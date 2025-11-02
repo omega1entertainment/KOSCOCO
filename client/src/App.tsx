@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Home from "@/pages/Home";
+import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Upload from "@/pages/Upload";
 import Dashboard from "@/pages/Dashboard";
@@ -36,6 +37,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/upload" component={Upload} />
       <Route path="/dashboard" component={Dashboard} />

@@ -6,26 +6,52 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import logo from "@assets/kOSCOCO_1762050897989.png";
 
 interface NavigationHeaderProps {
   currentPhase?: string;
-  onLoginClick?: () => void;
-  onRegisterClick?: () => void;
   onUploadClick?: () => void;
   onNavigate?: (path: string) => void;
 }
 
 export default function NavigationHeader({ 
   currentPhase = "PHASE 2: TOP 50 ACTIVE",
-  onLoginClick,
-  onRegisterClick,
   onUploadClick,
   onNavigate
 }: NavigationHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/logout", "POST");
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      setLocation("/");
+    },
+    onError: () => {
+      toast({
+        title: "Logout Failed",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
   
   const navItems = [
     { label: 'Categories', path: '/categories' },
@@ -110,26 +136,50 @@ export default function NavigationHeader({
           </div>
           
           <div className="hidden md:flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={onUploadClick}
-              data-testid="button-upload-nav"
-            >
-              Upload Video
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={onLoginClick}
-              data-testid="button-login"
-            >
-              Login
-            </Button>
-            <Button 
-              onClick={onRegisterClick}
-              data-testid="button-register"
-            >
-              Register
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={onUploadClick}
+                  data-testid="button-upload-nav"
+                >
+                  Upload Video
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" data-testid="button-user-menu">
+                      <User className="w-4 h-4 mr-2" />
+                      {user?.firstName || 'User'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onNavigate?.('/dashboard')} data-testid="menu-dashboard">
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => logoutMutation.mutate()} data-testid="menu-logout">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setLocation("/login")}
+                  data-testid="button-login"
+                >
+                  Login
+                </Button>
+                <Button 
+                  onClick={() => setLocation("/register")}
+                  data-testid="button-register"
+                >
+                  Register
+                </Button>
+              </>
+            )}
           </div>
           
           <button
