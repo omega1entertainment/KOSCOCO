@@ -1,19 +1,24 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
+import type { SelectUser } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const user = req.user as SelectUser;
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -52,8 +57,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/registrations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user as SelectUser;
+      const userId = user.id;
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -113,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/registrations/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const registrations = await storage.getUserRegistrations(userId);
       res.json(registrations);
     } catch (error) {
@@ -128,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
       const canAccess = await objectStorageService.canAccessObjectEntity({
         objectFile,
-        userId: req.user?.claims?.sub,
+        userId: (req.user as SelectUser | undefined)?.id,
         requestedPermission: ObjectPermission.READ,
       });
       if (!canAccess) {
@@ -157,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/videos', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const { videoUrl, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
 
       if (!videoUrl || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
@@ -245,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/videos/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const videos = await storage.getVideosByUser(userId);
       res.json(videos);
     } catch (error) {
@@ -267,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/videos/pending', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const user = await storage.getUser(userId);
       
       if (!user?.isAdmin) {
@@ -284,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/videos/:id/status', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const user = await storage.getUser(userId);
       
       if (!user?.isAdmin) {
@@ -384,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/votes/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const votes = await storage.getUserVotes(userId);
       res.json(votes);
     } catch (error) {
@@ -395,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/stats/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const stats = await storage.getUserStats(userId);
       res.json(stats);
     } catch (error) {
@@ -422,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Affiliate routes
   app.post('/api/affiliate/opt-in', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       
       // Check if already an affiliate
       const existing = await storage.getAffiliateByUserId(userId);
@@ -450,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/affiliate/status', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const affiliate = await storage.getAffiliateByUserId(userId);
       res.json({ isAffiliate: !!affiliate, affiliate });
     } catch (error) {
@@ -461,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/affiliate/referrals', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const affiliate = await storage.getAffiliateByUserId(userId);
       
       if (!affiliate) {
@@ -478,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
       const user = await storage.getUser(userId);
       
       if (!user?.isAdmin) {
@@ -573,7 +578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payments/verify', isAuthenticated, async (req: any, res) => {
     try {
       const { transaction_id, registrationId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = (req.user as SelectUser).id;
 
       if (!transaction_id || !registrationId) {
         return res.status(400).json({ message: "Missing transaction_id or registrationId" });
