@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import logo from "@assets/kOSCOCO_1762050897989.png";
 
@@ -25,8 +31,12 @@ export default function NavigationHeader({
     { label: 'Categories', path: '/categories' },
     { label: 'How It Works', path: '/how-it-works' },
     { label: 'Leaderboard', path: '/leaderboard' },
-    { label: 'Affiliate Program', path: '/affiliate' },
     { label: 'Prizes', path: '/prizes' },
+  ];
+  
+  const affiliateMenuItems = [
+    { label: 'Join Program', path: '/affiliate' },
+    { label: 'My Dashboard', path: '/affiliate/dashboard' },
   ];
   
   return (
@@ -47,6 +57,29 @@ export default function NavigationHeader({
                   {item.label}
                 </button>
               ))}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="text-sm font-medium hover-elevate px-3 py-2 rounded-md transition-colors flex items-center gap-1"
+                    data-testid="link-affiliate-program"
+                  >
+                    Affiliate Program
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {affiliateMenuItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.label}
+                      onClick={() => onNavigate?.(item.path)}
+                      data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           </div>
           
@@ -101,6 +134,26 @@ export default function NavigationHeader({
                 {item.label}
               </button>
             ))}
+            
+            <div className="mt-2">
+              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
+                Affiliate Program
+              </div>
+              {affiliateMenuItems.map((item) => (
+                <button
+                  key={item.label}
+                  className="text-left px-4 py-3 hover-elevate rounded-md w-full"
+                  onClick={() => {
+                    onNavigate?.(item.path);
+                    setMobileMenuOpen(false);
+                  }}
+                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               <Button variant="outline" onClick={onUploadClick}>Upload Video</Button>
               <Button variant="ghost" onClick={onLoginClick}>Login</Button>

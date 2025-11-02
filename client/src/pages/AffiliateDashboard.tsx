@@ -88,13 +88,17 @@ export default function AffiliateDashboard() {
     );
   }
 
-  const copyReferralCode = () => {
-    if (affiliateStatus.affiliate?.referralCode) {
-      navigator.clipboard.writeText(affiliateStatus.affiliate.referralCode);
+  const referralLink = affiliateStatus.affiliate?.referralCode 
+    ? `${window.location.origin}/register?ref=${affiliateStatus.affiliate.referralCode}`
+    : "";
+
+  const copyReferralLink = () => {
+    if (referralLink) {
+      navigator.clipboard.writeText(referralLink);
       setCopied(true);
       toast({
         title: "Copied!",
-        description: "Referral code copied to clipboard",
+        description: "Referral link copied to clipboard",
       });
       setTimeout(() => setCopied(false), 2000);
     }
@@ -160,26 +164,26 @@ export default function AffiliateDashboard() {
             </Card>
           </div>
 
-          {/* Referral Code */}
+          {/* Referral Link */}
           <Card data-testid="card-referral-code">
             <CardHeader>
-              <CardTitle>Your Referral Code</CardTitle>
+              <CardTitle>Your Referral Link</CardTitle>
               <CardDescription>
-                Share this code with others to earn commission
+                Share this link with others to earn commission
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
                 <Input
-                  value={affiliateStatus.affiliate?.referralCode || ""}
+                  value={referralLink}
                   readOnly
-                  className="font-mono text-lg"
-                  data-testid="input-referral-code"
+                  className="font-mono text-sm"
+                  data-testid="input-referral-link"
                 />
                 <Button
-                  onClick={copyReferralCode}
+                  onClick={copyReferralLink}
                   variant="outline"
-                  data-testid="button-copy-code"
+                  data-testid="button-copy-link"
                 >
                   {copied ? (
                     <CheckCircle className="w-4 h-4" />
@@ -189,7 +193,7 @@ export default function AffiliateDashboard() {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Share this code on social media, with friends, or anywhere you promote KOSCOCO
+                Share this link on social media, with friends, or anywhere you promote KOSCOCO
               </p>
             </CardContent>
           </Card>
