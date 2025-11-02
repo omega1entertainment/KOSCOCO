@@ -58,7 +58,7 @@ export interface IStorage {
   getUserVotesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Vote[]>;
   getUserVotes(userId: string): Promise<Vote[]>;
   getUserStats(userId: string): Promise<{ totalVideos: number; totalVotesReceived: number; totalVotesCast: number }>;
-  getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number })[]>;
+  getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number; totalJudgeScore: number; rank: number })[]>;
   
   createJudgeScore(score: InsertJudgeScore): Promise<JudgeScore>;
   getVideoJudgeScores(videoId: string): Promise<JudgeScore[]>;
@@ -288,7 +288,7 @@ export class DbStorage implements IStorage {
     };
   }
 
-  async getLeaderboard(categoryId?: string, phaseId?: string, limit: number = 50): Promise<(Video & { voteCount: number })[]> {
+  async getLeaderboard(categoryId?: string, phaseId?: string, limit: number = 50): Promise<(Video & { voteCount: number; totalJudgeScore: number; rank: number })[]> {
     const conditions = [eq(schema.videos.status, 'approved')];
     if (categoryId) {
       conditions.push(eq(schema.videos.categoryId, categoryId));
@@ -297,7 +297,9 @@ export class DbStorage implements IStorage {
       conditions.push(eq(schema.videos.phaseId, phaseId));
     }
 
-    const videosWithVotes = await db
+    // Use subqueries to aggregate votes and judge scores separately
+    // This avoids cartesian product and is efficient (single query)
+    const videosWithScores = await db
       .select({
         id: schema.videos.id,
         userId: schema.videos.userId,
@@ -314,16 +316,41 @@ export class DbStorage implements IStorage {
         views: schema.videos.views,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
-        voteCount: sql<number>`COALESCE(COUNT(${schema.votes.id}), 0)`,
+        voteCount: sql<number>`(
+          SELECT COALESCE(COUNT(*), 0)
+          FROM ${schema.votes}
+          WHERE ${schema.votes.videoId} = ${schema.videos.id}
+        )`,
+        totalJudgeScore: sql<number>`(
+          SELECT COALESCE(SUM(${schema.judgeScores.creativityScore} + ${schema.judgeScores.qualityScore}), 0)
+          FROM ${schema.judgeScores}
+          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
+        )`,
       })
       .from(schema.videos)
-      .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
       .where(and(...conditions))
-      .groupBy(schema.videos.id)
-      .orderBy(desc(sql`COALESCE(COUNT(${schema.votes.id}), 0)`), desc(schema.videos.views))
+      .orderBy(
+        desc(sql`(
+          SELECT COALESCE(SUM(${schema.judgeScores.creativityScore} + ${schema.judgeScores.qualityScore}), 0)
+          FROM ${schema.judgeScores}
+          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
+        )`),
+        desc(sql`(
+          SELECT COALESCE(COUNT(*), 0)
+          FROM ${schema.votes}
+          WHERE ${schema.votes.videoId} = ${schema.videos.id}
+        )`),
+        desc(schema.videos.views)
+      )
       .limit(limit);
 
-    return videosWithVotes as (Video & { voteCount: number })[];
+    // Add rank to results
+    const rankedVideos = videosWithScores.map((video, index) => ({
+      ...video,
+      rank: index + 1,
+    }));
+
+    return rankedVideos as (Video & { voteCount: number; totalJudgeScore: number; rank: number })[];
   }
 
   async createJudgeScore(insertScore: InsertJudgeScore): Promise<JudgeScore> {
