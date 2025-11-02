@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CompletePaymentButton from "@/components/CompletePaymentButton";
 import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
@@ -186,10 +187,10 @@ export default function Dashboard() {
                     {registrations.map((registration) => (
                       <div
                         key={registration.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg"
                         data-testid={`registration-${registration.id}`}
                       >
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">
                             {registration.categoryIds.map(id => getCategoryName(id)).join(", ")}
                           </div>
@@ -197,8 +198,15 @@ export default function Dashboard() {
                             Amount: {registration.totalFee.toLocaleString()} FCFA
                           </p>
                         </div>
-                        <div>
+                        <div className="flex items-center gap-3">
                           {getPaymentStatusBadge(registration.paymentStatus)}
+                          {registration.paymentStatus === 'pending' && (
+                            <CompletePaymentButton
+                              registration={registration}
+                              userEmail={user?.email || ''}
+                              userName={`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+                            />
+                          )}
                         </div>
                       </div>
                     ))}
