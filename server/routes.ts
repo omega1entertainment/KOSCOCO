@@ -223,6 +223,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/videos/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const video = await storage.getVideoById(id);
+      
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(403).json({ message: "Video not available" });
+      }
+
+      res.json(video);
+    } catch (error) {
+      console.error("Error fetching video:", error);
+      res.status(500).json({ message: "Failed to fetch video" });
+    }
+  });
+
   app.get('/api/videos/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

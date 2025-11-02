@@ -9,17 +9,24 @@ interface NavigationHeaderProps {
   onLoginClick?: () => void;
   onRegisterClick?: () => void;
   onUploadClick?: () => void;
+  onNavigate?: (path: string) => void;
 }
 
 export default function NavigationHeader({ 
   currentPhase = "PHASE 2: TOP 50 ACTIVE",
   onLoginClick,
   onRegisterClick,
-  onUploadClick
+  onUploadClick,
+  onNavigate
 }: NavigationHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const navItems = ['Categories', 'How It Works', 'Leaderboard', 'Prizes'];
+  const navItems = [
+    { label: 'Categories', path: '/categories' },
+    { label: 'How It Works', path: '/how-it-works' },
+    { label: 'Leaderboard', path: '/leaderboard' },
+    { label: 'Prizes', path: '/prizes' },
+  ];
   
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
@@ -31,12 +38,12 @@ export default function NavigationHeader({
             <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => (
                 <button
-                  key={item}
+                  key={item.label}
                   className="text-sm font-medium hover-elevate px-3 py-2 rounded-md transition-colors"
-                  onClick={() => console.log(`Navigate to ${item}`)}
-                  data-testid={`link-${item.toLowerCase().replace(/\s+/g, '-')}`}
+                  onClick={() => onNavigate?.(item.path)}
+                  data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
-                  {item}
+                  {item.label}
                 </button>
               ))}
             </nav>
@@ -83,14 +90,14 @@ export default function NavigationHeader({
           <nav className="flex flex-col p-4 gap-2">
             {navItems.map((item) => (
               <button
-                key={item}
+                key={item.label}
                 className="text-left px-4 py-3 hover-elevate rounded-md"
                 onClick={() => {
-                  console.log(`Navigate to ${item}`);
+                  onNavigate?.(item.path);
                   setMobileMenuOpen(false);
                 }}
               >
-                {item}
+                {item.label}
               </button>
             ))}
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">

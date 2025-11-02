@@ -7,6 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import Home from "@/pages/Home";
 import Register from "@/pages/Register";
 import Upload from "@/pages/Upload";
+import Categories from "@/pages/Categories";
+import CategoryVideos from "@/pages/CategoryVideos";
+import VideoPlayer from "@/pages/VideoPlayer";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +31,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/register" component={Register} />
       <Route path="/upload" component={Upload} />
+      <Route path="/categories" component={Categories} />
+      <Route path="/category/:id" component={CategoryVideos} />
+      <Route path="/video/:id" component={VideoPlayer} />
       <Route component={NotFound} />
     </Switch>
   );

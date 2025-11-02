@@ -1,0 +1,127 @@
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import NavigationHeader from "@/components/NavigationHeader";
+import Footer from "@/components/Footer";
+import { ArrowRight, Video } from "lucide-react";
+import type { Category } from "@shared/schema";
+
+import musicImage from "@assets/generated_images/Music_and_Dance_category_e223aa7f.png";
+import comedyImage from "@assets/generated_images/Comedy_and_Performing_Arts_ede3bf3d.png";
+import fashionImage from "@assets/generated_images/Fashion_and_Lifestyle_category_d45cea92.png";
+import educationImage from "@assets/generated_images/Education_and_Learning_category_c4ef1c1d.png";
+import gospelImage from "@assets/generated_images/Gospel_Choirs_category_e7d0b06c.png";
+
+const categoryImages: Record<string, string> = {
+  "Music & Dance": musicImage,
+  "Comedy & Performing Arts": comedyImage,
+  "Fashion & Lifestyle": fashionImage,
+  "Education & Learning": educationImage,
+  "Gospel Choirs": gospelImage,
+};
+
+export default function Categories() {
+  const [, setLocation] = useLocation();
+
+  const { data: categories, isLoading } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="mt-4 text-muted-foreground">Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <NavigationHeader 
+        onUploadClick={() => setLocation("/upload")}
+        onRegisterClick={() => setLocation("/register")}
+        onNavigate={(path) => setLocation(path)}
+      />
+
+      <main className="flex-1">
+        <section className="bg-muted/30 py-16">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h1 className="font-display text-5xl md:text-7xl uppercase tracking-wide mb-4">
+                Competition Categories
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Browse videos across all five competition categories
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {categories?.map((category) => (
+                <Card 
+                  key={category.id} 
+                  className="group overflow-hidden hover-elevate active-elevate-2 cursor-pointer transition-all"
+                  onClick={() => setLocation(`/category/${category.id}`)}
+                  data-testid={`card-category-${category.id}`}
+                >
+                  <div className="aspect-video relative overflow-hidden bg-muted">
+                    <img
+                      src={categoryImages[category.name] || musicImage}
+                      alt={category.name}
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="font-display text-2xl text-white font-bold uppercase">
+                        {category.name}
+                      </h3>
+                    </div>
+                  </div>
+                  <CardContent className="p-6">
+                    {category.description && (
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {category.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {category.subcategories.slice(0, 3).map((sub) => (
+                        <Badge key={sub} variant="outline" className="text-xs">
+                          {sub}
+                        </Badge>
+                      ))}
+                      {category.subcategories.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{category.subcategories.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full group/btn"
+                      onClick={() => setLocation(`/category/${category.id}`)}
+                      data-testid={`button-view-category-${category.id}`}
+                    >
+                      <Video className="w-4 h-4 mr-2" />
+                      View Videos
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

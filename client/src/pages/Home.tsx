@@ -101,6 +101,7 @@ export default function Home() {
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}
+        onNavigate={(path) => setLocation(path)}
       />
       
       <Hero 
