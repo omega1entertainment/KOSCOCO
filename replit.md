@@ -188,30 +188,31 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
 - Already-enrolled users automatically redirected to dashboard
 - Tested end-to-end with Playwright
 
-**How It Works Page with Animations (Session 3):**
-- Created stunning `/how-it-works` page with beautiful framer-motion animations
-- Hero section with floating Sparkles icon and CTA
-- Four competition stats cards with hover animations (scale + rotate icons)
-- Six-step process guide with alternating layouts and gradient badges (01-06)
+**How It Works Page (Session 3):**
+- Created professional `/how-it-works` page with clean, static design matching red theme
+- Hero section with Sparkles icon and CTA button
+- Four competition stats cards displaying key competition info
+- Six-step process guide with alternating layouts and red number badges (01-06)
 - Each step features:
-  - **AI-generated custom images** (6 total) replacing previous icons:
+  - **AI-generated custom images** (6 total, 800x488 dimensions):
     - Registration and category selection scene
     - Video upload and content creation scene
     - Content approval and moderation scene
     - Public voting and engagement scene
     - Phase progression and advancement scene
     - Winning prizes and celebration scene
-  - Images animated with scale/rotate effects (subtle 3° rotation)
-  - Gradient backgrounds (red → orange → yellow → green → blue → purple)
-  - Rounded corners, shadows, and decorative overlays on images
-  - Checkmark highlights list
-  - Scroll-triggered entrance animations
+  - Images sized to fit blocks with object-cover
+  - Solid RED number badges (bg-primary) matching theme colors
+  - RED checkmarks (text-primary) for highlights list
+  - Clean, static presentation (no animations)
+  - Neutral gray image containers (bg-muted)
 - Scoring section (60% Public Votes, 30% Creativity, 10% Quality)
-  - Animated circular backgrounds with continuous rotation
-  - Hover effects that lift cards
-- CTA section with animated Trophy icon and dual action buttons
-- All animations optimized for smooth performance
+  - Static icons in gradient circular backgrounds
+  - Clean card layout
+- CTA section with Trophy icon and dual action buttons
+- Completely static design (all animations removed)
 - Fully responsive design with alternating image/content layout
+- Red theme throughout (number badges and checkmarks)
 - Tested end-to-end with Playwright
 
 ## Next Steps

@@ -43,7 +43,7 @@ export default function Register() {
     },
     onSuccess: (data: any) => {
       const referralApplied = data.referralApplied !== false;
-      const totalAmount = data.totalAmount || data.totalFee || totalAmount;
+      const totalAmount = data.totalAmount || data.totalFee || 0;
       toast({
         title: "Registration Successful!",
         description: `Your registration has been submitted. Total amount: ${totalAmount?.toLocaleString() || '0'} FCFA. ${!referralApplied && referralCode ? 'Note: Referral code was not valid.' : ''}`,
