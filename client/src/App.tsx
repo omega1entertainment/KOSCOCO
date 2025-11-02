@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Home from "@/pages/Home";
 import Register from "@/pages/Register";
 import Upload from "@/pages/Upload";
+import Dashboard from "@/pages/Dashboard";
+import AffiliateProgram from "@/pages/AffiliateProgram";
 import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
 import VideoPlayer from "@/pages/VideoPlayer";
@@ -33,6 +35,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/register" component={Register} />
       <Route path="/upload" component={Upload} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/affiliate" component={AffiliateProgram} />
       <Route path="/categories" component={Categories} />
       <Route path="/category/:id" component={CategoryVideos} />
       <Route path="/video/:id" component={VideoPlayer} />

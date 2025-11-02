@@ -70,41 +70,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const FEE_PER_CATEGORY = 2500;
-      const totalAmount = categoryIds.length * FEE_PER_CATEGORY;
+      const totalFee = categoryIds.length * FEE_PER_CATEGORY;
 
       let affiliate = null;
-      let referralApplied = false;
       if (referralCode) {
         affiliate = await storage.getAffiliateByReferralCode(referralCode);
-        referralApplied = !!affiliate;
       }
 
-      const registrations = [];
-      for (const categoryId of categoryIds) {
-        const registration = await storage.createRegistration({
-          userId,
-          categoryId,
-          phaseId: activePhase.id,
-          referralCode: referralCode || null,
-          amount: FEE_PER_CATEGORY,
-          paymentStatus: 'pending',
+      // Create ONE registration with all categories
+      const registration = await storage.createRegistration({
+        userId,
+        categoryIds,
+        totalFee,
+        paymentStatus: 'pending',
+        referralCode: referralCode || null,
+      });
+
+      // Create referral record if affiliate code was used
+      if (affiliate) {
+        const commissionAmount = totalFee * 0.2; // 20% commission
+        await storage.createReferral({
+          affiliateId: affiliate.id,
+          registrationId: registration.id,
+          commission: commissionAmount,
         });
 
-        registrations.push(registration);
-
-        if (affiliate) {
-          const commission = FEE_PER_CATEGORY * 0.2;
-          await storage.createReferral({
-            affiliateId: affiliate.id,
-            registrationId: registration.id,
-            commission,
-            status: 'pending',
-          });
-          await storage.updateAffiliateStats(affiliate.id, 1, commission);
-        }
+        // Update affiliate stats
+        await storage.updateAffiliateStats(affiliate.id, 1, commissionAmount);
       }
 
-      res.json({ registrations, totalAmount, referralApplied });
+      res.json({ 
+        registration, 
+        totalFee, 
+        referralApplied: !!affiliate 
+      });
     } catch (error) {
       console.error("Error creating registration:", error);
       res.status(500).json({ message: "Failed to create registration" });
@@ -382,6 +381,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/votes/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const votes = await storage.getUserVotes(userId);
+      res.json(votes);
+    } catch (error) {
+      console.error("Error fetching user votes:", error);
+      res.status(500).json({ message: "Failed to fetch user votes" });
+    }
+  });
+
+  app.get('/api/stats/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getUserStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
   app.get('/api/leaderboard', async (req, res) => {
     try {
       const { categoryId, phaseId, limit } = req.query;
@@ -394,6 +415,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
       res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Affiliate routes
+  app.post('/api/affiliate/opt-in', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if already an affiliate
+      const existing = await storage.getAffiliateByUserId(userId);
+      if (existing) {
+        return res.status(400).json({ message: "Already enrolled as an affiliate" });
+      }
+
+      // Generate unique referral code
+      const referralCode = `REF-${userId.substring(0, 8).toUpperCase()}`;
+      
+      const affiliate = await storage.createAffiliate({
+        userId,
+        referralCode,
+        totalReferrals: 0,
+        totalEarnings: 0,
+        status: 'active',
+      });
+
+      res.json(affiliate);
+    } catch (error) {
+      console.error("Error creating affiliate:", error);
+      res.status(500).json({ message: "Failed to create affiliate" });
+    }
+  });
+
+  app.get('/api/affiliate/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const affiliate = await storage.getAffiliateByUserId(userId);
+      res.json({ isAffiliate: !!affiliate, affiliate });
+    } catch (error) {
+      console.error("Error fetching affiliate status:", error);
+      res.status(500).json({ message: "Failed to fetch affiliate status" });
+    }
+  });
+
+  app.get('/api/affiliate/referrals', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const affiliate = await storage.getAffiliateByUserId(userId);
+      
+      if (!affiliate) {
+        return res.status(404).json({ message: "Not enrolled as an affiliate" });
+      }
+
+      const referrals = await storage.getAffiliateReferrals(affiliate.id);
+      res.json(referrals);
+    } catch (error) {
+      console.error("Error fetching referrals:", error);
+      res.status(500).json({ message: "Failed to fetch referrals" });
     }
   });
 

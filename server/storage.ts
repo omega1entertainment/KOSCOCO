@@ -48,6 +48,8 @@ export interface IStorage {
   createVote(vote: InsertVote): Promise<Vote>;
   getVideoVoteCount(videoId: string): Promise<number>;
   getUserVotesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Vote[]>;
+  getUserVotes(userId: string): Promise<Vote[]>;
+  getUserStats(userId: string): Promise<{ totalVideos: number; totalVotesReceived: number; totalVotesCast: number }>;
   getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number })[]>;
   
   createJudgeScore(score: InsertJudgeScore): Promise<JudgeScore>;
@@ -202,6 +204,39 @@ export class DbStorage implements IStorage {
     return [];
   }
 
+  async getUserVotes(userId: string): Promise<Vote[]> {
+    return await db.select().from(schema.votes)
+      .where(eq(schema.votes.userId, userId))
+      .orderBy(desc(schema.votes.createdAt));
+  }
+
+  async getUserStats(userId: string): Promise<{ totalVideos: number; totalVotesReceived: number; totalVotesCast: number }> {
+    // Count total videos (all statuses)
+    const videoCountResult = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.videos)
+      .where(eq(schema.videos.userId, userId));
+    const totalVideos = videoCountResult[0]?.count || 0;
+
+    // Count total votes received (aggregate in SQL, all video statuses)
+    const votesReceivedResult = await db.select({ count: sql<number>`COUNT(${schema.votes.id})` })
+      .from(schema.votes)
+      .innerJoin(schema.videos, eq(schema.votes.videoId, schema.videos.id))
+      .where(eq(schema.videos.userId, userId));
+    const totalVotesReceived = votesReceivedResult[0]?.count || 0;
+
+    // Count total votes cast
+    const votesCastResult = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.votes)
+      .where(eq(schema.votes.userId, userId));
+    const totalVotesCast = votesCastResult[0]?.count || 0;
+
+    return {
+      totalVideos,
+      totalVotesReceived,
+      totalVotesCast,
+    };
+  }
+
   async getLeaderboard(categoryId?: string, phaseId?: string, limit: number = 50): Promise<(Video & { voteCount: number })[]> {
     const conditions = [eq(schema.videos.status, 'approved')];
     if (categoryId) {
@@ -280,8 +315,30 @@ export class DbStorage implements IStorage {
     return referral;
   }
 
-  async getAffiliateReferrals(affiliateId: string): Promise<Referral[]> {
-    return await db.select().from(schema.referrals).where(eq(schema.referrals.affiliateId, affiliateId)).orderBy(desc(schema.referrals.createdAt));
+  async getAffiliateReferrals(affiliateId: string): Promise<(Referral & { registration?: Registration })[]> {
+    const referrals = await db.select({
+      id: schema.referrals.id,
+      affiliateId: schema.referrals.affiliateId,
+      registrationId: schema.referrals.registrationId,
+      commission: schema.referrals.commission,
+      status: schema.referrals.status,
+      createdAt: schema.referrals.createdAt,
+      registration: {
+        id: schema.registrations.id,
+        userId: schema.registrations.userId,
+        categoryIds: schema.registrations.categoryIds,
+        totalFee: schema.registrations.totalFee,
+        paymentStatus: schema.registrations.paymentStatus,
+        referralCode: schema.registrations.referralCode,
+        createdAt: schema.registrations.createdAt,
+      }
+    })
+    .from(schema.referrals)
+    .leftJoin(schema.registrations, eq(schema.referrals.registrationId, schema.registrations.id))
+    .where(eq(schema.referrals.affiliateId, affiliateId))
+    .orderBy(desc(schema.referrals.createdAt));
+
+    return referrals as (Referral & { registration?: Registration })[];
   }
 }
 
