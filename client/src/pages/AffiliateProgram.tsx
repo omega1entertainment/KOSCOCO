@@ -50,6 +50,12 @@ export default function AffiliateProgram() {
     },
   });
 
+  useEffect(() => {
+    if (!statusLoading && affiliateStatus?.isAffiliate) {
+      setLocation("/affiliate/dashboard");
+    }
+  }, [statusLoading, affiliateStatus, setLocation]);
+
   if (authLoading || statusLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -60,12 +66,6 @@ export default function AffiliateProgram() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!statusLoading && affiliateStatus?.isAffiliate) {
-      setLocation("/affiliate/dashboard");
-    }
-  }, [statusLoading, affiliateStatus, setLocation]);
 
   if (!user) {
     return (
