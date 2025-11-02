@@ -25,19 +25,19 @@ export default function Home() {
     {
       title: 'Comedy & Performing Arts',
       image: comedyImage,
-      subcategories: ['Skits', 'Stand-up', 'Monologue', 'Acting'],
+      subcategories: ['Skits', 'Stand-up', 'Monologue', 'Acting', 'Movie content'],
       entryCount: 187,
     },
     {
       title: 'Fashion & Lifestyle',
       image: fashionImage,
-      subcategories: ['Fashion', 'Cooking', 'Beauty', 'Travel', 'Vlogging'],
+      subcategories: ['Cooking', 'Events', 'Decor', 'Sports', 'Travel', 'Vlogging', 'Fashion', 'Hair', 'Makeup', 'Beauty', 'Reviews'],
       entryCount: 312,
     },
     {
       title: 'Education & Learning',
       image: educationImage,
-      subcategories: ['Tutorials', 'DIY', 'Business', 'Documentary'],
+      subcategories: ['DIY', 'Tutorials', 'Documentary', 'Business & Finance', 'News', 'Motivational Speaking'],
       entryCount: 156,
     },
     {
