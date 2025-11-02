@@ -35,11 +35,11 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           <img src={seasonLogo} alt="KOSCOCO Season 1" className="h-16 md:h-20" />
         </div>
         
-        <p className="mb-3" style={{ fontFamily: 'Play, sans-serif', fontWeight: 600, fontSize: '51px', color: '#FBBF24' }}>
+        <p className="mb-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl" style={{ fontFamily: 'Play, sans-serif', fontWeight: 600, color: '#FBBF24' }}>
           Become Cameroon's next biggest content Creator and Influencer
         </p>
         
-        <p className="text-white mb-4" style={{ fontWeight: 700, fontSize: '45px' }}>
+        <p className="text-white mb-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">
           Unleash Creativity & Embrace the Spotlight
         </p>
         

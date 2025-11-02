@@ -110,9 +110,9 @@ export default function Home() {
         onWatchClick={() => console.log("Watch entries")}
       />
       
-      <section className="py-20 bg-muted/30">
+      <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {stats.map((stat, idx) => (
               <StatsCard key={idx} {...stat} />
             ))}
@@ -120,16 +120,16 @@ export default function Home() {
         </div>
       </section>
       
-      <section className="py-20">
+      <section className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="font-display text-5xl md:text-6xl text-center mb-4 uppercase tracking-wide">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 uppercase tracking-wide">
             Competition Categories
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground mb-8 md:mb-12 max-w-2xl mx-auto text-sm md:text-base">
             Choose your category and showcase your talent to Cameroon and the world
           </p>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
             {categories.map((category, idx) => (
               <CategoryCard
                 key={idx}
@@ -143,23 +143,23 @@ export default function Home() {
       
       <PhaseTimeline />
       
-      <section className="py-20 bg-muted/30">
+      <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
             <div>
-              <h2 className="font-display text-5xl md:text-6xl uppercase tracking-wide mb-2">
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide mb-2">
                 Trending Entries
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm md:text-base">
                 Watch the most popular submissions this week
               </p>
             </div>
-            <Button variant="outline" data-testid="button-view-all">
+            <Button variant="outline" data-testid="button-view-all" className="w-full sm:w-auto">
               View All
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {featuredVideos.map((video) => (
               <VideoCard
                 key={video.id}
@@ -173,18 +173,18 @@ export default function Home() {
         </div>
       </section>
       
-      <section className="py-20">
+      <section className="py-12 md:py-20">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-display text-5xl md:text-6xl uppercase tracking-wide mb-6">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide mb-4 md:mb-6">
             Ready to Compete?
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-base md:text-lg text-muted-foreground mb-6 md:mb-8">
             Register now for just 2,500 FCFA per category and join Cameroon's biggest content competition
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
               size="lg" 
-              className="px-12" 
+              className="w-full sm:w-auto px-8 md:px-12" 
               onClick={() => setLocation("/register")}
               data-testid="button-register-now"
             >
@@ -193,7 +193,7 @@ export default function Home() {
             <Button 
               size="lg" 
               variant="outline" 
-              className="px-12" 
+              className="w-full sm:w-auto px-8 md:px-12" 
               onClick={() => console.log("Learn more")}
               data-testid="button-learn-more"
             >
