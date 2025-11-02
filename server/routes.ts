@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -117,6 +119,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user registrations:", error);
       res.status(500).json({ message: "Failed to fetch registrations" });
+    }
+  });
+
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: req.user?.claims?.sub,
+        requestedPermission: ObjectPermission.READ,
+      });
+      if (!canAccess) {
+        return res.sendStatus(401);
+      }
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error checking object access:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.post('/api/videos/upload-url', isAuthenticated, async (req: any, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ message: "Failed to generate upload URL" });
+    }
+  });
+
+  app.post('/api/videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { videoURL, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
+
+      if (!videoURL || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
+        return res.status(400).json({ message: "Missing required fields (videoURL, categoryId, subcategory, title, duration, fileSize, mimeType)" });
+      }
+
+      const ALLOWED_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
+      if (!ALLOWED_FORMATS.includes(mimeType.toLowerCase())) {
+        return res.status(400).json({ message: "Invalid video format. Allowed: MP4, MPEG4, WebM, MOV, FLV" });
+      }
+
+      const MAX_FILE_SIZE = 512 * 1024 * 1024; // 512MB
+      if (fileSize > MAX_FILE_SIZE) {
+        return res.status(400).json({ message: "File size exceeds 512MB limit" });
+      }
+
+      const MIN_DURATION = 60; // 1 minute
+      const MAX_DURATION = 180; // 3 minutes
+      if (duration < MIN_DURATION || duration > MAX_DURATION) {
+        return res.status(400).json({ message: "Video duration must be between 1 and 3 minutes" });
+      }
+
+      const registrations = await storage.getUserRegistrations(userId);
+      const hasRegistration = registrations.some(r => r.categoryId === categoryId && r.paymentStatus === 'approved');
+      
+      if (!hasRegistration) {
+        return res.status(403).json({ message: "You must register and pay for this category before uploading videos" });
+      }
+
+      const existingVideos = await storage.getVideosByUser(userId);
+      const categoryVideoCount = existingVideos.filter(v => v.categoryId === categoryId).length;
+      if (categoryVideoCount >= 2) {
+        return res.status(400).json({ message: "Maximum 2 videos per category allowed" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const videoPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        videoURL,
+        {
+          owner: userId,
+          visibility: "private",
+        }
+      );
+
+      const video = await storage.createVideo({
+        userId,
+        categoryId,
+        subcategory,
+        title,
+        description: description || null,
+        videoUrl: videoPath,
+        thumbnailUrl: null,
+        duration,
+        fileSize,
+        status: 'pending',
+        views: 0,
+      });
+
+      res.json(video);
+    } catch (error) {
+      console.error("Error creating video:", error);
+      res.status(500).json({ message: "Failed to create video" });
+    }
+  });
+
+  app.get('/api/videos/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const videos = await storage.getVideosByUser(userId);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching user videos:", error);
+      res.status(500).json({ message: "Failed to fetch videos" });
+    }
+  });
+
+  app.get('/api/videos/category/:categoryId', async (req, res) => {
+    try {
+      const { categoryId } = req.params;
+      const videos = await storage.getVideosByCategory(categoryId);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching category videos:", error);
+      res.status(500).json({ message: "Failed to fetch videos" });
+    }
+  });
+
+  app.get('/api/videos/pending', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+
+      const videos = await storage.getPendingVideos();
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching pending videos:", error);
+      res.status(500).json({ message: "Failed to fetch pending videos" });
+    }
+  });
+
+  app.patch('/api/videos/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!['approved', 'rejected', 'pending'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const videoToUpdate = await storage.getVideoById(id);
+      if (!videoToUpdate) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (status === 'approved' && videoToUpdate.videoUrl) {
+        const objectStorageService = new ObjectStorageService();
+        await objectStorageService.trySetObjectEntityAclPolicy(
+          videoToUpdate.videoUrl,
+          {
+            owner: videoToUpdate.userId,
+            visibility: "public",
+          }
+        );
+      }
+
+      const video = await storage.updateVideoStatus(id, status);
+      res.json(video);
+    } catch (error) {
+      console.error("Error updating video status:", error);
+      res.status(500).json({ message: "Failed to update video status" });
     }
   });
 
