@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Mail, Headphones } from "lucide-react";
+import { Mail } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube, SiLinkedin } from "react-icons/si";
 
 interface TopBarProps {
@@ -22,7 +22,6 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
         <div className="flex items-center justify-between h-10 text-sm">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Headphones className="w-4 h-4" data-testid="icon-support" />
               <Mail className="w-4 h-4" />
               <a 
                 href="mailto:support@kozzii.africa"
