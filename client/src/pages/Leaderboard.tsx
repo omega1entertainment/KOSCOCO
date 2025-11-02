@@ -62,7 +62,6 @@ export default function Leaderboard() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
         onNavigate={(path) => setLocation(path)}
       />
 
@@ -143,7 +142,7 @@ export default function Leaderboard() {
                   >
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4">
                       <div className="md:col-span-1 flex items-center justify-center">
-                        <div className={`text-4xl font-bold ${getRankColor(rank)}`}>
+                        <div className={`text-2xl md:text-3xl lg:text-4xl font-bold ${getRankColor(rank)}`}>
                           #{rank}
                         </div>
                       </div>

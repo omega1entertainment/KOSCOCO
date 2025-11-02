@@ -152,8 +152,8 @@ export default function Login() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2 font-['Bebas_Neue']">Welcome to KOSCOCO</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2 font-['Bebas_Neue']">Welcome to KOSCOCO</h1>
+            <p className="text-muted-foreground text-sm md:text-base">
               Login to your account or create a new one
             </p>
           </div>
@@ -259,7 +259,7 @@ export default function Login() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="signup-firstname">First Name *</Label>
                         <Input
