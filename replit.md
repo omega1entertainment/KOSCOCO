@@ -149,7 +149,17 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
 **Auth & Bug Fixes:**
 - Fixed auth routes: /api/login and /api/logout (were incorrectly /api/auth/login and /api/auth/logout)
 - Fixed apiRequest parameter order: (url, method, data) to match all usages
+- Fixed login button in Home.tsx by adding onLoginClick handler to NavigationHeader
 - All features tested end-to-end with Playwright and passing
+
+**Affiliate Flow Improvements (Session 2):**
+- Split affiliate program into two pages:
+  - `/affiliate` - Enrollment page with benefits and "Enroll Now" button
+  - `/affiliate/dashboard` - Dashboard showing stats, referral code, and referrals list
+- After successful enrollment, users are automatically redirected to dashboard
+- Already-enrolled users visiting /affiliate are redirected to /affiliate/dashboard
+- Added "Affiliate Program" link to navigation header
+- Fixed React warning by using useEffect for redirect logic
 
 ## Next Steps
 1. ✅ All MVP features complete and tested
