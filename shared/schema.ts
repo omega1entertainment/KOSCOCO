@@ -16,7 +16,10 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique().notNull(),
-  password: varchar("password").notNull(),
+  username: varchar("username").unique(),
+  password: varchar("password"),
+  googleId: varchar("google_id").unique(),
+  facebookId: varchar("facebook_id").unique(),
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
   profileImageUrl: varchar("profile_image_url"),
@@ -24,6 +27,8 @@ export const users = pgTable("users", {
   location: text("location"),
   parentalConsent: boolean("parental_consent").default(false),
   isAdmin: boolean("is_admin").default(false),
+  resetPasswordToken: varchar("reset_password_token"),
+  resetPasswordExpires: timestamp("reset_password_expires"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
