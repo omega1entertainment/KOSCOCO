@@ -161,6 +161,18 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
 - Added "Affiliate Program" link to navigation header
 - Fixed React warning by using useEffect for redirect logic
 
+**Referral Link System (Session 3):**
+- Converted referral code system to referral link system
+- Referral links format: `${window.location.origin}/register?ref=REF-XXXXXXXX`
+- Updated AffiliateDashboard to display full referral link with copy button
+- Register page automatically reads and pre-fills referral code from URL query parameter
+- Shows toast notification "Referral Code Applied" when referral link is used
+- Added dropdown submenu to NavigationHeader for Affiliate Program:
+  - Desktop: Dropdown with "Join Program" and "My Dashboard" options
+  - Mobile: Collapsible section with same options
+- Fixed toast error for registration success message (totalAmount undefined)
+- All referral link flows tested end-to-end with Playwright
+
 ## Next Steps
 1. ✅ All MVP features complete and tested
 2. 🔜 Integrate payment processing (Flutterwave) for registration fees
