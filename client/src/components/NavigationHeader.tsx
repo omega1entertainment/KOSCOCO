@@ -76,27 +76,29 @@ export default function NavigationHeader({
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
           </div>
           
-          <nav className="hidden md:flex items-center gap-3 flex-1 justify-center">
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {navItems.map((item) => (
-              <button
+              <Button
                 key={item.label}
-                className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors"
+                variant="ghost"
+                className="min-h-11"
                 onClick={() => onNavigate?.(item.path)}
                 data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {item.label}
-              </button>
+              </Button>
             ))}
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
                   data-testid="link-leaderboard"
                 >
                   Leaderboard
-                  <ChevronDown className="w-4 h-4" />
-                </button>
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {leaderboardMenuItems.map((item) => (
@@ -113,13 +115,14 @@ export default function NavigationHeader({
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
                   data-testid="link-affiliate"
                 >
                   Affiliate
-                  <ChevronDown className="w-4 h-4" />
-                </button>
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {affiliateMenuItems.map((item) => (
