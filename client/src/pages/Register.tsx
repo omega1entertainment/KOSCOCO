@@ -63,10 +63,11 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/registrations", "POST", {
+      const response = await apiRequest("/api/registrations", "POST", {
         categoryIds: selectedCategories,
         referralCode: referralCode || null,
       });
+      return await response.json();
     },
     onSuccess: (data: any) => {
       console.log('Registration response:', data);
@@ -290,6 +291,23 @@ export default function Register() {
                       {selectedCategories.length}
                     </span>
                   </div>
+                  {selectedCategories.length > 0 && (
+                    <div className="mb-2">
+                      <div className="flex flex-wrap gap-2">
+                        {categories
+                          ?.filter(cat => selectedCategories.includes(cat.id))
+                          .map(cat => (
+                            <span
+                              key={cat.id}
+                              className="text-xs px-3 py-1 bg-primary/10 text-primary rounded-md font-medium"
+                              data-testid={`badge-selected-category-${cat.name.toLowerCase().replace(/\s+/g, '-')}`}
+                            >
+                              {cat.name}
+                            </span>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Fee per Category:</span>
                     <span className="font-medium">2,500 FCFA</span>
