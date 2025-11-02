@@ -35,6 +35,32 @@ export default function Register() {
     queryKey: ["/api/categories"],
   });
 
+  const FEE_PER_CATEGORY = 2500;
+  const totalAmount = selectedCategories.length * FEE_PER_CATEGORY;
+  const [paymentData, setPaymentData] = useState<any>(null);
+
+  const config = {
+    public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
+    tx_ref: paymentData ? `REG-${paymentData.registrationId}-${Date.now()}` : Date.now().toString(),
+    amount: paymentData ? paymentData.amount : totalAmount,
+    currency: 'XAF',
+    payment_options: 'card,mobilemoney,ussd,banktransfer',
+    customer: {
+      email: user?.email || '',
+      phone_number: '',
+      name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User',
+    },
+    customizations: {
+      title: 'KOSCOCO Registration',
+      description: paymentData 
+        ? `Registration for ${paymentData.categoryCount} ${paymentData.categoryCount === 1 ? 'category' : 'categories'}`
+        : 'Competition Registration Payment',
+      logo: '',
+    },
+  };
+
+  const handleFlutterPayment = useFlutterwave(config);
+
   const registerMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("/api/registrations", "POST", {
@@ -44,72 +70,65 @@ export default function Register() {
     },
     onSuccess: (data: any) => {
       const referralApplied = data.referralApplied !== false;
-      const totalAmount = data.totalAmount || data.totalFee || 0;
+      const paymentAmount = data.totalAmount || data.totalFee || 0;
       const registration = data.registration;
       
-      // Initialize Flutterwave payment
-      const config = {
-        public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || process.env.FLW_PUBLIC_KEY!,
-        tx_ref: `REG-${registration.id}-${Date.now()}`,
-        amount: totalAmount,
-        currency: 'XAF', // FCFA currency code
-        payment_options: 'card,mobilemoney,ussd,banktransfer',
-        customer: {
-          email: user?.email || '',
-          phone_number: user?.phone || '',
-          name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
-        },
-        customizations: {
-          title: 'KOSCOCO Registration',
-          description: `Registration for ${selectedCategories.length} ${selectedCategories.length === 1 ? 'category' : 'categories'}`,
-          logo: '',
-        },
-      };
+      // Set payment data and trigger payment modal
+      setPaymentData({
+        registrationId: registration.id,
+        amount: paymentAmount,
+        categoryCount: selectedCategories.length,
+      });
 
-      handleFlutterPayment({
-        callback: async (response: any) => {
-          console.log('Payment response:', response);
-          
-          if (response.status === 'successful') {
-            try {
-              await apiRequest("/api/payments/verify", "POST", {
-                transaction_id: response.transaction_id,
-                registrationId: registration.id,
-              });
-              
+      // Trigger payment modal
+      setTimeout(() => {
+        handleFlutterPayment({
+          callback: async (response: any) => {
+            console.log('Payment response:', response);
+            
+            if (response.status === 'successful') {
+              try {
+                await apiRequest("/api/payments/verify", "POST", {
+                  transaction_id: response.transaction_id,
+                  registrationId: registration.id,
+                });
+                
+                toast({
+                  title: "Payment Successful!",
+                  description: `Your registration payment of ${paymentAmount.toLocaleString()} FCFA has been confirmed.`,
+                });
+                
+                queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+                setLocation("/dashboard");
+              } catch (error: any) {
+                toast({
+                  title: "Payment Verification Failed",
+                  description: error.message || "Please contact support.",
+                  variant: "destructive",
+                });
+              }
+            } else {
               toast({
-                title: "Payment Successful!",
-                description: `Your registration payment of ${totalAmount.toLocaleString()} FCFA has been confirmed.`,
-              });
-              
-              queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-              setLocation("/dashboard");
-            } catch (error: any) {
-              toast({
-                title: "Payment Verification Failed",
-                description: error.message || "Please contact support.",
+                title: "Payment Incomplete",
+                description: "Your registration was created but payment was not completed. Please complete payment from your dashboard.",
                 variant: "destructive",
               });
             }
-          } else {
+            
+            closePaymentModal();
+            setPaymentData(null);
+          },
+          onClose: () => {
             toast({
-              title: "Payment Incomplete",
-              description: "Your registration was created but payment was not completed. Please complete payment from your dashboard.",
-              variant: "destructive",
+              title: "Payment Cancelled",
+              description: "Registration created but payment pending. Complete payment from your dashboard.",
             });
-          }
-          
-          closePaymentModal();
-        },
-        onClose: () => {
-          toast({
-            title: "Payment Cancelled",
-            description: "Registration created but payment pending. Complete payment from your dashboard.",
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-          setLocation("/dashboard");
-        },
-      });
+            queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+            setLocation("/dashboard");
+            setPaymentData(null);
+          },
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -120,26 +139,6 @@ export default function Register() {
     },
   });
 
-  const config = {
-    public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
-    tx_ref: Date.now().toString(),
-    amount: totalAmount,
-    currency: 'XAF',
-    payment_options: 'card,mobilemoney,ussd,banktransfer',
-    customer: {
-      email: user?.email || '',
-      phone_number: user?.phone || '',
-      name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User',
-    },
-    customizations: {
-      title: 'KOSCOCO Registration',
-      description: 'Competition Registration Payment',
-      logo: '',
-    },
-  };
-
-  const handleFlutterPayment = useFlutterwave(config);
-
   const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories(prev =>
       prev.includes(categoryId)
@@ -147,9 +146,6 @@ export default function Register() {
         : [...prev, categoryId]
     );
   };
-
-  const FEE_PER_CATEGORY = 2500;
-  const totalAmount = selectedCategories.length * FEE_PER_CATEGORY;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
