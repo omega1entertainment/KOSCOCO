@@ -101,6 +101,7 @@ export default function Home() {
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}
+        onLoginClick={() => window.location.href = "/api/login"}
         onNavigate={(path) => setLocation(path)}
       />
       
