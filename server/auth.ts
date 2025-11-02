@@ -8,7 +8,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import ConnectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
-import type { SelectUser } from "@shared/schema";
+import type { User } from "@shared/schema";
 
 const MemoryStore = createMemoryStore(session);
 const PgSession = ConnectPgSimple(session);
@@ -199,7 +199,7 @@ export async function setupAuth(app: Express) {
 
   // Serialize user to session
   passport.serializeUser((user: Express.User, cb) => {
-    cb(null, (user as SelectUser).id);
+    cb(null, (user as User).id);
   });
 
   // Deserialize user from session
@@ -214,7 +214,7 @@ export async function setupAuth(app: Express) {
 
   // Login route
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
+    passport.authenticate("local", (err: any, user: User | false, info: any) => {
       if (err) {
         return res.status(500).json({ message: "An error occurred during login" });
       }

@@ -18,6 +18,8 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Leaderboard from "@/pages/Leaderboard";
 import Prizes from "@/pages/Prizes";
 import HowItWorks from "@/pages/HowItWorks";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/upload" component={Upload} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/affiliate" component={AffiliateProgram} />

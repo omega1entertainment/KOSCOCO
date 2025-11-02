@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import type {
-  User, InsertUser, UpsertUser,
+  User, InsertUser,
   Category, InsertCategory,
   Phase, InsertPhase,
   Registration, InsertRegistration,
@@ -24,7 +24,6 @@ export interface IStorage {
   getUserByFacebookId(facebookId: string): Promise<User | undefined>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   updateUserGoogleId(id: string, googleId: string): Promise<User | undefined>;
   updateUserFacebookId(id: string, facebookId: string): Promise<User | undefined>;
@@ -101,21 +100,6 @@ export class DbStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(schema.users).values(insertUser).returning();
-    return user;
-  }
-
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(schema.users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: schema.users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
     return user;
   }
 

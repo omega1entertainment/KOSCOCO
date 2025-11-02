@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
+import { SiFacebook, SiGoogle } from "react-icons/si";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -185,6 +188,14 @@ export default function Login() {
                       />
                     </div>
 
+                    <div className="flex justify-end">
+                      <Link href="/forgot-password">
+                        <a className="text-sm text-primary hover:underline" data-testid="link-forgot-password">
+                          Forgot password?
+                        </a>
+                      </Link>
+                    </div>
+
                     <Button
                       type="submit"
                       className="w-full"
@@ -193,6 +204,36 @@ export default function Login() {
                     >
                       {loginMutation.isPending ? "Logging in..." : "Login"}
                     </Button>
+
+                    <div className="relative my-6">
+                      <Separator />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-sm text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => window.location.href = "/api/auth/google"}
+                        data-testid="button-google-login"
+                        className="w-full"
+                      >
+                        <SiGoogle className="mr-2 h-4 w-4" />
+                        Google
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => window.location.href = "/api/auth/facebook"}
+                        data-testid="button-facebook-login"
+                        className="w-full"
+                      >
+                        <SiFacebook className="mr-2 h-4 w-4" />
+                        Facebook
+                      </Button>
+                    </div>
                   </form>
                 </CardContent>
               </Card>
@@ -295,6 +336,36 @@ export default function Login() {
                     >
                       {signupMutation.isPending ? "Creating Account..." : "Create Account"}
                     </Button>
+
+                    <div className="relative my-6">
+                      <Separator />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-sm text-muted-foreground">
+                        Or sign up with
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => window.location.href = "/api/auth/google"}
+                        data-testid="button-google-signup"
+                        className="w-full"
+                      >
+                        <SiGoogle className="mr-2 h-4 w-4" />
+                        Google
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => window.location.href = "/api/auth/facebook"}
+                        data-testid="button-facebook-signup"
+                        className="w-full"
+                      >
+                        <SiFacebook className="mr-2 h-4 w-4" />
+                        Facebook
+                      </Button>
+                    </div>
                   </form>
                 </CardContent>
               </Card>
