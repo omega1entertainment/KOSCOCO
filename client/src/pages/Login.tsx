@@ -347,17 +347,25 @@ export default function Login() {
                       />
                       <Label htmlFor="accept-terms" className="text-sm cursor-pointer">
                         I agree to the{" "}
-                        <Link href="/terms-of-service">
-                          <a className="text-primary hover:underline" target="_blank" data-testid="link-terms-signup">
-                            Terms of Service
-                          </a>
-                        </Link>
+                        <a 
+                          href="/terms-of-service" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline" 
+                          data-testid="link-terms-signup"
+                        >
+                          Terms of Service
+                        </a>
                         {" "}and{" "}
-                        <Link href="/privacy-policy">
-                          <a className="text-primary hover:underline" target="_blank" data-testid="link-privacy-signup">
-                            Privacy Policy
-                          </a>
-                        </Link>
+                        <a 
+                          href="/privacy-policy" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline" 
+                          data-testid="link-privacy-signup"
+                        >
+                          Privacy Policy
+                        </a>
                       </Label>
                     </div>
 

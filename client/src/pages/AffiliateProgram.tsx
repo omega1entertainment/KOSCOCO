@@ -320,11 +320,15 @@ export default function AffiliateProgram() {
                         <div className="space-y-1 leading-none">
                           <FormLabel>
                             I agree to the{" "}
-                            <Link href="/affiliate-terms">
-                              <a className="text-primary hover:underline" target="_blank" data-testid="link-affiliate-terms">
-                                Affiliate Terms of Use
-                              </a>
-                            </Link>
+                            <a 
+                              href="/affiliate-terms" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline" 
+                              data-testid="link-affiliate-terms"
+                            >
+                              Affiliate Terms of Use
+                            </a>
                           </FormLabel>
                           <FormDescription>
                             By joining the affiliate program, you agree to promote KOSCOCO ethically and follow our guidelines.
