@@ -142,7 +142,8 @@ export default function NavigationHeader({
             {isAuthenticated ? (
               <>
                 <Button 
-                  variant="outline" 
+                  variant="outline"
+                  className="min-h-11"
                   onClick={onUploadClick}
                   data-testid="button-upload-nav"
                 >
@@ -150,7 +151,7 @@ export default function NavigationHeader({
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" data-testid="button-user-menu">
+                    <Button variant="ghost" className="min-h-11" data-testid="button-user-menu">
                       <User className="w-4 h-4 mr-2" />
                       {user?.firstName || 'User'}
                     </Button>
@@ -169,13 +170,15 @@ export default function NavigationHeader({
             ) : (
               <>
                 <Button 
-                  variant="ghost" 
+                  variant="ghost"
+                  className="min-h-11"
                   onClick={() => setLocation("/login")}
                   data-testid="button-login"
                 >
                   Login
                 </Button>
-                <Button 
+                <Button
+                  className="min-h-11"
                   onClick={() => setLocation("/register")}
                   data-testid="button-register"
                 >
@@ -188,7 +191,7 @@ export default function NavigationHeader({
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden min-h-11 min-w-11"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             data-testid="button-mobile-menu"
           >
@@ -201,16 +204,17 @@ export default function NavigationHeader({
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
             {navItems.map((item) => (
-              <button
+              <Button
                 key={item.label}
-                className="text-left px-4 py-3 hover-elevate rounded-md"
+                variant="ghost"
+                className="min-h-11 justify-start"
                 onClick={() => {
                   onNavigate?.(item.path);
                   setMobileMenuOpen(false);
                 }}
               >
                 {item.label}
-              </button>
+              </Button>
             ))}
             
             <div className="mt-2">
@@ -218,9 +222,10 @@ export default function NavigationHeader({
                 Leaderboard
               </div>
               {leaderboardMenuItems.map((item) => (
-                <button
+                <Button
                   key={item.label}
-                  className="text-left px-4 py-3 hover-elevate rounded-md w-full"
+                  variant="ghost"
+                  className="min-h-11 justify-start w-full"
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
@@ -228,7 +233,7 @@ export default function NavigationHeader({
                   data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   {item.label}
-                </button>
+                </Button>
               ))}
             </div>
             
@@ -237,9 +242,10 @@ export default function NavigationHeader({
                 Affiliate
               </div>
               {affiliateMenuItems.map((item) => (
-                <button
+                <Button
                   key={item.label}
-                  className="text-left px-4 py-3 hover-elevate rounded-md w-full"
+                  variant="ghost"
+                  className="min-h-11 justify-start w-full"
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
@@ -247,7 +253,7 @@ export default function NavigationHeader({
                   data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   {item.label}
-                </button>
+                </Button>
               ))}
             </div>
             
@@ -255,7 +261,8 @@ export default function NavigationHeader({
               {isAuthenticated ? (
                 <>
                   <Button 
-                    variant="outline" 
+                    variant="outline"
+                    className="min-h-11"
                     onClick={() => {
                       onUploadClick?.();
                       setMobileMenuOpen(false);
@@ -265,7 +272,8 @@ export default function NavigationHeader({
                     Upload Video
                   </Button>
                   <Button 
-                    variant="ghost" 
+                    variant="ghost"
+                    className="min-h-11"
                     onClick={() => {
                       setLocation("/dashboard");
                       setMobileMenuOpen(false);
@@ -277,6 +285,7 @@ export default function NavigationHeader({
                   </Button>
                   <Button 
                     variant="ghost"
+                    className="min-h-11"
                     onClick={() => {
                       logoutMutation.mutate();
                       setMobileMenuOpen(false);
@@ -290,7 +299,8 @@ export default function NavigationHeader({
               ) : (
                 <>
                   <Button 
-                    variant="ghost" 
+                    variant="ghost"
+                    className="min-h-11"
                     onClick={() => {
                       setLocation("/login");
                       setMobileMenuOpen(false);
@@ -299,7 +309,8 @@ export default function NavigationHeader({
                   >
                     Login
                   </Button>
-                  <Button 
+                  <Button
+                    className="min-h-11"
                     onClick={() => {
                       setLocation("/register");
                       setMobileMenuOpen(false);
