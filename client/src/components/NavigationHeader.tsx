@@ -247,9 +247,64 @@ export default function NavigationHeader({
             </div>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
-              <Button variant="outline" onClick={onUploadClick}>Upload Video</Button>
-              <Button variant="ghost" onClick={onLoginClick}>Login</Button>
-              <Button onClick={onRegisterClick}>Register</Button>
+              {isAuthenticated ? (
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      onUploadClick?.();
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-upload"
+                  >
+                    Upload Video
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      setLocation("/dashboard");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-dashboard"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    onClick={() => {
+                      logoutMutation.mutate();
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-logout"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      setLocation("/login");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-login"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setLocation("/register");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-register"
+                  >
+                    Register
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
