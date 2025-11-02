@@ -30,6 +30,7 @@ export default function Login() {
   const [signupLastName, setSignupLastName] = useState("");
   const [signupAge, setSignupAge] = useState("");
   const [signupParentalConsent, setSignupParentalConsent] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -126,6 +127,15 @@ export default function Login() {
       toast({
         title: "Parental Consent Required",
         description: "Users under 18 must have parental consent.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!acceptTerms) {
+      toast({
+        title: "Accept Terms Required",
+        description: "You must accept the Terms of Service and Privacy Policy to create an account.",
         variant: "destructive",
       });
       return;
@@ -327,6 +337,29 @@ export default function Login() {
                         </Label>
                       </div>
                     )}
+
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="accept-terms"
+                        checked={acceptTerms}
+                        onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                        data-testid="checkbox-accept-terms"
+                      />
+                      <Label htmlFor="accept-terms" className="text-sm cursor-pointer">
+                        I agree to the{" "}
+                        <Link href="/terms-of-service">
+                          <a className="text-primary hover:underline" target="_blank" data-testid="link-terms-signup">
+                            Terms of Service
+                          </a>
+                        </Link>
+                        {" "}and{" "}
+                        <Link href="/privacy-policy">
+                          <a className="text-primary hover:underline" target="_blank" data-testid="link-privacy-signup">
+                            Privacy Policy
+                          </a>
+                        </Link>
+                      </Label>
+                    </div>
 
                     <Button
                       type="submit"

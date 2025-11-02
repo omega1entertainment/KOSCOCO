@@ -20,6 +20,9 @@ import Prizes from "@/pages/Prizes";
 import HowItWorks from "@/pages/HowItWorks";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import AffiliateTerms from "@/pages/AffiliateTerms";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -53,6 +56,9 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/prizes" component={Prizes} />
       <Route path="/how-it-works" component={HowItWorks} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/affiliate-terms" component={AffiliateTerms} />
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
