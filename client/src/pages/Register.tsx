@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
+import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -44,12 +45,71 @@ export default function Register() {
     onSuccess: (data: any) => {
       const referralApplied = data.referralApplied !== false;
       const totalAmount = data.totalAmount || data.totalFee || 0;
-      toast({
-        title: "Registration Successful!",
-        description: `Your registration has been submitted. Total amount: ${totalAmount?.toLocaleString() || '0'} FCFA. ${!referralApplied && referralCode ? 'Note: Referral code was not valid.' : ''}`,
+      const registration = data.registration;
+      
+      // Initialize Flutterwave payment
+      const config = {
+        public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || process.env.FLW_PUBLIC_KEY!,
+        tx_ref: `REG-${registration.id}-${Date.now()}`,
+        amount: totalAmount,
+        currency: 'XAF', // FCFA currency code
+        payment_options: 'card,mobilemoney,ussd,banktransfer',
+        customer: {
+          email: user?.email || '',
+          phone_number: user?.phone || '',
+          name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+        },
+        customizations: {
+          title: 'KOSCOCO Registration',
+          description: `Registration for ${selectedCategories.length} ${selectedCategories.length === 1 ? 'category' : 'categories'}`,
+          logo: '',
+        },
+      };
+
+      handleFlutterPayment({
+        callback: async (response: any) => {
+          console.log('Payment response:', response);
+          
+          if (response.status === 'successful') {
+            try {
+              await apiRequest("/api/payments/verify", "POST", {
+                transaction_id: response.transaction_id,
+                registrationId: registration.id,
+              });
+              
+              toast({
+                title: "Payment Successful!",
+                description: `Your registration payment of ${totalAmount.toLocaleString()} FCFA has been confirmed.`,
+              });
+              
+              queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+              setLocation("/dashboard");
+            } catch (error: any) {
+              toast({
+                title: "Payment Verification Failed",
+                description: error.message || "Please contact support.",
+                variant: "destructive",
+              });
+            }
+          } else {
+            toast({
+              title: "Payment Incomplete",
+              description: "Your registration was created but payment was not completed. Please complete payment from your dashboard.",
+              variant: "destructive",
+            });
+          }
+          
+          closePaymentModal();
+        },
+        onClose: () => {
+          toast({
+            title: "Payment Cancelled",
+            description: "Registration created but payment pending. Complete payment from your dashboard.",
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+          setLocation("/dashboard");
+        },
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-      setLocation("/");
     },
     onError: (error: Error) => {
       toast({
@@ -59,6 +119,26 @@ export default function Register() {
       });
     },
   });
+
+  const config = {
+    public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
+    tx_ref: Date.now().toString(),
+    amount: totalAmount,
+    currency: 'XAF',
+    payment_options: 'card,mobilemoney,ussd,banktransfer',
+    customer: {
+      email: user?.email || '',
+      phone_number: user?.phone || '',
+      name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User',
+    },
+    customizations: {
+      title: 'KOSCOCO Registration',
+      description: 'Competition Registration Payment',
+      logo: '',
+    },
+  };
+
+  const handleFlutterPayment = useFlutterwave(config);
 
   const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories(prev =>

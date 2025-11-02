@@ -35,7 +35,9 @@ export interface IStorage {
   
   createRegistration(registration: InsertRegistration): Promise<Registration>;
   getUserRegistrations(userId: string): Promise<Registration[]>;
+  getRegistrationById(id: string): Promise<Registration | undefined>;
   getRegistrationByReferralCode(code: string): Promise<Registration[]>;
+  updateRegistrationPaymentStatus(id: string, status: string): Promise<Registration | undefined>;
   
   createVideo(video: InsertVideo): Promise<Video>;
   getVideoById(id: string): Promise<Video | undefined>;
@@ -142,8 +144,22 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.registrations).where(eq(schema.registrations.userId, userId));
   }
 
+  async getRegistrationById(id: string): Promise<Registration | undefined> {
+    const [registration] = await db.select().from(schema.registrations).where(eq(schema.registrations.id, id));
+    return registration;
+  }
+
   async getRegistrationByReferralCode(code: string): Promise<Registration[]> {
     return await db.select().from(schema.registrations).where(eq(schema.registrations.referralCode, code));
+  }
+
+  async updateRegistrationPaymentStatus(id: string, status: string): Promise<Registration | undefined> {
+    const [registration] = await db
+      .update(schema.registrations)
+      .set({ paymentStatus: status })
+      .where(eq(schema.registrations.id, id))
+      .returning();
+    return registration;
   }
 
   async createVideo(insertVideo: InsertVideo): Promise<Video> {

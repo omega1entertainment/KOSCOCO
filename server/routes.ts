@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
+import Flutterwave from "flutterwave-node-v3";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -565,6 +566,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error seeding database:", error);
       res.status(500).json({ message: "Failed to seed database" });
+    }
+  });
+
+  // Payment verification endpoint
+  app.post('/api/payments/verify', isAuthenticated, async (req: any, res) => {
+    try {
+      const { transaction_id, registrationId } = req.body;
+      const userId = req.user.claims.sub;
+
+      if (!transaction_id || !registrationId) {
+        return res.status(400).json({ message: "Missing transaction_id or registrationId" });
+      }
+
+      // Initialize Flutterwave
+      const flw = new Flutterwave(
+        process.env.FLW_PUBLIC_KEY!,
+        process.env.FLW_SECRET_KEY!
+      );
+
+      // Verify payment with Flutterwave
+      const response = await flw.Transaction.verify({ id: transaction_id });
+
+      if (
+        response.data.status === "successful" &&
+        response.data.currency === "XAF" // FCFA currency code
+      ) {
+        // Get registration to verify ownership and amount
+        const registration = await storage.getRegistrationById(registrationId);
+        
+        if (!registration) {
+          return res.status(404).json({ message: "Registration not found" });
+        }
+
+        if (registration.userId !== userId) {
+          return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Verify amount matches (allowing for small floating point differences)
+        const expectedAmount = registration.totalFee;
+        const paidAmount = response.data.amount;
+        
+        if (Math.abs(paidAmount - expectedAmount) > 1) {
+          return res.status(400).json({ 
+            message: "Payment amount mismatch",
+            expected: expectedAmount,
+            received: paidAmount
+          });
+        }
+
+        // Update registration payment status
+        await storage.updateRegistrationPaymentStatus(registrationId, 'paid');
+
+        res.json({
+          status: 'success',
+          message: 'Payment verified successfully',
+          data: {
+            transactionId: transaction_id,
+            amount: paidAmount,
+            currency: response.data.currency,
+            registrationId
+          }
+        });
+      } else {
+        res.status(400).json({
+          status: 'error',
+          message: 'Payment verification failed',
+          paymentStatus: response.data.status
+        });
+      }
+    } catch (error) {
+      console.error("Payment verification error:", error);
+      res.status(500).json({ 
+        status: 'error',
+        message: "Failed to verify payment" 
+      });
     }
   });
 
