@@ -47,6 +47,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/registrations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { categoryIds, referralCode } = req.body;
+
+      if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
+        return res.status(400).json({ message: "At least one category must be selected" });
+      }
+
+      const activePhase = await storage.getActivePhase();
+      if (!activePhase) {
+        return res.status(400).json({ message: "No active competition phase" });
+      }
+
+      const FEE_PER_CATEGORY = 2500;
+      const totalAmount = categoryIds.length * FEE_PER_CATEGORY;
+
+      let affiliate = null;
+      let referralApplied = false;
+      if (referralCode) {
+        affiliate = await storage.getAffiliateByReferralCode(referralCode);
+        referralApplied = !!affiliate;
+      }
+
+      const registrations = [];
+      for (const categoryId of categoryIds) {
+        const registration = await storage.createRegistration({
+          userId,
+          categoryId,
+          phaseId: activePhase.id,
+          referralCode: referralCode || null,
+          amount: FEE_PER_CATEGORY,
+          paymentStatus: 'pending',
+        });
+
+        registrations.push(registration);
+
+        if (affiliate) {
+          const commission = FEE_PER_CATEGORY * 0.2;
+          await storage.createReferral({
+            affiliateId: affiliate.id,
+            registrationId: registration.id,
+            commission,
+            status: 'pending',
+          });
+          await storage.updateAffiliateStats(affiliate.id, 1, commission);
+        }
+      }
+
+      res.json({ registrations, totalAmount, referralApplied });
+    } catch (error) {
+      console.error("Error creating registration:", error);
+      res.status(500).json({ message: "Failed to create registration" });
+    }
+  });
+
+  app.get('/api/registrations/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const registrations = await storage.getUserRegistrations(userId);
+      res.json(registrations);
+    } catch (error) {
+      console.error("Error fetching user registrations:", error);
+      res.status(500).json({ message: "Failed to fetch registrations" });
+    }
+  });
+
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

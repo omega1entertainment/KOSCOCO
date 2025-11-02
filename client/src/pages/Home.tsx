@@ -1,3 +1,4 @@
+import { useLocation } from "wouter";
 import NavigationHeader from "@/components/NavigationHeader";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
@@ -15,6 +16,7 @@ import educationImage from "@assets/generated_images/Education_and_Learning_cate
 import gospelImage from "@assets/generated_images/Gospel_Choirs_category_e7d0b06c.png";
 
 export default function Home() {
+  const [, setLocation] = useLocation();
   const categories = [
     {
       title: 'Music & Dance',
@@ -98,7 +100,10 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <NavigationHeader />
       
-      <Hero />
+      <Hero 
+        onRegisterClick={() => setLocation("/register")}
+        onWatchClick={() => console.log("Watch entries")}
+      />
       
       <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
@@ -172,10 +177,21 @@ export default function Home() {
             Register now for just 2,500 FCFA per category and join Cameroon's biggest content competition
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="px-12" data-testid="button-register-now">
+            <Button 
+              size="lg" 
+              className="px-12" 
+              onClick={() => setLocation("/register")}
+              data-testid="button-register-now"
+            >
               Register Now
             </Button>
-            <Button size="lg" variant="outline" className="px-12" data-testid="button-learn-more">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="px-12" 
+              onClick={() => console.log("Learn more")}
+              data-testid="button-learn-more"
+            >
               Learn More
             </Button>
           </div>
