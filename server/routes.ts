@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         registration, 
-        totalFee, 
+        totalAmount: totalFee, 
         referralApplied: !!affiliate 
       });
     } catch (error) {
