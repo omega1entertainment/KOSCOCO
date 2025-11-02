@@ -173,6 +173,21 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
 - Fixed toast error for registration success message (totalAmount undefined)
 - All referral link flows tested end-to-end with Playwright
 
+**Comprehensive Affiliate Signup Page (Session 3):**
+- Created professional affiliate signup page at `/affiliate` based on example
+- Three benefit cards highlighting: 20% commission (500 FCFA), easy sharing, earnings tracking
+- "How It Works" section with 5-step process explanation
+- Signup form with validation (react-hook-form + zod):
+  - Name (auto-filled from user.firstName + user.lastName, disabled)
+  - Email (auto-filled from user.email, disabled)
+  - Website/Social Media (optional)
+  - How Will You Promote (required, min 10 chars)
+  - Terms and Conditions checkbox (required)
+- Form submissions POST to /api/affiliate/opt-in with additional metadata
+- Success flow: Toast notification → Auto-redirect to /affiliate/dashboard after 1.5s
+- Already-enrolled users automatically redirected to dashboard
+- Tested end-to-end with Playwright
+
 ## Next Steps
 1. ✅ All MVP features complete and tested
 2. 🔜 Integrate payment processing (Flutterwave) for registration fees
