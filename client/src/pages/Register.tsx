@@ -69,6 +69,17 @@ export default function Register() {
       });
     },
     onSuccess: (data: any) => {
+      console.log('Registration response:', data);
+      
+      if (!data || !data.registration || !data.registration.id) {
+        toast({
+          title: "Registration Failed",
+          description: "Invalid response from server. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const referralApplied = data.referralApplied !== false;
       const paymentAmount = data.totalAmount || data.totalFee || 0;
       const registration = data.registration;
@@ -209,8 +220,9 @@ export default function Register() {
               {categories?.map((category) => (
                 <Card
                   key={category.id}
-                  className={selectedCategories.includes(category.id) ? "border-primary" : ""}
-                  data-testid={`card-category-${category.id}`}
+                  className={`cursor-pointer transition-colors ${selectedCategories.includes(category.id) ? "border-primary border-2" : ""}`}
+                  onClick={() => handleCategoryToggle(category.id)}
+                  data-testid={`card-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   <CardHeader>
                     <div className="flex items-start gap-4">
@@ -218,7 +230,8 @@ export default function Register() {
                         id={category.id}
                         checked={selectedCategories.includes(category.id)}
                         onCheckedChange={() => handleCategoryToggle(category.id)}
-                        data-testid={`checkbox-category-${category.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`checkbox-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                       />
                       <div className="flex-1">
                         <Label
@@ -231,11 +244,11 @@ export default function Register() {
                           {category.description}
                         </CardDescription>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {category.subcategories.map((sub) => (
+                          {category.subcategories.map((sub, index) => (
                             <span
                               key={sub}
                               className="text-xs px-2 py-1 bg-muted rounded-md"
-                              data-testid={`text-subcategory-${sub}`}
+                              data-testid={`badge-subcategory-${index}`}
                             >
                               {sub}
                             </span>
@@ -306,7 +319,7 @@ export default function Register() {
                 type="submit"
                 disabled={registerMutation.isPending || selectedCategories.length === 0}
                 className="flex-1"
-                data-testid="button-register"
+                data-testid="button-register-submit"
               >
                 {registerMutation.isPending ? "Processing..." : "Proceed to Payment"}
               </Button>
