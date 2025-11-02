@@ -101,7 +101,10 @@ export const judgeScores = pgTable("judge_scores", {
   qualityScore: integer("quality_score").notNull(),
   comments: text("comments"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Unique constraint: one score per judge per video
+  unique("unique_judge_video_score").on(table.videoId, table.judgeId),
+]);
 
 export const affiliates = pgTable("affiliates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

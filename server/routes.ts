@@ -13,6 +13,20 @@ const flw = new Flutterwave(
   process.env.FLW_SECRET_KEY || ''
 );
 
+// Admin middleware
+function isAdmin(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = req.user as SelectUser;
+  if (!user.isAdmin) {
+    return res.status(403).json({ message: "Forbidden: Admin access required" });
+  }
+  
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -507,6 +521,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating video status:", error);
       res.status(500).json({ message: "Failed to update video status" });
+    }
+  });
+
+  // Judge scoring endpoint - admin only
+  app.post('/api/videos/:id/score', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { creativityScore, qualityScore, comments } = req.body;
+      const judgeId = (req.user as SelectUser).id;
+
+      // Validate video exists and is approved
+      const video = await storage.getVideoById(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(400).json({ message: "Can only score approved videos" });
+      }
+
+      // Validate score ranges (0-50 for each component)
+      if (typeof creativityScore !== 'number' || creativityScore < 0 || creativityScore > 50) {
+        return res.status(400).json({ message: "Creativity score must be between 0 and 50" });
+      }
+
+      if (typeof qualityScore !== 'number' || qualityScore < 0 || qualityScore > 50) {
+        return res.status(400).json({ message: "Quality score must be between 0 and 50" });
+      }
+
+      // Check if judge already scored this video (application-level check)
+      const existingScores = await storage.getVideoJudgeScores(id);
+      const existingScore = existingScores.find(s => s.judgeId === judgeId);
+      if (existingScore) {
+        return res.status(400).json({ message: "You have already scored this video" });
+      }
+
+      // Create the judge score (database-level unique constraint will prevent race conditions)
+      const score = await storage.createJudgeScore({
+        videoId: id,
+        judgeId,
+        creativityScore,
+        qualityScore,
+        comments: comments || null,
+      });
+
+      res.json({
+        success: true,
+        score,
+        totalScore: creativityScore + qualityScore,
+      });
+    } catch (error: any) {
+      console.error("Error creating judge score:", error);
+      
+      // Handle unique constraint violations
+      if (error.code === '23505' || error.message?.includes('unique constraint')) {
+        return res.status(400).json({ message: "You have already scored this video" });
+      }
+      
+      res.status(500).json({ message: "Failed to create judge score" });
+    }
+  });
+
+  // Get judge scores for a video
+  app.get('/api/videos/:id/scores', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verify video exists
+      const video = await storage.getVideoById(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      const scores = await storage.getVideoJudgeScores(id);
+      
+      // Calculate total and average
+      const total = scores.reduce((sum, score) => sum + score.creativityScore + score.qualityScore, 0);
+      const average = scores.length > 0 ? total / scores.length : 0;
+
+      res.json({
+        scores,
+        count: scores.length,
+        total,
+        average,
+      });
+    } catch (error) {
+      console.error("Error fetching judge scores:", error);
+      res.status(500).json({ message: "Failed to fetch judge scores" });
     }
   });
 

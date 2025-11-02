@@ -30,6 +30,12 @@ The platform is built with a modern web stack:
     - **User Dashboard**: Centralized view for user's registrations, videos, votes, and statistics.
     - **Admin Dashboard**: Dedicated interface for video moderation (approve/reject).
 
+## Recent Changes (Latest)
+- **Phase 1 Completed**: Payment foundation with Flutterwave integration, verification, webhooks, and retry flow
+- **Phase 2 (Partial)**: Voting system with database-level duplicate prevention and leaderboard with judge score aggregation
+- **Database Enhancements**: Added unique constraints on votes (video_id, user_id) and (video_id, ip_address) to prevent duplicate votes even under race conditions
+- **Performance Optimizations**: Created indexes on votes.video_id and judge_scores.video_id for efficient leaderboard queries
+
 ## External Dependencies
 - **Database**: PostgreSQL (managed by Neon)
 - **Object Storage**: Replit Object Storage
