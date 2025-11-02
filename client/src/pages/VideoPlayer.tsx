@@ -27,6 +27,11 @@ export default function VideoPlayer() {
     queryKey: ["/api/categories"],
   });
 
+  const { data: voteData } = useQuery<{ voteCount: number }>({
+    queryKey: [`/api/votes/video/${videoId}`],
+    enabled: !!videoId,
+  });
+
   const voteMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest(`/api/votes`, "POST", {
@@ -39,6 +44,7 @@ export default function VideoPlayer() {
         description: "Your vote has been counted.",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
     },
     onError: (error: Error) => {
       toast({
@@ -112,7 +118,7 @@ export default function VideoPlayer() {
                         </div>
                         <div className="flex items-center gap-1">
                           <ThumbsUp className="w-4 h-4" />
-                          0 votes
+                          {voteData?.voteCount || 0} votes
                         </div>
                       </div>
                     </div>

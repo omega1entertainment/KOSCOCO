@@ -322,6 +322,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/votes', async (req: any, res) => {
+    try {
+      const { videoId } = req.body;
+      
+      if (!videoId) {
+        return res.status(400).json({ message: "Video ID is required" });
+      }
+
+      // Check if video exists and is approved
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(400).json({ message: "Cannot vote for unapproved videos" });
+      }
+
+      // Get user ID if authenticated, or use IP address for anonymous votes
+      const userId = req.user?.claims?.sub || null;
+      const ipAddress = req.ip || req.connection.remoteAddress || null;
+
+      // Check for duplicate votes
+      const existingVotes = await storage.getUserVotesForVideo(userId, videoId, ipAddress);
+      if (existingVotes.length > 0) {
+        return res.status(400).json({ message: "You have already voted for this video" });
+      }
+
+      // Create the vote
+      const vote = await storage.createVote({
+        videoId,
+        userId,
+        ipAddress,
+      });
+
+      // Get updated vote count
+      const voteCount = await storage.getVideoVoteCount(videoId);
+
+      res.json({ 
+        success: true, 
+        vote,
+        voteCount,
+      });
+    } catch (error) {
+      console.error("Error creating vote:", error);
+      res.status(500).json({ message: "Failed to create vote" });
+    }
+  });
+
+  app.get('/api/votes/video/:videoId', async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const voteCount = await storage.getVideoVoteCount(videoId);
+      res.json({ voteCount });
+    } catch (error) {
+      console.error("Error fetching vote count:", error);
+      res.status(500).json({ message: "Failed to fetch vote count" });
+    }
+  });
+
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
