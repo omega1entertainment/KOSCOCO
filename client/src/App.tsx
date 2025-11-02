@@ -10,6 +10,7 @@ import Upload from "@/pages/Upload";
 import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
 import VideoPlayer from "@/pages/VideoPlayer";
+import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/categories" component={Categories} />
       <Route path="/category/:id" component={CategoryVideos} />
       <Route path="/video/:id" component={VideoPlayer} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
