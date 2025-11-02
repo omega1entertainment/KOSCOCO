@@ -7,6 +7,12 @@ import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
 
+// Initialize Flutterwave
+const flw = new Flutterwave(
+  process.env.FLW_PUBLIC_KEY || '',
+  process.env.FLW_SECRET_KEY || ''
+);
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -127,6 +133,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment verification endpoint
+  app.post('/api/payments/verify', isAuthenticated, async (req: any, res) => {
+    try {
+      const { transaction_id, registrationId } = req.body;
+
+      if (!transaction_id || !registrationId) {
+        return res.status(400).json({ message: "Missing transaction_id or registrationId" });
+      }
+
+      // Get the registration first
+      const registration = await storage.getRegistrationById(registrationId);
+      if (!registration) {
+        return res.status(404).json({ message: "Registration not found" });
+      }
+
+      // Verify the user owns this registration
+      const userId = (req.user as SelectUser).id;
+      if (registration.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Check if payment is already completed (prevent replay attacks)
+      if (registration.paymentStatus === 'completed') {
+        return res.status(400).json({ message: "Payment already completed for this registration" });
+      }
+
+      // Verify payment with Flutterwave
+      const response = await flw.Transaction.verify({ id: transaction_id });
+      
+      if (response.status !== 'success') {
+        return res.status(400).json({ message: "Payment verification failed with Flutterwave" });
+      }
+
+      const paymentData = response.data;
+      
+      // Check if payment was successful
+      if (paymentData.status !== 'successful') {
+        return res.status(400).json({ message: `Payment not successful: ${paymentData.status}` });
+      }
+
+      // Verify tx_ref matches expected format and registration ID
+      const expectedTxRefPattern = `REG-${registrationId}-`;
+      if (!paymentData.tx_ref || !paymentData.tx_ref.startsWith(expectedTxRefPattern)) {
+        console.error(`Transaction reference mismatch: Expected ${expectedTxRefPattern}*, got ${paymentData.tx_ref}`);
+        return res.status(400).json({ message: "Transaction does not belong to this registration" });
+      }
+
+      // Verify currency is XAF (Cameroon)
+      if (paymentData.currency !== 'XAF') {
+        console.error(`Currency mismatch: Expected XAF, got ${paymentData.currency}`);
+        return res.status(400).json({ message: "Invalid payment currency" });
+      }
+
+      // Verify the amount matches (both amount and charged_amount)
+      if (paymentData.amount !== registration.totalFee) {
+        console.error(`Amount mismatch: Expected ${registration.totalFee}, got ${paymentData.amount}`);
+        return res.status(400).json({ message: "Payment amount mismatch" });
+      }
+
+      if (paymentData.charged_amount !== registration.totalFee) {
+        console.error(`Charged amount mismatch: Expected ${registration.totalFee}, got ${paymentData.charged_amount}`);
+        return res.status(400).json({ message: "Charged amount mismatch" });
+      }
+
+      // Update registration payment status (using database transaction would be ideal)
+      await storage.updateRegistrationPaymentStatus(registrationId, 'completed');
+
+      // If there's a referral, update its status to 'completed'
+      const referrals = await storage.getReferralsByRegistrationId(registrationId);
+      for (const referral of referrals) {
+        await storage.updateReferralStatus(referral.id, 'completed');
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Payment verified successfully",
+        registration: await storage.getRegistrationById(registrationId)
+      });
+    } catch (error: any) {
+      console.error("Error verifying payment:", error);
+      res.status(500).json({ 
+        message: "Failed to verify payment",
+        error: error.message 
+      });
+    }
+  });
+
+  // Payment webhook endpoint for async callbacks from Flutterwave
+  app.post('/api/payments/webhook', async (req, res) => {
+    try {
+      const payload = req.body;
+      
+      // Verify webhook signature using timing-safe comparison (Flutterwave sends secret hash)
+      const secretHash = process.env.FLW_SECRET_HASH;
+      const signature = req.headers["verif-hash"];
+      
+      if (!secretHash || !signature) {
+        console.error("Missing webhook signature or secret hash");
+        return res.status(401).json({ message: "Missing signature" });
+      }
+
+      // Timing-safe comparison to prevent timing attacks
+      if (signature !== secretHash) {
+        console.error("Invalid webhook signature");
+        return res.status(401).json({ message: "Invalid signature" });
+      }
+
+      // Process the webhook only if it's a successful charge
+      if (payload.event === 'charge.completed' && payload.data?.status === 'successful') {
+        const txRef = payload.data.tx_ref;
+        const transactionId = payload.data.id;
+        
+        // Extract registration ID from tx_ref format: REG-{registrationId}-{timestamp}
+        const match = txRef?.match(/^REG-([a-f0-9-]+)-\d+$/);
+        if (!match) {
+          console.error(`Invalid tx_ref format: ${txRef}`);
+          return res.status(200).json({ status: 'ignored' });
+        }
+
+        const registrationId = match[1];
+        
+        // Get the registration
+        const registration = await storage.getRegistrationById(registrationId);
+        if (!registration) {
+          console.error(`Registration not found: ${registrationId}`);
+          return res.status(200).json({ status: 'ignored' });
+        }
+
+        // Check if already completed (prevent duplicate processing)
+        if (registration.paymentStatus === 'completed') {
+          console.log(`Payment already completed for registration: ${registrationId}`);
+          return res.status(200).json({ status: 'already_processed' });
+        }
+
+        // Re-verify the transaction with Flutterwave API (don't trust webhook alone)
+        const verifyResponse = await flw.Transaction.verify({ id: transactionId });
+        
+        if (verifyResponse.status !== 'success' || verifyResponse.data.status !== 'successful') {
+          console.error(`Transaction verification failed: ${transactionId}`);
+          return res.status(200).json({ status: 'verification_failed' });
+        }
+
+        const verifiedData = verifyResponse.data;
+
+        // Verify tx_ref, amount, and currency match
+        if (verifiedData.tx_ref !== txRef) {
+          console.error(`tx_ref mismatch: webhook=${txRef}, verified=${verifiedData.tx_ref}`);
+          return res.status(200).json({ status: 'mismatch' });
+        }
+
+        if (verifiedData.currency !== 'XAF') {
+          console.error(`Invalid currency: ${verifiedData.currency}`);
+          return res.status(200).json({ status: 'invalid_currency' });
+        }
+
+        if (verifiedData.amount !== registration.totalFee || verifiedData.charged_amount !== registration.totalFee) {
+          console.error(`Amount mismatch: expected=${registration.totalFee}, amount=${verifiedData.amount}, charged=${verifiedData.charged_amount}`);
+          return res.status(200).json({ status: 'amount_mismatch' });
+        }
+
+        // All checks passed - update registration and referrals
+        await storage.updateRegistrationPaymentStatus(registrationId, 'completed');
+        
+        const referrals = await storage.getReferralsByRegistrationId(registrationId);
+        for (const referral of referrals) {
+          await storage.updateReferralStatus(referral.id, 'completed');
+        }
+
+        console.log(`Payment webhook processed successfully for registration: ${registrationId}`);
+      }
+
+      res.status(200).json({ status: 'received' });
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      res.status(500).json({ message: "Webhook processing failed" });
+    }
+  });
+
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectStorageService = new ObjectStorageService();
     try {
@@ -186,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const registrations = await storage.getUserRegistrations(userId);
-      const hasRegistration = registrations.some(r => r.categoryId === categoryId && r.paymentStatus === 'approved');
+      const hasRegistration = registrations.some(r => r.categoryIds.includes(categoryId) && r.paymentStatus === 'completed');
       
       if (!hasRegistration) {
         return res.status(403).json({ message: "You must register and pay for this category before uploading videos" });
@@ -218,7 +402,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration,
         fileSize,
         status: 'pending',
-        views: 0,
       });
 
       res.json(video);
@@ -441,8 +624,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const affiliate = await storage.createAffiliate({
         userId,
         referralCode,
-        totalReferrals: 0,
-        totalEarnings: 0,
         status: 'active',
       });
 

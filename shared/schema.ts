@@ -181,6 +181,7 @@ export const insertReferralSchema = createInsertSchema(referrals).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type SelectUser = typeof users.$inferSelect;
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;

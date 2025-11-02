@@ -70,6 +70,8 @@ export interface IStorage {
   
   createReferral(referral: InsertReferral): Promise<Referral>;
   getAffiliateReferrals(affiliateId: string): Promise<Referral[]>;
+  getReferralsByRegistrationId(registrationId: string): Promise<Referral[]>;
+  updateReferralStatus(id: string, status: string): Promise<Referral | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -388,6 +390,19 @@ export class DbStorage implements IStorage {
     .orderBy(desc(schema.referrals.createdAt));
 
     return referrals as (Referral & { registration?: Registration })[];
+  }
+
+  async getReferralsByRegistrationId(registrationId: string): Promise<Referral[]> {
+    const referrals = await db.select().from(schema.referrals).where(eq(schema.referrals.registrationId, registrationId));
+    return referrals;
+  }
+
+  async updateReferralStatus(id: string, status: string): Promise<Referral | undefined> {
+    const [referral] = await db.update(schema.referrals)
+      .set({ status })
+      .where(eq(schema.referrals.id, id))
+      .returning();
+    return referral;
   }
 }
 
