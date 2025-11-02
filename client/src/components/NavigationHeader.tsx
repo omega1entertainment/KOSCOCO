@@ -71,69 +71,69 @@ export default function NavigationHeader({
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
+        <div className="flex items-center justify-between h-16 gap-4">
+          <div className="flex items-center">
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
-            
-            <nav className="hidden md:flex items-center gap-3">
-              {navItems.map((item) => (
-                <button
-                  key={item.label}
-                  className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors"
-                  onClick={() => onNavigate?.(item.path)}
-                  data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  {item.label}
-                </button>
-              ))}
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
-                    data-testid="link-leaderboard"
-                  >
-                    Leaderboard
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {leaderboardMenuItems.map((item) => (
-                    <DropdownMenuItem
-                      key={item.label}
-                      onClick={() => onNavigate?.(item.path)}
-                      data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {item.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
-                    data-testid="link-affiliate"
-                  >
-                    Affiliate
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {affiliateMenuItems.map((item) => (
-                    <DropdownMenuItem
-                      key={item.label}
-                      onClick={() => onNavigate?.(item.path)}
-                      data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {item.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </nav>
           </div>
+          
+          <nav className="hidden md:flex items-center gap-3 flex-1 justify-center">
+            {navItems.map((item) => (
+              <button
+                key={item.label}
+                className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors"
+                onClick={() => onNavigate?.(item.path)}
+                data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                {item.label}
+              </button>
+            ))}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
+                  data-testid="link-leaderboard"
+                >
+                  Leaderboard
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {leaderboardMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => onNavigate?.(item.path)}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
+                  data-testid="link-affiliate"
+                >
+                  Affiliate
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {affiliateMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => onNavigate?.(item.path)}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
           
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
