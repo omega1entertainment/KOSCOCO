@@ -13,7 +13,7 @@ import type { Category } from "@shared/schema";
 
 export default function Register() {
   const [, setLocation] = useLocation();
-  const { user, login } = useAuth();
+  const { user, isLoading: authLoading, login } = useAuth();
   const { toast } = useToast();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState("");
@@ -73,7 +73,7 @@ export default function Register() {
     registerMutation.mutate();
   };
 
-  if (categoriesLoading) {
+  if (authLoading || categoriesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -86,21 +86,17 @@ export default function Register() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex items-center justify-center min-h-screen px-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle>Sign In Required</CardTitle>
+            <CardTitle>Authentication Required</CardTitle>
             <CardDescription>
-              Please sign in to register for the competition
+              Please log in to register for the competition
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => login()}
-              className="w-full"
-              data-testid="button-signin"
-            >
-              Sign In with Replit
+          <CardContent className="flex flex-col gap-4">
+            <Button onClick={login} className="w-full" data-testid="button-login">
+              Log In to Continue
             </Button>
           </CardContent>
         </Card>

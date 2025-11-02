@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import type {
@@ -14,8 +14,8 @@ import type {
   Referral, InsertReferral
 } from "@shared/schema";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
-export const db = drizzle(pool, { schema });
+const httpClient = neon(process.env.DATABASE_URL!);
+export const db = drizzle({ client: httpClient, schema });
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
