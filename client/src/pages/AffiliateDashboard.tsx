@@ -114,8 +114,6 @@ export default function AffiliateDashboard() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
-        onLoginClick={() => window.location.href = "/api/login"}
         onNavigate={(path) => setLocation(path)}
       />
       

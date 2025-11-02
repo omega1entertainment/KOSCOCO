@@ -107,8 +107,6 @@ export default function AffiliateProgram() {
         <TopBar />
         <NavigationHeader 
           onUploadClick={() => setLocation("/upload")}
-          onRegisterClick={() => setLocation("/register")}
-          onLoginClick={() => window.location.href = "/api/login"}
           onNavigate={(path) => setLocation(path)}
         />
         
@@ -122,12 +120,22 @@ export default function AffiliateProgram() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Button 
-                onClick={() => window.location.href = "/api/login"} 
+                onClick={() => setLocation("/login")} 
                 className="w-full" 
                 data-testid="button-login"
               >
                 Log In to Continue
               </Button>
+              <p className="text-sm text-center text-muted-foreground">
+                Don't have an account?{' '}
+                <button
+                  onClick={() => setLocation("/register")}
+                  className="text-primary underline-offset-4 hover:underline"
+                  data-testid="link-register"
+                >
+                  Register here
+                </button>
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -146,8 +154,6 @@ export default function AffiliateProgram() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
-        onLoginClick={() => window.location.href = "/api/login"}
         onNavigate={(path) => setLocation(path)}
       />
       
