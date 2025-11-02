@@ -11,14 +11,14 @@ interface HeroProps {
 
 export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onRegisterClick, onWatchClick }: HeroProps) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden py-24">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ paddingTop: '50px', paddingBottom: '50px' }}>
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${heroBackground})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
       
-      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-24">
+      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
         <Badge 
           className="mb-6 px-6 py-2 text-sm font-bold tracking-widest"
           variant="destructive"
@@ -35,7 +35,7 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           <img src={seasonLogo} alt="KOSCOCO Season 1" className="h-16 md:h-20" />
         </div>
         
-        <p className="mb-3" style={{ fontFamily: 'Play, sans-serif', fontWeight: 600, fontSize: '34px', color: '#FBBF24' }}>
+        <p className="mb-3" style={{ fontFamily: 'Play, sans-serif', fontWeight: 600, fontSize: '51px', color: '#FBBF24' }}>
           Become Cameroon's next biggest content Creator and Influencer
         </p>
         
