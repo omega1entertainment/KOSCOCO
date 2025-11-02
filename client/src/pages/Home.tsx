@@ -98,7 +98,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <NavigationHeader />
+      <NavigationHeader 
+        onUploadClick={() => setLocation("/upload")}
+        onRegisterClick={() => setLocation("/register")}
+      />
       
       <Hero 
         onRegisterClick={() => setLocation("/register")}

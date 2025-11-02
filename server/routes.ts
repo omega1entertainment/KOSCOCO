@@ -147,8 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/videos/upload-url', isAuthenticated, async (req: any, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
+      const { uploadUrl, videoUrl } = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadUrl, videoUrl });
     } catch (error) {
       console.error("Error generating upload URL:", error);
       res.status(500).json({ message: "Failed to generate upload URL" });
@@ -158,10 +158,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/videos', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { videoURL, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
+      const { videoUrl, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
 
-      if (!videoURL || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
-        return res.status(400).json({ message: "Missing required fields (videoURL, categoryId, subcategory, title, duration, fileSize, mimeType)" });
+      if (!videoUrl || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
+        return res.status(400).json({ message: "Missing required fields (videoUrl, categoryId, subcategory, title, duration, fileSize, mimeType)" });
       }
 
       const ALLOWED_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const objectStorageService = new ObjectStorageService();
       const videoPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        videoURL,
+        videoUrl,
         {
           owner: userId,
           visibility: "private",

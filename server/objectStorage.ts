@@ -113,17 +113,21 @@ export class ObjectStorageService {
     }
   }
 
-  async getObjectEntityUploadURL(): Promise<string> {
+  async getObjectEntityUploadURL(): Promise<{ uploadUrl: string; videoUrl: string }> {
     const privateObjectDir = this.getPrivateObjectDir();
     const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/videos/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
-    return signObjectURL({
+    const uploadUrl = await signObjectURL({
       bucketName,
       objectName,
       method: "PUT",
       ttlSec: 900,
     });
+    return {
+      uploadUrl,
+      videoUrl: fullPath,
+    };
   }
 
   async getObjectEntityFile(objectPath: string): Promise<File> {

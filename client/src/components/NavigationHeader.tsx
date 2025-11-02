@@ -8,12 +8,14 @@ interface NavigationHeaderProps {
   currentPhase?: string;
   onLoginClick?: () => void;
   onRegisterClick?: () => void;
+  onUploadClick?: () => void;
 }
 
 export default function NavigationHeader({ 
   currentPhase = "PHASE 2: TOP 50 ACTIVE",
   onLoginClick,
-  onRegisterClick
+  onRegisterClick,
+  onUploadClick
 }: NavigationHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -44,6 +46,13 @@ export default function NavigationHeader({
             <Badge variant="destructive" className="font-bold text-xs tracking-wide" data-testid="badge-phase">
               {currentPhase}
             </Badge>
+            <Button 
+              variant="outline" 
+              onClick={onUploadClick}
+              data-testid="button-upload-nav"
+            >
+              Upload Video
+            </Button>
             <Button 
               variant="ghost" 
               onClick={onLoginClick}
@@ -85,6 +94,7 @@ export default function NavigationHeader({
               </button>
             ))}
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
+              <Button variant="outline" onClick={onUploadClick}>Upload Video</Button>
               <Button variant="ghost" onClick={onLoginClick}>Login</Button>
               <Button onClick={onRegisterClick}>Register</Button>
             </div>
