@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +61,12 @@ export default function AffiliateProgram() {
     );
   }
 
+  useEffect(() => {
+    if (!statusLoading && affiliateStatus?.isAffiliate) {
+      setLocation("/affiliate/dashboard");
+    }
+  }, [statusLoading, affiliateStatus, setLocation]);
+
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -92,7 +99,6 @@ export default function AffiliateProgram() {
   }
 
   if (affiliateStatus?.isAffiliate) {
-    setLocation("/affiliate/dashboard");
     return null;
   }
 
