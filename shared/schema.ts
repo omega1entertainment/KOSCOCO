@@ -60,6 +60,7 @@ export const videos = pgTable("videos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   categoryId: varchar("category_id").notNull().references(() => categories.id),
+  phaseId: varchar("phase_id").references(() => phases.id),
   subcategory: text("subcategory").notNull(),
   title: text("title").notNull(),
   description: text("description"),

@@ -48,6 +48,7 @@ export interface IStorage {
   createVote(vote: InsertVote): Promise<Vote>;
   getVideoVoteCount(videoId: string): Promise<number>;
   getUserVotesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Vote[]>;
+  getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number })[]>;
   
   createJudgeScore(score: InsertJudgeScore): Promise<JudgeScore>;
   getVideoJudgeScores(videoId: string): Promise<JudgeScore[]>;
@@ -199,6 +200,44 @@ export class DbStorage implements IStorage {
         .where(and(eq(schema.votes.videoId, videoId), eq(schema.votes.ipAddress, ipAddress)));
     }
     return [];
+  }
+
+  async getLeaderboard(categoryId?: string, phaseId?: string, limit: number = 50): Promise<(Video & { voteCount: number })[]> {
+    const conditions = [eq(schema.videos.status, 'approved')];
+    if (categoryId) {
+      conditions.push(eq(schema.videos.categoryId, categoryId));
+    }
+    if (phaseId) {
+      conditions.push(eq(schema.videos.phaseId, phaseId));
+    }
+
+    const videosWithVotes = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        voteCount: sql<number>`COALESCE(COUNT(${schema.votes.id}), 0)`,
+      })
+      .from(schema.videos)
+      .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
+      .where(and(...conditions))
+      .groupBy(schema.videos.id)
+      .orderBy(desc(sql`COALESCE(COUNT(${schema.votes.id}), 0)`), desc(schema.videos.views))
+      .limit(limit);
+
+    return videosWithVotes as (Video & { voteCount: number })[];
   }
 
   async createJudgeScore(insertScore: InsertJudgeScore): Promise<JudgeScore> {

@@ -11,6 +11,7 @@ import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
 import VideoPlayer from "@/pages/VideoPlayer";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Leaderboard from "@/pages/Leaderboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/categories" component={Categories} />
       <Route path="/category/:id" component={CategoryVideos} />
       <Route path="/video/:id" component={VideoPlayer} />
+      <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>

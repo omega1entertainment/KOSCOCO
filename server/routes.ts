@@ -382,6 +382,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/leaderboard', async (req, res) => {
+    try {
+      const { categoryId, phaseId, limit } = req.query;
+      const leaderboard = await storage.getLeaderboard(
+        categoryId as string | undefined,
+        phaseId as string | undefined,
+        limit ? parseInt(limit as string) : 50
+      );
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
