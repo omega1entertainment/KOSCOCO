@@ -194,9 +194,16 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
 - Four competition stats cards with hover animations (scale + rotate icons)
 - Six-step process guide with alternating layouts and gradient badges (01-06)
 - Each step features:
-  - Animated icons (UserPlus, Upload, Video, Vote, TrendingUp, Trophy)
+  - **AI-generated custom images** (6 total) replacing previous icons:
+    - Registration and category selection scene
+    - Video upload and content creation scene
+    - Content approval and moderation scene
+    - Public voting and engagement scene
+    - Phase progression and advancement scene
+    - Winning prizes and celebration scene
+  - Images animated with scale/rotate effects (subtle 3° rotation)
   - Gradient backgrounds (red → orange → yellow → green → blue → purple)
-  - Rotating/scaling icon animations
+  - Rounded corners, shadows, and decorative overlays on images
   - Checkmark highlights list
   - Scroll-triggered entrance animations
 - Scoring section (60% Public Votes, 30% Creativity, 10% Quality)
@@ -204,7 +211,7 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
   - Hover effects that lift cards
 - CTA section with animated Trophy icon and dual action buttons
 - All animations optimized for smooth performance
-- Fully responsive design
+- Fully responsive design with alternating image/content layout
 - Tested end-to-end with Playwright
 
 ## Next Steps

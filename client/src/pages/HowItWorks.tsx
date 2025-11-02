@@ -6,19 +6,20 @@ import { Badge } from "@/components/ui/badge";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
 import { 
-  UserPlus, 
-  Upload, 
-  Video, 
   Trophy,
   Users,
-  Vote,
   DollarSign,
   CheckCircle2,
   Sparkles,
   ArrowRight,
-  TrendingUp,
   Award
 } from "lucide-react";
+import stepImage1 from "@assets/generated_images/Registration_and_category_selection_1a167c42.png";
+import stepImage2 from "@assets/generated_images/Video_upload_and_content_creation_862fb653.png";
+import stepImage3 from "@assets/generated_images/Content_approval_and_moderation_42c462a4.png";
+import stepImage4 from "@assets/generated_images/Public_voting_and_engagement_8d98442c.png";
+import stepImage5 from "@assets/generated_images/Phase_progression_and_advancement_c5aa149a.png";
+import stepImage6 from "@assets/generated_images/Winning_prizes_and_celebration_eac6a499.png";
 
 export default function HowItWorks() {
   const [, setLocation] = useLocation();
@@ -60,7 +61,7 @@ export default function HowItWorks() {
       number: "01",
       title: "Register & Choose Categories",
       description: "Sign up and select from 5 exciting categories. Pay just 2,500 FCFA per category to enter the competition.",
-      icon: UserPlus,
+      image: stepImage1,
       color: "from-red-500 to-red-600",
       highlights: ["Music & Dance", "Comedy & Performing Arts", "Fashion & Lifestyle", "Education & Learning", "Gospel Choirs"]
     },
@@ -68,7 +69,7 @@ export default function HowItWorks() {
       number: "02",
       title: "Upload Your Best Content",
       description: "Create and upload your 1-3 minute video showcasing your talent. Up to 2 videos per category!",
-      icon: Upload,
+      image: stepImage2,
       color: "from-orange-500 to-red-500",
       highlights: ["1-3 minutes duration", "512MB max file size", "MP4, WebM, MOV supported"]
     },
@@ -76,7 +77,7 @@ export default function HowItWorks() {
       number: "03",
       title: "Get Approved & Go Live",
       description: "Our team reviews your submission to ensure quality. Once approved, your video goes live for the world to see!",
-      icon: Video,
+      image: stepImage3,
       color: "from-yellow-500 to-orange-500",
       highlights: ["Quick review process", "Quality assurance", "Public visibility"]
     },
@@ -84,7 +85,7 @@ export default function HowItWorks() {
       number: "04",
       title: "Public Voting Begins",
       description: "Share your video and gather votes! Public votes count for 60% of your total score. Get your network engaged!",
-      icon: Vote,
+      image: stepImage4,
       color: "from-green-500 to-yellow-500",
       highlights: ["60% of total score", "Share on social media", "Unlimited voting"]
     },
@@ -92,7 +93,7 @@ export default function HowItWorks() {
       number: "05",
       title: "Progress Through Phases",
       description: "Compete through 5 exciting phases: TOP 100 → TOP 50 → TOP 10 → TOP 3 → GRAND FINALE",
-      icon: TrendingUp,
+      image: stepImage5,
       color: "from-blue-500 to-green-500",
       highlights: ["Phase-based progression", "Multiple chances to shine", "Fair competition"]
     },
@@ -100,7 +101,7 @@ export default function HowItWorks() {
       number: "06",
       title: "Win Amazing Prizes!",
       description: "Top performers in each category and the grand winner receive incredible prizes and recognition!",
-      icon: Trophy,
+      image: stepImage6,
       color: "from-purple-500 to-blue-500",
       highlights: ["Category winners", "Grand prize", "Fame & recognition"]
     }
@@ -109,7 +110,7 @@ export default function HowItWorks() {
   const features = [
     { icon: Users, title: "5 Categories", description: "Multiple talent categories to choose from" },
     { icon: Trophy, title: "5 Phases", description: "Exciting progression through competition stages" },
-    { icon: Vote, title: "Public Voting", description: "60% of score from audience votes" },
+    { icon: Sparkles, title: "Public Voting", description: "60% of score from audience votes" },
     { icon: Award, title: "Judge Scores", description: "40% from creativity and quality assessment" }
   ];
 
@@ -215,7 +216,6 @@ export default function HowItWorks() {
 
           <div className="max-w-6xl mx-auto space-y-12">
             {steps.map((step, index) => {
-              const Icon = step.icon;
               const isEven = index % 2 === 0;
               
               return (
@@ -261,34 +261,35 @@ export default function HowItWorks() {
                         </div>
                       </div>
 
-                      {/* Icon Side */}
-                      <div className={`relative bg-gradient-to-br ${step.color} p-8 flex items-center justify-center min-h-[250px] ${isEven ? 'md:order-2' : 'md:order-1'}`}>
-                        <motion.div
+                      {/* Image Side */}
+                      <div className={`relative overflow-hidden bg-gradient-to-br ${step.color} p-8 flex items-center justify-center min-h-[250px] ${isEven ? 'md:order-2' : 'md:order-1'}`}>
+                        <motion.img
+                          src={step.image}
+                          alt={step.title}
                           animate={{
                             scale: [1, 1.05, 1],
-                            rotate: [0, 5, -5, 0]
+                            rotate: [0, 3, -3, 0]
                           }}
                           transition={{
                             duration: 4,
                             repeat: Infinity,
                             ease: "easeInOut"
                           }}
-                        >
-                          <Icon className="w-32 h-32 text-white opacity-90" />
-                        </motion.div>
+                          className="w-full h-full object-cover rounded-lg shadow-2xl"
+                        />
                         
-                        {/* Decorative circles */}
+                        {/* Decorative overlay */}
                         <motion.div
                           animate={{
                             scale: [1, 1.2, 1],
-                            opacity: [0.3, 0.1, 0.3]
+                            opacity: [0.2, 0.05, 0.2]
                           }}
                           transition={{
                             duration: 3,
                             repeat: Infinity,
                             ease: "easeInOut"
                           }}
-                          className="absolute inset-0 bg-white rounded-full blur-3xl opacity-20"
+                          className="absolute inset-0 bg-white rounded-lg blur-2xl opacity-10"
                         />
                       </div>
                     </div>
