@@ -20,9 +20,16 @@ export const db = drizzle({ client: httpClient, schema });
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByFacebookId(facebookId: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+  updateUserGoogleId(id: string, googleId: string): Promise<User | undefined>;
+  updateUserFacebookId(id: string, facebookId: string): Promise<User | undefined>;
+  setPasswordResetToken(id: string, token: string, expires: Date): Promise<void>;
+  updatePassword(id: string, password: string): Promise<void>;
   
   getAllCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
@@ -77,6 +84,21 @@ export class DbStorage implements IStorage {
     return user;
   }
 
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.googleId, googleId));
+    return user;
+  }
+
+  async getUserByFacebookId(facebookId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.facebookId, facebookId));
+    return user;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.resetPasswordToken, token));
+    return user;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(schema.users).values(insertUser).returning();
     return user;
@@ -100,6 +122,33 @@ export class DbStorage implements IStorage {
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
     const [user] = await db.update(schema.users).set({...updates, updatedAt: new Date()}).where(eq(schema.users.id, id)).returning();
     return user;
+  }
+
+  async updateUserGoogleId(id: string, googleId: string): Promise<User | undefined> {
+    const [user] = await db.update(schema.users).set({ googleId, updatedAt: new Date() }).where(eq(schema.users.id, id)).returning();
+    return user;
+  }
+
+  async updateUserFacebookId(id: string, facebookId: string): Promise<User | undefined> {
+    const [user] = await db.update(schema.users).set({ facebookId, updatedAt: new Date() }).where(eq(schema.users.id, id)).returning();
+    return user;
+  }
+
+  async setPasswordResetToken(id: string, token: string, expires: Date): Promise<void> {
+    await db.update(schema.users).set({ 
+      resetPasswordToken: token, 
+      resetPasswordExpires: expires,
+      updatedAt: new Date() 
+    }).where(eq(schema.users.id, id));
+  }
+
+  async updatePassword(id: string, password: string): Promise<void> {
+    await db.update(schema.users).set({ 
+      password, 
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+      updatedAt: new Date() 
+    }).where(eq(schema.users.id, id));
   }
 
   async getAllCategories(): Promise<Category[]> {

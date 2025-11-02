@@ -1,5 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as FacebookStrategy } from "passport-facebook";
 import bcrypt from "bcrypt";
 import type { Express, RequestHandler } from "express";
 import session from "express-session";
@@ -66,6 +68,10 @@ export async function setupAuth(app: Express) {
             return done(null, false, { message: "Invalid email or password" });
           }
 
+          if (!user.password) {
+            return done(null, false, { message: "This account uses social login. Please login with Google or Facebook." });
+          }
+
           const isPasswordValid = await bcrypt.compare(password, user.password);
           
           if (!isPasswordValid) {
@@ -79,6 +85,117 @@ export async function setupAuth(app: Express) {
       }
     )
   );
+
+  // Configure Google OAuth strategy
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: "/api/auth/google/callback",
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            // Check if user exists with Google ID
+            let user = await storage.getUserByGoogleId(profile.id);
+            
+            if (!user) {
+              // Check if user exists with same email
+              const email = profile.emails?.[0]?.value;
+              if (email) {
+                user = await storage.getUserByEmail(email);
+                if (user) {
+                  // Link Google account to existing user
+                  user = await storage.updateUserGoogleId(user.id, profile.id);
+                }
+              }
+            }
+
+            if (!user) {
+              // Create new user
+              const email = profile.emails?.[0]?.value;
+              const firstName = profile.name?.givenName || profile.displayName?.split(' ')[0] || 'User';
+              const lastName = profile.name?.familyName || profile.displayName?.split(' ').slice(1).join(' ') || '';
+              const profileImageUrl = profile.photos?.[0]?.value;
+
+              if (!email) {
+                return done(new Error('Email not provided by Google'));
+              }
+
+              user = await storage.createUser({
+                email,
+                googleId: profile.id,
+                firstName,
+                lastName,
+                profileImageUrl,
+              });
+            }
+
+            return done(null, user);
+          } catch (error) {
+            return done(error as Error);
+          }
+        }
+      )
+    );
+  }
+
+  // Configure Facebook OAuth strategy
+  if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+    passport.use(
+      new FacebookStrategy(
+        {
+          clientID: process.env.FACEBOOK_APP_ID,
+          clientSecret: process.env.FACEBOOK_APP_SECRET,
+          callbackURL: "/api/auth/facebook/callback",
+          profileFields: ['id', 'emails', 'name', 'photos'],
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            // Check if user exists with Facebook ID
+            let user = await storage.getUserByFacebookId(profile.id);
+            
+            if (!user) {
+              // Check if user exists with same email
+              const email = profile.emails?.[0]?.value;
+              if (email) {
+                user = await storage.getUserByEmail(email);
+                if (user) {
+                  // Link Facebook account to existing user
+                  user = await storage.updateUserFacebookId(user.id, profile.id);
+                }
+              }
+            }
+
+            if (!user) {
+              // Create new user
+              const email = profile.emails?.[0]?.value;
+              const firstName = profile.name?.givenName || profile.displayName?.split(' ')[0] || 'User';
+              const lastName = profile.name?.familyName || profile.displayName?.split(' ').slice(1).join(' ') || '';
+              const profileImageUrl = profile.photos?.[0]?.value;
+
+              if (!email) {
+                return done(new Error('Email not provided by Facebook'));
+              }
+
+              user = await storage.createUser({
+                email,
+                facebookId: profile.id,
+                firstName,
+                lastName,
+                profileImageUrl,
+              });
+            }
+
+            return done(null, user);
+          } catch (error) {
+            return done(error as Error);
+          }
+        }
+      )
+    );
+  }
 
   // Serialize user to session
   passport.serializeUser((user: Express.User, cb) => {
@@ -180,6 +297,103 @@ export async function setupAuth(app: Express) {
       }
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  // Google OAuth routes
+  app.get(
+    "/api/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+  );
+
+  app.get(
+    "/api/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    (req, res) => {
+      res.redirect("/");
+    }
+  );
+
+  // Facebook OAuth routes
+  app.get(
+    "/api/auth/facebook",
+    passport.authenticate("facebook", { scope: ["email"] })
+  );
+
+  app.get(
+    "/api/auth/facebook/callback",
+    passport.authenticate("facebook", { failureRedirect: "/login" }),
+    (req, res) => {
+      res.redirect("/");
+    }
+  );
+
+  // Forgot password - Request reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Don't reveal if user exists
+        return res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+      }
+
+      // Generate reset token
+      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
+
+      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
+
+      // In a real app, you would send an email here
+      // For now, we'll just return the token (in production, this should be sent via email)
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+
+      res.json({ 
+        message: "If an account with that email exists, a password reset link has been sent.",
+        // Remove this in production - only for testing
+        resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined,
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Update password and clear reset token
+      await storage.updatePassword(user.id, hashedPassword);
+
+      res.json({ message: "Password reset successful. You can now login with your new password." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
   });
 }
 
