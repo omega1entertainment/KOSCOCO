@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
@@ -98,6 +99,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}

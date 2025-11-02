@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
 import { 
@@ -77,6 +78,7 @@ export default function HowItWorks() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}

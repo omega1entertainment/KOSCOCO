@@ -30,7 +30,10 @@ export default function NavigationHeader({
   const navItems = [
     { label: 'Categories', path: '/categories' },
     { label: 'How It Works', path: '/how-it-works' },
-    { label: 'Leaderboard', path: '/leaderboard' },
+  ];
+  
+  const leaderboardMenuItems = [
+    { label: 'View Leaderboard', path: '/leaderboard' },
     { label: 'Prizes', path: '/prizes' },
   ];
   
@@ -46,11 +49,11 @@ export default function NavigationHeader({
           <div className="flex items-center gap-8">
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
             
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-3">
               {navItems.map((item) => (
                 <button
                   key={item.label}
-                  className="text-sm font-medium hover-elevate px-3 py-2 rounded-md transition-colors"
+                  className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors"
                   onClick={() => onNavigate?.(item.path)}
                   data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
@@ -61,10 +64,33 @@ export default function NavigationHeader({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="text-sm font-medium hover-elevate px-3 py-2 rounded-md transition-colors flex items-center gap-1"
-                    data-testid="link-affiliate-program"
+                    className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
+                    data-testid="link-leaderboard"
                   >
-                    Affiliate Program
+                    Leaderboard
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {leaderboardMenuItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.label}
+                      onClick={() => onNavigate?.(item.path)}
+                      data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="text-sm font-medium hover-elevate px-2 py-2 rounded-md transition-colors flex items-center gap-1"
+                    data-testid="link-affiliate"
+                  >
+                    Affiliate
                     <ChevronDown className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
@@ -84,9 +110,6 @@ export default function NavigationHeader({
           </div>
           
           <div className="hidden md:flex items-center gap-4">
-            <Badge variant="destructive" className="font-bold text-xs tracking-wide" data-testid="badge-phase">
-              {currentPhase}
-            </Badge>
             <Button 
               variant="outline" 
               onClick={onUploadClick}
@@ -137,7 +160,26 @@ export default function NavigationHeader({
             
             <div className="mt-2">
               <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                Affiliate Program
+                Leaderboard
+              </div>
+              {leaderboardMenuItems.map((item) => (
+                <button
+                  key={item.label}
+                  className="text-left px-4 py-3 hover-elevate rounded-md w-full"
+                  onClick={() => {
+                    onNavigate?.(item.path);
+                    setMobileMenuOpen(false);
+                  }}
+                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            
+            <div className="mt-2">
+              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
+                Affiliate
               </div>
               {affiliateMenuItems.map((item) => (
                 <button

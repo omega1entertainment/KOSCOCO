@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
 import { Trophy, ThumbsUp, Eye, Play } from "lucide-react";
@@ -58,6 +59,7 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}

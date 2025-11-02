@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
 import { 
@@ -110,6 +111,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <TopBar />
       <NavigationHeader />
       
       <main className="flex-1 container mx-auto px-4 py-8">

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
 import { CheckCircle, XCircle, Eye, Clock } from "lucide-react";
@@ -255,6 +256,7 @@ export default function AdminDashboard() {
   // User is authenticated, render the dashboard
   return (
     <div className="min-h-screen flex flex-col">
+      <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}

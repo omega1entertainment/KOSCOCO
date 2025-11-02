@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
 import Footer from "@/components/Footer";
 import { 
@@ -103,6 +104,7 @@ export default function AffiliateProgram() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
+        <TopBar />
         <NavigationHeader 
           onUploadClick={() => setLocation("/upload")}
           onRegisterClick={() => setLocation("/register")}
@@ -141,6 +143,7 @@ export default function AffiliateProgram() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
         onRegisterClick={() => setLocation("/register")}
