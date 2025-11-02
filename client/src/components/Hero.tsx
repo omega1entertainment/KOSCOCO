@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import heroBackground from "@assets/generated_images/Hero_background_competition_energy_2a99609f.png";
+import seasonLogo from "@assets/kOSCOCO-SEASON 1_1762052498157.png";
 
 interface HeroProps {
   currentPhase?: string;
@@ -27,8 +28,12 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
         </Badge>
         
         <h1 className="font-display text-7xl md:text-8xl lg:text-9xl text-white mb-6 tracking-wide uppercase">
-          KOSCOCO
+          the kozzii short content competition
         </h1>
+        
+        <div className="flex justify-center mb-6">
+          <img src={seasonLogo} alt="KOSCOCO Season 1" className="h-16 md:h-20" />
+        </div>
         
         <p className="text-2xl md:text-3xl text-white/90 mb-4 font-medium">
           Cameroon's Next Big Content Creator
