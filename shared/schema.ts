@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, jsonb, index, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -86,7 +86,12 @@ export const votes = pgTable("votes", {
   userId: varchar("user_id").references(() => users.id),
   ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Unique constraint: one vote per authenticated user per video
+  unique("unique_vote_user").on(table.videoId, table.userId),
+  // Unique constraint: one vote per IP address per video (for anonymous votes)
+  unique("unique_vote_ip").on(table.videoId, table.ipAddress),
+]);
 
 export const judgeScores = pgTable("judge_scores", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

@@ -529,16 +529,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get user ID if authenticated, or use IP address for anonymous votes
-      const userId = req.user?.claims?.sub || null;
+      const userId = req.user ? (req.user as SelectUser).id : null;
       const ipAddress = req.ip || req.connection.remoteAddress || null;
 
-      // Check for duplicate votes
+      // Check for duplicate votes (application-level check as first line of defense)
       const existingVotes = await storage.getUserVotesForVideo(userId, videoId, ipAddress);
       if (existingVotes.length > 0) {
         return res.status(400).json({ message: "You have already voted for this video" });
       }
 
-      // Create the vote
+      // Create the vote (database-level unique constraints will prevent race conditions)
       const vote = await storage.createVote({
         videoId,
         userId,
@@ -553,8 +553,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vote,
         voteCount,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating vote:", error);
+      
+      // Handle unique constraint violations
+      if (error.code === '23505' || error.message?.includes('unique constraint')) {
+        return res.status(400).json({ message: "You have already voted for this video" });
+      }
+      
       res.status(500).json({ message: "Failed to create vote" });
     }
   });
