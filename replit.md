@@ -188,6 +188,25 @@ KOSCOCO (KOZZII Short Content Competition) is a comprehensive video competition 
 - Already-enrolled users automatically redirected to dashboard
 - Tested end-to-end with Playwright
 
+**How It Works Page with Animations (Session 3):**
+- Created stunning `/how-it-works` page with beautiful framer-motion animations
+- Hero section with floating Sparkles icon and CTA
+- Four competition stats cards with hover animations (scale + rotate icons)
+- Six-step process guide with alternating layouts and gradient badges (01-06)
+- Each step features:
+  - Animated icons (UserPlus, Upload, Video, Vote, TrendingUp, Trophy)
+  - Gradient backgrounds (red → orange → yellow → green → blue → purple)
+  - Rotating/scaling icon animations
+  - Checkmark highlights list
+  - Scroll-triggered entrance animations
+- Scoring section (60% Public Votes, 30% Creativity, 10% Quality)
+  - Animated circular backgrounds with continuous rotation
+  - Hover effects that lift cards
+- CTA section with animated Trophy icon and dual action buttons
+- All animations optimized for smooth performance
+- Fully responsive design
+- Tested end-to-end with Playwright
+
 ## Next Steps
 1. ✅ All MVP features complete and tested
 2. 🔜 Integrate payment processing (Flutterwave) for registration fees
