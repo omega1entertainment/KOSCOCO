@@ -48,7 +48,6 @@ export default function CategoryVideos() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
         onNavigate={(path) => setLocation(path)}
       />
 
@@ -66,20 +65,20 @@ export default function CategoryVideos() {
             </Button>
 
             <div className="max-w-4xl">
-              <h1 className="font-display text-4xl md:text-6xl uppercase tracking-wide mb-4">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide mb-4">
                 {category.name}
               </h1>
               {category.description && (
-                <p className="text-lg text-muted-foreground mb-6">
+                <p className="text-base md:text-lg text-muted-foreground mb-6">
                   {category.description}
                 </p>
               )}
 
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Filter className="w-4 h-4 text-muted-foreground" />
                   <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
-                    <SelectTrigger className="w-[200px]" data-testid="select-subcategory-filter">
+                    <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-subcategory-filter">
                       <SelectValue placeholder="Filter by subcategory" />
                     </SelectTrigger>
                     <SelectContent>
@@ -98,10 +97,10 @@ export default function CategoryVideos() {
           </div>
         </section>
 
-        <section className="py-12">
+        <section className="py-8 md:py-12">
           <div className="container mx-auto px-4">
             {filteredVideos && filteredVideos.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {filteredVideos.map((video) => (
                   <Card 
                     key={video.id} 

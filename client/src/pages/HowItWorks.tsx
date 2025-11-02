@@ -81,8 +81,6 @@ export default function HowItWorks() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
-        onLoginClick={() => window.location.href = "/api/login"}
         onNavigate={(path) => setLocation(path)}
       />
 
@@ -94,10 +92,10 @@ export default function HowItWorks() {
             <div className="inline-block mb-6">
               <Sparkles className="w-16 h-16 text-primary mx-auto" />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6" data-testid="heading-how-it-works">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6" data-testid="heading-how-it-works">
               How KOSCOCO Works
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-base md:text-xl text-muted-foreground mb-8">
               Your journey from registration to stardom in 6 simple steps
             </p>
             <div>

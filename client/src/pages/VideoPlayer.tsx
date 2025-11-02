@@ -77,7 +77,6 @@ export default function VideoPlayer() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
         onNavigate={(path) => setLocation(path)}
       />
 

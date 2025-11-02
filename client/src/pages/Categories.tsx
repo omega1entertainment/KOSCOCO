@@ -46,7 +46,6 @@ export default function Categories() {
       <TopBar />
       <NavigationHeader 
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
         onNavigate={(path) => setLocation(path)}
       />
 
@@ -54,19 +53,19 @@ export default function Categories() {
         <section className="bg-muted/30 py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="font-display text-5xl md:text-7xl uppercase tracking-wide mb-4">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl uppercase tracking-wide mb-4">
                 Competition Categories
               </h1>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base md:text-lg text-muted-foreground">
                 Browse videos across all five competition categories
               </p>
             </div>
           </div>
         </section>
 
-        <section className="py-16">
+        <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {categories?.map((category) => (
                 <Card 
                   key={category.id} 

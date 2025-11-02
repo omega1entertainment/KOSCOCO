@@ -58,8 +58,6 @@ export default function Prizes() {
       <TopBar />
       <NavigationHeader
         onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
-        onLoginClick={() => window.location.href = "/api/login"}
         onNavigate={(path) => setLocation(path)}
       />
 
@@ -74,10 +72,10 @@ export default function Prizes() {
             >
               COMPETITION PRIZES
             </Badge>
-            <h1 className="text-5xl font-bold mb-4" data-testid="heading-prizes">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4" data-testid="heading-prizes">
               Win Big with KOSCOCO
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-prizes-description">
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-prizes-description">
               Compete for amazing prizes across 5 categories and 5 exciting phases. 
               The more you advance, the bigger the rewards!
             </p>
