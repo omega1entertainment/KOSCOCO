@@ -25,6 +25,7 @@ export default function NavigationHeader({
     { label: 'Categories', path: '/categories' },
     { label: 'How It Works', path: '/how-it-works' },
     { label: 'Leaderboard', path: '/leaderboard' },
+    { label: 'Affiliate Program', path: '/affiliate' },
     { label: 'Prizes', path: '/prizes' },
   ];
   
