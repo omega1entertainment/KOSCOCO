@@ -72,9 +72,13 @@ export default function NavigationHeader({
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16 gap-4">
-          <div className="flex items-center">
+          <button 
+            onClick={() => setLocation("/")}
+            className="flex items-center hover-elevate active-elevate-2 rounded-md p-2 -ml-2"
+            data-testid="button-logo-home"
+          >
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
-          </div>
+          </button>
           
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {navItems.map((item) => (
