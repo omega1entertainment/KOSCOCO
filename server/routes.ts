@@ -896,6 +896,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Affiliate: Request payout
+  app.post('/api/affiliate/payout/request', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const affiliate = await storage.getAffiliateByUserId(userId);
+      
+      if (!affiliate) {
+        return res.status(404).json({ message: "Not enrolled as an affiliate" });
+      }
+
+      const { amount, paymentMethod, accountDetails } = req.body;
+
+      // Validate required fields
+      if (!amount || !paymentMethod || !accountDetails) {
+        return res.status(400).json({ message: "Amount, payment method, and account details are required" });
+      }
+
+      // Validate amount
+      if (amount <= 0) {
+        return res.status(400).json({ message: "Amount must be greater than 0" });
+      }
+
+      // Check available balance
+      const availableBalance = await storage.getAffiliateAvailableBalance(affiliate.id);
+      
+      if (amount > availableBalance) {
+        return res.status(400).json({ 
+          message: `Insufficient balance. Available: ${availableBalance} FCFA`,
+          availableBalance 
+        });
+      }
+
+      // Minimum payout threshold (e.g., 5000 FCFA)
+      const MIN_PAYOUT = 5000;
+      if (amount < MIN_PAYOUT) {
+        return res.status(400).json({ 
+          message: `Minimum payout amount is ${MIN_PAYOUT} FCFA` 
+        });
+      }
+
+      const payoutRequest = await storage.createPayoutRequest({
+        affiliateId: affiliate.id,
+        amount,
+        paymentMethod,
+        accountDetails,
+        status: 'pending',
+      });
+
+      res.json(payoutRequest);
+    } catch (error) {
+      console.error("Error creating payout request:", error);
+      res.status(500).json({ message: "Failed to create payout request" });
+    }
+  });
+
+  // Affiliate: Get payout history
+  app.get('/api/affiliate/payout/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const affiliate = await storage.getAffiliateByUserId(userId);
+      
+      if (!affiliate) {
+        return res.status(404).json({ message: "Not enrolled as an affiliate" });
+      }
+
+      const payoutRequests = await storage.getPayoutRequestsByAffiliate(affiliate.id);
+      const availableBalance = await storage.getAffiliateAvailableBalance(affiliate.id);
+
+      res.json({ 
+        payoutRequests,
+        availableBalance,
+        totalEarnings: affiliate.totalEarnings 
+      });
+    } catch (error) {
+      console.error("Error fetching payout history:", error);
+      res.status(500).json({ message: "Failed to fetch payout history" });
+    }
+  });
+
+  // Admin: Get all payout requests
+  app.get('/api/admin/payouts', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const payoutRequests = await storage.getAllPayoutRequests();
+      res.json(payoutRequests);
+    } catch (error) {
+      console.error("Error fetching payout requests:", error);
+      res.status(500).json({ message: "Failed to fetch payout requests" });
+    }
+  });
+
+  // Admin: Approve payout request
+  app.post('/api/admin/payouts/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = (req.user as SelectUser).id;
+
+      const updatedRequest = await storage.updatePayoutStatus(id, 'approved', adminId);
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ message: "Payout request not found" });
+      }
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error approving payout:", error);
+      res.status(500).json({ message: "Failed to approve payout" });
+    }
+  });
+
+  // Admin: Reject payout request
+  app.post('/api/admin/payouts/:id/reject', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = (req.user as SelectUser).id;
+      const { rejectionReason } = req.body;
+
+      if (!rejectionReason) {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+
+      const updatedRequest = await storage.updatePayoutStatus(id, 'rejected', adminId, rejectionReason);
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ message: "Payout request not found" });
+      }
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error rejecting payout:", error);
+      res.status(500).json({ message: "Failed to reject payout" });
+    }
+  });
+
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
