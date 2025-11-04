@@ -5,9 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
-import Footer from "@/components/Footer";
 import { Play, Eye, ThumbsUp, ArrowLeft, Filter } from "lucide-react";
 import type { Category, Video } from "@shared/schema";
 
@@ -45,12 +42,6 @@ export default function CategoryVideos() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-
       <main className="flex-1">
         <section className="bg-muted/30 py-12">
           <div className="container mx-auto px-4">
@@ -169,8 +160,6 @@ export default function CategoryVideos() {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }

@@ -3,9 +3,6 @@ import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
-import Footer from "@/components/Footer";
 import { ArrowRight, Video } from "lucide-react";
 import type { Category } from "@shared/schema";
 
@@ -42,14 +39,7 @@ export default function Categories() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-
-      <main className="flex-1">
+    <div className="flex flex-col">
         <section className="bg-muted/30 py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
@@ -120,9 +110,6 @@ export default function Categories() {
             </div>
           </div>
         </section>
-      </main>
-
-      <Footer />
     </div>
   );
 }

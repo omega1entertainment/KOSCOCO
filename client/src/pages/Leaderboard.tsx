@@ -10,9 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
-import Footer from "@/components/Footer";
 import { Trophy, ThumbsUp, Eye, Play } from "lucide-react";
 import { useState } from "react";
 import type { Video, Category, Phase } from "@shared/schema";
@@ -59,12 +56,6 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-
       <main className="flex-1 bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
@@ -199,8 +190,6 @@ export default function Leaderboard() {
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

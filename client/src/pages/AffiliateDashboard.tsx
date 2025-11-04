@@ -11,9 +11,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
-import Footer from "@/components/Footer";
 import { 
   Users, 
   DollarSign, 
@@ -190,12 +187,6 @@ export default function AffiliateDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-      
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2" data-testid="heading-dashboard">Affiliate Dashboard</h1>
@@ -484,8 +475,6 @@ export default function AffiliateDashboard() {
           </Card>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

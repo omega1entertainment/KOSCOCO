@@ -1,8 +1,6 @@
 import { Trophy, Medal, Award, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
 import { useLocation } from "wouter";
 import grandFinaleImg from "@assets/generated_images/Grand_finale_winner_trophy_e9b20746.png";
 import top3Img from "@assets/generated_images/Top_3_category_winners_podium_0b933e0e.png";
@@ -55,12 +53,6 @@ export default function Prizes() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <TopBar />
-      <NavigationHeader
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-
       <main className="flex-1">
         {/* Hero Section */}
         <section className="bg-muted/30 py-16">

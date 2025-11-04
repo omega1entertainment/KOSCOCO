@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
 import { SiFacebook, SiGoogle } from "react-icons/si";
 
 export default function Login() {
@@ -146,9 +144,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar />
-      <NavigationHeader />
-      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">

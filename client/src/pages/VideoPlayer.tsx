@@ -5,9 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
-import Footer from "@/components/Footer";
 import { ArrowLeft, ThumbsUp, Eye, Share2, Flag } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -74,12 +71,6 @@ export default function VideoPlayer() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-
       <main className="flex-1 bg-background">
         <div className="container mx-auto px-4 py-8">
           <Button
@@ -243,8 +234,6 @@ export default function VideoPlayer() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

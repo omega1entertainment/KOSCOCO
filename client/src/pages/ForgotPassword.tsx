@@ -6,8 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 
@@ -57,9 +55,6 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar />
-      <NavigationHeader />
-      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <Link href="/login">
