@@ -264,23 +264,6 @@ export default function Register() {
 
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Referral Code (Optional)</CardTitle>
-                <CardDescription>
-                  If you have a referral code, enter it here to support an affiliate
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Input
-                  placeholder="Enter referral code"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                  data-testid="input-referralcode"
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="mb-6">
-              <CardHeader>
                 <CardTitle>Registration Summary</CardTitle>
               </CardHeader>
               <CardContent>
