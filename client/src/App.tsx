@@ -26,6 +26,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AffiliateTerms from "@/pages/AffiliateTerms";
+import VerifyEmail from "@/pages/VerifyEmail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -62,6 +63,7 @@ function Router() {
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/verify-email" component={VerifyEmail} />
           <Route path="/upload" component={Upload} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/affiliate" component={AffiliateProgram} />

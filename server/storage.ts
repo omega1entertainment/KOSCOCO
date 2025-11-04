@@ -24,12 +24,15 @@ export interface IStorage {
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   getUserByFacebookId(facebookId: string): Promise<User | undefined>;
   getUserByResetToken(token: string): Promise<User | undefined>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   updateUserGoogleId(id: string, googleId: string): Promise<User | undefined>;
   updateUserFacebookId(id: string, facebookId: string): Promise<User | undefined>;
   setPasswordResetToken(id: string, token: string, expires: Date): Promise<void>;
   updatePassword(id: string, password: string): Promise<void>;
+  verifyUserEmail(id: string): Promise<void>;
+  updateUserVerificationToken(id: string, token: string, expiry: Date): Promise<void>;
   
   getAllCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
@@ -141,6 +144,28 @@ export class DbStorage implements IStorage {
       resetPasswordToken: null,
       resetPasswordExpires: null,
       updatedAt: new Date() 
+    }).where(eq(schema.users.id, id));
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.verificationToken, token));
+    return user;
+  }
+
+  async verifyUserEmail(id: string): Promise<void> {
+    await db.update(schema.users).set({
+      emailVerified: true,
+      verificationToken: null,
+      verificationTokenExpiry: null,
+      updatedAt: new Date()
+    }).where(eq(schema.users.id, id));
+  }
+
+  async updateUserVerificationToken(id: string, token: string, expiry: Date): Promise<void> {
+    await db.update(schema.users).set({
+      verificationToken: token,
+      verificationTokenExpiry: expiry,
+      updatedAt: new Date()
     }).where(eq(schema.users.id, id));
   }
 

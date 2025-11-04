@@ -9,6 +9,11 @@ import createMemoryStore from "memorystore";
 import ConnectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
+import {
+  generateVerificationToken,
+  getVerificationTokenExpiry,
+  sendVerificationEmail,
+} from "./emailService";
 
 const MemoryStore = createMemoryStore(session);
 const PgSession = ConnectPgSimple(session);
@@ -263,6 +268,10 @@ export async function setupAuth(app: Express) {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Generate verification token
+      const verificationToken = generateVerificationToken();
+      const verificationTokenExpiry = getVerificationTokenExpiry();
+
       // Create user
       const user = await storage.createUser({
         email,
@@ -271,6 +280,18 @@ export async function setupAuth(app: Express) {
         lastName,
         age: age || null,
         parentalConsent: parentalConsent || false,
+        emailVerified: false,
+        verificationToken,
+        verificationTokenExpiry,
+      });
+
+      // Send verification email (non-blocking)
+      sendVerificationEmail({
+        email: user.email,
+        firstName: user.firstName,
+        verificationToken,
+      }).catch((error) => {
+        console.error("Failed to send verification email:", error);
       });
 
       // Log in the user automatically
@@ -280,8 +301,11 @@ export async function setupAuth(app: Express) {
         }
         
         // Return user without password
-        const { password: _, ...userWithoutPassword } = user;
-        res.json({ user: userWithoutPassword });
+        const { password: _, verificationToken: __, ...userWithoutPassword } = user;
+        res.json({ 
+          user: userWithoutPassword,
+          message: "Account created successfully. Please check your email to verify your account."
+        });
       });
     } catch (error) {
       console.error("Signup error:", error);
