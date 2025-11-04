@@ -32,6 +32,14 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Email Verification System** (Nov 4, 2024): Implemented comprehensive email verification for user accounts:
+  - Added `emailVerified`, `verificationToken`, `verificationTokenExpiry` fields to users table
+  - Integrated Resend email service for sending verification emails
+  - Automatic verification email sent upon user signup
+  - Email verification page (/verify-email) with token validation
+  - Dashboard banner for unverified users with resend email functionality
+  - Middleware protection: video uploads require verified email (isEmailVerified)
+  - Backend routes: POST /api/verify-email (token verification), POST /api/resend-verification (resend email)
 - **Affiliate Payout System** (Nov 4, 2024): Implemented complete payout request and approval workflow for affiliates:
   - Added `payout_requests` table with status tracking (pending/approved/rejected)
   - Available balance calculation: total earnings minus requested/paid amounts
@@ -53,6 +61,7 @@ The platform is built with a modern web stack:
 - **Object Storage**: Replit Object Storage
 - **Authentication**: Passport.js, bcrypt
 - **Payment Gateway**: Flutterwave (SDKs: `flutterwave-react-v3`, `flutterwave-node-v3`)
+- **Email Service**: Resend (for email verification and notifications)
 - **Frontend Libraries**: React, Tailwind CSS, Shadcn UI, Wouter, react-hook-form, Zod
 - **Backend Libraries**: Express.js, Node.js, Drizzle ORM
 - **Fonts**: Bebas Neue, Play, Inter
