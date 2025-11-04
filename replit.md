@@ -28,13 +28,15 @@ The platform is built with a modern web stack:
     - **Payment Integration**: Flutterwave for secure and localized payment processing (XAF currency).
     - **Leaderboard**: Real-time, category, and phase-filtered rankings.
     - **User Dashboard**: Centralized view for user's registrations, videos, votes, and statistics.
-    - **Admin Dashboard**: Dedicated interface for video moderation (approve/reject).
+    - **Admin Dashboard**: Dedicated interface for video moderation (approve/reject) and phase management (activate/complete phases).
+    - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Phase Progression System** (Nov 4, 2024): Implemented complete phase management with admin controls to activate/complete phases, ensuring only one phase is active at a time. Added Phase Management tab to Admin Dashboard with visual status indicators and date tracking.
 - **Navigation Enhancement** (Nov 4, 2024): Moved TopBar, NavigationHeader, and Footer to App.tsx root level so they appear consistently on all pages across the entire application
 - **Affiliate Program Enhancement** (Nov 4, 2024): Updated to accept both authenticated and non-authenticated users with dual-mode endpoint that creates accounts and affiliate records in one transaction
 - **Phase 1 Completed**: Payment foundation with Flutterwave integration, verification, webhooks, and retry flow
-- **Phase 2 (Partial)**: Voting system with database-level duplicate prevention and leaderboard with judge score aggregation
+- **Phase 2 Completed**: Voting system with database-level duplicate prevention, leaderboard with judge score aggregation, and phase progression logic
 - **Database Enhancements**: Added unique constraints on votes (video_id, user_id) and (video_id, ip_address) to prevent duplicate votes even under race conditions
 - **Performance Optimizations**: Created indexes on votes.video_id and judge_scores.video_id for efficient leaderboard queries
 

@@ -76,6 +76,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Update phase (only allows updating description and name, not status)
+  app.put('/api/admin/phases/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description } = req.body;
+
+      // Only allow updating name and description
+      // Status changes must go through activate/complete endpoints
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (description !== undefined) updates.description = description;
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      const phase = await storage.updatePhase(id, updates);
+      
+      if (!phase) {
+        return res.status(404).json({ message: "Phase not found" });
+      }
+
+      res.json(phase);
+    } catch (error) {
+      console.error("Error updating phase:", error);
+      res.status(500).json({ message: "Failed to update phase" });
+    }
+  });
+
+  // Admin: Activate phase (deactivates all others)
+  app.post('/api/admin/phases/:id/activate', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Get all phases
+      const allPhases = await storage.getAllPhases();
+
+      // Deactivate all phases first
+      for (const phase of allPhases) {
+        if (phase.id !== id && phase.status === 'active') {
+          await storage.updatePhase(phase.id, { status: 'completed' });
+        } else if (phase.id !== id && phase.status !== 'completed') {
+          await storage.updatePhase(phase.id, { status: 'upcoming' });
+        }
+      }
+
+      // Activate the selected phase
+      const activatedPhase = await storage.updatePhase(id, { 
+        status: 'active',
+        startDate: new Date(),
+      });
+
+      if (!activatedPhase) {
+        return res.status(404).json({ message: "Phase not found" });
+      }
+
+      res.json(activatedPhase);
+    } catch (error) {
+      console.error("Error activating phase:", error);
+      res.status(500).json({ message: "Failed to activate phase" });
+    }
+  });
+
+  // Admin: Complete phase
+  app.post('/api/admin/phases/:id/complete', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const completedPhase = await storage.updatePhase(id, { 
+        status: 'completed',
+        endDate: new Date(),
+      });
+
+      if (!completedPhase) {
+        return res.status(404).json({ message: "Phase not found" });
+      }
+
+      res.json(completedPhase);
+    } catch (error) {
+      console.error("Error completing phase:", error);
+      res.status(500).json({ message: "Failed to complete phase" });
+    }
+  });
+
   app.post('/api/registrations', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as SelectUser;

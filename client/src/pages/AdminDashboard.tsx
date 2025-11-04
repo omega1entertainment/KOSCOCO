@@ -1,13 +1,13 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
-import Footer from "@/components/Footer";
+import PhaseManagement from "@/components/PhaseManagement";
 import { CheckCircle, XCircle, Eye, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -52,17 +52,37 @@ function AdminDashboardContent() {
   const is403Error = error && typeof error === 'object' && 'status' in error && (error as any).status === 403;
 
   return (
-    <>
-      <div className="mb-8">
+    <div className="space-y-8">
+      <div>
         <h1 className="text-3xl font-bold mb-2" data-testid="text-admin-title">
           Admin Dashboard
         </h1>
         <p className="text-muted-foreground">
-          Review and moderate pending video submissions
+          Manage competition phases and moderate video submissions
         </p>
       </div>
 
-      {isLoading ? (
+      <Tabs defaultValue="phases" className="w-full">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-2">
+          <TabsTrigger value="phases" data-testid="tab-phases">
+            Phase Management
+          </TabsTrigger>
+          <TabsTrigger value="videos" data-testid="tab-videos">
+            Video Moderation
+            {pendingVideos.length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {pendingVideos.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="phases" className="mt-6">
+          <PhaseManagement />
+        </TabsContent>
+
+        <TabsContent value="videos" className="mt-6">
+          {isLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               <p className="mt-4 text-muted-foreground">Loading pending videos...</p>
@@ -214,7 +234,9 @@ function AdminDashboardContent() {
               </div>
             </div>
           )}
-    </>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 
@@ -255,21 +277,8 @@ export default function AdminDashboard() {
 
   // User is authenticated, render the dashboard
   return (
-    <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onRegisterClick={() => setLocation("/register")}
-        onNavigate={(path) => setLocation(path)}
-      />
-
-      <main className="flex-1 bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <AdminDashboardContent />
-        </div>
-      </main>
-
-      <Footer />
+    <div className="container mx-auto px-4 py-8">
+      <AdminDashboardContent />
     </div>
   );
 }
