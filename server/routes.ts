@@ -28,6 +28,20 @@ function isAdmin(req: any, res: any, next: any) {
   next();
 }
 
+// Email verified middleware
+function isEmailVerified(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = req.user as SelectUser;
+  if (!user.emailVerified) {
+    return res.status(403).json({ message: "Email verification required. Please verify your email to continue." });
+  }
+  
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -432,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/videos/upload-url', isAuthenticated, async (req: any, res) => {
+  app.post('/api/videos/upload-url', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const { uploadUrl, videoUrl } = await objectStorageService.getObjectEntityUploadURL();
@@ -443,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/videos', isAuthenticated, async (req: any, res) => {
+  app.post('/api/videos', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
       const { videoUrl, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
