@@ -145,6 +145,13 @@ export default function NavigationHeader({
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <>
+                <Button
+                  className="min-h-11"
+                  onClick={() => setLocation("/register")}
+                  data-testid="button-register"
+                >
+                  Register
+                </Button>
                 <Button 
                   variant="outline"
                   className="min-h-11"
@@ -264,6 +271,16 @@ export default function NavigationHeader({
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               {isAuthenticated ? (
                 <>
+                  <Button
+                    className="min-h-11"
+                    onClick={() => {
+                      setLocation("/register");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-register"
+                  >
+                    Register
+                  </Button>
                   <Button 
                     variant="outline"
                     className="min-h-11"
