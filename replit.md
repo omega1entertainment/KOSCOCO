@@ -32,6 +32,14 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Affiliate Payout System** (Nov 4, 2024): Implemented complete payout request and approval workflow for affiliates:
+  - Added `payout_requests` table with status tracking (pending/approved/rejected)
+  - Available balance calculation: total earnings minus requested/paid amounts
+  - Minimum withdrawal threshold: 5,000 FCFA
+  - Support for multiple payment methods: Mobile Money, Bank Transfer, PayPal
+  - Affiliate Dashboard: Payout request form with payment details and history display
+  - Admin Dashboard: New Payout Management tab with approve/reject functionality and rejection reason tracking
+  - Admin approval process records timestamp and admin user who processed the request
 - **Phase Progression System** (Nov 4, 2024): Implemented complete phase management with admin controls to activate/complete phases, ensuring only one phase is active at a time. Added Phase Management tab to Admin Dashboard with visual status indicators and date tracking.
 - **Navigation Enhancement** (Nov 4, 2024): Moved TopBar, NavigationHeader, and Footer to App.tsx root level so they appear consistently on all pages across the entire application
 - **Affiliate Program Enhancement** (Nov 4, 2024): Updated to accept both authenticated and non-authenticated users with dual-mode endpoint that creates accounts and affiliate records in one transaction
