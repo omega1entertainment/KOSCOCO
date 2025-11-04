@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import PhaseManagement from "@/components/PhaseManagement";
-import { CheckCircle, XCircle, Eye, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Clock, DollarSign } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Video, Category } from "@shared/schema";
+import type { Video, Category, PayoutRequest } from "@shared/schema";
 
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
@@ -23,6 +26,69 @@ function AdminDashboardContent() {
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  const { data: payoutRequests = [], isLoading: payoutsLoading } = useQuery<PayoutRequest[]>({
+    queryKey: ["/api/admin/payouts"],
+  });
+
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  const approvePayoutMutation = useMutation({
+    mutationFn: async (payoutId: string) => {
+      return await apiRequest(`/api/admin/payouts/${payoutId}/approve`, "POST", {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payout Approved",
+        description: "The payout request has been approved",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payouts"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Approval Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectPayoutMutation = useMutation({
+    mutationFn: async ({ payoutId, rejectionReason }: { payoutId: string; rejectionReason: string }) => {
+      return await apiRequest(`/api/admin/payouts/${payoutId}/reject`, "POST", { rejectionReason });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payout Rejected",
+        description: "The payout request has been rejected",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payouts"] });
+      setRejectionDialogOpen(false);
+      setSelectedPayoutId(null);
+      setRejectionReason("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Rejection Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRejectPayout = () => {
+    if (!selectedPayoutId || !rejectionReason) {
+      toast({
+        title: "Rejection Reason Required",
+        description: "Please provide a reason for rejection",
+        variant: "destructive",
+      });
+      return;
+    }
+    rejectPayoutMutation.mutate({ payoutId: selectedPayoutId, rejectionReason });
+  };
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ videoId, status }: { videoId: string; status: string }) => {
@@ -63,7 +129,7 @@ function AdminDashboardContent() {
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-2">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3">
           <TabsTrigger value="phases" data-testid="tab-phases">
             Phase Management
           </TabsTrigger>
@@ -72,6 +138,14 @@ function AdminDashboardContent() {
             {pendingVideos.length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {pendingVideos.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="payouts" data-testid="tab-payouts">
+            Payout Requests
+            {payoutRequests.filter(p => p.status === 'pending').length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {payoutRequests.filter(p => p.status === 'pending').length}
               </Badge>
             )}
           </TabsTrigger>
@@ -232,6 +306,179 @@ function AdminDashboardContent() {
                   );
                 })}
               </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="payouts" className="mt-6">
+          {payoutsLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">Loading payout requests...</p>
+            </div>
+          ) : payoutRequests.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <DollarSign className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">No Payout Requests</h3>
+                <p className="text-muted-foreground">
+                  There are no payout requests from affiliates at this time
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 mb-4">
+                <Badge variant="outline" className="text-base">
+                  {payoutRequests.length} Total {payoutRequests.length === 1 ? 'Request' : 'Requests'}
+                </Badge>
+                <Badge variant="secondary" className="text-base">
+                  {payoutRequests.filter(p => p.status === 'pending').length} Pending
+                </Badge>
+              </div>
+
+              <div className="grid gap-6">
+                {payoutRequests.map((payout) => (
+                  <Card key={payout.id} data-testid={`payout-card-${payout.id}`}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-xl">
+                            {payout.amount.toLocaleString()} FCFA
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Requested on {new Date(payout.requestedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={
+                            payout.status === 'approved' ? 'default' : 
+                            payout.status === 'rejected' ? 'destructive' : 
+                            'secondary'
+                          }
+                          className="text-sm"
+                        >
+                          {payout.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                          {payout.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {payout.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+                          {payout.status.charAt(0).toUpperCase() + payout.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Payment Method</p>
+                            <p className="font-medium">{payout.paymentMethod}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Affiliate ID</p>
+                            <p className="font-mono text-sm">{payout.affiliateId}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Account Details</p>
+                          <div className="bg-muted p-3 rounded-md">
+                            <p className="text-sm font-mono whitespace-pre-wrap">{payout.accountDetails}</p>
+                          </div>
+                        </div>
+
+                        {payout.status === 'rejected' && payout.rejectionReason && (
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-1">Rejection Reason</p>
+                            <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+                              <p className="text-sm text-destructive">{payout.rejectionReason}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {payout.status === 'approved' && payout.processedAt && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Approved on {new Date(payout.processedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+
+                        {payout.status === 'pending' && (
+                          <div className="flex gap-3 pt-4 border-t">
+                            <Button
+                              onClick={() => approvePayoutMutation.mutate(payout.id)}
+                              disabled={approvePayoutMutation.isPending}
+                              className="flex-1"
+                              data-testid={`button-approve-payout-${payout.id}`}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              {approvePayoutMutation.isPending ? "Processing..." : "Approve"}
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setSelectedPayoutId(payout.id);
+                                setRejectionDialogOpen(true);
+                              }}
+                              disabled={rejectPayoutMutation.isPending}
+                              variant="destructive"
+                              className="flex-1"
+                              data-testid={`button-reject-payout-${payout.id}`}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Reject Payout Request</DialogTitle>
+                    <DialogDescription>
+                      Please provide a reason for rejecting this payout request.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="rejection-reason">Rejection Reason</Label>
+                      <Textarea
+                        id="rejection-reason"
+                        placeholder="Enter the reason for rejection..."
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        rows={4}
+                        data-testid="textarea-rejection-reason"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => {
+                          setRejectionDialogOpen(false);
+                          setSelectedPayoutId(null);
+                          setRejectionReason("");
+                        }}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleRejectPayout}
+                        disabled={rejectPayoutMutation.isPending || !rejectionReason}
+                        variant="destructive"
+                        className="flex-1"
+                        data-testid="button-confirm-reject"
+                      >
+                        {rejectPayoutMutation.isPending ? "Processing..." : "Confirm Rejection"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
         </TabsContent>
