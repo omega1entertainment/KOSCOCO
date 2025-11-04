@@ -6,6 +6,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
+import bcrypt from "bcrypt";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -715,15 +716,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Affiliate routes
-  app.post('/api/affiliate/opt-in', isAuthenticated, async (req: any, res) => {
+  // Affiliate routes - accepts both authenticated and non-authenticated users
+  app.post('/api/affiliate/opt-in', async (req: any, res) => {
     try {
-      const userId = (req.user as SelectUser).id;
-      
-      // Check if already an affiliate
-      const existing = await storage.getAffiliateByUserId(userId);
-      if (existing) {
-        return res.status(400).json({ message: "Already enrolled as an affiliate" });
+      let userId: string;
+
+      if (req.user) {
+        // User is already authenticated
+        userId = (req.user as SelectUser).id;
+        
+        // Check if already an affiliate
+        const existing = await storage.getAffiliateByUserId(userId);
+        if (existing) {
+          return res.status(400).json({ message: "Already enrolled as an affiliate" });
+        }
+      } else {
+        // User is not authenticated - create a new account
+        const { firstName, lastName, email, username, password } = req.body;
+
+        // Validate required fields for new users
+        if (!firstName || !lastName || !email || !username || !password) {
+          return res.status(400).json({ message: "All user fields are required for registration" });
+        }
+
+        // Check if email already exists
+        const existingEmail = await storage.getUserByEmail(email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already registered" });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create the user account
+        const newUser = await storage.createUser({
+          firstName,
+          lastName,
+          email,
+          username,
+          password: hashedPassword,
+          isAdmin: false,
+        });
+
+        userId = newUser.id;
+
+        // Auto-login the newly created user
+        req.login(newUser, (err: Error) => {
+          if (err) {
+            console.error("Auto-login error:", err);
+          }
+        });
       }
 
       // Generate unique referral code

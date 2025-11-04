@@ -26,6 +26,11 @@ import {
 import type { Affiliate } from "@shared/schema";
 
 const affiliateFormSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   website: z.string().optional(),
   promotionMethod: z.string().min(10, "Please describe how you plan to promote KOSCOCO (minimum 10 characters)"),
   agreeToTerms: z.boolean().refine(val => val === true, {
@@ -43,6 +48,11 @@ export default function AffiliateProgram() {
   const form = useForm<AffiliateFormData>({
     resolver: zodResolver(affiliateFormSchema),
     defaultValues: {
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      username: user?.username || "",
+      password: "",
       website: "",
       promotionMethod: "",
       agreeToTerms: false
@@ -90,7 +100,14 @@ export default function AffiliateProgram() {
     optInMutation.mutate(data);
   };
 
-  if (authLoading || statusLoading) {
+  // Redirect if already an affiliate (only for authenticated users)
+  useEffect(() => {
+    if (user && !statusLoading && affiliateStatus?.isAffiliate) {
+      setLocation("/affiliate/dashboard");
+    }
+  }, [user, statusLoading, affiliateStatus, setLocation]);
+
+  if (authLoading || (user && statusLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -101,51 +118,7 @@ export default function AffiliateProgram() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <TopBar />
-        <NavigationHeader 
-          onUploadClick={() => setLocation("/upload")}
-          onNavigate={(path) => setLocation(path)}
-        />
-        
-        <div className="flex-1 flex items-center justify-center px-4">
-          <Card className="max-w-md w-full">
-            <CardHeader>
-              <CardTitle>Authentication Required</CardTitle>
-              <CardDescription>
-                Please log in to join our affiliate program
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <Button 
-                onClick={() => setLocation("/login")} 
-                className="w-full" 
-                data-testid="button-login"
-              >
-                Log In to Continue
-              </Button>
-              <p className="text-sm text-center text-muted-foreground">
-                Don't have an account?{' '}
-                <button
-                  onClick={() => setLocation("/register")}
-                  className="text-primary underline-offset-4 hover:underline"
-                  data-testid="link-register"
-                >
-                  Register here
-                </button>
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Footer />
-      </div>
-    );
-  }
-
-  if (affiliateStatus?.isAffiliate) {
+  if (user && affiliateStatus?.isAffiliate) {
     return null;
   }
 
@@ -237,36 +210,146 @@ export default function AffiliateProgram() {
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* User Info - Auto-filled from auth */}
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          value={`${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || ""} 
-                          disabled 
-                          data-testid="input-name"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Your name from your account
-                      </FormDescription>
-                    </FormItem>
+                  {!user && (
+                    <>
+                      <div className="bg-muted/50 rounded-lg p-4 mb-6">
+                        <p className="text-sm text-muted-foreground">
+                          <strong className="text-foreground">New to KOSCOCO?</strong> Fill in your details below to create an account and join our affiliate program in one step!
+                        </p>
+                      </div>
 
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          value={user.email || ""} 
-                          disabled 
-                          data-testid="input-email"
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="John" 
+                                  {...field}
+                                  data-testid="input-first-name"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormDescription>
-                        Your email from your account
-                      </FormDescription>
-                    </FormItem>
-                  </div>
+
+                        <FormField
+                          control={form.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Doe" 
+                                  {...field}
+                                  data-testid="input-last-name"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="email"
+                                placeholder="john@example.com" 
+                                {...field}
+                                data-testid="input-email"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Username</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="johndoe" 
+                                  {...field}
+                                  data-testid="input-username"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Password</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="password"
+                                  placeholder="••••••••" 
+                                  {...field}
+                                  data-testid="input-password"
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Minimum 6 characters
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {user && (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            value={`${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || ""} 
+                            disabled 
+                            data-testid="input-name"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Your name from your account
+                        </FormDescription>
+                      </FormItem>
+
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            value={user.email || ""} 
+                            disabled 
+                            data-testid="input-email"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Your email from your account
+                        </FormDescription>
+                      </FormItem>
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}
