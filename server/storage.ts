@@ -11,7 +11,8 @@ import type {
   Vote, InsertVote,
   JudgeScore, InsertJudgeScore,
   Affiliate, InsertAffiliate,
-  Referral, InsertReferral
+  Referral, InsertReferral,
+  PayoutRequest, InsertPayoutRequest
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -72,6 +73,12 @@ export interface IStorage {
   getAffiliateReferrals(affiliateId: string): Promise<Referral[]>;
   getReferralsByRegistrationId(registrationId: string): Promise<Referral[]>;
   updateReferralStatus(id: string, status: string): Promise<Referral | undefined>;
+
+  createPayoutRequest(request: InsertPayoutRequest): Promise<PayoutRequest>;
+  getPayoutRequestsByAffiliate(affiliateId: string): Promise<PayoutRequest[]>;
+  getAllPayoutRequests(): Promise<PayoutRequest[]>;
+  updatePayoutStatus(id: string, status: string, processedBy?: string, rejectionReason?: string): Promise<PayoutRequest | undefined>;
+  getAffiliateAvailableBalance(affiliateId: string): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -430,6 +437,78 @@ export class DbStorage implements IStorage {
       .where(eq(schema.referrals.id, id))
       .returning();
     return referral;
+  }
+
+  async createPayoutRequest(insertRequest: InsertPayoutRequest): Promise<PayoutRequest> {
+    const [request] = await db.insert(schema.payoutRequests).values(insertRequest).returning();
+    return request;
+  }
+
+  async getPayoutRequestsByAffiliate(affiliateId: string): Promise<PayoutRequest[]> {
+    const requests = await db.select()
+      .from(schema.payoutRequests)
+      .where(eq(schema.payoutRequests.affiliateId, affiliateId))
+      .orderBy(desc(schema.payoutRequests.requestedAt));
+    return requests;
+  }
+
+  async getAllPayoutRequests(): Promise<PayoutRequest[]> {
+    const requests = await db.select()
+      .from(schema.payoutRequests)
+      .orderBy(desc(schema.payoutRequests.requestedAt));
+    return requests;
+  }
+
+  async updatePayoutStatus(
+    id: string, 
+    status: string, 
+    processedBy?: string, 
+    rejectionReason?: string
+  ): Promise<PayoutRequest | undefined> {
+    const updates: any = { 
+      status,
+      processedAt: new Date()
+    };
+    
+    if (processedBy) {
+      updates.processedBy = processedBy;
+    }
+    
+    if (rejectionReason) {
+      updates.rejectionReason = rejectionReason;
+    }
+
+    const [request] = await db.update(schema.payoutRequests)
+      .set(updates)
+      .where(eq(schema.payoutRequests.id, id))
+      .returning();
+    return request;
+  }
+
+  async getAffiliateAvailableBalance(affiliateId: string): Promise<number> {
+    // Get the affiliate's total earnings
+    const [affiliate] = await db.select()
+      .from(schema.affiliates)
+      .where(eq(schema.affiliates.id, affiliateId));
+    
+    if (!affiliate) return 0;
+
+    // Get the sum of all approved/paid payout requests
+    const result = await db.select({
+      totalPaidOut: sql<number>`COALESCE(SUM(${schema.payoutRequests.amount}), 0)`
+    })
+    .from(schema.payoutRequests)
+    .where(
+      and(
+        eq(schema.payoutRequests.affiliateId, affiliateId),
+        sql`${schema.payoutRequests.status} IN ('approved', 'paid')`
+      )
+    );
+
+    const totalPaidOut = result[0]?.totalPaidOut || 0;
+    const availableBalance = affiliate.totalEarnings - totalPaidOut;
+    
+    return Math.max(0, availableBalance);
   }
 }
 
