@@ -16,7 +16,7 @@ The platform is built with a modern web stack:
 - **UI/UX Decisions**:
     - **Branding**: Primary Red (#DC2626), Secondary Black, Accent White, Featured Yellow (#FBBF24).
     - **Components**: Utilizes Shadcn UI for consistent and accessible components.
-    - **Navigation**: Features a `TopBar` for contact info and social media, and a `NavigationHeader` with conditional rendering based on user authentication status.
+    - **Navigation**: Features a `TopBar` for contact info and social media, and a `NavigationHeader` with conditional rendering based on user authentication status. Both components are rendered at the app level (App.tsx) to ensure consistent navigation across all pages, with a `Footer` also included at the bottom of every page.
     - **Content Display**: Video galleries, leaderboards with real-time rankings, and user dashboards are designed for clarity and ease of use.
     - **Competition Structure**: Organized into five distinct phases, with specific categories for video submissions.
 - **Technical Implementations**:
@@ -24,13 +24,15 @@ The platform is built with a modern web stack:
     - **RESTful API Design**: For clear and consistent communication between frontend and backend.
     - **Video Upload System**: Supports specific file formats, size, and duration limits, with a moderation queue.
     - **Voting System**: Public voting with anti-spam measures and judge scoring components (creativity, quality).
-    - **Affiliate Program**: Opt-in system with unique referral links and 20% commission tracking.
+    - **Affiliate Program**: Opt-in system with unique referral links and 20% commission tracking. Accepts both authenticated and non-authenticated users; for new users, creates both user account and affiliate record in a single transaction.
     - **Payment Integration**: Flutterwave for secure and localized payment processing (XAF currency).
     - **Leaderboard**: Real-time, category, and phase-filtered rankings.
     - **User Dashboard**: Centralized view for user's registrations, videos, votes, and statistics.
     - **Admin Dashboard**: Dedicated interface for video moderation (approve/reject).
 
 ## Recent Changes (Latest)
+- **Navigation Enhancement** (Nov 4, 2024): Moved TopBar, NavigationHeader, and Footer to App.tsx root level so they appear consistently on all pages across the entire application
+- **Affiliate Program Enhancement** (Nov 4, 2024): Updated to accept both authenticated and non-authenticated users with dual-mode endpoint that creates accounts and affiliate records in one transaction
 - **Phase 1 Completed**: Payment foundation with Flutterwave integration, verification, webhooks, and retry flow
 - **Phase 2 (Partial)**: Voting system with database-level duplicate prevention and leaderboard with judge score aggregation
 - **Database Enhancements**: Added unique constraints on votes (video_id, user_id) and (video_id, ip_address) to prevent duplicate votes even under race conditions

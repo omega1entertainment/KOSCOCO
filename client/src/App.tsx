@@ -4,6 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import TopBar from "@/components/TopBar";
+import NavigationHeader from "@/components/NavigationHeader";
+import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -40,28 +43,35 @@ function Router() {
   }
 
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/forgot-password" component={ForgotPassword} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/upload" component={Upload} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/affiliate" component={AffiliateProgram} />
-      <Route path="/affiliate/dashboard" component={AffiliateDashboard} />
-      <Route path="/categories" component={Categories} />
-      <Route path="/category/:id" component={CategoryVideos} />
-      <Route path="/video/:id" component={VideoPlayer} />
-      <Route path="/leaderboard" component={Leaderboard} />
-      <Route path="/prizes" component={Prizes} />
-      <Route path="/how-it-works" component={HowItWorks} />
-      <Route path="/terms-of-service" component={TermsOfService} />
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/affiliate-terms" component={AffiliateTerms} />
-      <Route path="/admin" component={AdminDashboard} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen flex flex-col">
+      <TopBar />
+      <NavigationHeader />
+      <main className="flex-1">
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/upload" component={Upload} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/affiliate" component={AffiliateProgram} />
+          <Route path="/affiliate/dashboard" component={AffiliateDashboard} />
+          <Route path="/categories" component={Categories} />
+          <Route path="/category/:id" component={CategoryVideos} />
+          <Route path="/video/:id" component={VideoPlayer} />
+          <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/prizes" component={Prizes} />
+          <Route path="/how-it-works" component={HowItWorks} />
+          <Route path="/terms-of-service" component={TermsOfService} />
+          <Route path="/privacy-policy" component={PrivacyPolicy} />
+          <Route path="/affiliate-terms" component={AffiliateTerms} />
+          <Route path="/admin" component={AdminDashboard} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+      <Footer />
+    </div>
   );
 }
 

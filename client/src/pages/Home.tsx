@@ -1,12 +1,9 @@
 import { useLocation } from "wouter";
-import TopBar from "@/components/TopBar";
-import NavigationHeader from "@/components/NavigationHeader";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
 import PhaseTimeline from "@/components/PhaseTimeline";
 import VideoCard from "@/components/VideoCard";
 import StatsCard from "@/components/StatsCard";
-import Footer from "@/components/Footer";
 import { Users, Video, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -98,13 +95,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <NavigationHeader 
-        onUploadClick={() => setLocation("/upload")}
-        onNavigate={(path) => setLocation(path)}
-      />
-      
+    <div>
       <Hero 
         onRegisterClick={() => setLocation("/register")}
         onWatchClick={() => console.log("Watch entries")}
@@ -202,8 +193,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
-      <Footer />
     </div>
   );
 }
