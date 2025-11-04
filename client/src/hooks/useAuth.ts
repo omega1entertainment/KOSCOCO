@@ -11,7 +11,7 @@ export function useAuth() {
   });
 
   const login = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
   };
 
   const logout = () => {
