@@ -34,6 +34,7 @@ export default function Register() {
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     retry: 3,
+    staleTime: 5 * 60 * 1000,
   });
 
   const FEE_PER_CATEGORY = 2500;
@@ -172,36 +173,25 @@ export default function Register() {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to continue with registration.",
+      });
+      login();
+      return;
+    }
+
     registerMutation.mutate();
   };
 
-  if (authLoading || categoriesLoading) {
+  if (categoriesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">Loading categories...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen px-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
-            <CardDescription>
-              Please log in to register for the competition
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Button onClick={login} className="w-full" data-testid="button-login">
-              Log In to Continue
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -257,6 +247,24 @@ export default function Register() {
               Select the categories you want to compete in. Registration fee is 2,500 FCFA per category.
             </p>
           </div>
+
+          {!user && (
+            <Card className="mb-6 border-primary/50 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1">Login Required</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      You can browse categories below. To complete registration and proceed to payment, you'll need to log in or create an account.
+                    </p>
+                    <Button onClick={login} size="sm" data-testid="button-login-banner">
+                      Log In / Sign Up
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="grid gap-6 mb-6">
@@ -364,7 +372,11 @@ export default function Register() {
                 className="flex-1"
                 data-testid="button-register-submit"
               >
-                {registerMutation.isPending ? "Processing..." : "Proceed to Payment"}
+                {registerMutation.isPending 
+                  ? "Processing..." 
+                  : !user 
+                    ? "Log In to Continue" 
+                    : "Proceed to Payment"}
               </Button>
             </div>
           </form>
