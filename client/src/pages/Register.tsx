@@ -31,8 +31,9 @@ export default function Register() {
     }
   }, [toast]);
 
-  const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+    retry: 3,
   });
 
   const FEE_PER_CATEGORY = 2500;
@@ -198,6 +199,47 @@ export default function Register() {
           <CardContent className="flex flex-col gap-4">
             <Button onClick={login} className="w-full" data-testid="button-login">
               Log In to Continue
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (categoriesError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>Error Loading Categories</CardTitle>
+            <CardDescription>
+              There was a problem loading the competition categories. Please try again.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm text-destructive">{(categoriesError as Error).message}</p>
+            <Button onClick={() => window.location.reload()} className="w-full" data-testid="button-reload">
+              Reload Page
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle>No Categories Available</CardTitle>
+            <CardDescription>
+              There are currently no competition categories available. Please check back later.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <Button onClick={() => setLocation("/")} className="w-full" data-testid="button-home">
+              Go to Home
             </Button>
           </CardContent>
         </Card>
