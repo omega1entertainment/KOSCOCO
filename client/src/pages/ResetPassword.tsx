@@ -97,11 +97,9 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
-          <Link href="/login">
-            <a className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-6" data-testid="link-back-to-login">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Login
-            </a>
+          <Link href="/login" className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-6" data-testid="link-back-to-login">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Login
           </Link>
 
           <div className="text-center mb-8">
