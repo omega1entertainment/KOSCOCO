@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
-import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
+
+declare global {
+  interface Window {
+    FlutterwaveCheckout: any;
+  }
+}
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -18,6 +23,18 @@ export default function Register() {
   const { toast } = useToast();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState("");
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const scriptLoaded = useRef(false);
+
+  useEffect(() => {
+    if (!scriptLoaded.current) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.flutterwave.com/v3.js';
+      script.async = true;
+      document.body.appendChild(script);
+      scriptLoaded.current = true;
+    }
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -37,29 +54,73 @@ export default function Register() {
 
   const FEE_PER_CATEGORY = 2500;
   const totalAmount = selectedCategories.length * FEE_PER_CATEGORY;
-  const [paymentData, setPaymentData] = useState<any>(null);
 
-  const config = {
-    public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
-    tx_ref: paymentData ? `REG-${paymentData.registrationId}-${Date.now()}` : Date.now().toString(),
-    amount: paymentData ? paymentData.amount : totalAmount,
-    currency: 'XAF',
-    payment_options: 'card,mobilemoney,ussd,banktransfer',
-    customer: {
-      email: user?.email || '',
-      phone_number: '',
-      name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User',
-    },
-    customizations: {
-      title: 'KOSCOCO Registration',
-      description: paymentData 
-        ? `Registration for ${paymentData.categoryCount} ${paymentData.categoryCount === 1 ? 'category' : 'categories'}`
-        : 'Competition Registration Payment',
-      logo: '',
-    },
-  };
+  useEffect(() => {
+    if (paymentData && window.FlutterwaveCheckout) {
+      const config = {
+        public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
+        tx_ref: `REG-${paymentData.registrationId}-${Date.now()}`,
+        amount: paymentData.amount,
+        currency: 'XAF',
+        payment_options: 'card,mobilemoney,ussd,banktransfer',
+        customer: {
+          email: user?.email || '',
+          phone_number: '',
+          name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User',
+        },
+        customizations: {
+          title: 'KOSCOCO Registration',
+          description: `Registration for ${paymentData.categoryCount} ${paymentData.categoryCount === 1 ? 'category' : 'categories'}`,
+          logo: '',
+        },
+        callback: async (response: any) => {
+          console.log('Payment response:', response);
+          
+          if (response.status === 'successful') {
+            try {
+              await apiRequest("/api/payments/verify", "POST", {
+                transaction_id: response.transaction_id,
+                registrationId: paymentData.registrationId,
+              });
+              
+              toast({
+                title: "Payment Successful!",
+                description: `Your registration payment of ${paymentData.amount.toLocaleString()} FCFA has been confirmed.`,
+              });
+              
+              queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+              setLocation("/dashboard");
+            } catch (error: any) {
+              toast({
+                title: "Payment Verification Failed",
+                description: error.message || "Please contact support.",
+                variant: "destructive",
+              });
+            }
+          } else {
+            toast({
+              title: "Payment Incomplete",
+              description: "Your registration was created but payment was not completed. Please complete payment from your dashboard.",
+              variant: "destructive",
+            });
+          }
+          
+          setPaymentData(null);
+        },
+        onclose: () => {
+          toast({
+            title: "Payment Cancelled",
+            description: "Registration created but payment pending. Complete payment from your dashboard.",
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+          setLocation("/dashboard");
+          setPaymentData(null);
+        },
+      };
 
-  const handleFlutterPayment = useFlutterwave(config);
+      window.FlutterwaveCheckout(config);
+    }
+  }, [paymentData, user, toast, setLocation]);
 
   const registerMutation = useMutation({
     mutationFn: async () => {
@@ -85,62 +146,11 @@ export default function Register() {
       const paymentAmount = data.totalAmount || data.totalFee || 0;
       const registration = data.registration;
       
-      // Set payment data and trigger payment modal
       setPaymentData({
         registrationId: registration.id,
         amount: paymentAmount,
         categoryCount: selectedCategories.length,
       });
-
-      // Trigger payment modal
-      setTimeout(() => {
-        handleFlutterPayment({
-          callback: async (response: any) => {
-            console.log('Payment response:', response);
-            
-            if (response.status === 'successful') {
-              try {
-                await apiRequest("/api/payments/verify", "POST", {
-                  transaction_id: response.transaction_id,
-                  registrationId: registration.id,
-                });
-                
-                toast({
-                  title: "Payment Successful!",
-                  description: `Your registration payment of ${paymentAmount.toLocaleString()} FCFA has been confirmed.`,
-                });
-                
-                queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-                setLocation("/dashboard");
-              } catch (error: any) {
-                toast({
-                  title: "Payment Verification Failed",
-                  description: error.message || "Please contact support.",
-                  variant: "destructive",
-                });
-              }
-            } else {
-              toast({
-                title: "Payment Incomplete",
-                description: "Your registration was created but payment was not completed. Please complete payment from your dashboard.",
-                variant: "destructive",
-              });
-            }
-            
-            closePaymentModal();
-            setPaymentData(null);
-          },
-          onClose: () => {
-            toast({
-              title: "Payment Cancelled",
-              description: "Registration created but payment pending. Complete payment from your dashboard.",
-            });
-            queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-            setLocation("/dashboard");
-            setPaymentData(null);
-          },
-        });
-      }, 100);
     },
     onError: (error: Error) => {
       toast({
