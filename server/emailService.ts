@@ -24,13 +24,17 @@ export async function sendVerificationEmail({
   firstName,
   verificationToken,
 }: SendVerificationEmailParams): Promise<void> {
-  const verificationUrl = `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/verify-email?token=${verificationToken}`;
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+    : 'http://localhost:5000';
+  const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
 
   try {
-    await resend.emails.send({
-      from: 'KOSCOCO <noreply@kozzii.africa>',
+    const result = await resend.emails.send({
+      from: 'KOSCOCO <onboarding@resend.dev>',
       to: email,
       subject: 'Verify Your Email - KOSCOCO',
+      replyTo: 'support@kozzii.africa',
       html: `
         <!DOCTYPE html>
         <html>
@@ -75,6 +79,12 @@ export async function sendVerificationEmail({
         </html>
       `,
     });
+    
+    console.log('Verification email sent successfully:', { 
+      to: email, 
+      emailId: result.data?.id,
+      error: result.error 
+    });
   } catch (error) {
     console.error('Failed to send verification email:', error);
     throw new Error('Failed to send verification email. Please try again later.');
@@ -92,13 +102,17 @@ export async function sendVerificationReminder({
   firstName,
   verificationToken,
 }: SendVerificationReminderParams): Promise<void> {
-  const verificationUrl = `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/verify-email?token=${verificationToken}`;
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+    : 'http://localhost:5000';
+  const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
 
   try {
-    await resend.emails.send({
-      from: 'KOSCOCO <noreply@kozzii.africa>',
+    const result = await resend.emails.send({
+      from: 'KOSCOCO <onboarding@resend.dev>',
       to: email,
       subject: 'Reminder: Verify Your Email - KOSCOCO',
+      replyTo: 'support@kozzii.africa',
       html: `
         <!DOCTYPE html>
         <html>
@@ -142,6 +156,12 @@ export async function sendVerificationReminder({
           </body>
         </html>
       `,
+    });
+    
+    console.log('Verification reminder sent successfully:', { 
+      to: email, 
+      emailId: result.data?.id,
+      error: result.error 
     });
   } catch (error) {
     console.error('Failed to send verification reminder:', error);
