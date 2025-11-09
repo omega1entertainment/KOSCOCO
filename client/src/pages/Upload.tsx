@@ -158,11 +158,15 @@ export default function Upload() {
       setIsUploading(true);
       setUploadProgress(0);
 
-      const uploadUrlResponse: any = await apiRequest("/api/videos/upload-url", "POST", {
+      const uploadPathResponse: any = await apiRequest("/api/videos/upload-url", "POST", {
         fileName: videoFile.name,
       });
 
-      const { uploadUrl, videoUrl } = uploadUrlResponse;
+      const { videoUrl } = uploadPathResponse;
+
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      formData.append('videoUrl', videoUrl);
 
       const xhr = new XMLHttpRequest();
       
@@ -185,9 +189,8 @@ export default function Upload() {
         xhr.addEventListener('error', () => reject(new Error('Upload failed')));
         xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
-        xhr.open('PUT', uploadUrl);
-        xhr.setRequestHeader('Content-Type', videoFile.type);
-        xhr.send(videoFile);
+        xhr.open('POST', '/api/videos/upload');
+        xhr.send(formData);
       });
 
       const videoData = await apiRequest("/api/videos", "POST", {

@@ -2,12 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import { randomUUID } from "crypto";
+import formidable from "formidable";
+import { promises as fs } from "fs";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -483,12 +486,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/videos/upload-url', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
-      const objectStorageService = new ObjectStorageService();
-      const { uploadUrl, videoUrl } = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadUrl, videoUrl });
+      const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+      if (!privateObjectDir) {
+        return res.status(500).json({ message: "Object storage not configured" });
+      }
+      const objectId = randomUUID();
+      const videoUrl = `${privateObjectDir}/videos/${objectId}`;
+      res.json({ videoUrl });
     } catch (error) {
-      console.error("Error generating upload URL:", error);
-      res.status(500).json({ message: "Failed to generate upload URL" });
+      console.error("Error generating upload path:", error);
+      res.status(500).json({ message: "Failed to generate upload path" });
+    }
+  });
+
+  app.post('/api/videos/upload', isAuthenticated, isEmailVerified, async (req: any, res) => {
+    try {
+      const form = formidable({
+        maxFileSize: 512 * 1024 * 1024, // 512MB
+        keepExtensions: true,
+      });
+
+      form.parse(req, async (err, fields, files) => {
+        if (err) {
+          console.error("Error parsing form:", err);
+          return res.status(400).json({ message: "Error parsing upload" });
+        }
+
+        const videoFile = Array.isArray(files.video) ? files.video[0] : files.video;
+        const videoUrl = Array.isArray(fields.videoUrl) ? fields.videoUrl[0] : fields.videoUrl;
+
+        if (!videoFile || !videoUrl) {
+          return res.status(400).json({ message: "Missing video file or path" });
+        }
+
+        try {
+          const { bucketName, objectName } = parseObjectPath(videoUrl);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const file = bucket.file(objectName);
+
+          await file.save(await fs.readFile(videoFile.filepath), {
+            contentType: videoFile.mimetype || 'video/mp4',
+            metadata: {
+              cacheControl: 'private, max-age=3600',
+            },
+          });
+
+          res.json({ success: true, videoUrl });
+        } catch (error) {
+          console.error("Error uploading to storage:", error);
+          res.status(500).json({ message: "Failed to upload video" });
+        }
+      });
+    } catch (error) {
+      console.error("Error in upload handler:", error);
+      res.status(500).json({ message: "Failed to process upload" });
     }
   });
 
