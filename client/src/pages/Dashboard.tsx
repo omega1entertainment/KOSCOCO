@@ -1,10 +1,9 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import CompletePaymentButton from "@/components/CompletePaymentButton";
 import { 
   Video as VideoIcon, 
@@ -15,39 +14,14 @@ import {
   Clock,
   XCircle,
   Eye,
-  ThumbsUp,
-  Mail,
-  AlertCircle
+  ThumbsUp
 } from "lucide-react";
 import type { Registration, Video, Vote, Category } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading, login } = useAuth();
-  const { toast } = useToast();
 
-  const resendVerificationMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("/api/resend-verification", "POST");
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Email Sent",
-        description: data.message || "Verification email sent successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to Send Email",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const { data: stats, isLoading: statsLoading } = useQuery<{
     totalVideos: number;
@@ -143,30 +117,6 @@ export default function Dashboard() {
             Track your competition progress, videos, and voting activity
           </p>
         </div>
-
-        {!user.emailVerified && (
-          <Alert className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-950" data-testid="alert-email-verification">
-            <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-            <AlertDescription className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span className="font-medium">Email not verified</span>
-                <span className="text-sm">
-                  Please verify your email to access all features
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => resendVerificationMutation.mutate()}
-                disabled={resendVerificationMutation.isPending}
-                data-testid="button-resend-verification"
-              >
-                {resendVerificationMutation.isPending ? "Sending..." : "Resend Email"}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
         {isLoading ? (
           <div className="text-center py-12">

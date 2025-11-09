@@ -1171,67 +1171,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email verification endpoint
-  app.post('/api/verify-email', async (req, res) => {
-    try {
-      const { token } = req.body;
+  // Email verification disabled - accounts are automatically verified upon creation
+  // Keeping these routes commented out for reference
+  
+  // app.post('/api/verify-email', async (req, res) => {
+  //   try {
+  //     const { token } = req.body;
+  //     if (!token) {
+  //       return res.status(400).json({ message: "Verification token is required" });
+  //     }
+  //     const user = await storage.getUserByVerificationToken(token);
+  //     if (!user) {
+  //       return res.status(400).json({ message: "Invalid or expired verification token" });
+  //     }
+  //     if (user.verificationTokenExpiry && new Date() > new Date(user.verificationTokenExpiry)) {
+  //       return res.status(400).json({ message: "Verification token has expired. Please request a new one." });
+  //     }
+  //     await storage.verifyUserEmail(user.id);
+  //     res.json({ message: "Email verified successfully! You can now access all features." });
+  //   } catch (error) {
+  //     console.error("Email verification error:", error);
+  //     res.status(500).json({ message: "Failed to verify email" });
+  //   }
+  // });
 
-      if (!token) {
-        return res.status(400).json({ message: "Verification token is required" });
-      }
-
-      const user = await storage.getUserByVerificationToken(token);
-
-      if (!user) {
-        return res.status(400).json({ message: "Invalid or expired verification token" });
-      }
-
-      // Check if token is expired
-      if (user.verificationTokenExpiry && new Date() > new Date(user.verificationTokenExpiry)) {
-        return res.status(400).json({ message: "Verification token has expired. Please request a new one." });
-      }
-
-      // Update user as verified
-      await storage.verifyUserEmail(user.id);
-
-      res.json({ message: "Email verified successfully! You can now access all features." });
-    } catch (error) {
-      console.error("Email verification error:", error);
-      res.status(500).json({ message: "Failed to verify email" });
-    }
-  });
-
-  // Resend verification email endpoint
-  app.post('/api/resend-verification', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = (req.user as SelectUser).id;
-      const user = req.user as SelectUser;
-
-      if (user.emailVerified) {
-        return res.status(400).json({ message: "Email is already verified" });
-      }
-
-      // Generate new token
-      const { generateVerificationToken, getVerificationTokenExpiry, sendVerificationReminder } = await import('./emailService');
-      const verificationToken = generateVerificationToken();
-      const verificationTokenExpiry = getVerificationTokenExpiry();
-
-      // Update user with new token
-      await storage.updateUserVerificationToken(userId, verificationToken, verificationTokenExpiry);
-
-      // Send verification email
-      await sendVerificationReminder({
-        email: user.email,
-        firstName: user.firstName,
-        verificationToken,
-      });
-
-      res.json({ message: "Verification email sent successfully. Please check your inbox." });
-    } catch (error) {
-      console.error("Resend verification error:", error);
-      res.status(500).json({ message: "Failed to resend verification email" });
-    }
-  });
+  // app.post('/api/resend-verification', isAuthenticated, async (req: any, res) => {
+  //   try {
+  //     const userId = (req.user as SelectUser).id;
+  //     const user = req.user as SelectUser;
+  //     if (user.emailVerified) {
+  //       return res.status(400).json({ message: "Email is already verified" });
+  //     }
+  //     const { generateVerificationToken, getVerificationTokenExpiry, sendVerificationReminder } = await import('./emailService');
+  //     const verificationToken = generateVerificationToken();
+  //     const verificationTokenExpiry = getVerificationTokenExpiry();
+  //     await storage.updateUserVerificationToken(userId, verificationToken, verificationTokenExpiry);
+  //     await sendVerificationReminder({
+  //       email: user.email,
+  //       firstName: user.firstName,
+  //       verificationToken,
+  //     });
+  //     res.json({ message: "Verification email sent successfully. Please check your inbox." });
+  //   } catch (error) {
+  //     console.error("Resend verification error:", error);
+  //     res.status(500).json({ message: "Failed to resend verification email" });
+  //   }
+  // });
 
   // Payment verification endpoint
   app.post('/api/payments/verify', isAuthenticated, async (req: any, res) => {
