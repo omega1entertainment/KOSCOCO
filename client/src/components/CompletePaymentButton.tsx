@@ -3,6 +3,7 @@ import { CreditCard } from "lucide-react";
 import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import type { Registration } from "@shared/schema";
 
 interface CompletePaymentButtonProps {
@@ -17,6 +18,7 @@ export default function CompletePaymentButton({
   userName 
 }: CompletePaymentButtonProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Validate Flutterwave public key
   const publicKey = import.meta.env.VITE_FLW_PUBLIC_KEY;
@@ -54,6 +56,8 @@ export default function CompletePaymentButton({
 
     handleFlutterPayment({
       callback: async (response: any) => {
+        closePaymentModal();
+        
         if (response.status === 'successful') {
           try {
             await apiRequest("/api/payments/verify", "POST", {
@@ -63,16 +67,26 @@ export default function CompletePaymentButton({
             
             toast({
               title: "Payment Successful!",
-              description: `Your payment of ${registration.totalFee.toLocaleString()} FCFA has been confirmed.`,
+              description: `Your payment of ${registration.totalFee.toLocaleString()} FCFA has been confirmed. Redirecting to dashboard...`,
             });
             
-            queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+            await queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
+            
+            // Redirect to dashboard after a brief delay to show the success message
+            setTimeout(() => {
+              setLocation("/dashboard");
+            }, 1500);
           } catch (error: any) {
             toast({
               title: "Payment Verification Failed",
               description: error.message || "Please contact support.",
               variant: "destructive",
             });
+            
+            // Still redirect to dashboard even if verification fails
+            setTimeout(() => {
+              setLocation("/dashboard");
+            }, 2000);
           }
         } else {
           toast({
@@ -80,15 +94,23 @@ export default function CompletePaymentButton({
             description: "Payment was not completed. Please try again.",
             variant: "destructive",
           });
+          
+          // Redirect to dashboard
+          setTimeout(() => {
+            setLocation("/dashboard");
+          }, 2000);
         }
-        
-        closePaymentModal();
       },
       onClose: () => {
         toast({
           title: "Payment Cancelled",
           description: "You can retry payment anytime from your dashboard.",
         });
+        
+        // Redirect to dashboard when user closes the modal
+        setTimeout(() => {
+          setLocation("/dashboard");
+        }, 1500);
       },
     });
   };
