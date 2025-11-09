@@ -205,15 +205,25 @@ export function parseObjectPath(path: string): {
   bucketName: string;
   objectName: string;
 } {
+  console.log("DEBUG parseObjectPath: input path:", path);
+  console.log("DEBUG parseObjectPath: path type:", typeof path);
+  
   if (!path.startsWith("/")) {
     path = `/${path}`;
   }
   const pathParts = path.split("/");
+  console.log("DEBUG parseObjectPath: pathParts:", pathParts);
+  console.log("DEBUG parseObjectPath: pathParts.length:", pathParts.length);
+  
   if (pathParts.length < 3) {
     throw new Error("Invalid path: must contain at least a bucket name");
   }
   const bucketName = pathParts[1];
   const objectName = pathParts.slice(2).join("/");
+  
+  console.log("DEBUG parseObjectPath: bucketName:", bucketName);
+  console.log("DEBUG parseObjectPath: objectName:", objectName);
+  
   return {
     bucketName,
     objectName,

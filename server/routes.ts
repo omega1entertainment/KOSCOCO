@@ -520,6 +520,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const videoFile = Array.isArray(files.video) ? files.video[0] : files.video;
         const videoUrlField = Array.isArray(fields.videoUrl) ? fields.videoUrl[0] : fields.videoUrl;
 
+        console.log("DEBUG: Received videoUrl:", videoUrlField);
+        console.log("DEBUG: videoUrl type:", typeof videoUrlField);
+        console.log("DEBUG: videoUrl length:", videoUrlField?.length);
+
         if (!videoFile || !videoUrlField) {
           console.error("Missing video file or path. videoFile:", !!videoFile, "videoUrl:", videoUrlField);
           return res.status(400).json({ message: "Missing video file or path" });
