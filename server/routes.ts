@@ -502,44 +502,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/videos/upload', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
       const form = formidable({
-        maxFileSize: 512 * 1024 * 1024, // 512MB
+        maxFileSize: 600 * 1024 * 1024, // 600MB (with overhead for 512MB limit)
+        maxFieldsSize: 10 * 1024, // 10KB for fields
         keepExtensions: true,
+        allowEmptyFiles: false,
       });
 
-      form.parse(req, async (err, fields, files) => {
+      form.parse(req, async (err: any, fields: any, files: any) => {
         if (err) {
           console.error("Error parsing form:", err);
-          return res.status(400).json({ message: "Error parsing upload" });
+          if (err.code === 'LIMIT_FILE_SIZE' || err.message?.includes('maxFileSize')) {
+            return res.status(413).json({ message: "File size exceeds 512MB limit" });
+          }
+          return res.status(400).json({ message: "Error parsing upload: " + err.message });
         }
 
         const videoFile = Array.isArray(files.video) ? files.video[0] : files.video;
-        const videoUrl = Array.isArray(fields.videoUrl) ? fields.videoUrl[0] : fields.videoUrl;
+        const videoUrlField = Array.isArray(fields.videoUrl) ? fields.videoUrl[0] : fields.videoUrl;
 
-        if (!videoFile || !videoUrl) {
+        if (!videoFile || !videoUrlField) {
+          console.error("Missing video file or path. videoFile:", !!videoFile, "videoUrl:", videoUrlField);
           return res.status(400).json({ message: "Missing video file or path" });
         }
 
+        const ALLOWED_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
+        if (!ALLOWED_FORMATS.includes(videoFile.mimetype?.toLowerCase() || '')) {
+          return res.status(400).json({ message: "Invalid video format" });
+        }
+
+        const MAX_SIZE = 512 * 1024 * 1024;
+        if (videoFile.size > MAX_SIZE) {
+          return res.status(413).json({ message: "File size exceeds 512MB limit" });
+        }
+
         try {
-          const { bucketName, objectName } = parseObjectPath(videoUrl);
+          const { bucketName, objectName } = parseObjectPath(videoUrlField);
           const bucket = objectStorageClient.bucket(bucketName);
           const file = bucket.file(objectName);
 
-          await file.save(await fs.readFile(videoFile.filepath), {
-            contentType: videoFile.mimetype || 'video/mp4',
-            metadata: {
-              cacheControl: 'private, max-age=3600',
-            },
-          });
+          try {
+            await new Promise((resolve, reject) => {
+              const readStream = require('fs').createReadStream(videoFile.filepath);
+              const writeStream = file.createWriteStream({
+                metadata: {
+                  contentType: videoFile.mimetype || 'video/mp4',
+                  cacheControl: 'private, max-age=3600',
+                },
+              });
 
-          res.json({ success: true, videoUrl });
-        } catch (error) {
+              readStream.on('error', (error: Error) => {
+                console.error("Error reading file:", error);
+                reject(new Error('Failed to read video file'));
+              });
+
+              writeStream.on('error', (error: Error) => {
+                console.error("Error writing to storage:", error);
+                reject(new Error('Failed to upload to storage'));
+              });
+
+              writeStream.on('finish', () => {
+                resolve(undefined);
+              });
+
+              readStream.pipe(writeStream);
+            });
+
+            res.json({ success: true, videoUrl: videoUrlField });
+          } finally {
+            try {
+              await fs.unlink(videoFile.filepath);
+            } catch (unlinkError) {
+              console.error("Error cleaning up temp file:", unlinkError);
+            }
+          }
+        } catch (error: any) {
           console.error("Error uploading to storage:", error);
-          res.status(500).json({ message: "Failed to upload video" });
+          res.status(500).json({ message: error.message || "Failed to upload video" });
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in upload handler:", error);
-      res.status(500).json({ message: "Failed to process upload" });
+      res.status(500).json({ message: error.message || "Failed to process upload" });
     }
   });
 

@@ -30,6 +30,7 @@ export default function Upload() {
     fileSize: number;
     mimeType: string;
   } | null>(null);
+  const [uploadedVideo, setUploadedVideo] = useState<VideoType | null>(null);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -182,11 +183,16 @@ export default function Upload() {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.response);
           } else {
-            reject(new Error('Upload failed'));
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              reject(new Error(errorData.message || 'Upload failed'));
+            } catch {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
           }
         });
 
-        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+        xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
         xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
 
         xhr.open('POST', '/api/videos/upload');
@@ -206,21 +212,15 @@ export default function Upload() {
 
       return videoData;
     },
-    onSuccess: () => {
+    onSuccess: (videoData: VideoType) => {
       toast({
         title: "Video Uploaded!",
-        description: "Your video has been submitted for review. You'll be notified when it's approved.",
+        description: "Your video has been submitted for review. You can preview it below.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos/user"] });
-      setSelectedCategory("");
-      setSelectedSubcategory("");
-      setTitle("");
-      setDescription("");
-      setVideoFile(null);
-      setVideoMetadata(null);
-      setUploadProgress(0);
+      setUploadedVideo(videoData);
       setIsUploading(false);
-      setLocation("/");
+      setUploadProgress(100);
     },
     onError: (error: Error) => {
       toast({
@@ -298,18 +298,81 @@ export default function Upload() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UploadIcon className="w-5 h-5" />
-                Submit Your Video
-              </CardTitle>
-              <CardDescription>
-                Upload your competition entry. Videos must be 1-3 minutes long and under 512MB.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {uploadedVideo && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  Upload Successful!
+                </CardTitle>
+                <CardDescription>
+                  Your video has been uploaded and is pending review. You can preview it below.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="aspect-video bg-black rounded-md overflow-hidden">
+                  <video
+                    controls
+                    className="w-full h-full"
+                    src={uploadedVideo.videoUrl}
+                    data-testid="video-player"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">{uploadedVideo.title}</h3>
+                  {uploadedVideo.description && (
+                    <p className="text-sm text-muted-foreground">{uploadedVideo.description}</p>
+                  )}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>Duration: {Math.floor(uploadedVideo.duration / 60)}:{(uploadedVideo.duration % 60).toString().padStart(2, '0')}</span>
+                    <span>Size: {(uploadedVideo.fileSize / (1024 * 1024)).toFixed(2)}MB</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setUploadedVideo(null);
+                      setSelectedCategory("");
+                      setSelectedSubcategory("");
+                      setTitle("");
+                      setDescription("");
+                      setVideoFile(null);
+                      setVideoMetadata(null);
+                      setUploadProgress(0);
+                    }}
+                    className="flex-1"
+                    data-testid="button-upload-another"
+                  >
+                    Upload Another Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation("/")}
+                    className="flex-1"
+                    data-testid="button-go-home"
+                  >
+                    Back to Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!uploadedVideo && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UploadIcon className="w-5 h-5" />
+                  Submit Your Video
+                </CardTitle>
+                <CardDescription>
+                  Upload your competition entry. Videos must be 1-3 minutes long and under 512MB.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select value={selectedCategory} onValueChange={(value) => {
@@ -443,7 +506,8 @@ export default function Upload() {
                 )}
               </Button>
             </CardContent>
-          </Card>
+            </Card>
+          )}
         </div>
       </main>
     </div>
