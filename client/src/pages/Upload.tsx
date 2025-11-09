@@ -159,11 +159,11 @@ export default function Upload() {
       setIsUploading(true);
       setUploadProgress(0);
 
-      const uploadPathResponse: any = await apiRequest("/api/videos/upload-url", "POST", {
+      const uploadPathResponse = await apiRequest("/api/videos/upload-url", "POST", {
         fileName: videoFile.name,
       });
 
-      const { videoUrl } = uploadPathResponse;
+      const { videoUrl } = await uploadPathResponse.json();
 
       const formData = new FormData();
       formData.append('video', videoFile);
