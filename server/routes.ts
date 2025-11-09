@@ -268,8 +268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      // Check if payment is already completed (prevent replay attacks)
-      if (registration.paymentStatus === 'completed') {
+      // Check if payment is already approved (prevent replay attacks)
+      if (registration.paymentStatus === 'approved') {
         return res.status(400).json({ message: "Payment already completed for this registration" });
       }
 
@@ -311,8 +311,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Charged amount mismatch" });
       }
 
-      // Update registration payment status (using database transaction would be ideal)
-      await storage.updateRegistrationPaymentStatus(registrationId, 'completed');
+      // Update registration payment status to approved (user is now fully registered)
+      await storage.updateRegistrationPaymentStatus(registrationId, 'approved');
 
       // If there's a referral, update its status to 'completed'
       const referrals = await storage.getReferralsByRegistrationId(registrationId);
@@ -409,9 +409,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json({ status: 'ignored' });
         }
 
-        // Check if already completed (prevent duplicate processing)
-        if (registration.paymentStatus === 'completed') {
-          console.log(`Payment already completed for registration: ${registrationId}`);
+        // Check if already approved (prevent duplicate processing)
+        if (registration.paymentStatus === 'approved') {
+          console.log(`Payment already approved for registration: ${registrationId}`);
           return res.status(200).json({ status: 'already_processed' });
         }
 
@@ -441,8 +441,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json({ status: 'amount_mismatch' });
         }
 
-        // All checks passed - update registration and referrals
-        await storage.updateRegistrationPaymentStatus(registrationId, 'completed');
+        // All checks passed - update registration to approved (user is now fully registered)
+        await storage.updateRegistrationPaymentStatus(registrationId, 'approved');
         
         const referrals = await storage.getReferralsByRegistrationId(registrationId);
         for (const referral of referrals) {
@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const registrations = await storage.getUserRegistrations(userId);
-      const hasRegistration = registrations.some(r => r.categoryIds.includes(categoryId) && r.paymentStatus === 'completed');
+      const hasRegistration = registrations.some(r => r.categoryIds.includes(categoryId) && r.paymentStatus === 'approved');
       
       if (!hasRegistration) {
         return res.status(403).json({ message: "You must register and pay for this category before uploading videos" });
@@ -1264,11 +1264,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Update registration payment status
-        await storage.updateRegistrationPaymentStatus(registrationId, 'paid');
+        // Update registration payment status to approved (user is now fully registered)
+        await storage.updateRegistrationPaymentStatus(registrationId, 'approved');
 
         res.json({
-          status: 'success',
+          success: true,
           message: 'Payment verified successfully',
           data: {
             transactionId: transaction_id,
