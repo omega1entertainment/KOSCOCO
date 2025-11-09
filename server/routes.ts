@@ -7,6 +7,7 @@ import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -337,19 +338,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payments/webhook', async (req, res) => {
     try {
       const payload = req.body;
-      
-      // Verify webhook signature using timing-safe comparison (Flutterwave sends secret hash)
       const secretHash = process.env.FLW_SECRET_HASH;
-      const signature = req.headers["verif-hash"];
       
-      if (!secretHash || !signature) {
-        console.error("Missing webhook signature or secret hash");
+      if (!secretHash) {
+        console.error("FLW_SECRET_HASH not configured");
+        return res.status(401).json({ message: "Webhook not configured" });
+      }
+
+      // Support both verification methods for backward compatibility
+      const verifHashHeader = req.headers["verif-hash"] as string | undefined;
+      const flwSignatureHeader = req.headers["flutterwave-signature"] as string | undefined;
+      
+      let isValidSignature = false;
+
+      // Method 1: Modern HMAC-SHA256 verification (recommended)
+      if (flwSignatureHeader) {
+        const rawBody = JSON.stringify(req.body);
+        const expectedSignature = crypto
+          .createHmac('sha256', secretHash)
+          .update(rawBody)
+          .digest('hex');
+        
+        isValidSignature = crypto.timingSafeEqual(
+          Buffer.from(flwSignatureHeader),
+          Buffer.from(expectedSignature)
+        );
+        
+        if (!isValidSignature) {
+          console.error("Invalid HMAC signature");
+        }
+      }
+      // Method 2: Legacy simple hash verification (backward compatibility)
+      else if (verifHashHeader) {
+        isValidSignature = crypto.timingSafeEqual(
+          Buffer.from(verifHashHeader),
+          Buffer.from(secretHash)
+        );
+        
+        if (!isValidSignature) {
+          console.error("Invalid verif-hash signature");
+        }
+      }
+      else {
+        console.error("Missing webhook signature headers");
         return res.status(401).json({ message: "Missing signature" });
       }
 
-      // Timing-safe comparison to prevent timing attacks
-      if (signature !== secretHash) {
-        console.error("Invalid webhook signature");
+      if (!isValidSignature) {
         return res.status(401).json({ message: "Invalid signature" });
       }
 
