@@ -10,7 +10,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
 import formidable from "formidable";
-import { promises as fs } from "fs";
+import { promises as fs, createReadStream } from "fs";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -542,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           try {
             await new Promise((resolve, reject) => {
-              const readStream = require('fs').createReadStream(videoFile.filepath);
+              const readStream = createReadStream(videoFile.filepath);
               const writeStream = file.createWriteStream({
                 metadata: {
                   contentType: videoFile.mimetype || 'video/mp4',
