@@ -198,6 +198,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No active competition phase" });
       }
 
+      // Check if user has already registered for any of these categories
+      const existingRegistrations = await storage.getUserRegistrations(userId);
+      const approvedRegistrations = existingRegistrations.filter(reg => reg.paymentStatus === 'approved');
+      
+      // Get all category IDs from approved registrations
+      const registeredCategoryIds = new Set<string>();
+      for (const reg of approvedRegistrations) {
+        for (const catId of reg.categoryIds) {
+          registeredCategoryIds.add(catId);
+        }
+      }
+      
+      // Check if any of the new categories are already registered
+      const duplicateCategories = categoryIds.filter(catId => registeredCategoryIds.has(catId));
+      if (duplicateCategories.length > 0) {
+        return res.status(400).json({ message: "Sorry, you cannot register for a Category twice." });
+      }
+
       const FEE_PER_CATEGORY = 2500;
       const totalFee = categoryIds.length * FEE_PER_CATEGORY;
 
