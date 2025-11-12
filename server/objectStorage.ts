@@ -155,20 +155,22 @@ export class ObjectStorageService {
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
-    if (!rawPath.startsWith("https://storage.googleapis.com/")) {
-      return rawPath;
+    if (rawPath.startsWith("https://storage.googleapis.com/")) {
+      const url = new URL(rawPath);
+      rawPath = url.pathname;
     }
-    const url = new URL(rawPath);
-    const rawObjectPath = url.pathname;
+    
     let objectEntityDir = this.getPrivateObjectDir();
     if (!objectEntityDir.endsWith("/")) {
       objectEntityDir = `${objectEntityDir}/`;
     }
-    if (!rawObjectPath.startsWith(objectEntityDir)) {
-      return rawObjectPath;
+    
+    if (rawPath.startsWith(objectEntityDir)) {
+      const entityId = rawPath.slice(objectEntityDir.length);
+      return `/objects/${entityId}`;
     }
-    const entityId = rawObjectPath.slice(objectEntityDir.length);
-    return `/objects/${entityId}`;
+    
+    return rawPath;
   }
 
   async trySetObjectEntityAclPolicy(
