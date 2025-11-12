@@ -606,7 +606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const thumbnailId = randomUUID();
               const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
               const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
-              const thumbnailFileObj = bucket.file(thumbObjectName);
+              const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
+              const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
 
               await new Promise((resolve, reject) => {
                 const readStream = createReadStream(thumbnailFile.filepath);

@@ -63,7 +63,8 @@ export async function generateThumbnail(
     const thumbnailId = randomUUID();
     const thumbnailStoragePath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
     const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailStoragePath);
-    const thumbnailFile = bucket.file(thumbObjectName);
+    const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
+    const thumbnailFile = thumbnailBucket.file(thumbObjectName);
 
     await new Promise<void>((resolve, reject) => {
       const readStream = require('fs').createReadStream(tempThumbnailPath);
