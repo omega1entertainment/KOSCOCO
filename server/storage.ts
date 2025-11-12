@@ -55,6 +55,7 @@ export interface IStorage {
   getVideosByCategory(categoryId: string): Promise<Video[]>;
   getPendingVideos(): Promise<Video[]>;
   updateVideoStatus(id: string, status: string): Promise<Video | undefined>;
+  updateVideoThumbnail(id: string, thumbnailUrl: string): Promise<Video | undefined>;
   incrementVideoViews(id: string): Promise<void>;
   
   createVote(vote: InsertVote): Promise<Vote>;
@@ -255,6 +256,11 @@ export class DbStorage implements IStorage {
 
   async updateVideoStatus(id: string, status: string): Promise<Video | undefined> {
     const [video] = await db.update(schema.videos).set({ status, updatedAt: new Date() }).where(eq(schema.videos.id, id)).returning();
+    return video;
+  }
+
+  async updateVideoThumbnail(id: string, thumbnailUrl: string): Promise<Video | undefined> {
+    const [video] = await db.update(schema.videos).set({ thumbnailUrl, updatedAt: new Date() }).where(eq(schema.videos.id, id)).returning();
     return video;
   }
 

@@ -23,6 +23,8 @@ export default function Upload() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [videoMetadata, setVideoMetadata] = useState<{
@@ -150,6 +152,44 @@ export default function Upload() {
     video.src = URL.createObjectURL(file);
   };
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "Invalid Format",
+        description: "Please upload an image in JPEG, PNG, or WebP format.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+      toast({
+        title: "File Too Large",
+        description: "Thumbnail must be under 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setThumbnailFile(file);
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setThumbnailPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    toast({
+      title: "Thumbnail Selected",
+      description: `${file.name} - ${(file.size / 1024).toFixed(2)}KB`,
+    });
+  };
+
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!videoFile || !videoMetadata || !selectedCategory || !selectedSubcategory || !title) {
@@ -168,6 +208,9 @@ export default function Upload() {
       const formData = new FormData();
       formData.append('video', videoFile);
       formData.append('videoUrl', videoUrl);
+      if (thumbnailFile) {
+        formData.append('thumbnail', thumbnailFile);
+      }
 
       const xhr = new XMLHttpRequest();
       
@@ -199,8 +242,12 @@ export default function Upload() {
         xhr.send(formData);
       });
 
-      const videoData = await apiRequest("/api/videos", "POST", {
+      const uploadResponse = JSON.parse(xhr.responseText);
+      const thumbnailUrl = uploadResponse.thumbnailUrl || null;
+
+      const videoResponse = await apiRequest("/api/videos", "POST", {
         videoUrl,
+        thumbnailUrl,
         categoryId: selectedCategory,
         subcategory: selectedSubcategory,
         title,
@@ -210,6 +257,7 @@ export default function Upload() {
         mimeType: videoMetadata.mimeType,
       });
 
+      const videoData = await videoResponse.json();
       return videoData;
     },
     onSuccess: (videoData: VideoType) => {
@@ -340,6 +388,8 @@ export default function Upload() {
                       setTitle("");
                       setDescription("");
                       setVideoFile(null);
+                      setThumbnailFile(null);
+                      setThumbnailPreview(null);
                       setVideoMetadata(null);
                       setUploadProgress(0);
                     }}
@@ -475,6 +525,47 @@ export default function Upload() {
                 <p className="text-xs text-muted-foreground">
                   Accepted formats: MP4, MPEG4, WebM, MOV, FLV. Max 512MB, 1-3 minutes duration.
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
+                <div className="space-y-3">
+                  <Input
+                    id="thumbnail"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleThumbnailChange}
+                    disabled={isUploading || !canUploadToCategory}
+                    data-testid="input-thumbnail"
+                  />
+                  {thumbnailPreview && (
+                    <div className="relative w-full max-w-xs">
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Thumbnail preview" 
+                        className="w-full rounded-md border"
+                        data-testid="img-thumbnail-preview"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setThumbnailFile(null);
+                          setThumbnailPreview(null);
+                        }}
+                        disabled={isUploading}
+                        data-testid="button-remove-thumbnail"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Upload a custom thumbnail or one will be generated automatically from your video. Accepted formats: JPEG, PNG, WebP. Max 2MB.
+                  </p>
+                </div>
               </div>
 
               {isUploading && (

@@ -11,6 +11,7 @@ import crypto from "crypto";
 import { randomUUID } from "crypto";
 import formidable from "formidable";
 import { promises as fs, createReadStream } from "fs";
+import { generateThumbnail } from "./thumbnailGenerator";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -536,6 +537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const videoFile = Array.isArray(files.video) ? files.video[0] : files.video;
+        const thumbnailFile = files.thumbnail ? (Array.isArray(files.thumbnail) ? files.thumbnail[0] : files.thumbnail) : null;
         const videoUrlField = Array.isArray(fields.videoUrl) ? fields.videoUrl[0] : fields.videoUrl;
 
         if (!videoFile || !videoUrlField) {
@@ -543,25 +545,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Missing video file or path" });
         }
 
-        const ALLOWED_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
-        if (!ALLOWED_FORMATS.includes(videoFile.mimetype?.toLowerCase() || '')) {
+        const ALLOWED_VIDEO_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
+        if (!ALLOWED_VIDEO_FORMATS.includes(videoFile.mimetype?.toLowerCase() || '')) {
           return res.status(400).json({ message: "Invalid video format" });
         }
 
-        const MAX_SIZE = 512 * 1024 * 1024;
-        if (videoFile.size > MAX_SIZE) {
+        const MAX_VIDEO_SIZE = 512 * 1024 * 1024;
+        if (videoFile.size > MAX_VIDEO_SIZE) {
           return res.status(413).json({ message: "File size exceeds 512MB limit" });
         }
+
+        if (thumbnailFile) {
+          const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+          if (!ALLOWED_IMAGE_FORMATS.includes(thumbnailFile.mimetype?.toLowerCase() || '')) {
+            return res.status(400).json({ message: "Invalid thumbnail format. Allowed: JPEG, PNG, WebP" });
+          }
+
+          const MAX_THUMBNAIL_SIZE = 2 * 1024 * 1024; // 2MB
+          if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
+            return res.status(413).json({ message: "Thumbnail size exceeds 2MB limit" });
+          }
+        }
+
+        let thumbnailUrl = null;
 
         try {
           const { bucketName, objectName } = parseObjectPath(videoUrlField);
           const bucket = objectStorageClient.bucket(bucketName);
-          const file = bucket.file(objectName);
+          const videoFileObj = bucket.file(objectName);
 
           try {
             await new Promise((resolve, reject) => {
               const readStream = createReadStream(videoFile.filepath);
-              const writeStream = file.createWriteStream({
+              const writeStream = videoFileObj.createWriteStream({
                 metadata: {
                   contentType: videoFile.mimetype || 'video/mp4',
                   cacheControl: 'private, max-age=3600',
@@ -585,12 +601,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
               readStream.pipe(writeStream);
             });
 
-            res.json({ success: true, videoUrl: videoUrlField });
+            if (thumbnailFile) {
+              const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+              const thumbnailId = randomUUID();
+              const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
+              const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
+              const thumbnailFileObj = bucket.file(thumbObjectName);
+
+              await new Promise((resolve, reject) => {
+                const readStream = createReadStream(thumbnailFile.filepath);
+                const writeStream = thumbnailFileObj.createWriteStream({
+                  metadata: {
+                    contentType: 'image/jpeg',
+                    cacheControl: 'private, max-age=3600',
+                  },
+                });
+
+                readStream.on('error', (error: Error) => {
+                  console.error("Error reading thumbnail file:", error);
+                  reject(new Error('Failed to read thumbnail file'));
+                });
+
+                writeStream.on('error', (error: Error) => {
+                  console.error("Error writing thumbnail to storage:", error);
+                  reject(new Error('Failed to upload thumbnail to storage'));
+                });
+
+                writeStream.on('finish', () => {
+                  resolve(undefined);
+                });
+
+                readStream.pipe(writeStream);
+              });
+
+              thumbnailUrl = thumbnailPath;
+            }
+
+            res.json({ success: true, videoUrl: videoUrlField, thumbnailUrl });
           } finally {
             try {
               await fs.unlink(videoFile.filepath);
+              if (thumbnailFile) {
+                await fs.unlink(thumbnailFile.filepath);
+              }
             } catch (unlinkError) {
-              console.error("Error cleaning up temp file:", unlinkError);
+              console.error("Error cleaning up temp files:", unlinkError);
             }
           }
         } catch (error: any) {
@@ -607,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/videos', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
-      const { videoUrl, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
+      const { videoUrl, thumbnailUrl, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
 
       if (!videoUrl || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
         return res.status(400).json({ message: "Missing required fields (videoUrl, categoryId, subcategory, title, duration, fileSize, mimeType)" });
@@ -651,6 +706,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
+      let thumbnailPath = null;
+      if (thumbnailUrl) {
+        thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          thumbnailUrl,
+          {
+            owner: userId,
+            visibility: "private",
+          }
+        );
+      }
+
       const video = await storage.createVideo({
         userId,
         categoryId,
@@ -658,11 +724,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title,
         description: description || null,
         videoUrl: videoPath,
-        thumbnailUrl: null,
+        thumbnailUrl: thumbnailPath,
         duration,
         fileSize,
         status: 'pending',
       });
+
+      if (!thumbnailPath) {
+        console.log(`[VideoCreation] No thumbnail provided, scheduling async generation for video ${video.id}`);
+        
+        generateThumbnail(videoPath, userId, duration)
+          .then(async (result) => {
+            if (result.success) {
+              console.log(`[VideoCreation] Thumbnail generated successfully for video ${video.id}: ${result.thumbnailUrl}`);
+              await storage.updateVideoThumbnail(video.id, result.thumbnailUrl);
+            } else {
+              console.error(`[VideoCreation] Failed to generate thumbnail for video ${video.id}:`, result.error);
+            }
+          })
+          .catch((error) => {
+            console.error(`[VideoCreation] Thumbnail generation error for video ${video.id}:`, error);
+          });
+      }
 
       res.json(video);
     } catch (error) {
