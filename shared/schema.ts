@@ -168,6 +168,20 @@ export const payoutRequests = pgTable("payout_requests", {
   rejectionReason: text("rejection_reason"),
 });
 
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  reportedBy: varchar("reported_by").references(() => users.id),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default('pending'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+}, (table) => [
+  index("idx_reports_video_id").on(table.videoId),
+  index("idx_reports_status").on(table.status),
+]);
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -250,6 +264,13 @@ export const insertPayoutRequestSchema = createInsertSchema(payoutRequests).omit
   rejectionReason: true,
 });
 
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+  reviewedAt: true,
+  reviewedBy: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -287,3 +308,6 @@ export type Referral = typeof referrals.$inferSelect;
 
 export type InsertPayoutRequest = z.infer<typeof insertPayoutRequestSchema>;
 export type PayoutRequest = typeof payoutRequests.$inferSelect;
+
+export type InsertReport = z.infer<typeof insertReportSchema>;
+export type Report = typeof reports.$inferSelect;
