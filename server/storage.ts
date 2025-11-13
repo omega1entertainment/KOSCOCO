@@ -287,10 +287,7 @@ export class DbStorage implements IStorage {
   }
 
   async getVideoVoteCount(videoId: string): Promise<number> {
-    const result = await db.select({ count: sql<number>`count(*)` })
-      .from(schema.votes)
-      .where(eq(schema.votes.videoId, videoId));
-    return result[0]?.count || 0;
+    return this.getCombinedVoteCount(videoId);
   }
 
   async getUserVotesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Vote[]> {
@@ -367,14 +364,25 @@ export class DbStorage implements IStorage {
       .where(eq(schema.videos.userId, userId));
     const totalVideos = videoCountResult[0]?.count || 0;
 
-    // Count total votes received (aggregate in SQL, all video statuses)
-    const votesReceivedResult = await db.select({ count: sql<number>`COUNT(${schema.votes.id})` })
+    // Count total free votes received (aggregate in SQL, all video statuses)
+    const freeVotesReceivedResult = await db.select({ count: sql<number>`COUNT(${schema.votes.id})` })
       .from(schema.votes)
       .innerJoin(schema.videos, eq(schema.votes.videoId, schema.videos.id))
       .where(eq(schema.videos.userId, userId));
-    const totalVotesReceived = votesReceivedResult[0]?.count || 0;
+    const freeVotesReceived = freeVotesReceivedResult[0]?.count || 0;
 
-    // Count total votes cast
+    // Count total paid votes received (sum of quantity)
+    const paidVotesReceivedResult = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${schema.paidVotes.quantity}), 0)` 
+    })
+      .from(schema.paidVotes)
+      .innerJoin(schema.videos, eq(schema.paidVotes.videoId, schema.videos.id))
+      .where(eq(schema.videos.userId, userId));
+    const paidVotesReceived = paidVotesReceivedResult[0]?.total || 0;
+
+    const totalVotesReceived = freeVotesReceived + paidVotesReceived;
+
+    // Count total votes cast (free votes only - users don't "cast" paid votes, they purchase them)
     const votesCastResult = await db.select({ count: sql<number>`COUNT(*)` })
       .from(schema.votes)
       .where(eq(schema.votes.userId, userId));
@@ -416,9 +424,13 @@ export class DbStorage implements IStorage {
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
         voteCount: sql<number>`(
-          SELECT COALESCE(COUNT(*), 0)
-          FROM ${schema.votes}
-          WHERE ${schema.votes.videoId} = ${schema.videos.id}
+          (SELECT COALESCE(COUNT(*), 0)
+           FROM ${schema.votes}
+           WHERE ${schema.votes.videoId} = ${schema.videos.id})
+          +
+          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
+           FROM ${schema.paidVotes}
+           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
         )`,
         totalJudgeScore: sql<number>`(
           SELECT COALESCE(SUM(${schema.judgeScores.creativityScore} + ${schema.judgeScores.qualityScore}), 0)
@@ -435,9 +447,13 @@ export class DbStorage implements IStorage {
           WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
         )`),
         desc(sql`(
-          SELECT COALESCE(COUNT(*), 0)
-          FROM ${schema.votes}
-          WHERE ${schema.votes.videoId} = ${schema.videos.id}
+          (SELECT COALESCE(COUNT(*), 0)
+           FROM ${schema.votes}
+           WHERE ${schema.votes.videoId} = ${schema.videos.id})
+          +
+          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
+           FROM ${schema.paidVotes}
+           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
         )`),
         desc(schema.videos.views)
       )
