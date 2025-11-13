@@ -192,8 +192,11 @@ export default function Upload() {
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!videoFile || !videoMetadata || !selectedCategory || !selectedSubcategory || !title || !thumbnailFile) {
-        throw new Error("Missing required fields");
+      if (!videoFile || !videoMetadata || !selectedCategory || !selectedSubcategory || !title) {
+        throw new Error("Please fill in all required fields");
+      }
+      if (!thumbnailFile) {
+        throw new Error("Please select a thumbnail image for your video");
       }
 
       setIsUploading(true);
