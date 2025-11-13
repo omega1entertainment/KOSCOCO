@@ -79,6 +79,10 @@ export const videos = pgTable("videos", {
   fileSize: integer("file_size").notNull(),
   status: text("status").notNull().default('pending'),
   views: integer("views").default(0).notNull(),
+  moderationStatus: text("moderation_status").default('pending'),
+  moderationCategories: text("moderation_categories").array(),
+  moderationReason: text("moderation_reason"),
+  moderatedAt: timestamp("moderated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

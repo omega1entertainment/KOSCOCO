@@ -27,6 +27,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AffiliateTerms from "@/pages/AffiliateTerms";
+import Terms from "@/pages/Terms";
 import VerifyEmail from "@/pages/VerifyEmail";
 import NotFound from "@/pages/not-found";
 
@@ -76,6 +77,7 @@ function Router() {
           <Route path="/prizes" component={Prizes} />
           <Route path="/how-it-works" component={HowItWorks} />
           <Route path="/terms-of-service" component={TermsOfService} />
+          <Route path="/terms" component={Terms} />
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/affiliate-terms" component={AffiliateTerms} />
           <Route path="/admin" component={AdminDashboard} />
