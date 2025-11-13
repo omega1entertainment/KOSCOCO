@@ -75,6 +75,40 @@ export default function VideoPlayer() {
     },
   });
 
+  useEffect(() => {
+    localStorage.setItem('videoAutoplay', String(autoplay));
+  }, [autoplay]);
+
+  useEffect(() => {
+    if (videoRef.current && video && !videoLoading) {
+      videoRef.current.play().catch(() => {
+        // Autoplay might be blocked by browser, ignore error
+      });
+    }
+  }, [videoId, video, videoLoading]);
+
+  const handleVideoEnded = () => {
+    const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
+    const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
+    const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
+      ? approvedVideos[currentIndex + 1] 
+      : null;
+    
+    if (autoplay && nextVideo) {
+      setLocation(`/video/${nextVideo.id}`);
+    }
+  };
+
+  const handleToggleAutoplay = (checked: boolean) => {
+    setAutoplay(checked);
+    toast({
+      title: checked ? "Autoplay Enabled" : "Autoplay Disabled",
+      description: checked 
+        ? "Next video will play automatically" 
+        : "Autoplay has been turned off",
+    });
+  };
+
   if (videoLoading || !video) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -105,26 +139,6 @@ export default function VideoPlayer() {
   const otherVideos = approvedVideos
     .filter(v => v.id !== videoId)
     .slice(0, 10);
-
-  useEffect(() => {
-    localStorage.setItem('videoAutoplay', String(autoplay));
-  }, [autoplay]);
-
-  const handleVideoEnded = () => {
-    if (autoplay && nextVideo) {
-      setLocation(`/video/${nextVideo.id}`);
-    }
-  };
-
-  const handleToggleAutoplay = (checked: boolean) => {
-    setAutoplay(checked);
-    toast({
-      title: checked ? "Autoplay Enabled" : "Autoplay Disabled",
-      description: checked 
-        ? "Next video will play automatically" 
-        : "Autoplay has been turned off",
-    });
-  };
 
   if (isVideoRejected) {
     return (
