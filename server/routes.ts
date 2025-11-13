@@ -854,6 +854,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate thumbnails for all videos without thumbnails - admin only
+  app.post('/api/admin/generate-thumbnails', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const videosWithoutThumbnails = await storage.getVideosWithoutThumbnails();
+      
+      if (videosWithoutThumbnails.length === 0) {
+        return res.json({ 
+          message: 'All videos have thumbnails', 
+          processed: 0,
+          total: 0
+        });
+      }
+
+      console.log(`[ThumbnailBatch] Starting batch generation for ${videosWithoutThumbnails.length} videos`);
+      
+      const results = {
+        total: videosWithoutThumbnails.length,
+        processed: 0,
+        successful: 0,
+        failed: 0,
+        errors: [] as string[]
+      };
+
+      for (const video of videosWithoutThumbnails) {
+        try {
+          console.log(`[ThumbnailBatch] Processing video ${video.id}: ${video.title}`);
+          const result = await generateThumbnail(video.videoUrl, video.userId, video.duration);
+          
+          if (result.success) {
+            await storage.updateVideoThumbnail(video.id, result.thumbnailUrl);
+            results.successful++;
+            console.log(`[ThumbnailBatch] ✓ Successfully generated thumbnail for video ${video.id}`);
+          } else {
+            results.failed++;
+            results.errors.push(`Video ${video.id}: ${result.error}`);
+            console.error(`[ThumbnailBatch] ✗ Failed to generate thumbnail for video ${video.id}:`, result.error);
+          }
+          results.processed++;
+        } catch (error: any) {
+          results.failed++;
+          results.errors.push(`Video ${video.id}: ${error.message}`);
+          console.error(`[ThumbnailBatch] ✗ Error processing video ${video.id}:`, error);
+          results.processed++;
+        }
+      }
+
+      console.log(`[ThumbnailBatch] Batch complete. Successful: ${results.successful}, Failed: ${results.failed}`);
+      
+      res.json({
+        message: `Processed ${results.processed} videos. ${results.successful} successful, ${results.failed} failed.`,
+        ...results
+      });
+    } catch (error: any) {
+      console.error('[ThumbnailBatch] Batch generation error:', error);
+      res.status(500).json({ message: 'Failed to generate thumbnails', error: error.message });
+    }
+  });
+
   // Judge scoring endpoint - admin only
   app.post('/api/videos/:id/score', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

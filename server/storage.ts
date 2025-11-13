@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@shared/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, isNull } from "drizzle-orm";
 import type {
   User, InsertUser,
   Category, InsertCategory,
@@ -56,6 +56,7 @@ export interface IStorage {
   getVideosByUser(userId: string): Promise<Video[]>;
   getVideosByCategory(categoryId: string): Promise<Video[]>;
   getPendingVideos(): Promise<Video[]>;
+  getVideosWithoutThumbnails(): Promise<Video[]>;
   updateVideoStatus(id: string, status: string): Promise<Video | undefined>;
   updateVideoThumbnail(id: string, thumbnailUrl: string): Promise<Video | undefined>;
   incrementVideoViews(id: string): Promise<void>;
@@ -263,6 +264,10 @@ export class DbStorage implements IStorage {
 
   async getPendingVideos(): Promise<Video[]> {
     return await db.select().from(schema.videos).where(eq(schema.videos.status, 'pending')).orderBy(desc(schema.videos.createdAt));
+  }
+
+  async getVideosWithoutThumbnails(): Promise<Video[]> {
+    return await db.select().from(schema.videos).where(isNull(schema.videos.thumbnailUrl)).orderBy(desc(schema.videos.createdAt));
   }
 
   async updateVideoStatus(id: string, status: string): Promise<Video | undefined> {
