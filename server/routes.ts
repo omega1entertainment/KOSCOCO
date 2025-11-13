@@ -545,6 +545,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Missing video file or path" });
         }
 
+        if (!thumbnailFile) {
+          return res.status(400).json({ message: "Thumbnail image is required" });
+        }
+
         const ALLOWED_VIDEO_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
         if (!ALLOWED_VIDEO_FORMATS.includes(videoFile.mimetype?.toLowerCase() || '')) {
           return res.status(400).json({ message: "Invalid video format" });
@@ -555,16 +559,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(413).json({ message: "File size exceeds 512MB limit" });
         }
 
-        if (thumbnailFile) {
-          const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
-          if (!ALLOWED_IMAGE_FORMATS.includes(thumbnailFile.mimetype?.toLowerCase() || '')) {
-            return res.status(400).json({ message: "Invalid thumbnail format. Allowed: JPEG, PNG, WebP" });
-          }
+        const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!ALLOWED_IMAGE_FORMATS.includes(thumbnailFile.mimetype?.toLowerCase() || '')) {
+          return res.status(400).json({ message: "Invalid thumbnail format. Allowed: JPEG, PNG, WebP" });
+        }
 
-          const MAX_THUMBNAIL_SIZE = 2 * 1024 * 1024; // 2MB
-          if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
-            return res.status(413).json({ message: "Thumbnail size exceeds 2MB limit" });
-          }
+        const MAX_THUMBNAIL_SIZE = 2 * 1024 * 1024; // 2MB
+        if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
+          return res.status(413).json({ message: "Thumbnail size exceeds 2MB limit" });
         }
 
         let thumbnailUrl = null;
@@ -601,50 +603,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
               readStream.pipe(writeStream);
             });
 
-            if (thumbnailFile) {
-              const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
-              const thumbnailId = randomUUID();
-              const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
-              const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
-              const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
-              const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
+            const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+            const thumbnailId = randomUUID();
+            const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
+            const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
+            const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
+            const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
 
-              await new Promise((resolve, reject) => {
-                const readStream = createReadStream(thumbnailFile.filepath);
-                const writeStream = thumbnailFileObj.createWriteStream({
-                  metadata: {
-                    contentType: 'image/jpeg',
-                    cacheControl: 'private, max-age=3600',
-                  },
-                });
-
-                readStream.on('error', (error: Error) => {
-                  console.error("Error reading thumbnail file:", error);
-                  reject(new Error('Failed to read thumbnail file'));
-                });
-
-                writeStream.on('error', (error: Error) => {
-                  console.error("Error writing thumbnail to storage:", error);
-                  reject(new Error('Failed to upload thumbnail to storage'));
-                });
-
-                writeStream.on('finish', () => {
-                  resolve(undefined);
-                });
-
-                readStream.pipe(writeStream);
+            await new Promise((resolve, reject) => {
+              const readStream = createReadStream(thumbnailFile.filepath);
+              const writeStream = thumbnailFileObj.createWriteStream({
+                metadata: {
+                  contentType: 'image/jpeg',
+                  cacheControl: 'private, max-age=3600',
+                },
               });
 
-              thumbnailUrl = thumbnailPath;
-            }
+              readStream.on('error', (error: Error) => {
+                console.error("Error reading thumbnail file:", error);
+                reject(new Error('Failed to read thumbnail file'));
+              });
+
+              writeStream.on('error', (error: Error) => {
+                console.error("Error writing thumbnail to storage:", error);
+                reject(new Error('Failed to upload thumbnail to storage'));
+              });
+
+              writeStream.on('finish', () => {
+                resolve(undefined);
+              });
+
+              readStream.pipe(writeStream);
+            });
+
+            thumbnailUrl = thumbnailPath;
 
             res.json({ success: true, videoUrl: videoUrlField, thumbnailUrl });
           } finally {
             try {
               await fs.unlink(videoFile.filepath);
-              if (thumbnailFile) {
-                await fs.unlink(thumbnailFile.filepath);
-              }
+              await fs.unlink(thumbnailFile.filepath);
             } catch (unlinkError) {
               console.error("Error cleaning up temp files:", unlinkError);
             }
@@ -665,8 +663,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as SelectUser).id;
       const { videoUrl, thumbnailUrl, categoryId, subcategory, title, description, duration, fileSize, mimeType } = req.body;
 
-      if (!videoUrl || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
-        return res.status(400).json({ message: "Missing required fields (videoUrl, categoryId, subcategory, title, duration, fileSize, mimeType)" });
+      if (!videoUrl || !thumbnailUrl || !categoryId || !subcategory || !title || !duration || !fileSize || !mimeType) {
+        return res.status(400).json({ message: "Missing required fields (videoUrl, thumbnailUrl, categoryId, subcategory, title, duration, fileSize, mimeType)" });
       }
 
       const ALLOWED_FORMATS = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
@@ -707,16 +705,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
-      let thumbnailPath = null;
-      if (thumbnailUrl) {
-        thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
-          thumbnailUrl,
-          {
-            owner: userId,
-            visibility: "private",
-          }
-        );
-      }
+      const thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        thumbnailUrl,
+        {
+          owner: userId,
+          visibility: "private",
+        }
+      );
 
       const video = await storage.createVideo({
         userId,
@@ -730,23 +725,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileSize,
         status: 'pending',
       });
-
-      if (!thumbnailPath) {
-        console.log(`[VideoCreation] No thumbnail provided, scheduling async generation for video ${video.id}`);
-        
-        generateThumbnail(videoPath, userId, duration)
-          .then(async (result) => {
-            if (result.success) {
-              console.log(`[VideoCreation] Thumbnail generated successfully for video ${video.id}: ${result.thumbnailUrl}`);
-              await storage.updateVideoThumbnail(video.id, result.thumbnailUrl);
-            } else {
-              console.error(`[VideoCreation] Failed to generate thumbnail for video ${video.id}:`, result.error);
-            }
-          })
-          .catch((error) => {
-            console.error(`[VideoCreation] Thumbnail generation error for video ${video.id}:`, error);
-          });
-      }
 
       res.json(video);
     } catch (error) {
