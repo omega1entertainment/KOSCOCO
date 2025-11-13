@@ -9,6 +9,8 @@ import type {
   Registration, InsertRegistration,
   Video, InsertVideo,
   Vote, InsertVote,
+  VotePurchase, InsertVotePurchase,
+  PaidVote, InsertPaidVote,
   JudgeScore, InsertJudgeScore,
   Affiliate, InsertAffiliate,
   Referral, InsertReferral,
@@ -60,10 +62,19 @@ export interface IStorage {
   
   createVote(vote: InsertVote): Promise<Vote>;
   getVideoVoteCount(videoId: string): Promise<number>;
+  getCombinedVoteCount(videoId: string): Promise<number>;
   getUserVotesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Vote[]>;
   getUserVotes(userId: string): Promise<Vote[]>;
   getUserStats(userId: string): Promise<{ totalVideos: number; totalVotesReceived: number; totalVotesCast: number }>;
   getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number; totalJudgeScore: number; rank: number })[]>;
+  
+  createVotePurchase(purchase: InsertVotePurchase): Promise<VotePurchase>;
+  getVotePurchaseByTxRef(txRef: string): Promise<VotePurchase | undefined>;
+  getVotePurchaseByFlwRef(flwRef: string): Promise<VotePurchase | undefined>;
+  updateVotePurchase(id: string, updates: Partial<VotePurchase>): Promise<VotePurchase | undefined>;
+  
+  createPaidVote(paidVote: InsertPaidVote): Promise<PaidVote>;
+  getPaidVotesByVideo(videoId: string): Promise<PaidVote[]>;
   
   createJudgeScore(score: InsertJudgeScore): Promise<JudgeScore>;
   getVideoJudgeScores(videoId: string): Promise<JudgeScore[]>;
@@ -293,10 +304,60 @@ export class DbStorage implements IStorage {
     return [];
   }
 
+  async getCombinedVoteCount(videoId: string): Promise<number> {
+    const freeVotesResult = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.votes)
+      .where(eq(schema.votes.videoId, videoId));
+    const freeVotes = freeVotesResult[0]?.count || 0;
+
+    const paidVotesResult = await db.select({ total: sql<number>`COALESCE(SUM(${schema.paidVotes.quantity}), 0)` })
+      .from(schema.paidVotes)
+      .where(eq(schema.paidVotes.videoId, videoId));
+    const paidVotes = paidVotesResult[0]?.total || 0;
+
+    return freeVotes + paidVotes;
+  }
+
   async getUserVotes(userId: string): Promise<Vote[]> {
     return await db.select().from(schema.votes)
       .where(eq(schema.votes.userId, userId))
       .orderBy(desc(schema.votes.createdAt));
+  }
+
+  async createVotePurchase(insertPurchase: InsertVotePurchase): Promise<VotePurchase> {
+    const [purchase] = await db.insert(schema.votePurchases).values(insertPurchase).returning();
+    return purchase;
+  }
+
+  async getVotePurchaseByTxRef(txRef: string): Promise<VotePurchase | undefined> {
+    const [purchase] = await db.select().from(schema.votePurchases)
+      .where(eq(schema.votePurchases.txRef, txRef));
+    return purchase;
+  }
+
+  async getVotePurchaseByFlwRef(flwRef: string): Promise<VotePurchase | undefined> {
+    const [purchase] = await db.select().from(schema.votePurchases)
+      .where(eq(schema.votePurchases.flwRef, flwRef));
+    return purchase;
+  }
+
+  async updateVotePurchase(id: string, updates: Partial<VotePurchase>): Promise<VotePurchase | undefined> {
+    const [purchase] = await db.update(schema.votePurchases)
+      .set(updates)
+      .where(eq(schema.votePurchases.id, id))
+      .returning();
+    return purchase;
+  }
+
+  async createPaidVote(insertPaidVote: InsertPaidVote): Promise<PaidVote> {
+    const [paidVote] = await db.insert(schema.paidVotes).values(insertPaidVote).returning();
+    return paidVote;
+  }
+
+  async getPaidVotesByVideo(videoId: string): Promise<PaidVote[]> {
+    return await db.select().from(schema.paidVotes)
+      .where(eq(schema.paidVotes.videoId, videoId))
+      .orderBy(desc(schema.paidVotes.createdAt));
   }
 
   async getUserStats(userId: string): Promise<{ totalVideos: number; totalVotesReceived: number; totalVotesCast: number }> {

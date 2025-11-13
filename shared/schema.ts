@@ -96,6 +96,33 @@ export const votes = pgTable("votes", {
   unique("unique_vote_ip").on(table.videoId, table.ipAddress),
 ]);
 
+export const votePurchases = pgTable("vote_purchases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  voteCount: integer("vote_count").notNull(),
+  amount: integer("amount").notNull(),
+  txRef: text("tx_ref").notNull().unique(),
+  flwRef: text("flw_ref").unique(),
+  status: text("status").notNull().default('pending'),
+  paymentData: jsonb("payment_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const paidVotes = pgTable("paid_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  purchaseId: varchar("purchase_id").notNull().references(() => votePurchases.id),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  // Unique constraint: one paid_votes record per purchase
+  unique("unique_purchase_paid_votes").on(table.purchaseId, table.videoId),
+  // Index for efficient leaderboard aggregation
+  index("idx_paid_votes_video_id").on(table.videoId),
+]);
+
 export const judgeScores = pgTable("judge_scores", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   videoId: varchar("video_id").notNull().references(() => videos.id),
@@ -185,6 +212,19 @@ export const insertVoteSchema = createInsertSchema(votes).omit({
   createdAt: true,
 });
 
+export const insertVotePurchaseSchema = createInsertSchema(votePurchases).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+  flwRef: true,
+  paymentData: true,
+});
+
+export const insertPaidVoteSchema = createInsertSchema(paidVotes).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertJudgeScoreSchema = createInsertSchema(judgeScores).omit({
   id: true,
   createdAt: true,
@@ -229,6 +269,12 @@ export type Video = typeof videos.$inferSelect;
 
 export type InsertVote = z.infer<typeof insertVoteSchema>;
 export type Vote = typeof votes.$inferSelect;
+
+export type InsertVotePurchase = z.infer<typeof insertVotePurchaseSchema>;
+export type VotePurchase = typeof votePurchases.$inferSelect;
+
+export type InsertPaidVote = z.infer<typeof insertPaidVoteSchema>;
+export type PaidVote = typeof paidVotes.$inferSelect;
 
 export type InsertJudgeScore = z.infer<typeof insertJudgeScoreSchema>;
 export type JudgeScore = typeof judgeScores.$inferSelect;
