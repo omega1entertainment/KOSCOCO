@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, ChevronLeft, ChevronRight, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -90,6 +90,8 @@ export default function VideoPlayer() {
   const videoUrl = video.videoUrl.startsWith('/objects/') 
     ? video.videoUrl 
     : `/objects/${video.videoUrl}`;
+
+  const isVideoRejected = video.moderationStatus === 'rejected';
   
   const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
   const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
@@ -123,6 +125,71 @@ export default function VideoPlayer() {
         : "Autoplay has been turned off",
     });
   };
+
+  if (isVideoRejected) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <main className="flex-1 bg-background">
+          <div className="container mx-auto px-4 py-8">
+            <Button
+              variant="ghost"
+              onClick={() => setLocation(`/category/${video.categoryId}`)}
+              className="mb-6"
+              data-testid="button-back-category"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to {category?.name}
+            </Button>
+
+            <Card className="border-destructive">
+              <CardContent className="p-12">
+                <div className="text-center space-y-6">
+                  <div className="flex justify-center">
+                    <div className="rounded-full bg-destructive/10 p-6">
+                      <AlertTriangle className="w-16 h-16 text-destructive" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h1 className="text-3xl font-bold text-destructive">
+                      Content Policy Violation
+                    </h1>
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                      This video has been automatically blocked because it violates our Terms and Conditions.
+                    </p>
+                  </div>
+
+                  {video.moderationReason && (
+                    <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-md max-w-2xl mx-auto">
+                      <p className="text-sm font-semibold mb-2">Reason for Removal:</p>
+                      <p className="text-sm">{video.moderationReason}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4 pt-6">
+                    <p className="text-sm text-muted-foreground">
+                      Our automated content moderation system detected policy violations in this content.
+                      All uploads are subject to review to ensure compliance with platform guidelines.
+                    </p>
+                    
+                    <Button
+                      onClick={() => setLocation('/terms')}
+                      variant="default"
+                      className="gap-2"
+                      data-testid="button-view-terms"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View Terms and Conditions
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

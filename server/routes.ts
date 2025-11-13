@@ -12,6 +12,8 @@ import { randomUUID } from "crypto";
 import formidable from "formidable";
 import { promises as fs, createReadStream } from "fs";
 import { generateThumbnail } from "./thumbnailGenerator";
+import { moderateVideo } from "./moderation";
+import path from "path";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -723,6 +725,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
+      const objectStorageTempDir = path.join(process.cwd(), '.tmp-object-storage');
+      await fs.mkdir(objectStorageTempDir, { recursive: true });
+      
+      const tempVideoPath = path.join(objectStorageTempDir, `video-${randomUUID()}.mp4`);
+      
+      let moderationResult;
+      try {
+        const parsedPath = parseObjectPath(videoPath);
+        const [file] = await objectStorageClient
+          .bucket(parsedPath.bucketName)
+          .file(parsedPath.objectName)
+          .download();
+        
+        await fs.writeFile(tempVideoPath, file);
+
+        moderationResult = await moderateVideo(tempVideoPath, title, description);
+      } catch (moderationError) {
+        console.error('Moderation error:', moderationError);
+        moderationResult = { flagged: false, categories: [], reason: undefined };
+      } finally {
+        try {
+          await fs.unlink(tempVideoPath);
+        } catch (cleanupError) {
+          console.error('Error cleaning up temp video:', cleanupError);
+        }
+      }
+
       const video = await storage.createVideo({
         userId,
         categoryId,
@@ -733,7 +762,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         thumbnailUrl: thumbnailPath,
         duration,
         fileSize,
-        status: 'pending',
+        status: moderationResult.flagged ? 'rejected' : 'pending',
+        moderationStatus: moderationResult.flagged ? 'rejected' : 'approved',
+        moderationCategories: moderationResult.categories.length > 0 ? moderationResult.categories : null,
+        moderationReason: moderationResult.reason || null,
+        moderatedAt: new Date(),
       });
 
       res.json(video);
