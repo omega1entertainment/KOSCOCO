@@ -110,6 +110,26 @@ function AdminDashboardContent() {
     },
   });
 
+  const generateThumbnailsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/admin/generate-thumbnails", "POST", {});
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Thumbnail Generation Complete",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos/pending"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Thumbnail Generation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || "Unknown";
   };
@@ -200,10 +220,18 @@ function AdminDashboardContent() {
             </Card>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center justify-between gap-4 mb-4">
                 <Badge variant="outline" className="text-base">
                   {pendingVideos.length} Pending {pendingVideos.length === 1 ? 'Video' : 'Videos'}
                 </Badge>
+                <Button 
+                  onClick={() => generateThumbnailsMutation.mutate()}
+                  disabled={generateThumbnailsMutation.isPending}
+                  variant="outline"
+                  data-testid="button-generate-thumbnails"
+                >
+                  {generateThumbnailsMutation.isPending ? "Generating Thumbnails..." : "Generate Missing Thumbnails"}
+                </Button>
               </div>
 
               <div className="grid gap-6">
