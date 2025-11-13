@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import VotePaymentModal from "@/components/VotePaymentModal";
 import { ArrowLeft, ThumbsUp, Eye, Share2, Flag } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -15,6 +17,7 @@ export default function VideoPlayer() {
   const videoId = params?.id;
   const { user } = useAuth();
   const { toast } = useToast();
+  const [voteModalOpen, setVoteModalOpen] = useState(false);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
     queryKey: [`/api/videos/${videoId}`],
@@ -136,14 +139,13 @@ export default function VideoPlayer() {
                           });
                           return;
                         }
-                        voteMutation.mutate();
+                        setVoteModalOpen(true);
                       }}
-                      disabled={voteMutation.isPending}
                       className="flex-1"
                       data-testid="button-vote"
                     >
                       <ThumbsUp className="w-4 h-4 mr-2" />
-                      {voteMutation.isPending ? "Voting..." : "Vote for this Video"}
+                      Vote for this Video
                     </Button>
                     <Button
                       variant="outline"
@@ -234,6 +236,15 @@ export default function VideoPlayer() {
           </div>
         </div>
       </main>
+
+      {videoId && video && (
+        <VotePaymentModal
+          open={voteModalOpen}
+          onOpenChange={setVoteModalOpen}
+          videoId={videoId}
+          videoTitle={video.title}
+        />
+      )}
     </div>
   );
 }
