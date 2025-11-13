@@ -85,7 +85,7 @@ export default function VotePaymentModal({
       const modal = window.FlutterwaveCheckout({
         public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
         tx_ref: data.txRef,
-        amount: voteCount * COST_PER_VOTE,
+        amount: data.amount,
         currency: 'XAF',
         payment_options: 'card,mobilemoney,ussd',
         customer: {
@@ -95,7 +95,7 @@ export default function VotePaymentModal({
         },
         customizations: {
           title: 'KOSCOCO Vote Purchase',
-          description: `${voteCount} vote${voteCount > 1 ? 's' : ''} for "${videoTitle}"`,
+          description: `${data.voteCount} vote${data.voteCount > 1 ? 's' : ''} for "${videoTitle}"`,
           logo: '',
         },
         callback: (response: any) => {
@@ -105,7 +105,7 @@ export default function VotePaymentModal({
           if (response.status === "successful") {
             toast({
               title: "Payment Successful!",
-              description: `Your ${voteCount} vote${voteCount > 1 ? 's' : ''} will be recorded shortly.`,
+              description: `Your ${data.voteCount} vote${data.voteCount > 1 ? 's' : ''} will be recorded shortly.`,
             });
             onOpenChange(false);
             setVoteCount(1);
