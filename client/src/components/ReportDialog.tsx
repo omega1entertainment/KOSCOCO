@@ -30,7 +30,7 @@ export function ReportDialog({ open, onOpenChange, videoId, videoTitle }: Report
         throw new Error("Please provide a reason for reporting this video");
       }
 
-      return apiRequest("POST", "/api/reports", {
+      return apiRequest("/api/reports", "POST", {
         videoId,
         reason: reason.trim(),
       });

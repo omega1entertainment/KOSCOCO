@@ -11,9 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import PhaseManagement from "@/components/PhaseManagement";
-import { CheckCircle, XCircle, Eye, Clock, DollarSign } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Clock, DollarSign, Flag, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Video, Category, PayoutRequest } from "@shared/schema";
+import type { Video, Category, PayoutRequest, Report } from "@shared/schema";
 
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
@@ -29,6 +29,10 @@ function AdminDashboardContent() {
 
   const { data: payoutRequests = [], isLoading: payoutsLoading } = useQuery<PayoutRequest[]>({
     queryKey: ["/api/admin/payouts"],
+  });
+
+  const { data: reports = [], isLoading: reportsLoading } = useQuery<Report[]>({
+    queryKey: ["/api/admin/reports"],
   });
 
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
@@ -130,6 +134,26 @@ function AdminDashboardContent() {
     },
   });
 
+  const reviewReportMutation = useMutation({
+    mutationFn: async ({ reportId, status }: { reportId: string; status: string }) => {
+      return await apiRequest(`/api/admin/reports/${reportId}/review`, "PATCH", { status });
+    },
+    onSuccess: (_, { status }) => {
+      toast({
+        title: "Report Updated",
+        description: `Report has been marked as ${status}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reports"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || "Unknown";
   };
@@ -149,7 +173,7 @@ function AdminDashboardContent() {
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4 gap-1">
           <TabsTrigger value="phases" data-testid="tab-phases">
             Phase Management
           </TabsTrigger>
@@ -166,6 +190,14 @@ function AdminDashboardContent() {
             {payoutRequests.filter(p => p.status === 'pending').length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {payoutRequests.filter(p => p.status === 'pending').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="reports" data-testid="tab-reports">
+            Reports
+            {reports.filter(r => r.status === 'pending').length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {reports.filter(r => r.status === 'pending').length}
               </Badge>
             )}
           </TabsTrigger>
@@ -507,6 +539,130 @@ function AdminDashboardContent() {
                   </div>
                 </DialogContent>
               </Dialog>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-6">
+          {reportsLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">Loading reports...</p>
+            </div>
+          ) : reports.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Flag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">No Reports</h3>
+                <p className="text-muted-foreground">
+                  There are no video reports at this time
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 mb-4">
+                <Badge variant="outline" className="text-base">
+                  {reports.length} Total {reports.length === 1 ? 'Report' : 'Reports'}
+                </Badge>
+                <Badge variant="secondary" className="text-base">
+                  {reports.filter(r => r.status === 'pending').length} Pending
+                </Badge>
+              </div>
+
+              <div className="grid gap-6">
+                {reports.map((report) => (
+                  <Card key={report.id} data-testid={`report-card-${report.id}`}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-xl flex items-center gap-2">
+                            <Flag className="w-5 h-5 text-destructive flex-shrink-0" />
+                            <span className="truncate">Video Report</span>
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Reported on {new Date(report.createdAt).toLocaleDateString()} at {new Date(report.createdAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={
+                            report.status === 'reviewed' || report.status === 'action_taken' ? 'default' : 
+                            report.status === 'dismissed' ? 'secondary' : 
+                            'destructive'
+                          }
+                          className="text-sm flex-shrink-0"
+                        >
+                          {report.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                          {(report.status === 'reviewed' || report.status === 'action_taken') && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {report.status.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Report Reason</p>
+                          <div className="bg-muted p-4 rounded-md">
+                            <p className="text-sm whitespace-pre-wrap">{report.reason}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setLocation(`/video/${report.videoId}`)}
+                            className="gap-2"
+                            data-testid={`button-view-video-${report.id}`}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            View Reported Video
+                          </Button>
+                        </div>
+
+                        {report.reviewedAt && report.reviewedBy && (
+                          <div className="pt-4 border-t">
+                            <p className="text-sm text-muted-foreground">
+                              Reviewed on {new Date(report.reviewedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+
+                        {report.status === 'pending' && (
+                          <div className="flex gap-3 pt-4 border-t">
+                            <Button
+                              onClick={() => reviewReportMutation.mutate({ reportId: report.id, status: 'reviewed' })}
+                              disabled={reviewReportMutation.isPending}
+                              variant="default"
+                              className="flex-1"
+                              data-testid={`button-mark-reviewed-${report.id}`}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              {reviewReportMutation.isPending ? "Processing..." : "Mark Reviewed"}
+                            </Button>
+                            <Button
+                              onClick={() => reviewReportMutation.mutate({ reportId: report.id, status: 'action_taken' })}
+                              disabled={reviewReportMutation.isPending}
+                              className="flex-1"
+                              data-testid={`button-action-taken-${report.id}`}
+                            >
+                              Action Taken
+                            </Button>
+                            <Button
+                              onClick={() => reviewReportMutation.mutate({ reportId: report.id, status: 'dismissed' })}
+                              disabled={reviewReportMutation.isPending}
+                              variant="outline"
+                              className="flex-1"
+                              data-testid={`button-dismiss-${report.id}`}
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </TabsContent>
