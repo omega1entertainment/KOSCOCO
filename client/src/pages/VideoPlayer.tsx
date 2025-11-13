@@ -33,6 +33,11 @@ export default function VideoPlayer() {
     enabled: !!videoId,
   });
 
+  const { data: relatedVideos = [] } = useQuery<Video[]>({
+    queryKey: [`/api/videos/category/${video?.categoryId}`],
+    enabled: !!video?.categoryId,
+  });
+
   const voteMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest(`/api/votes`, "POST", {
@@ -71,6 +76,10 @@ export default function VideoPlayer() {
   const videoUrl = video.videoUrl.startsWith('/objects/') 
     ? video.videoUrl 
     : `/objects/${video.videoUrl}`;
+  
+  const otherVideos = relatedVideos
+    .filter(v => v.id !== videoId && v.status === 'approved')
+    .slice(0, 10);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -184,54 +193,73 @@ export default function VideoPlayer() {
             </div>
 
             <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Video Details</h3>
-                  <dl className="space-y-3 text-sm">
-                    <div>
-                      <dt className="text-muted-foreground">Category</dt>
-                      <dd className="font-medium">{category?.name}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Subcategory</dt>
-                      <dd className="font-medium">{video.subcategory}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Duration</dt>
-                      <dd className="font-medium">
-                        {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Status</dt>
-                      <dd>
-                        <Badge 
-                          variant={video.status === 'approved' ? 'default' : video.status === 'rejected' ? 'destructive' : 'outline'}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Related Videos</h3>
+                
+                {otherVideos.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      No other videos in this category yet
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {otherVideos.map((relatedVideo) => {
+                      const thumbnailUrl = relatedVideo.thumbnailUrl?.startsWith('/objects/') 
+                        ? relatedVideo.thumbnailUrl 
+                        : `/objects/${relatedVideo.thumbnailUrl}`;
+                      
+                      return (
+                        <Card 
+                          key={relatedVideo.id}
+                          className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer"
+                          onClick={() => setLocation(`/video/${relatedVideo.id}`)}
+                          data-testid={`related-video-${relatedVideo.id}`}
                         >
-                          {video.status}
-                        </Badge>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Uploaded</dt>
-                      <dd className="font-medium">
-                        {new Date(video.createdAt).toLocaleDateString()}
-                      </dd>
-                    </div>
-                  </dl>
-
-                  <div className="mt-6 pt-6 border-t">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setLocation(`/category/${video.categoryId}`)}
-                      data-testid="button-more-videos"
-                    >
-                      More from {category?.name}
-                    </Button>
+                          <div className="flex gap-3 p-3">
+                            <div className="relative w-40 flex-shrink-0 aspect-video bg-muted rounded overflow-hidden">
+                              {relatedVideo.thumbnailUrl ? (
+                                <img 
+                                  src={thumbnailUrl}
+                                  alt={relatedVideo.title}
+                                  className="w-full h-full object-cover"
+                                  data-testid={`img-thumbnail-${relatedVideo.id}`}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                  No thumbnail
+                                </div>
+                              )}
+                              <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
+                                {Math.floor(relatedVideo.duration / 60)}:{(relatedVideo.duration % 60).toString().padStart(2, '0')}
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm line-clamp-2 mb-1" data-testid={`text-title-${relatedVideo.id}`}>
+                                {relatedVideo.title}
+                              </h4>
+                              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs py-0">
+                                    {relatedVideo.subcategory}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1">
+                                    <Eye className="w-3 h-3" />
+                                    {relatedVideo.views.toLocaleString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             </div>
           </div>
         </div>
