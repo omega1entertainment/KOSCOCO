@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
+import { ReportDialog } from "@/components/ReportDialog";
 import { ArrowLeft, ThumbsUp, Eye, Share2, Flag } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -18,6 +19,7 @@ export default function VideoPlayer() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
     queryKey: [`/api/videos/${videoId}`],
@@ -177,12 +179,7 @@ export default function VideoPlayer() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        toast({
-                          title: "Report Submitted",
-                          description: "Thank you for helping keep our platform safe",
-                        });
-                      }}
+                      onClick={() => setReportDialogOpen(true)}
                       data-testid="button-report"
                     >
                       <Flag className="w-4 h-4" />
@@ -266,12 +263,20 @@ export default function VideoPlayer() {
       </main>
 
       {videoId && video && (
-        <VotePaymentModal
-          open={voteModalOpen}
-          onOpenChange={setVoteModalOpen}
-          videoId={videoId}
-          videoTitle={video.title}
-        />
+        <>
+          <VotePaymentModal
+            open={voteModalOpen}
+            onOpenChange={setVoteModalOpen}
+            videoId={videoId}
+            videoTitle={video.title}
+          />
+          <ReportDialog
+            open={reportDialogOpen}
+            onOpenChange={setReportDialogOpen}
+            videoId={videoId}
+            videoTitle={video.title}
+          />
+        </>
       )}
     </div>
   );
