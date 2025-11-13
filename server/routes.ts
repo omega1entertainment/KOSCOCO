@@ -1000,11 +1000,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/votes/video/:videoId', async (req, res) => {
     try {
       const { videoId } = req.params;
-      const voteCount = await storage.getVideoVoteCount(videoId);
+      const voteCount = await storage.getCombinedVoteCount(videoId);
       res.json({ voteCount });
     } catch (error) {
       console.error("Error fetching vote count:", error);
       res.status(500).json({ message: "Failed to fetch vote count" });
+    }
+  });
+
+  app.post('/api/votes/purchase/initiate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const { videoId, voteCount } = req.body;
+
+      if (!videoId || !voteCount) {
+        return res.status(400).json({ message: "Video ID and vote count are required" });
+      }
+
+      if (voteCount < 1 || voteCount > 1000) {
+        return res.status(400).json({ message: "Vote count must be between 1 and 1000" });
+      }
+
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(400).json({ message: "Cannot purchase votes for unapproved videos" });
+      }
+
+      const COST_PER_VOTE = 50;
+      const amount = voteCount * COST_PER_VOTE;
+
+      const txRef = `VOTE-${randomUUID()}`;
+
+      const purchase = await storage.createVotePurchase({
+        userId,
+        videoId,
+        voteCount,
+        amount,
+        txRef,
+        status: 'pending',
+      });
+
+      const user = await storage.getUser(userId);
+
+      res.json({
+        success: true,
+        txRef: purchase.txRef,
+        customer: {
+          email: user?.email,
+          phone: user?.username || '',
+          name: `${user?.firstName} ${user?.lastName}`,
+        },
+      });
+    } catch (error) {
+      console.error("Error initiating vote purchase:", error);
+      res.status(500).json({ message: "Failed to initiate vote purchase" });
+    }
+  });
+
+  app.post('/api/votes/purchase/webhook', async (req, res) => {
+    try {
+      const payload = req.body;
+      console.log("[Vote Purchase Webhook] Received:", JSON.stringify(payload, null, 2));
+
+      const secretHash = process.env.FLW_SECRET_HASH;
+      const signature = req.headers['verif-hash'];
+
+      if (!signature || signature !== secretHash) {
+        console.error("[Vote Purchase Webhook] Invalid signature");
+        return res.status(401).json({ message: "Unauthorized - Invalid signature" });
+      }
+
+      const { status, tx_ref, flw_ref, amount, currency } = payload;
+
+      if (!tx_ref) {
+        console.error("[Vote Purchase Webhook] Missing tx_ref");
+        return res.status(400).json({ message: "Missing transaction reference" });
+      }
+
+      const purchase = await storage.getVotePurchaseByTxRef(tx_ref);
+      if (!purchase) {
+        console.error(`[Vote Purchase Webhook] Purchase not found: ${tx_ref}`);
+        return res.status(404).json({ message: "Purchase not found" });
+      }
+
+      if (purchase.status === 'successful') {
+        console.log(`[Vote Purchase Webhook] Already processed: ${tx_ref}`);
+        return res.json({ success: true, message: "Already processed" });
+      }
+
+      const existingByFlwRef = flw_ref ? await storage.getVotePurchaseByFlwRef(flw_ref) : null;
+      if (existingByFlwRef && existingByFlwRef.id !== purchase.id) {
+        console.log(`[Vote Purchase Webhook] Duplicate flw_ref: ${flw_ref}`);
+        return res.json({ success: true, message: "Duplicate Flutterwave reference" });
+      }
+
+      if (status === 'successful') {
+        if (currency !== 'XAF') {
+          console.error(`[Vote Purchase Webhook] Invalid currency: ${currency}`);
+          return res.status(400).json({ message: "Invalid currency" });
+        }
+
+        const COST_PER_VOTE = 50;
+        const expectedAmount = purchase.voteCount * COST_PER_VOTE;
+
+        if (Math.abs(amount - expectedAmount) > 0.01) {
+          console.error(`[Vote Purchase Webhook] Amount mismatch: expected ${expectedAmount}, got ${amount}`);
+          return res.status(400).json({ message: "Amount mismatch - potential tampering detected" });
+        }
+
+        const verifiedVoteCount = Math.floor(amount / COST_PER_VOTE);
+        if (verifiedVoteCount !== purchase.voteCount) {
+          console.error(`[Vote Purchase Webhook] Vote count mismatch: stored ${purchase.voteCount}, calculated ${verifiedVoteCount}`);
+          return res.status(400).json({ message: "Vote count mismatch" });
+        }
+
+        await storage.updateVotePurchase(purchase.id, {
+          status: 'successful',
+          flwRef: flw_ref,
+          completedAt: new Date(),
+          paymentData: payload,
+        });
+
+        await storage.createPaidVote({
+          purchaseId: purchase.id,
+          videoId: purchase.videoId,
+          quantity: verifiedVoteCount,
+        });
+
+        console.log(`[Vote Purchase Webhook] Successfully processed: ${tx_ref}, ${verifiedVoteCount} votes added`);
+      } else {
+        await storage.updateVotePurchase(purchase.id, {
+          status: 'failed',
+          paymentData: payload,
+        });
+        console.log(`[Vote Purchase Webhook] Payment failed: ${tx_ref}`);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[Vote Purchase Webhook] Error:", error);
+      res.status(500).json({ message: "Webhook processing failed" });
     }
   });
 
