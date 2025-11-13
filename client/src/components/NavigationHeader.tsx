@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -142,7 +143,8 @@ export default function NavigationHeader({
             </DropdownMenu>
           </nav>
           
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             {isAuthenticated ? (
               <>
                 <Button
@@ -269,6 +271,10 @@ export default function NavigationHeader({
             </div>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-semibold text-muted-foreground">Theme</span>
+                <ThemeToggle />
+              </div>
               {isAuthenticated ? (
                 <>
                   <Button
