@@ -192,7 +192,7 @@ export default function Upload() {
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!videoFile || !videoMetadata || !selectedCategory || !selectedSubcategory || !title) {
+      if (!videoFile || !videoMetadata || !selectedCategory || !selectedSubcategory || !title || !thumbnailFile) {
         throw new Error("Missing required fields");
       }
 
@@ -208,9 +208,7 @@ export default function Upload() {
       const formData = new FormData();
       formData.append('video', videoFile);
       formData.append('videoUrl', videoUrl);
-      if (thumbnailFile) {
-        formData.append('thumbnail', thumbnailFile);
-      }
+      formData.append('thumbnail', thumbnailFile);
 
       const xhr = new XMLHttpRequest();
       
@@ -528,7 +526,7 @@ export default function Upload() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnail">Thumbnail (Optional)</Label>
+                <Label htmlFor="thumbnail">Thumbnail *</Label>
                 <div className="space-y-3">
                   <Input
                     id="thumbnail"
@@ -563,7 +561,7 @@ export default function Upload() {
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Upload a custom thumbnail or one will be generated automatically from your video. Accepted formats: JPEG, PNG, WebP. Max 2MB.
+                    Accepted formats: JPEG, PNG, WebP. Max 2MB.
                   </p>
                 </div>
               </div>
@@ -580,7 +578,7 @@ export default function Upload() {
 
               <Button
                 onClick={() => uploadMutation.mutate()}
-                disabled={!selectedCategory || !selectedSubcategory || !title || !videoFile || !videoMetadata || isUploading || !canUploadToCategory}
+                disabled={!selectedCategory || !selectedSubcategory || !title || !videoFile || !videoMetadata || !thumbnailFile || isUploading || !canUploadToCategory}
                 className="w-full"
                 data-testid="button-submit"
               >
