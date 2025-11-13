@@ -231,7 +231,7 @@ export default function VideoPlayer() {
                                 </div>
                               )}
                               <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
-                                {Math.floor(relatedVideo.duration / 60)}:{(relatedVideo.duration % 60).toString().padStart(2, '0')}
+                                {relatedVideo.duration ? `${Math.floor(relatedVideo.duration / 60)}:${(relatedVideo.duration % 60).toString().padStart(2, '0')}` : '0:00'}
                               </div>
                             </div>
                             
