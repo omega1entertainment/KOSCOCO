@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
 import PhaseTimeline from "@/components/PhaseTimeline";
 import VideoCard from "@/components/VideoCard";
 import StatsCard from "@/components/StatsCard";
+import VotePaymentModal from "@/components/VotePaymentModal";
 import { Users, Video, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +17,14 @@ import gospelImage from "@assets/generated_images/Gospel_Choirs_category_e7d0b06
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const [voteModalOpen, setVoteModalOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
+
+  const handleVoteClick = (videoId: string, videoTitle: string) => {
+    setSelectedVideo({ id: videoId, title: videoTitle });
+    setVoteModalOpen(true);
+  };
+
   const categories = [
     {
       title: 'Music & Dance',
@@ -156,13 +166,22 @@ export default function Home() {
                 key={video.id}
                 {...video}
                 onPlay={() => console.log(`Play ${video.id}`)}
-                onVote={() => console.log(`Vote ${video.id}`)}
+                onVote={() => handleVoteClick(video.id, video.title)}
                 onShare={() => console.log(`Share ${video.id}`)}
               />
             ))}
           </div>
         </div>
       </section>
+
+      {selectedVideo && (
+        <VotePaymentModal
+          open={voteModalOpen}
+          onOpenChange={setVoteModalOpen}
+          videoId={selectedVideo.id}
+          videoTitle={selectedVideo.title}
+        />
+      )}
       
       <section className="py-12 md:py-20">
         <div className="max-w-4xl mx-auto px-4 text-center">

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
 
 interface VotePaymentModalProps {
   open: boolean;
@@ -15,6 +14,12 @@ interface VotePaymentModalProps {
 }
 
 const COST_PER_VOTE = 50; // XAF
+
+declare global {
+  interface Window {
+    FlutterwaveCheckout: any;
+  }
+}
 
 export default function VotePaymentModal({
   open,
@@ -33,6 +38,22 @@ export default function VotePaymentModal({
     if (!isNaN(value) && value > 0 && value <= 1000) {
       setVoteCount(value);
     }
+  };
+
+  const loadFlutterwaveScript = () => {
+    return new Promise<void>((resolve, reject) => {
+      if (window.FlutterwaveCheckout) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.flutterwave.com/v3.js';
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Flutterwave'));
+      document.body.appendChild(script);
+    });
   };
 
   const handlePayment = async () => {
@@ -59,10 +80,12 @@ export default function VotePaymentModal({
         throw new Error(data.message || "Failed to initiate payment");
       }
 
-      const config = {
+      await loadFlutterwaveScript();
+
+      const modal = window.FlutterwaveCheckout({
         public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
         tx_ref: data.txRef,
-        amount: totalAmount,
+        amount: voteCount * COST_PER_VOTE,
         currency: 'XAF',
         payment_options: 'card,mobilemoney,ussd',
         customer: {
@@ -73,11 +96,11 @@ export default function VotePaymentModal({
         customizations: {
           title: 'KOSCOCO Vote Purchase',
           description: `${voteCount} vote${voteCount > 1 ? 's' : ''} for "${videoTitle}"`,
-          logo: 'https://koscoco.com/logo.png',
+          logo: '',
         },
-        callback: async (response: any) => {
+        callback: (response: any) => {
           console.log("Payment callback:", response);
-          closePaymentModal();
+          modal.close();
           
           if (response.status === "successful") {
             toast({
@@ -85,6 +108,7 @@ export default function VotePaymentModal({
               description: `Your ${voteCount} vote${voteCount > 1 ? 's' : ''} will be recorded shortly.`,
             });
             onOpenChange(false);
+            setVoteCount(1);
           } else {
             toast({
               title: "Payment Failed",
@@ -92,17 +116,12 @@ export default function VotePaymentModal({
               variant: "destructive",
             });
           }
+          setIsProcessing(false);
         },
-        onClose: () => {
+        onclose: () => {
           console.log("Payment modal closed");
           setIsProcessing(false);
         },
-      };
-
-      const handleFlutterPayment = useFlutterwave(config);
-      handleFlutterPayment({
-        callback: config.callback,
-        onClose: config.onClose,
       });
 
     } catch (error: any) {
@@ -117,7 +136,14 @@ export default function VotePaymentModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!isProcessing) {
+        onOpenChange(newOpen);
+        if (!newOpen) {
+          setVoteCount(1);
+        }
+      }
+    }}>
       <DialogContent className="sm:max-w-md" data-testid="modal-vote-payment">
         <DialogHeader>
           <DialogTitle>Purchase Votes</DialogTitle>
