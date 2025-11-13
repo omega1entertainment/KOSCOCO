@@ -40,6 +40,7 @@ export interface IStorage {
   getAllCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+  getCategoryVideoCounts(): Promise<Record<string, number>>;
   
   getAllPhases(): Promise<Phase[]>;
   getActivePhase(): Promise<Phase | undefined>;
@@ -266,6 +267,23 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.videos)
       .where(and(eq(schema.videos.categoryId, categoryId), eq(schema.videos.status, 'approved')))
       .orderBy(desc(schema.videos.createdAt));
+  }
+
+  async getCategoryVideoCounts(): Promise<Record<string, number>> {
+    const result = await db
+      .select({
+        categoryId: schema.videos.categoryId,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(schema.videos)
+      .where(eq(schema.videos.status, 'approved'))
+      .groupBy(schema.videos.categoryId);
+    
+    const counts: Record<string, number> = {};
+    for (const row of result) {
+      counts[row.categoryId] = Number(row.count ?? 0);
+    }
+    return counts;
   }
 
   async getPendingVideos(): Promise<Video[]> {

@@ -27,6 +27,10 @@ export default function Categories() {
     queryKey: ["/api/categories"],
   });
 
+  const { data: videoCounts } = useQuery<Record<string, number>>({
+    queryKey: ["/api/categories/video-counts"],
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -93,6 +97,11 @@ export default function Categories() {
                           +{category.subcategories.length - 3} more
                         </Badge>
                       )}
+                    </div>
+                    <div className="mb-4 pt-2 border-t">
+                      <p className="text-sm text-muted-foreground" data-testid={`text-video-count-${category.id}`}>
+                        {videoCounts?.[category.id] || 0} video{(videoCounts?.[category.id] || 0) !== 1 ? 's' : ''}
+                      </p>
                     </div>
                     <Button 
                       variant="ghost" 

@@ -75,6 +75,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/categories/video-counts', async (req, res) => {
+    try {
+      const counts = await storage.getCategoryVideoCounts();
+      res.json(counts);
+    } catch (error) {
+      console.error("Error fetching category video counts:", error);
+      res.status(500).json({ message: "Failed to fetch video counts" });
+    }
+  });
+
   app.get('/api/phases', async (req, res) => {
     try {
       const phases = await storage.getAllPhases();
