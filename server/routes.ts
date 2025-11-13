@@ -1480,6 +1480,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Submit a report (authenticated or anonymous)
+  app.post('/api/reports', async (req: any, res) => {
+    try {
+      const { videoId, reason } = req.body;
+      const reportedBy = req.user ? (req.user as SelectUser).id : null;
+
+      if (!videoId || !reason) {
+        return res.status(400).json({ message: "Video ID and reason are required" });
+      }
+
+      if (!reason.trim()) {
+        return res.status(400).json({ message: "Report reason cannot be empty" });
+      }
+
+      // Verify video exists
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      const report = await storage.createReport({
+        videoId,
+        reportedBy,
+        reason: reason.trim(),
+        status: 'pending',
+      });
+
+      res.json({ message: "Report submitted successfully", report });
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      res.status(500).json({ message: "Failed to submit report" });
+    }
+  });
+
+  // Admin: Get all reports
+  app.get('/api/admin/reports', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const reports = await storage.getAllReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      res.status(500).json({ message: "Failed to fetch reports" });
+    }
+  });
+
+  // Admin: Mark report as reviewed
+  app.patch('/api/admin/reports/:id/review', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const adminId = (req.user as SelectUser).id;
+
+      if (!status || !['reviewed', 'dismissed', 'action_taken'].includes(status)) {
+        return res.status(400).json({ 
+          message: "Valid status is required (reviewed, dismissed, or action_taken)" 
+        });
+      }
+
+      const report = await storage.updateReportStatus(id, status, adminId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Error reviewing report:", error);
+      res.status(500).json({ message: "Failed to review report" });
+    }
+  });
+
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
