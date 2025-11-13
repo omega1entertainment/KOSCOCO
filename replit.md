@@ -16,7 +16,8 @@ The platform is built with a modern web stack:
 - **UI/UX Decisions**:
     - **Branding**: Primary Red (#DC2626), Secondary Black, Accent White, Featured Yellow (#FBBF24).
     - **Components**: Utilizes Shadcn UI for consistent and accessible components.
-    - **Navigation**: Features a `TopBar` for contact info and social media, and a `NavigationHeader` with conditional rendering based on user authentication status. Both components are rendered at the app level (App.tsx) to ensure consistent navigation across all pages, with a `Footer` also included at the bottom of every page.
+    - **Dark Mode**: Theme toggle in navigation with localStorage persistence and smooth transitions.
+    - **Navigation**: Features a `TopBar` for contact info and social media, and a `NavigationHeader` with conditional rendering based on user authentication status and theme toggle. Both components are rendered at the app level (App.tsx) to ensure consistent navigation across all pages, with a `Footer` also included at the bottom of every page.
     - **Content Display**: Video galleries, leaderboards with real-time rankings, and user dashboards are designed for clarity and ease of use.
     - **Competition Structure**: Organized into five distinct phases, with specific categories for video submissions.
 - **Technical Implementations**:
@@ -32,6 +33,18 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Dark Mode Toggle** (Nov 13, 2024): Implemented theme switching functionality with user preference persistence:
+  - Added ThemeProvider component with localStorage persistence and system preference detection
+  - Created ThemeToggle component with sun/moon icons in navigation header
+  - Theme toggle available in both desktop and mobile navigation
+  - Smooth theme transitions using useLayoutEffect to prevent flash
+  - Respects user's system dark mode preference on first visit
+- **Paid Voting System** (Nov 13, 2024): Integrated payment modal for purchasing votes:
+  - VotePaymentModal component allows users to purchase 1-1000 votes at 50 XAF per vote
+  - Secure Flutterwave integration with signature verification
+  - Server-side amount validation and webhook verification
+  - Combined vote counting (free + paid votes) across leaderboard and stats
+  - Vote button opens payment modal instead of direct voting
 - **Email Verification System** (Nov 4, 2024): Implemented comprehensive email verification for user accounts:
   - Added `emailVerified`, `verificationToken`, `verificationTokenExpiry` fields to users table
   - Integrated Resend email service for sending verification emails
