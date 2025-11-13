@@ -14,7 +14,8 @@ import type {
   JudgeScore, InsertJudgeScore,
   Affiliate, InsertAffiliate,
   Referral, InsertReferral,
-  PayoutRequest, InsertPayoutRequest
+  PayoutRequest, InsertPayoutRequest,
+  Report, InsertReport
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -95,6 +96,11 @@ export interface IStorage {
   getAllPayoutRequests(): Promise<PayoutRequest[]>;
   updatePayoutStatus(id: string, status: string, processedBy?: string, rejectionReason?: string): Promise<PayoutRequest | undefined>;
   getAffiliateAvailableBalance(affiliateId: string): Promise<number>;
+
+  createReport(report: InsertReport): Promise<Report>;
+  getAllReports(): Promise<Report[]>;
+  getReportsByVideo(videoId: string): Promise<Report[]>;
+  updateReportStatus(id: string, status: string, reviewedBy: string): Promise<Report | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -622,6 +628,38 @@ export class DbStorage implements IStorage {
     const availableBalance = affiliate.totalEarnings - totalPaidOut;
     
     return Math.max(0, availableBalance);
+  }
+
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    const [report] = await db.insert(schema.reports).values(insertReport).returning();
+    return report;
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    const reports = await db.select()
+      .from(schema.reports)
+      .orderBy(desc(schema.reports.createdAt));
+    return reports;
+  }
+
+  async getReportsByVideo(videoId: string): Promise<Report[]> {
+    const reports = await db.select()
+      .from(schema.reports)
+      .where(eq(schema.reports.videoId, videoId))
+      .orderBy(desc(schema.reports.createdAt));
+    return reports;
+  }
+
+  async updateReportStatus(id: string, status: string, reviewedBy: string): Promise<Report | undefined> {
+    const [report] = await db.update(schema.reports)
+      .set({ 
+        status,
+        reviewedAt: new Date(),
+        reviewedBy
+      })
+      .where(eq(schema.reports.id, id))
+      .returning();
+    return report;
   }
 }
 
