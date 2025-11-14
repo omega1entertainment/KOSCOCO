@@ -309,6 +309,12 @@ export type Registration = typeof registrations.$inferSelect;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
 export type Video = typeof videos.$inferSelect;
 
+// Extended video type with aggregated engagement metrics
+export type VideoWithStats = Video & {
+  likeCount: number;
+  voteCount: number;
+};
+
 export type InsertVote = z.infer<typeof insertVoteSchema>;
 export type Vote = typeof votes.$inferSelect;
 
