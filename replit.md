@@ -33,6 +33,15 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Judge Profile Self-Service Editing** (Nov 14, 2024): Judges can now edit their own profiles and upload photos:
+  - Added "Profile" tab to JudgeDashboard with reactive form for judgeName and judgeBio editing
+  - Photo upload feature with instant preview, validation (JPEG/PNG/WebP, max 5MB), and server-side storage
+  - Backend endpoints: POST /api/judge/photo (photo upload), PATCH /api/judge/profile (profile updates)
+  - Reactive state management using direct useQuery subscription for automatic form sync
+  - Loading states prevent empty form submission before data loads
+  - Character counter for bio field (max 500 characters)
+  - Form validation: judgeName 2-80 characters, judgeBio max 500 characters
+  - Temp file cleanup in try-finally blocks for safe photo upload handling
 - **Dark Mode Toggle** (Nov 13, 2024): Implemented theme switching functionality with user preference persistence:
   - Added ThemeProvider component with localStorage persistence and system preference detection
   - Created ThemeToggle component with sun/moon icons in navigation header
