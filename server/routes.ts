@@ -1289,15 +1289,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user ? (req.user as SelectUser).id : null;
       const ipAddress = req.ip || req.connection.remoteAddress || null;
 
-      const existingLikes = await storage.getUserLikesForVideo(userId, videoId, ipAddress);
-      if (existingLikes.length > 0) {
-        return res.status(400).json({ message: "You have already liked this video" });
+      // Check for both authenticated and IP-based duplicates
+      if (userId) {
+        const userLikes = await storage.getUserLikesForVideo(userId, videoId, null);
+        if (userLikes.length > 0) {
+          return res.status(400).json({ message: "You have already liked this video" });
+        }
+      }
+      
+      if (ipAddress && !userId) {
+        const ipLikes = await storage.getUserLikesForVideo(null, videoId, ipAddress);
+        if (ipLikes.length > 0) {
+          return res.status(400).json({ message: "You have already liked this video" });
+        }
       }
 
       const like = await storage.createLike({
         videoId,
         userId,
-        ipAddress,
+        ipAddress: !userId ? ipAddress : null, // Only store IP for anonymous users
       });
 
       const likeCount = await storage.getVideoLikeCount(videoId);

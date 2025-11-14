@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trophy, ThumbsUp, Eye, Play } from "lucide-react";
+import { Trophy, Check, Eye, Play } from "lucide-react";
 import { useState } from "react";
 import type { Video, Category, Phase } from "@shared/schema";
 
@@ -169,8 +169,8 @@ export default function Leaderboard() {
                         )}
 
                         <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1 font-semibold text-primary">
-                            <ThumbsUp className="w-4 h-4" />
+                          <div className="flex items-center gap-1 font-semibold text-primary" title="Competition votes (ranking based on this)">
+                            <Check className="w-4 h-4" />
                             {video.voteCount.toLocaleString()} votes
                           </div>
                           <div className="flex items-center gap-1 text-muted-foreground">

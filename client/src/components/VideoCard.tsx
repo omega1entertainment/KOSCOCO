@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Play, Heart, Eye, Share2 } from "lucide-react";
+import { Play, Check, ThumbsUp, Eye, Share2 } from "lucide-react";
 import { useState } from "react";
 
 interface VideoCardProps {
@@ -15,9 +15,11 @@ interface VideoCardProps {
   };
   category: string;
   votes: number;
+  likes: number;
   views: number;
   onPlay?: () => void;
   onVote?: () => void;
+  onLike?: () => void;
   onShare?: () => void;
 }
 
@@ -27,22 +29,14 @@ export default function VideoCard({
   thumbnail,
   creator,
   category,
-  votes: initialVotes,
+  votes,
+  likes,
   views,
   onPlay,
   onVote,
+  onLike,
   onShare
 }: VideoCardProps) {
-  const [votes, setVotes] = useState(initialVotes);
-  const [hasVoted, setHasVoted] = useState(false);
-  
-  const handleVote = () => {
-    if (!hasVoted) {
-      setVotes(v => v + 1);
-      setHasVoted(true);
-      onVote?.();
-    }
-  };
   
   return (
     <Card className="overflow-hidden hover-elevate transition-transform duration-200" data-testid={`card-video-${id}`}>
@@ -84,8 +78,11 @@ export default function VideoCard({
         
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1" data-testid="text-vote-count">
-              <Heart className="w-4 h-4" /> {votes}
+            <span className="flex items-center gap-1" data-testid="text-vote-count" title="Competition votes">
+              <Check className="w-4 h-4" /> {votes}
+            </span>
+            <span className="flex items-center gap-1" data-testid="text-like-count" title="Likes">
+              <ThumbsUp className="w-4 h-4" /> {likes}
             </span>
             <span className="flex items-center gap-1" data-testid="text-view-count">
               <Eye className="w-4 h-4" /> {views}
@@ -98,24 +95,23 @@ export default function VideoCard({
               variant="ghost"
               onClick={(e) => {
                 e.stopPropagation();
+                onLike?.();
+              }}
+              data-testid="button-like"
+              title="Like this video"
+            >
+              <ThumbsUp className="w-4 h-4" />
+            </Button>
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
                 onShare?.();
               }}
               data-testid="button-share"
             >
               <Share2 className="w-4 h-4" />
-            </Button>
-            <Button 
-              size="sm"
-              variant={hasVoted ? "secondary" : "default"}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleVote();
-              }}
-              disabled={hasVoted}
-              data-testid="button-vote"
-            >
-              <Heart className="w-4 h-4 mr-1" />
-              Vote
             </Button>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -36,6 +36,11 @@ export default function VideoPlayer() {
     enabled: !!videoId,
   });
 
+  const { data: likeData } = useQuery<{ likeCount: number }>({
+    queryKey: [`/api/likes/video/${videoId}`],
+    enabled: !!videoId,
+  });
+
   const { data: relatedVideos = [] } = useQuery<Video[]>({
     queryKey: [`/api/videos/category/${video?.categoryId}`],
     enabled: !!video?.categoryId,
@@ -58,6 +63,29 @@ export default function VideoPlayer() {
     onError: (error: Error) => {
       toast({
         title: "Vote Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/likes`, "POST", {
+        videoId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Liked!",
+        description: "You liked this video.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/likes/video/${videoId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Like Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -204,13 +232,17 @@ export default function VideoPlayer() {
                       </h1>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <Badge variant="outline">{video.subcategory}</Badge>
+                        <div className="flex items-center gap-1" title="Competition votes">
+                          <Check className="w-4 h-4" />
+                          {voteData?.voteCount || 0} votes
+                        </div>
+                        <div className="flex items-center gap-1" title="Likes">
+                          <ThumbsUp className="w-4 h-4" />
+                          {likeData?.likeCount || 0} likes
+                        </div>
                         <div className="flex items-center gap-1">
                           <Eye className="w-4 h-4" />
                           {video.views.toLocaleString()} views
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <ThumbsUp className="w-4 h-4" />
-                          {voteData?.voteCount || 0} votes
                         </div>
                       </div>
                     </div>
@@ -240,9 +272,30 @@ export default function VideoPlayer() {
                       }}
                       className="flex-1"
                       data-testid="button-vote"
+                      title="Vote for this video in the competition"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Vote
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (!user) {
+                          toast({
+                            title: "Sign In Required",
+                            description: "Please sign in to like videos",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        likeMutation.mutate();
+                      }}
+                      data-testid="button-like"
+                      title="Show appreciation for this video"
+                      disabled={likeMutation.isPending}
                     >
                       <ThumbsUp className="w-4 h-4 mr-2" />
-                      Vote for this Video
+                      Like
                     </Button>
                     <Button
                       variant="outline"

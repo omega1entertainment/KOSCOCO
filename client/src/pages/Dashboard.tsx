@@ -8,13 +8,13 @@ import CompletePaymentButton from "@/components/CompletePaymentButton";
 import { 
   Video as VideoIcon, 
   TrendingUp, 
-  Heart, 
+  Check, 
+  ThumbsUp,
   Upload as UploadIcon,
   CheckCircle,
   Clock,
   XCircle,
-  Eye,
-  ThumbsUp
+  Eye
 } from "lucide-react";
 import type { Registration, Video, Vote, Category } from "@shared/schema";
 
@@ -152,11 +152,11 @@ export default function Dashboard() {
               <Card data-testid="card-stat-votes-cast">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Votes Cast</CardTitle>
-                  <Heart className="h-4 w-4 text-muted-foreground" />
+                  <Check className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.totalVotesCast || 0}</div>
-                  <p className="text-xs text-muted-foreground">Videos supported</p>
+                  <p className="text-xs text-muted-foreground">Competition votes</p>
                 </CardContent>
               </Card>
             </div>
@@ -246,13 +246,9 @@ export default function Dashboard() {
                           {getCategoryName(video.categoryId)} - {video.subcategory}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1" title="Views">
                             <Eye className="w-4 h-4" />
                             {video.views}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <ThumbsUp className="w-4 h-4" />
-                            {/* Vote count would need to be fetched separately or joined */}
                           </span>
                         </div>
                       </div>
