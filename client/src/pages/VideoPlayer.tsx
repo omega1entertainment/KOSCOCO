@@ -4,18 +4,11 @@ import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -27,10 +20,6 @@ export default function VideoPlayer() {
   const { toast } = useToast();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [autoplay, setAutoplay] = useState(() => {
-    const saved = localStorage.getItem('videoAutoplay');
-    return saved === 'true';
-  });
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
@@ -76,38 +65,12 @@ export default function VideoPlayer() {
   });
 
   useEffect(() => {
-    localStorage.setItem('videoAutoplay', String(autoplay));
-  }, [autoplay]);
-
-  useEffect(() => {
     if (videoRef.current && video && !videoLoading) {
       videoRef.current.play().catch(() => {
         // Autoplay might be blocked by browser, ignore error
       });
     }
   }, [videoId, video, videoLoading]);
-
-  const handleVideoEnded = () => {
-    const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
-    const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
-    const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
-      ? approvedVideos[currentIndex + 1] 
-      : null;
-    
-    if (autoplay && nextVideo) {
-      setLocation(`/video/${nextVideo.id}`);
-    }
-  };
-
-  const handleToggleAutoplay = (checked: boolean) => {
-    setAutoplay(checked);
-    toast({
-      title: checked ? "Autoplay Enabled" : "Autoplay Disabled",
-      description: checked 
-        ? "Next video will play automatically" 
-        : "Autoplay has been turned off",
-    });
-  };
 
   if (videoLoading || !video) {
     return (
@@ -228,50 +191,10 @@ export default function VideoPlayer() {
                     controls
                     className="w-full h-full"
                     data-testid="video-player"
-                    onEnded={handleVideoEnded}
                   >
                     <source src={videoUrl} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute bottom-4 right-4 opacity-80 hover:opacity-100"
-                        data-testid="button-settings"
-                      >
-                        <Settings className="w-5 h-5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64" align="end" data-testid="popover-settings">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm">Video Settings</h4>
-                          <p className="text-xs text-muted-foreground">
-                            Configure your playback preferences
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="autoplay" className="text-sm">
-                            Autoplay next video
-                          </Label>
-                          <Switch
-                            id="autoplay"
-                            checked={autoplay}
-                            onCheckedChange={handleToggleAutoplay}
-                            data-testid="switch-autoplay"
-                          />
-                        </div>
-                        {autoplay && nextVideo && (
-                          <div className="text-xs text-muted-foreground pt-2 border-t">
-                            Next: {nextVideo.title}
-                          </div>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
