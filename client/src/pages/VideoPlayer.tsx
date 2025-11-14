@@ -263,13 +263,13 @@ export default function VideoPlayer() {
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="absolute bottom-4 right-4 opacity-80 hover:opacity-100"
+                        className="absolute top-4 right-4 opacity-80 hover:opacity-100"
                         data-testid="button-settings"
                       >
                         <Settings className="w-5 h-5" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64" align="end" data-testid="popover-settings">
+                    <PopoverContent className="w-64" align="end" side="bottom" sideOffset={8} data-testid="popover-settings">
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <h4 className="font-semibold text-sm">Video Settings</h4>
