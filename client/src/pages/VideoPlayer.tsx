@@ -4,11 +4,18 @@ import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Repeat, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, ChevronLeft, ChevronRight, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -68,51 +75,35 @@ export default function VideoPlayer() {
     },
   });
 
-  // Calculate derived values before any conditional returns
-  const category = categories?.find(c => c.id === video?.categoryId);
-  const videoUrl = video?.videoUrl?.startsWith('/objects/') 
-    ? video.videoUrl 
-    : video?.videoUrl ? `/objects/${video.videoUrl}` : '';
-
-  const isVideoRejected = video?.moderationStatus === 'rejected';
-  
-  const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
-  const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
-  const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
-    ? approvedVideos[currentIndex + 1] 
-    : null;
-  const previousVideo = currentIndex > 0 
-    ? approvedVideos[currentIndex - 1] 
-    : null;
-
-  const otherVideos = approvedVideos
-    .filter(v => v.id !== videoId)
-    .slice(0, 10);
-
   useEffect(() => {
     localStorage.setItem('videoAutoplay', String(autoplay));
   }, [autoplay]);
 
   useEffect(() => {
-    if (videoRef.current && video && !videoLoading && !isVideoRejected) {
+    if (videoRef.current && video && !videoLoading) {
       videoRef.current.play().catch(() => {
         // Autoplay might be blocked by browser, ignore error
       });
     }
-  }, [videoId, video, videoLoading, isVideoRejected]);
+  }, [videoId, video, videoLoading]);
 
   const handleVideoEnded = () => {
+    const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
+    const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
+    const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
+      ? approvedVideos[currentIndex + 1] 
+      : null;
+    
     if (autoplay && nextVideo) {
       setLocation(`/video/${nextVideo.id}`);
     }
   };
 
-  const handleToggleAutoplay = () => {
-    const newAutoplay = !autoplay;
-    setAutoplay(newAutoplay);
+  const handleToggleAutoplay = (checked: boolean) => {
+    setAutoplay(checked);
     toast({
-      title: newAutoplay ? "Autoplay Enabled" : "Autoplay Disabled",
-      description: newAutoplay 
+      title: checked ? "Autoplay Enabled" : "Autoplay Disabled",
+      description: checked 
         ? "Next video will play automatically" 
         : "Autoplay has been turned off",
     });
@@ -128,6 +119,26 @@ export default function VideoPlayer() {
       </div>
     );
   }
+
+  const category = categories?.find(c => c.id === video.categoryId);
+  const videoUrl = video.videoUrl.startsWith('/objects/') 
+    ? video.videoUrl 
+    : `/objects/${video.videoUrl}`;
+
+  const isVideoRejected = video.moderationStatus === 'rejected';
+  
+  const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
+  const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
+  const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
+    ? approvedVideos[currentIndex + 1] 
+    : null;
+  const previousVideo = currentIndex > 0 
+    ? approvedVideos[currentIndex - 1] 
+    : null;
+
+  const otherVideos = approvedVideos
+    .filter(v => v.id !== videoId)
+    .slice(0, 10);
 
   if (isVideoRejected) {
     return (
@@ -223,21 +234,68 @@ export default function VideoPlayer() {
                     Your browser does not support the video tag.
                   </video>
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`absolute bottom-14 right-4 flex items-center gap-1.5 px-2.5 py-1.5 h-auto text-xs rounded-md z-10 ${
-                      autoplay 
-                        ? 'bg-white/90 hover:bg-white text-black' 
-                        : 'bg-black/70 hover:bg-black/80 text-white border border-white/20'
-                    }`}
-                    onClick={handleToggleAutoplay}
-                    data-testid="button-autoplay"
-                    title={autoplay ? "Autoplay is on" : "Autoplay is off"}
-                  >
-                    <Repeat className={`w-3.5 h-3.5 ${autoplay ? 'text-primary' : 'text-white'}`} />
-                    <span className="font-semibold">Autoplay</span>
-                  </Button>
+                  {previousVideo && (
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100"
+                      onClick={() => setLocation(`/video/${previousVideo.id}`)}
+                      data-testid="button-previous-video"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </Button>
+                  )}
+                  
+                  {nextVideo && (
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100"
+                      onClick={() => setLocation(`/video/${nextVideo.id}`)}
+                      data-testid="button-next-video"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                  )}
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute bottom-4 right-4 opacity-80 hover:opacity-100"
+                        data-testid="button-settings"
+                      >
+                        <Settings className="w-5 h-5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64" align="end" data-testid="popover-settings">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-sm">Video Settings</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Configure your playback preferences
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="autoplay" className="text-sm">
+                            Autoplay next video
+                          </Label>
+                          <Switch
+                            id="autoplay"
+                            checked={autoplay}
+                            onCheckedChange={handleToggleAutoplay}
+                            data-testid="switch-autoplay"
+                          />
+                        </div>
+                        {autoplay && nextVideo && (
+                          <div className="text-xs text-muted-foreground pt-2 border-t">
+                            Next: {nextVideo.title}
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
