@@ -65,6 +65,21 @@ function isEmailVerified(req: any, res: any, next: any) {
   next();
 }
 
+// Helper to sanitize user data for public judge profile responses
+function toPublicJudgeProfile(user: SelectUser) {
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    judgeName: user.judgeName,
+    judgeBio: user.judgeBio,
+    judgePhotoUrl: user.judgePhotoUrl,
+    emailVerified: user.emailVerified,
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -1841,6 +1856,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error rejecting payout:", error);
       res.status(500).json({ message: "Failed to reject payout" });
+    }
+  });
+
+  // Admin: Create judge account
+  app.post('/api/admin/judges', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      // Validate request body with Zod
+      const createJudgeSchema = z.object({
+        email: z.string().trim().email(),
+        password: z.string().trim().min(8),
+        firstName: z.string().trim().min(1).max(100),
+        lastName: z.string().trim().min(1).max(100),
+        username: z.string().trim().min(3).max(50),
+        judgeName: z.string().trim().min(1).max(100),
+        judgeBio: z.string().trim().optional().or(z.literal("")),
+        judgePhotoUrl: z.string().trim().url().optional().or(z.literal("")),
+      });
+
+      const validationResult = createJudgeSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid judge data",
+          errors: validationResult.error.errors 
+        });
+      }
+
+      const { email, password, firstName, lastName, username, judgeName, judgeBio, judgePhotoUrl } = validationResult.data;
+
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create the judge account
+      const newJudge = await storage.createUser({
+        firstName,
+        lastName,
+        email,
+        username,
+        password: hashedPassword,
+        isAdmin: false,
+        isJudge: true,
+        emailVerified: true, // Auto-verify admin-created judges
+        judgeName,
+        judgeBio: judgeBio || null,
+        judgePhotoUrl: judgePhotoUrl || null,
+      });
+
+      // Return only safe judge profile data (exclude all sensitive fields)
+      res.json(toPublicJudgeProfile(newJudge));
+    } catch (error) {
+      console.error("Error creating judge:", error);
+      res.status(500).json({ message: "Failed to create judge account" });
+    }
+  });
+
+  // Admin: Get all judges
+  app.get('/api/admin/judges', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const judges = await storage.getJudgeRoster();
+      // Sanitize each judge to exclude sensitive fields
+      const sanitizedJudges = judges.map(judge => ({
+        id: judge.id,
+        email: judge.email,
+        firstName: judge.firstName,
+        lastName: judge.lastName,
+        judgeName: judge.judgeName,
+        judgeBio: judge.judgeBio,
+        judgePhotoUrl: judge.judgePhotoUrl,
+      }));
+      res.json(sanitizedJudges);
+    } catch (error) {
+      console.error("Error fetching judges:", error);
+      res.status(500).json({ message: "Failed to fetch judges" });
     }
   });
 

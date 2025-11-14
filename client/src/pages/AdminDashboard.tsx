@@ -7,13 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import PhaseManagement from "@/components/PhaseManagement";
-import { CheckCircle, XCircle, Eye, Clock, DollarSign, Flag, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Clock, DollarSign, Flag, ExternalLink, UserCog } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Video, Category, PayoutRequest, Report } from "@shared/schema";
+import type { Video, Category, PayoutRequest, Report, JudgeProfile } from "@shared/schema";
 
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
@@ -33,6 +38,10 @@ function AdminDashboardContent() {
 
   const { data: reports = [], isLoading: reportsLoading } = useQuery<Report[]>({
     queryKey: ["/api/admin/reports"],
+  });
+
+  const { data: judges = [], isLoading: judgesLoading } = useQuery<JudgeProfile[]>({
+    queryKey: ["/api/admin/judges"],
   });
 
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
@@ -154,6 +163,52 @@ function AdminDashboardContent() {
     },
   });
 
+  const createJudgeSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    judgeName: z.string().min(1, "Judge name is required"),
+    judgeBio: z.string().optional(),
+    judgePhotoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  });
+
+  const judgeForm = useForm<z.infer<typeof createJudgeSchema>>({
+    resolver: zodResolver(createJudgeSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      username: "",
+      judgeName: "",
+      judgeBio: "",
+      judgePhotoUrl: "",
+    },
+  });
+
+  const createJudgeMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof createJudgeSchema>) => {
+      return await apiRequest("/api/admin/judges", "POST", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Judge Created",
+        description: "Judge account has been created successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
+      judgeForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || "Unknown";
   };
@@ -173,7 +228,7 @@ function AdminDashboardContent() {
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4 gap-1">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-5 gap-1">
           <TabsTrigger value="phases" data-testid="tab-phases">
             Phase Management
           </TabsTrigger>
@@ -184,6 +239,9 @@ function AdminDashboardContent() {
                 {pendingVideos.length}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="judges" data-testid="tab-judges">
+            Judges
           </TabsTrigger>
           <TabsTrigger value="payouts" data-testid="tab-payouts">
             Payout Requests
@@ -205,6 +263,186 @@ function AdminDashboardContent() {
 
         <TabsContent value="phases" className="mt-6">
           <PhaseManagement />
+        </TabsContent>
+
+        <TabsContent value="judges" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card data-testid="card-create-judge">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="w-5 h-5" />
+                  Create Judge Account
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...judgeForm}>
+                  <form onSubmit={judgeForm.handleSubmit((data) => createJudgeMutation.mutate(data))} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={judgeForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} data-testid="input-judge-firstname" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={judgeForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} data-testid="input-judge-lastname" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={judgeForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" data-testid="input-judge-email" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={judgeForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-judge-username" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={judgeForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" data-testid="input-judge-password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={judgeForm.control}
+                      name="judgeName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Judge Name (Public Display)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Prof. John Doe" data-testid="input-judge-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={judgeForm.control}
+                      name="judgeBio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Judge Bio (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Brief biography" data-testid="input-judge-bio" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={judgeForm.control}
+                      name="judgePhotoUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Photo URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="url" placeholder="https://..." data-testid="input-judge-photo" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={createJudgeMutation.isPending}
+                      data-testid="button-create-judge"
+                    >
+                      {createJudgeMutation.isPending ? "Creating..." : "Create Judge Account"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-judge-list">
+              <CardHeader>
+                <CardTitle>Current Judges ({judges.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {judgesLoading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="mt-4 text-muted-foreground">Loading judges...</p>
+                  </div>
+                ) : judges.length === 0 ? (
+                  <div className="text-center py-12">
+                    <UserCog className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-semibold mb-2">No Judges Yet</h3>
+                    <p className="text-muted-foreground">
+                      Create judge accounts using the form
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {judges.map((judge) => (
+                      <Card key={judge.id} className="p-4" data-testid={`judge-item-${judge.id}`}>
+                        <div className="flex items-start gap-4">
+                          {judge.judgePhotoUrl && (
+                            <img 
+                              src={judge.judgePhotoUrl} 
+                              alt={judge.judgeName || judge.email} 
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-semibold" data-testid={`text-judge-name-${judge.id}`}>
+                              {judge.judgeName || `${judge.firstName} ${judge.lastName}`}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">{judge.email}</p>
+                            {judge.judgeBio && (
+                              <p className="text-sm mt-2">{judge.judgeBio}</p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="videos" className="mt-6">
