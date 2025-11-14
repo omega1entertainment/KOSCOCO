@@ -226,17 +226,17 @@ export default function VideoPlayer() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`absolute bottom-3 right-16 flex items-center gap-1.5 px-2 py-1 h-auto text-xs ${
+                    className={`absolute bottom-14 right-4 flex items-center gap-1.5 px-2.5 py-1.5 h-auto text-xs rounded-md z-10 ${
                       autoplay 
-                        ? 'bg-white/20 hover:bg-white/30 text-white' 
-                        : 'bg-black/20 hover:bg-black/30 text-white/70'
+                        ? 'bg-white/90 hover:bg-white text-black' 
+                        : 'bg-black/70 hover:bg-black/80 text-white border border-white/20'
                     }`}
                     onClick={handleToggleAutoplay}
                     data-testid="button-autoplay"
                     title={autoplay ? "Autoplay is on" : "Autoplay is off"}
                   >
-                    <Repeat className={`w-3.5 h-3.5 ${autoplay ? 'text-primary' : ''}`} />
-                    <span className="font-medium">Autoplay</span>
+                    <Repeat className={`w-3.5 h-3.5 ${autoplay ? 'text-primary' : 'text-white'}`} />
+                    <span className="font-semibold">Autoplay</span>
                   </Button>
                 </div>
                 <CardContent className="p-6">
