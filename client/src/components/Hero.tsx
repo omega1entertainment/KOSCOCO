@@ -38,7 +38,7 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
         <div className="flex items-center justify-center gap-6 text-white/80 text-sm md:text-base mb-12 flex-wrap">
           <span className="font-semibold">5 Categories</span>
           <span className="w-1 h-1 bg-white/60 rounded-full"></span>
-          <span className="font-semibold">8 Weeks</span>
+          <span className="font-semibold">10 Weeks</span>
           <span className="w-1 h-1 bg-white/60 rounded-full"></span>
           <span className="font-semibold">Cash Prizes</span>
         </div>
