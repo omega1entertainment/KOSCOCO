@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import heroBackground from "@assets/generated_images/Hero_background_competition_energy_2a99609f.png";
+import heroBackground from "@assets/wallpaper_background_with_gold_coins_money_flying (1)_1763090073005.jpeg";
 import seasonLogo from "@assets/kOSCOCO-SEASON 1_1762052498157.png";
 
 interface HeroProps {
