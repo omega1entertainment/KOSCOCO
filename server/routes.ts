@@ -1268,6 +1268,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Like routes
+  app.post('/api/likes', async (req: any, res) => {
+    try {
+      const { videoId } = req.body;
+      
+      if (!videoId) {
+        return res.status(400).json({ message: "Video ID is required" });
+      }
+
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(400).json({ message: "Cannot like unapproved videos" });
+      }
+
+      const userId = req.user ? (req.user as SelectUser).id : null;
+      const ipAddress = req.ip || req.connection.remoteAddress || null;
+
+      const existingLikes = await storage.getUserLikesForVideo(userId, videoId, ipAddress);
+      if (existingLikes.length > 0) {
+        return res.status(400).json({ message: "You have already liked this video" });
+      }
+
+      const like = await storage.createLike({
+        videoId,
+        userId,
+        ipAddress,
+      });
+
+      const likeCount = await storage.getVideoLikeCount(videoId);
+
+      res.json({ 
+        success: true, 
+        like,
+        likeCount
+      });
+    } catch (error: any) {
+      if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
+        return res.status(400).json({ message: "You have already liked this video" });
+      }
+      console.error("Error creating like:", error);
+      res.status(500).json({ message: "Failed to create like" });
+    }
+  });
+
+  app.get('/api/likes/video/:videoId', async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const likeCount = await storage.getVideoLikeCount(videoId);
+      res.json({ likeCount });
+    } catch (error) {
+      console.error("Error fetching like count:", error);
+      res.status(500).json({ message: "Failed to fetch like count" });
+    }
+  });
+
+  app.get('/api/likes/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const likes = await storage.getUserLikes(userId);
+      res.json(likes);
+    } catch (error) {
+      console.error("Error fetching user likes:", error);
+      res.status(500).json({ message: "Failed to fetch user likes" });
+    }
+  });
+
   app.get('/api/stats/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
