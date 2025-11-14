@@ -4,18 +4,11 @@ import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, ChevronLeft, ChevronRight, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Play, Pause, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -114,11 +107,12 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleToggleAutoplay = (checked: boolean) => {
-    setAutoplay(checked);
+  const handleToggleAutoplay = () => {
+    const newAutoplay = !autoplay;
+    setAutoplay(newAutoplay);
     toast({
-      title: checked ? "Autoplay Enabled" : "Autoplay Disabled",
-      description: checked 
+      title: newAutoplay ? "Autoplay Enabled" : "Autoplay Disabled",
+      description: newAutoplay 
         ? "Next video will play automatically" 
         : "Autoplay has been turned off",
     });
@@ -229,68 +223,16 @@ export default function VideoPlayer() {
                     Your browser does not support the video tag.
                   </video>
                   
-                  {previousVideo && (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute left-4 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100"
-                      onClick={() => setLocation(`/video/${previousVideo.id}`)}
-                      data-testid="button-previous-video"
-                    >
-                      <ChevronLeft className="w-6 h-6" />
-                    </Button>
-                  )}
-                  
-                  {nextVideo && (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100"
-                      onClick={() => setLocation(`/video/${nextVideo.id}`)}
-                      data-testid="button-next-video"
-                    >
-                      <ChevronRight className="w-6 h-6" />
-                    </Button>
-                  )}
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute top-4 right-4 opacity-80 hover:opacity-100"
-                        data-testid="button-settings"
-                      >
-                        <Settings className="w-5 h-5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64" align="end" side="bottom" sideOffset={8} data-testid="popover-settings">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm">Video Settings</h4>
-                          <p className="text-xs text-muted-foreground">
-                            Configure your playback preferences
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="autoplay" className="text-sm">
-                            Autoplay next video
-                          </Label>
-                          <Switch
-                            id="autoplay"
-                            checked={autoplay}
-                            onCheckedChange={handleToggleAutoplay}
-                            data-testid="switch-autoplay"
-                          />
-                        </div>
-                        {autoplay && nextVideo && (
-                          <div className="text-xs text-muted-foreground pt-2 border-t">
-                            Next: {nextVideo.title}
-                          </div>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-4 right-4 opacity-80 hover:opacity-100"
+                    onClick={handleToggleAutoplay}
+                    data-testid="button-autoplay"
+                    title={autoplay ? "Autoplay enabled" : "Autoplay disabled"}
+                  >
+                    {autoplay ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5" />}
+                  </Button>
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
