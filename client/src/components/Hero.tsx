@@ -19,14 +19,6 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
       
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-        <Badge 
-          className="mb-6 px-6 py-2 text-sm font-bold tracking-widest"
-          variant="destructive"
-          data-testid="badge-phase"
-        >
-          {currentPhase}
-        </Badge>
-        
         <h1 className="font-display text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl text-white mb-6 tracking-wide uppercase">
           the kozzii short content competition
         </h1>
@@ -51,7 +43,7 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           <span className="font-semibold">Cash Prizes</span>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <Button 
             size="lg"
             variant="default"
@@ -70,6 +62,14 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
             Watch Entries
           </Button>
         </div>
+        
+        <Badge 
+          className="px-6 py-2 text-sm font-bold tracking-widest"
+          variant="destructive"
+          data-testid="badge-phase"
+        >
+          {currentPhase}
+        </Badge>
       </div>
     </div>
   );
