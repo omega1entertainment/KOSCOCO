@@ -331,6 +331,37 @@ export type PaidVote = typeof paidVotes.$inferSelect;
 export type InsertJudgeScore = z.infer<typeof insertJudgeScoreSchema>;
 export type JudgeScore = typeof judgeScores.$inferSelect;
 
+// Judge-specific types
+export type JudgeProfile = {
+  id: string;
+  judgeName: string | null;
+  judgeBio: string | null;
+  judgePhotoUrl: string | null;
+  email: string;
+  firstName: string;
+  lastName: string;
+};
+
+export type JudgeWithStats = JudgeProfile & {
+  totalVideosScored: number;
+  averageCreativityScore: number;
+  averageQualityScore: number;
+};
+
+export type JudgeScoreWithVideo = JudgeScore & {
+  video: Video & {
+    category: { id: string; name: string; } | null;
+    creator: { id: string; firstName: string; lastName: string; judgeName: string | null; } | null;
+  };
+};
+
+export type VideoForJudging = Video & {
+  voteCount: number;
+  likeCount: number;
+  category: { id: string; name: string; } | null;
+  creator: { id: string; firstName: string; lastName: string; judgeName: string | null; } | null;
+};
+
 export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
 export type Affiliate = typeof affiliates.$inferSelect;
 

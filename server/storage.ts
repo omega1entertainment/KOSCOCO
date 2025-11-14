@@ -11,7 +11,7 @@ import type {
   Vote, InsertVote,
   VotePurchase, InsertVotePurchase,
   PaidVote, InsertPaidVote,
-  JudgeScore, InsertJudgeScore,
+  JudgeScore, InsertJudgeScore, JudgeProfile, JudgeWithStats, JudgeScoreWithVideo, VideoForJudging,
   Affiliate, InsertAffiliate,
   Referral, InsertReferral,
   PayoutRequest, InsertPayoutRequest,
@@ -87,6 +87,14 @@ export interface IStorage {
   
   createJudgeScore(score: InsertJudgeScore): Promise<JudgeScore>;
   getVideoJudgeScores(videoId: string): Promise<JudgeScore[]>;
+  
+  // Judge-specific methods
+  getJudgeRoster(): Promise<JudgeProfile[]>;
+  getJudgeWithStats(judgeId: string): Promise<JudgeWithStats | undefined>;
+  getVideosForJudging(judgeId: string, filters?: { categoryId?: string; phaseId?: string; limit?: number }): Promise<VideoForJudging[]>;
+  getJudgeCompletedScores(judgeId: string, filters?: { categoryId?: string; phaseId?: string }): Promise<JudgeScoreWithVideo[]>;
+  updateJudgeProfile(judgeId: string, updates: Partial<Pick<User, 'judgeName' | 'judgeBio' | 'judgePhotoUrl'>>): Promise<User | undefined>;
+  getJudgeAssignmentSummary(judgeId: string): Promise<{ pendingCount: number; completedCount: number }>;
   
   createAffiliate(affiliate: InsertAffiliate): Promise<Affiliate>;
   getAffiliateByUserId(userId: string): Promise<Affiliate | undefined>;
@@ -573,6 +581,244 @@ export class DbStorage implements IStorage {
 
   async getVideoJudgeScores(videoId: string): Promise<JudgeScore[]> {
     return await db.select().from(schema.judgeScores).where(eq(schema.judgeScores.videoId, videoId));
+  }
+
+  async getJudgeRoster(): Promise<JudgeProfile[]> {
+    const judges = await db
+      .select({
+        id: schema.users.id,
+        judgeName: schema.users.judgeName,
+        judgeBio: schema.users.judgeBio,
+        judgePhotoUrl: schema.users.judgePhotoUrl,
+        email: schema.users.email,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+      })
+      .from(schema.users)
+      .where(eq(schema.users.isJudge, true))
+      .orderBy(sql`COALESCE(${schema.users.judgeName}, ${schema.users.lastName})`);
+    
+    return judges as JudgeProfile[];
+  }
+
+  async getJudgeWithStats(judgeId: string): Promise<JudgeWithStats | undefined> {
+    const [judge] = await db
+      .select({
+        id: schema.users.id,
+        judgeName: schema.users.judgeName,
+        judgeBio: schema.users.judgeBio,
+        judgePhotoUrl: schema.users.judgePhotoUrl,
+        email: schema.users.email,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        totalVideosScored: sql<number>`COALESCE(COUNT(${schema.judgeScores.id}), 0)`,
+        averageCreativityScore: sql<number>`COALESCE(AVG(${schema.judgeScores.creativityScore}), 0)`,
+        averageQualityScore: sql<number>`COALESCE(AVG(${schema.judgeScores.qualityScore}), 0)`,
+      })
+      .from(schema.users)
+      .leftJoin(schema.judgeScores, eq(schema.users.id, schema.judgeScores.judgeId))
+      .where(and(
+        eq(schema.users.id, judgeId),
+        eq(schema.users.isJudge, true)
+      ))
+      .groupBy(
+        schema.users.id,
+        schema.users.judgeName,
+        schema.users.judgeBio,
+        schema.users.judgePhotoUrl,
+        schema.users.email,
+        schema.users.firstName,
+        schema.users.lastName
+      );
+    
+    return judge as JudgeWithStats | undefined;
+  }
+
+  async getVideosForJudging(
+    judgeId: string,
+    filters?: { categoryId?: string; phaseId?: string; limit?: number }
+  ): Promise<VideoForJudging[]> {
+    const conditions = [
+      eq(schema.videos.status, 'approved'),
+      isNull(schema.judgeScores.id)  // No score from this judge
+    ];
+    
+    if (filters?.categoryId) {
+      conditions.push(eq(schema.videos.categoryId, filters.categoryId));
+    }
+    if (filters?.phaseId) {
+      conditions.push(eq(schema.videos.phaseId, filters.phaseId));
+    }
+
+    const videos = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        moderationStatus: schema.videos.moderationStatus,
+        moderationCategories: schema.videos.moderationCategories,
+        moderationReason: schema.videos.moderationReason,
+        moderatedAt: schema.videos.moderatedAt,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        likeCount: sql<number>`(
+          SELECT COALESCE(COUNT(*), 0)
+          FROM ${schema.likes}
+          WHERE ${schema.likes.videoId} = ${schema.videos.id}
+        )`,
+        voteCount: sql<number>`(
+          (SELECT COALESCE(COUNT(*), 0)
+           FROM ${schema.votes}
+           WHERE ${schema.votes.videoId} = ${schema.videos.id})
+          +
+          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
+           FROM ${schema.paidVotes}
+           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
+        )`,
+        category: {
+          id: schema.categories.id,
+          name: schema.categories.name,
+        },
+        creator: {
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          judgeName: schema.users.judgeName,
+        },
+      })
+      .from(schema.videos)
+      .leftJoin(
+        schema.judgeScores,
+        and(
+          eq(schema.videos.id, schema.judgeScores.videoId),
+          eq(schema.judgeScores.judgeId, judgeId)
+        )
+      )
+      .leftJoin(schema.categories, eq(schema.videos.categoryId, schema.categories.id))
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
+      .where(and(...conditions))
+      .orderBy(desc(schema.videos.createdAt))
+      .limit(filters?.limit || 50);
+    
+    return videos as VideoForJudging[];
+  }
+
+  async getJudgeCompletedScores(
+    judgeId: string,
+    filters?: { categoryId?: string; phaseId?: string }
+  ): Promise<JudgeScoreWithVideo[]> {
+    const conditions = [eq(schema.judgeScores.judgeId, judgeId)];
+    
+    const rows = await db
+      .select({
+        id: schema.judgeScores.id,
+        videoId: schema.judgeScores.videoId,
+        judgeId: schema.judgeScores.judgeId,
+        creativityScore: schema.judgeScores.creativityScore,
+        qualityScore: schema.judgeScores.qualityScore,
+        comments: schema.judgeScores.comments,
+        createdAt: schema.judgeScores.createdAt,
+        video: {
+          id: schema.videos.id,
+          userId: schema.videos.userId,
+          categoryId: schema.videos.categoryId,
+          phaseId: schema.videos.phaseId,
+          subcategory: schema.videos.subcategory,
+          title: schema.videos.title,
+          description: schema.videos.description,
+          videoUrl: schema.videos.videoUrl,
+          thumbnailUrl: schema.videos.thumbnailUrl,
+          duration: schema.videos.duration,
+          fileSize: schema.videos.fileSize,
+          status: schema.videos.status,
+          views: schema.videos.views,
+          moderationStatus: schema.videos.moderationStatus,
+          moderationCategories: schema.videos.moderationCategories,
+          moderationReason: schema.videos.moderationReason,
+          moderatedAt: schema.videos.moderatedAt,
+          createdAt: schema.videos.createdAt,
+          updatedAt: schema.videos.updatedAt,
+          category: {
+            id: schema.categories.id,
+            name: schema.categories.name,
+          },
+          creator: {
+            id: schema.users.id,
+            firstName: schema.users.firstName,
+            lastName: schema.users.lastName,
+            judgeName: schema.users.judgeName,
+          },
+        }
+      })
+      .from(schema.judgeScores)
+      .innerJoin(schema.videos, eq(schema.judgeScores.videoId, schema.videos.id))
+      .leftJoin(schema.categories, eq(schema.videos.categoryId, schema.categories.id))
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
+      .where(and(...conditions))
+      .orderBy(desc(schema.judgeScores.createdAt));
+    
+    return rows.map(row => ({
+      id: row.id,
+      videoId: row.videoId,
+      judgeId: row.judgeId,
+      creativityScore: row.creativityScore,
+      qualityScore: row.qualityScore,
+      comments: row.comments,
+      createdAt: row.createdAt,
+      video: row.video
+    })) as JudgeScoreWithVideo[];
+  }
+
+  async updateJudgeProfile(
+    judgeId: string,
+    updates: Partial<Pick<User, 'judgeName' | 'judgeBio' | 'judgePhotoUrl'>>
+  ): Promise<User | undefined> {
+    const [user] = await db
+      .update(schema.users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(schema.users.id, judgeId),
+        eq(schema.users.isJudge, true)
+      ))
+      .returning();
+    
+    return user;
+  }
+
+  async getJudgeAssignmentSummary(judgeId: string): Promise<{ pendingCount: number; completedCount: number }> {
+    const [pendingResult, completedResult] = await Promise.all([
+      db.select({ count: sql<number>`COUNT(DISTINCT ${schema.videos.id})` })
+        .from(schema.videos)
+        .leftJoin(
+          schema.judgeScores,
+          and(
+            eq(schema.videos.id, schema.judgeScores.videoId),
+            eq(schema.judgeScores.judgeId, judgeId)
+          )
+        )
+        .where(and(
+          eq(schema.videos.status, 'approved'),
+          isNull(schema.judgeScores.id)
+        )),
+      db.select({ count: sql<number>`COUNT(*)` })
+        .from(schema.judgeScores)
+        .where(eq(schema.judgeScores.judgeId, judgeId))
+    ]);
+    
+    return {
+      pendingCount: Number(pendingResult[0]?.count || 0),
+      completedCount: Number(completedResult[0]?.count || 0)
+    };
   }
 
   async createAffiliate(insertAffiliate: InsertAffiliate): Promise<Affiliate> {

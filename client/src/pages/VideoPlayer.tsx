@@ -41,6 +41,28 @@ export default function VideoPlayer() {
     enabled: !!videoId,
   });
 
+  const { data: judgeScoresData } = useQuery<{
+    scores: Array<{
+      id: string;
+      judgeId: string;
+      creativityScore: number;
+      qualityScore: number;
+      comments: string | null;
+      createdAt: Date;
+      judge?: {
+        judgeName: string | null;
+        firstName: string;
+        lastName: string;
+      };
+    }>;
+    count: number;
+    total: number;
+    average: number;
+  }>({
+    queryKey: [`/api/videos/${videoId}/scores`],
+    enabled: !!videoId,
+  });
+
   const { data: relatedVideos = [] } = useQuery<Video[]>({
     queryKey: [`/api/videos/category/${video?.categoryId}`],
     enabled: !!video?.categoryId,
@@ -254,6 +276,67 @@ export default function VideoPlayer() {
                       <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-video-description">
                         {video.description}
                       </p>
+                    </div>
+                  )}
+
+                  {/* Judge Scores Section */}
+                  {judgeScoresData && judgeScoresData.count > 0 && (
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border" data-testid="section-judge-scores">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Check className="w-4 h-4" />
+                        Judge Scores
+                      </h3>
+                      
+                      {/* Average Score Display */}
+                      <div className="mb-4 p-3 bg-background rounded-md border">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Average Judge Score</p>
+                            <p className="text-xs text-muted-foreground">{judgeScoresData.count} {judgeScoresData.count === 1 ? 'judge' : 'judges'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-3xl font-bold text-primary" data-testid="text-avg-judge-score">
+                              {judgeScoresData.average.toFixed(1)}/20
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Individual Judge Scores */}
+                      <div className="space-y-2">
+                        {judgeScoresData.scores.map((score) => {
+                          const judgeName = score.judge?.judgeName || 
+                            `${score.judge?.firstName} ${score.judge?.lastName}` || 
+                            'Anonymous Judge';
+                          const totalScore = score.creativityScore + score.qualityScore;
+
+                          return (
+                            <div 
+                              key={score.id} 
+                              className="flex items-center justify-between p-3 bg-background rounded-md hover-elevate"
+                              data-testid={`judge-score-${score.id}`}
+                            >
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{judgeName}</p>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                  <span>Creativity: {score.creativityScore}/10</span>
+                                  <span>Quality: {score.qualityScore}/10</span>
+                                </div>
+                                {score.comments && (
+                                  <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
+                                    "{score.comments}"
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xl font-bold" data-testid={`text-judge-total-${score.id}`}>
+                                  {totalScore}/20
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 

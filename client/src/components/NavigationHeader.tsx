@@ -56,6 +56,7 @@ export default function NavigationHeader({
   
   const navItems = [
     { label: 'Watch', path: '/categories' },
+    { label: 'Judges', path: '/judges' },
     { label: 'How It Works', path: '/how-it-works' },
   ];
   
@@ -173,6 +174,11 @@ export default function NavigationHeader({
                     <DropdownMenuItem onClick={() => onNavigate?.('/dashboard')} data-testid="menu-dashboard">
                       Dashboard
                     </DropdownMenuItem>
+                    {user?.isJudge && (
+                      <DropdownMenuItem onClick={() => onNavigate?.('/judge-dashboard')} data-testid="menu-judge-dashboard">
+                        Judge Dashboard
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => logoutMutation.mutate()} data-testid="menu-logout">
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout

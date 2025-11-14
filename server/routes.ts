@@ -6,6 +6,8 @@ import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseOb
 import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
+import { insertJudgeScoreSchema } from "@shared/schema";
+import { z } from "zod";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
@@ -1032,6 +1034,231 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching judge scores:", error);
       res.status(500).json({ message: "Failed to fetch judge scores" });
+    }
+  });
+
+  // Public judges roster
+  app.get('/api/judges', async (req, res) => {
+    try {
+      const judges = await storage.getJudgeRoster();
+      res.json(judges);
+    } catch (error) {
+      console.error("Error fetching judges:", error);
+      res.status(500).json({ message: "Failed to fetch judges" });
+    }
+  });
+
+  // Public judge with stats
+  app.get('/api/judges/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const judge = await storage.getJudgeWithStats(id);
+      
+      if (!judge) {
+        return res.status(404).json({ message: "Judge not found" });
+      }
+      
+      res.json(judge);
+    } catch (error) {
+      console.error("Error fetching judge:", error);
+      res.status(500).json({ message: "Failed to fetch judge" });
+    }
+  });
+
+  // Judge dashboard - Get pending videos to score
+  app.get('/api/judge/videos/pending', isAuthenticated, isJudge, async (req: any, res) => {
+    try {
+      const judgeId = (req.user as SelectUser).id;
+      const { categoryId, phaseId, limit } = req.query;
+      
+      // Validate UUID format for categoryId and phaseId
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (categoryId && !uuidRegex.test(categoryId as string)) {
+        return res.status(400).json({ message: "Invalid categoryId format. Must be a valid UUID" });
+      }
+      
+      if (phaseId && !uuidRegex.test(phaseId as string)) {
+        return res.status(400).json({ message: "Invalid phaseId format. Must be a valid UUID" });
+      }
+      
+      // Validate and sanitize limit parameter
+      let parsedLimit: number | undefined = undefined;
+      if (limit) {
+        const limitNum = parseInt(limit as string, 10);
+        if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+          return res.status(400).json({ message: "Invalid limit parameter. Must be between 1 and 100" });
+        }
+        parsedLimit = limitNum;
+      }
+      
+      const videos = await storage.getVideosForJudging(judgeId, {
+        categoryId: categoryId as string,
+        phaseId: phaseId as string,
+        limit: parsedLimit
+      });
+      
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching pending videos for judge:", error);
+      res.status(500).json({ message: "Failed to fetch pending videos" });
+    }
+  });
+
+  // Judge dashboard - Get completed scores
+  app.get('/api/judge/videos/completed', isAuthenticated, isJudge, async (req: any, res) => {
+    try {
+      const judgeId = (req.user as SelectUser).id;
+      const { categoryId, phaseId } = req.query;
+      
+      // Validate UUID format for categoryId and phaseId
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (categoryId && !uuidRegex.test(categoryId as string)) {
+        return res.status(400).json({ message: "Invalid categoryId format. Must be a valid UUID" });
+      }
+      
+      if (phaseId && !uuidRegex.test(phaseId as string)) {
+        return res.status(400).json({ message: "Invalid phaseId format. Must be a valid UUID" });
+      }
+      
+      const scores = await storage.getJudgeCompletedScores(judgeId, {
+        categoryId: categoryId as string,
+        phaseId: phaseId as string
+      });
+      
+      res.json(scores);
+    } catch (error) {
+      console.error("Error fetching completed scores for judge:", error);
+      res.status(500).json({ message: "Failed to fetch completed scores" });
+    }
+  });
+
+  // Judge dashboard - Submit score for a video
+  app.post('/api/judge/videos/:videoId/score', isAuthenticated, isJudge, async (req: any, res) => {
+    try {
+      const { videoId } = req.params;
+      const judgeId = (req.user as SelectUser).id;
+
+      // Validate request body with Zod (omit server-populated fields)
+      const judgeScoreValidationSchema = insertJudgeScoreSchema
+        .omit({ judgeId: true, videoId: true })
+        .extend({
+          creativityScore: z.number().int().min(0).max(10),
+          qualityScore: z.number().int().min(0).max(10),
+          comments: z.string().optional().nullable(),
+        });
+
+      const validationResult = judgeScoreValidationSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid score data",
+          errors: validationResult.error.errors 
+        });
+      }
+
+      const { creativityScore, qualityScore, comments } = validationResult.data;
+
+      // Check if video exists and is approved
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(400).json({ message: "Can only score approved videos" });
+      }
+
+      // Check if judge already scored this video
+      const existingScores = await storage.getVideoJudgeScores(videoId);
+      const existingScore = existingScores.find(s => s.judgeId === judgeId);
+      if (existingScore) {
+        return res.status(400).json({ message: "You have already scored this video" });
+      }
+
+      // Create the judge score using validated data
+      const score = await storage.createJudgeScore({
+        videoId,
+        judgeId,
+        creativityScore,
+        qualityScore,
+        comments: comments || null,
+      });
+
+      res.json({
+        success: true,
+        score,
+        totalScore: creativityScore + qualityScore,
+      });
+    } catch (error: any) {
+      console.error("Error creating judge score:", error);
+      
+      if (error.code === '23505' || error.message?.includes('unique constraint')) {
+        return res.status(400).json({ message: "You have already scored this video" });
+      }
+      
+      res.status(500).json({ message: "Failed to create judge score" });
+    }
+  });
+
+  // Judge dashboard - Get assignment summary
+  app.get('/api/judge/summary', isAuthenticated, isJudge, async (req: any, res) => {
+    try {
+      const judgeId = (req.user as SelectUser).id;
+      const summary = await storage.getJudgeAssignmentSummary(judgeId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching judge summary:", error);
+      res.status(500).json({ message: "Failed to fetch judge summary" });
+    }
+  });
+
+  // Judge profile - Update judge profile
+  app.patch('/api/judge/profile', isAuthenticated, isJudge, async (req: any, res) => {
+    try {
+      const judgeId = (req.user as SelectUser).id;
+      const { judgeName, judgeBio, judgePhotoUrl } = req.body;
+      
+      const updates: any = {};
+      if (judgeName !== undefined) updates.judgeName = judgeName;
+      if (judgeBio !== undefined) updates.judgeBio = judgeBio;
+      if (judgePhotoUrl !== undefined) updates.judgePhotoUrl = judgePhotoUrl;
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No updates provided" });
+      }
+      
+      const user = await storage.updateJudgeProfile(judgeId, updates);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Judge not found" });
+      }
+      
+      // Return only safe fields, explicitly exclude all sensitive data
+      const safeUser = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        age: user.age,
+        location: user.location,
+        parentalConsent: user.parentalConsent,
+        isAdmin: user.isAdmin,
+        isJudge: user.isJudge,
+        judgeName: user.judgeName,
+        judgeBio: user.judgeBio,
+        judgePhotoUrl: user.judgePhotoUrl,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error updating judge profile:", error);
+      res.status(500).json({ message: "Failed to update judge profile" });
     }
   });
 

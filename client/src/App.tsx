@@ -29,6 +29,9 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AffiliateTerms from "@/pages/AffiliateTerms";
 import Terms from "@/pages/Terms";
 import VerifyEmail from "@/pages/VerifyEmail";
+import JudgeDashboard from "@/pages/JudgeDashboard";
+import Judges from "@/pages/Judges";
+import JudgeProfile from "@/pages/JudgeProfile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -81,6 +84,9 @@ function Router() {
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/affiliate-terms" component={AffiliateTerms} />
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/judge-dashboard" component={JudgeDashboard} />
+          <Route path="/judges" component={Judges} />
+          <Route path="/judges/:id" component={JudgeProfile} />
           <Route component={NotFound} />
         </Switch>
       </main>
