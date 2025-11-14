@@ -155,7 +155,7 @@ export default function JudgeProfile() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-avg-creativity">
-                    {judge.averageCreativityScore.toFixed(1)}/10
+                    {judge.averageCreativityScore ? judge.averageCreativityScore.toFixed(1) : 'N/A'}/10
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Average score given
@@ -173,7 +173,7 @@ export default function JudgeProfile() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-avg-quality">
-                    {judge.averageQualityScore.toFixed(1)}/10
+                    {judge.averageQualityScore ? judge.averageQualityScore.toFixed(1) : 'N/A'}/10
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Average score given
@@ -195,7 +195,9 @@ export default function JudgeProfile() {
                     </p>
                   </div>
                   <div className="text-3xl font-bold text-primary" data-testid="text-overall-avg">
-                    {((judge.averageCreativityScore + judge.averageQualityScore) / 2).toFixed(1)}/10
+                    {(judge.averageCreativityScore && judge.averageQualityScore) 
+                      ? ((judge.averageCreativityScore + judge.averageQualityScore) / 2).toFixed(1) 
+                      : 'N/A'}/10
                   </div>
                 </div>
               </CardContent>
