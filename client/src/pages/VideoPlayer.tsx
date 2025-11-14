@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Play, Pause, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Repeat, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -224,14 +224,19 @@ export default function VideoPlayer() {
                   </video>
                   
                   <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-4 right-4 opacity-80 hover:opacity-100"
+                    variant="ghost"
+                    size="sm"
+                    className={`absolute bottom-3 right-16 flex items-center gap-1.5 px-2 py-1 h-auto text-xs ${
+                      autoplay 
+                        ? 'bg-white/20 hover:bg-white/30 text-white' 
+                        : 'bg-black/20 hover:bg-black/30 text-white/70'
+                    }`}
                     onClick={handleToggleAutoplay}
                     data-testid="button-autoplay"
-                    title={autoplay ? "Autoplay enabled" : "Autoplay disabled"}
+                    title={autoplay ? "Autoplay is on" : "Autoplay is off"}
                   >
-                    {autoplay ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5" />}
+                    <Repeat className={`w-3.5 h-3.5 ${autoplay ? 'text-primary' : ''}`} />
+                    <span className="font-medium">Autoplay</span>
                   </Button>
                 </div>
                 <CardContent className="p-6">
