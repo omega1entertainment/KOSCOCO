@@ -613,7 +613,7 @@ export class DbStorage implements IStorage {
   }
 
   async getJudgeWithStats(judgeId: string): Promise<JudgeWithStats | undefined> {
-    const [judge] = await db
+    const [result] = await db
       .select({
         id: schema.users.id,
         judgeName: schema.users.judgeName,
@@ -622,9 +622,9 @@ export class DbStorage implements IStorage {
         email: schema.users.email,
         firstName: schema.users.firstName,
         lastName: schema.users.lastName,
-        totalVideosScored: sql<number>`COALESCE(COUNT(${schema.judgeScores.id}), 0)`,
-        averageCreativityScore: sql<number>`COALESCE(AVG(${schema.judgeScores.creativityScore}), 0)`,
-        averageQualityScore: sql<number>`COALESCE(AVG(${schema.judgeScores.qualityScore}), 0)`,
+        totalVideosScored: sql<string>`COALESCE(COUNT(${schema.judgeScores.id}), 0)`,
+        averageCreativityScore: sql<string>`COALESCE(AVG(${schema.judgeScores.creativityScore}), 0)`,
+        averageQualityScore: sql<string>`COALESCE(AVG(${schema.judgeScores.qualityScore}), 0)`,
       })
       .from(schema.users)
       .leftJoin(schema.judgeScores, eq(schema.users.id, schema.judgeScores.judgeId))
@@ -642,7 +642,17 @@ export class DbStorage implements IStorage {
         schema.users.lastName
       );
     
-    return judge as JudgeWithStats | undefined;
+    if (!result) {
+      return undefined;
+    }
+    
+    // Convert string values from PostgreSQL aggregates to numbers
+    return {
+      ...result,
+      totalVideosScored: parseInt(result.totalVideosScored, 10),
+      averageCreativityScore: parseFloat(result.averageCreativityScore),
+      averageQualityScore: parseFloat(result.averageQualityScore),
+    } as JudgeWithStats;
   }
 
   async getVideosForJudging(
