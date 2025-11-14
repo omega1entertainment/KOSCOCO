@@ -75,25 +75,40 @@ export default function VideoPlayer() {
     },
   });
 
+  // Calculate derived values before any conditional returns
+  const category = categories?.find(c => c.id === video?.categoryId);
+  const videoUrl = video?.videoUrl?.startsWith('/objects/') 
+    ? video.videoUrl 
+    : video?.videoUrl ? `/objects/${video.videoUrl}` : '';
+
+  const isVideoRejected = video?.moderationStatus === 'rejected';
+  
+  const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
+  const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
+  const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
+    ? approvedVideos[currentIndex + 1] 
+    : null;
+  const previousVideo = currentIndex > 0 
+    ? approvedVideos[currentIndex - 1] 
+    : null;
+
+  const otherVideos = approvedVideos
+    .filter(v => v.id !== videoId)
+    .slice(0, 10);
+
   useEffect(() => {
     localStorage.setItem('videoAutoplay', String(autoplay));
   }, [autoplay]);
 
   useEffect(() => {
-    if (videoRef.current && video && !videoLoading) {
+    if (videoRef.current && video && !videoLoading && !isVideoRejected) {
       videoRef.current.play().catch(() => {
         // Autoplay might be blocked by browser, ignore error
       });
     }
-  }, [videoId, video, videoLoading]);
+  }, [videoId, video, videoLoading, isVideoRejected]);
 
   const handleVideoEnded = () => {
-    const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
-    const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
-    const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
-      ? approvedVideos[currentIndex + 1] 
-      : null;
-    
     if (autoplay && nextVideo) {
       setLocation(`/video/${nextVideo.id}`);
     }
@@ -119,26 +134,6 @@ export default function VideoPlayer() {
       </div>
     );
   }
-
-  const category = categories?.find(c => c.id === video.categoryId);
-  const videoUrl = video.videoUrl.startsWith('/objects/') 
-    ? video.videoUrl 
-    : `/objects/${video.videoUrl}`;
-
-  const isVideoRejected = video.moderationStatus === 'rejected';
-  
-  const approvedVideos = relatedVideos.filter(v => v.status === 'approved');
-  const currentIndex = approvedVideos.findIndex(v => v.id === videoId);
-  const nextVideo = currentIndex >= 0 && currentIndex < approvedVideos.length - 1 
-    ? approvedVideos[currentIndex + 1] 
-    : null;
-  const previousVideo = currentIndex > 0 
-    ? approvedVideos[currentIndex - 1] 
-    : null;
-
-  const otherVideos = approvedVideos
-    .filter(v => v.id !== videoId)
-    .slice(0, 10);
 
   if (isVideoRejected) {
     return (
