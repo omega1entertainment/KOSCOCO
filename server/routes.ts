@@ -1923,6 +1923,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Upload judge profile photo
+  app.post('/api/admin/judges/photo', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const form = formidable({
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+        maxFieldsSize: 1024,
+        keepExtensions: true,
+        allowEmptyFiles: false,
+      });
+
+      form.parse(req, async (err: any, fields: any, files: any) => {
+        if (err) {
+          console.error("Error parsing photo upload:", err);
+          if (err.code === 'LIMIT_FILE_SIZE' || err.message?.includes('maxFileSize')) {
+            return res.status(413).json({ message: "Photo size exceeds 5MB limit" });
+          }
+          return res.status(400).json({ message: "Error parsing upload: " + err.message });
+        }
+
+        const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
+        
+        if (!photoFile) {
+          return res.status(400).json({ message: "No photo file provided" });
+        }
+
+        const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!ALLOWED_IMAGE_FORMATS.includes(photoFile.mimetype?.toLowerCase() || '')) {
+          return res.status(400).json({ message: "Invalid image format. Allowed: JPEG, PNG, WebP" });
+        }
+
+        try {
+          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+          if (!privateObjectDir) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          // Determine file extension based on mimetype
+          const extMap: { [key: string]: string } = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/webp': 'webp',
+          };
+          const ext = extMap[photoFile.mimetype?.toLowerCase() || ''] || 'jpg';
+
+          const photoId = randomUUID();
+          const photoPath = `${privateObjectDir}/judge-photos/${photoId}.${ext}`;
+          const { bucketName, objectName } = parseObjectPath(photoPath);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const photoFileObj = bucket.file(objectName);
+
+          await new Promise((resolve, reject) => {
+            const readStream = createReadStream(photoFile.filepath);
+            const writeStream = photoFileObj.createWriteStream({
+              metadata: {
+                contentType: photoFile.mimetype || 'image/jpeg',
+                cacheControl: 'private, max-age=3600',
+              },
+            });
+
+            readStream.on('error', (error: Error) => {
+              console.error("Error reading photo file:", error);
+              reject(new Error('Failed to read photo file'));
+            });
+
+            writeStream.on('error', (error: Error) => {
+              console.error("Error writing photo to storage:", error);
+              reject(new Error('Failed to upload photo to storage'));
+            });
+
+            writeStream.on('finish', () => {
+              resolve(undefined);
+            });
+
+            readStream.pipe(writeStream);
+          });
+
+          // Clean up temp file
+          try {
+            await fs.unlink(photoFile.filepath);
+          } catch (unlinkError) {
+            console.error("Error cleaning up temp file:", unlinkError);
+          }
+
+          res.json({ photoUrl: photoPath });
+        } catch (error: any) {
+          console.error("Error uploading photo:", error);
+          res.status(500).json({ message: error.message || "Failed to upload photo" });
+        }
+      });
+    } catch (error: any) {
+      console.error("Error in photo upload handler:", error);
+      res.status(500).json({ message: error.message || "Failed to process upload" });
+    }
+  });
+
   // Admin: Get all judges
   app.get('/api/admin/judges', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
@@ -1941,6 +2036,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching judges:", error);
       res.status(500).json({ message: "Failed to fetch judges" });
+    }
+  });
+
+  // Admin: Delete judge account
+  app.delete('/api/admin/judges/:judgeId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { judgeId } = req.params;
+      
+      if (!judgeId) {
+        return res.status(400).json({ message: "Judge ID is required" });
+      }
+
+      // Verify the user exists and is a judge
+      const judge = await storage.getUserById(judgeId);
+      if (!judge) {
+        return res.status(404).json({ message: "Judge not found" });
+      }
+
+      if (!judge.isJudge) {
+        return res.status(400).json({ message: "User is not a judge" });
+      }
+
+      // Delete related judge_scores first to avoid foreign key constraint issues
+      await db.delete(schema.judgeScores).where(eq(schema.judgeScores.judgeId, judgeId));
+      
+      // Delete the judge account
+      await storage.deleteUser(judgeId);
+
+      res.json({ message: "Judge account deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting judge:", error);
+      res.status(500).json({ message: "Failed to delete judge account" });
     }
   });
 

@@ -32,6 +32,7 @@ export interface IStorage {
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<void>;
   updateUserGoogleId(id: string, googleId: string): Promise<User | undefined>;
   updateUserFacebookId(id: string, facebookId: string): Promise<User | undefined>;
   setPasswordResetToken(id: string, token: string, expires: Date): Promise<void>;
@@ -158,6 +159,10 @@ export class DbStorage implements IStorage {
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
     const [user] = await db.update(schema.users).set({...updates, updatedAt: new Date()}).where(eq(schema.users.id, id)).returning();
     return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(schema.users).where(eq(schema.users.id, id));
   }
 
   async updateUserGoogleId(id: string, googleId: string): Promise<User | undefined> {

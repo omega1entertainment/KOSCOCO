@@ -16,7 +16,18 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import PhaseManagement from "@/components/PhaseManagement";
-import { CheckCircle, XCircle, Eye, Clock, DollarSign, Flag, ExternalLink, UserCog } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Clock, DollarSign, Flag, ExternalLink, UserCog, Upload, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useRef } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category, PayoutRequest, Report, JudgeProfile } from "@shared/schema";
 
@@ -47,6 +58,15 @@ function AdminDashboardContent() {
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  
+  // Judge photo upload state
+  const [judgePhotoFile, setJudgePhotoFile] = useState<File | null>(null);
+  const [judgePhotoPreview, setJudgePhotoPreview] = useState<string | null>(null);
+  const judgePhotoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Judge delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [judgeToDelete, setJudgeToDelete] = useState<JudgeProfile | null>(null);
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -188,6 +208,44 @@ function AdminDashboardContent() {
     },
   });
 
+  // Photo upload mutation
+  const uploadJudgePhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("photo", file);
+      
+      const response = await fetch("/api/admin/judges/photo", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to upload photo");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data: { photoUrl: string }) => {
+      judgeForm.setValue("judgePhotoUrl", data.photoUrl);
+      setJudgePhotoPreview(URL.createObjectURL(judgePhotoFile!));
+      toast({
+        title: "Photo Uploaded",
+        description: "Judge photo has been uploaded successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setJudgePhotoFile(null);
+      setJudgePhotoPreview(null);
+    },
+  });
+
   const createJudgeMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createJudgeSchema>) => {
       return await apiRequest("/api/admin/judges", "POST", data);
@@ -199,6 +257,8 @@ function AdminDashboardContent() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
       judgeForm.reset();
+      setJudgePhotoFile(null);
+      setJudgePhotoPreview(null);
     },
     onError: (error: Error) => {
       toast({
@@ -208,6 +268,76 @@ function AdminDashboardContent() {
       });
     },
   });
+
+  // Delete judge mutation
+  const deleteJudgeMutation = useMutation({
+    mutationFn: async (judgeId: string) => {
+      const response = await fetch(`/api/admin/judges/${judgeId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete judge");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Judge Deleted",
+        description: "Judge account has been deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
+      setDeleteDialogOpen(false);
+      setJudgeToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Deletion Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "Invalid Format",
+        description: "Please upload an image in JPEG, PNG, or WebP format.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      toast({
+        title: "File Too Large",
+        description: "Photo must be under 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setJudgePhotoFile(file);
+    uploadJudgePhotoMutation.mutate(file);
+  };
+  
+  const handleClearPhoto = () => {
+    setJudgePhotoFile(null);
+    setJudgePhotoPreview(null);
+    judgeForm.setValue("judgePhotoUrl", "");
+    if (judgePhotoInputRef.current) {
+      judgePhotoInputRef.current.value = "";
+    }
+  };
 
   const getCategoryName = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.name || "Unknown";
@@ -375,9 +505,69 @@ function AdminDashboardContent() {
                       name="judgePhotoUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Photo URL (Optional)</FormLabel>
+                          <FormLabel>Profile Photo (Optional)</FormLabel>
                           <FormControl>
-                            <Input {...field} type="url" placeholder="https://..." data-testid="input-judge-photo" />
+                            <div className="space-y-2">
+                              <input
+                                ref={judgePhotoInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handlePhotoFileSelect}
+                                className="hidden"
+                                data-testid="input-judge-photo-file"
+                              />
+                              {judgePhotoPreview ? (
+                                <div className="flex items-center gap-4">
+                                  <img
+                                    src={judgePhotoPreview}
+                                    alt="Preview"
+                                    className="w-20 h-20 rounded-full object-cover"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => judgePhotoInputRef.current?.click()}
+                                      disabled={uploadJudgePhotoMutation.isPending}
+                                      data-testid="button-change-photo"
+                                    >
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Change Photo
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleClearPhoto}
+                                      disabled={uploadJudgePhotoMutation.isPending}
+                                      data-testid="button-remove-photo"
+                                    >
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      Remove
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => judgePhotoInputRef.current?.click()}
+                                  disabled={uploadJudgePhotoMutation.isPending}
+                                  data-testid="button-upload-photo"
+                                >
+                                  {uploadJudgePhotoMutation.isPending ? (
+                                    <>Uploading...</>
+                                  ) : (
+                                    <>
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Upload Photo
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                              <Input {...field} type="hidden" />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -435,6 +625,19 @@ function AdminDashboardContent() {
                               <p className="text-sm mt-2">{judge.judgeBio}</p>
                             )}
                           </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setJudgeToDelete(judge);
+                              setDeleteDialogOpen(true);
+                            }}
+                            disabled={deleteJudgeMutation.isPending}
+                            data-testid={`button-delete-judge-${judge.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </Button>
                         </div>
                       </Card>
                     ))}
@@ -905,6 +1108,35 @@ function AdminDashboardContent() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Delete Judge Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-judge">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Judge Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the judge account for{" "}
+              <strong>{judgeToDelete?.judgeName || judgeToDelete?.email}</strong>?
+              This action cannot be undone and will remove all their data from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (judgeToDelete) {
+                  deleteJudgeMutation.mutate(judgeToDelete.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteJudgeMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteJudgeMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
