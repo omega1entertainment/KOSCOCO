@@ -1277,6 +1277,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Judge profile - Upload judge profile photo (self-service)
+  app.post('/api/judge/photo', isAuthenticated, isJudge, async (req: any, res) => {
+    try {
+      const form = formidable({
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+        maxFieldsSize: 1024,
+        keepExtensions: true,
+        allowEmptyFiles: false,
+      });
+
+      form.parse(req, async (err: any, fields: any, files: any) => {
+        if (err) {
+          console.error("Error parsing photo upload:", err);
+          if (err.code === 'LIMIT_FILE_SIZE' || err.message?.includes('maxFileSize')) {
+            return res.status(413).json({ message: "Photo size exceeds 5MB limit" });
+          }
+          return res.status(400).json({ message: "Error parsing upload: " + err.message });
+        }
+
+        const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
+        
+        if (!photoFile) {
+          return res.status(400).json({ message: "No photo file provided" });
+        }
+
+        const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!ALLOWED_IMAGE_FORMATS.includes(photoFile.mimetype?.toLowerCase() || '')) {
+          return res.status(400).json({ message: "Invalid image format. Allowed: JPEG, PNG, WebP" });
+        }
+
+        try {
+          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+          if (!privateObjectDir) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          // Determine file extension based on mimetype
+          const extMap: { [key: string]: string } = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/webp': 'webp',
+          };
+          const ext = extMap[photoFile.mimetype?.toLowerCase() || ''] || 'jpg';
+
+          const photoId = randomUUID();
+          const photoPath = `${privateObjectDir}/judge-photos/${photoId}.${ext}`;
+          const { bucketName, objectName } = parseObjectPath(photoPath);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const photoFileObj = bucket.file(objectName);
+
+          await new Promise((resolve, reject) => {
+            const readStream = createReadStream(photoFile.filepath);
+            const writeStream = photoFileObj.createWriteStream({
+              metadata: {
+                contentType: photoFile.mimetype || 'image/jpeg',
+                cacheControl: 'private, max-age=3600',
+              },
+            });
+
+            readStream.on('error', (error: Error) => {
+              console.error("Error reading photo file:", error);
+              reject(new Error('Failed to read photo file'));
+            });
+
+            writeStream.on('error', (error: Error) => {
+              console.error("Error writing photo to storage:", error);
+              reject(new Error('Failed to upload photo to storage'));
+            });
+
+            writeStream.on('finish', () => {
+              resolve(undefined);
+            });
+
+            readStream.pipe(writeStream);
+          });
+
+          // Clean up temp file
+          try {
+            await fs.unlink(photoFile.filepath);
+          } catch (unlinkError) {
+            console.error("Error cleaning up temp file:", unlinkError);
+          }
+
+          res.json({ photoUrl: photoPath });
+        } catch (error: any) {
+          console.error("Error uploading photo:", error);
+          res.status(500).json({ message: error.message || "Failed to upload photo" });
+        }
+      });
+    } catch (error: any) {
+      console.error("Error in photo upload handler:", error);
+      res.status(500).json({ message: error.message || "Failed to process upload" });
+    }
+  });
+
   app.post('/api/votes', async (req: any, res) => {
     try {
       const { videoId } = req.body;

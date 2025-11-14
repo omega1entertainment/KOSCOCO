@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,15 +8,35 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Play, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Play, Clock, CheckCircle, AlertCircle, Upload, User as UserIcon } from "lucide-react";
 import type { VideoForJudging, JudgeScoreWithVideo } from "@shared/schema";
+
+//Profile form schema
+const profileFormSchema = z.object({
+  judgeName: z.string().min(2, "Name must be at least 2 characters").max(80, "Name must be less than 80 characters"),
+  judgeBio: z.string().max(500, "Bio must be less than 500 characters").optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function JudgeDashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("pending");
+  
+  // Profile photo upload state
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch pending videos
   const { data: pendingVideos, isLoading: pendingLoading } = useQuery<VideoForJudging[]>({
@@ -34,6 +54,105 @@ export default function JudgeDashboard() {
   const { data: summary } = useQuery<{ pendingCount: number; completedCount: number }>({
     queryKey: ['/api/judge/summary'],
   });
+
+  // Profile form
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      judgeName: user?.judgeName || "",
+      judgeBio: user?.judgeBio || "",
+    },
+  });
+
+  // Photo upload mutation
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("photo", file);
+      
+      const response = await fetch("/api/judge/photo", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to upload photo");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data: { photoUrl: string }) => {
+      setPhotoPreview(URL.createObjectURL(photoFile!));
+      // Update the profile with new photo
+      updateProfileMutation.mutate({ judgePhotoUrl: data.photoUrl });
+      toast({
+        title: "Photo Uploaded",
+        description: "Your profile photo has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload photo",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Profile update mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updates: Partial<ProfileFormValues & { judgePhotoUrl?: string }>) => {
+      return await apiRequest("/api/judge/profile", "PATCH", updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a JPEG, PNG, or WebP image",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Photo must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setPhotoFile(file);
+    uploadPhotoMutation.mutate(file);
+  };
+
+  const handleProfileSubmit = (values: ProfileFormValues) => {
+    updateProfileMutation.mutate(values);
+  };
 
   // Score submission
   const [scoringVideoId, setScoringVideoId] = useState<string | null>(null);
@@ -149,12 +268,15 @@ export default function JudgeDashboard() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+          <TabsList className="grid w-full md:w-[600px] grid-cols-3">
             <TabsTrigger value="pending" data-testid="tab-pending">
               Pending ({summary?.pendingCount || 0})
             </TabsTrigger>
             <TabsTrigger value="completed" data-testid="tab-completed">
               Completed ({summary?.completedCount || 0})
+            </TabsTrigger>
+            <TabsTrigger value="profile" data-testid="tab-profile">
+              Profile
             </TabsTrigger>
           </TabsList>
 
@@ -457,6 +579,118 @@ export default function JudgeDashboard() {
                 })}
               </div>
             )}
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle data-testid="heading-profile">My Profile</CardTitle>
+                <CardDescription>
+                  Update your judge profile information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Photo Upload Section */}
+                  <div className="flex flex-col items-center gap-4 pb-6 border-b">
+                    <Avatar className="h-32 w-32" data-testid="avatar-profile">
+                      <AvatarImage 
+                        src={photoPreview || user?.judgePhotoUrl || undefined} 
+                        alt={user?.judgeName || "Judge"} 
+                      />
+                      <AvatarFallback className="text-3xl">
+                        <UserIcon className="h-16 w-16" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-center">
+                      <Input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        data-testid="input-photo-file"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={uploadPhotoMutation.isPending}
+                        data-testid="button-upload-photo"
+                      >
+                        {uploadPhotoMutation.isPending ? (
+                          <>Uploading...</>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload New Photo
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        JPEG, PNG, or WebP • Max 5MB
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Profile Form */}
+                  <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
+                      <FormField
+                        control={profileForm.control}
+                        name="judgeName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Judge Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Your display name" 
+                                {...field} 
+                                data-testid="input-judge-name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={profileForm.control}
+                        name="judgeBio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bio</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Tell the contestants about yourself..."
+                                rows={5}
+                                className="resize-none"
+                                {...field}
+                                data-testid="textarea-judge-bio"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-muted-foreground">
+                              {(field.value?.length || 0)}/500 characters
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={updateProfileMutation.isPending || !profileForm.formState.isDirty}
+                        data-testid="button-save-profile"
+                      >
+                        {updateProfileMutation.isPending ? "Saving..." : "Save Profile"}
+                      </Button>
+                    </form>
+                  </Form>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
