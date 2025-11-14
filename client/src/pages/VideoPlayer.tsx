@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, ChevronLeft, ChevronRight, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Eye, Share2, Flag, Settings, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 
@@ -233,30 +233,6 @@ export default function VideoPlayer() {
                     <source src={videoUrl} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
-                  
-                  {previousVideo && (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute left-4 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100"
-                      onClick={() => setLocation(`/video/${previousVideo.id}`)}
-                      data-testid="button-previous-video"
-                    >
-                      <ChevronLeft className="w-6 h-6" />
-                    </Button>
-                  )}
-                  
-                  {nextVideo && (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100"
-                      onClick={() => setLocation(`/video/${nextVideo.id}`)}
-                      data-testid="button-next-video"
-                    >
-                      <ChevronRight className="w-6 h-6" />
-                    </Button>
-                  )}
 
                   <Popover>
                     <PopoverTrigger asChild>
