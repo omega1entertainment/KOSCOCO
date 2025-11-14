@@ -55,7 +55,7 @@ export default function NavigationHeader({
   });
   
   const navItems = [
-    { label: 'Categories', path: '/categories' },
+    { label: 'Watch', path: '/categories' },
     { label: 'How It Works', path: '/how-it-works' },
   ];
   
