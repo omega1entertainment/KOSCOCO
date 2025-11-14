@@ -15,6 +15,7 @@ import type {
   Affiliate, InsertAffiliate,
   Referral, InsertReferral,
   PayoutRequest, InsertPayoutRequest,
+  Like, InsertLike,
   Report, InsertReport
 } from "@shared/schema";
 
@@ -70,6 +71,11 @@ export interface IStorage {
   getUserVotes(userId: string): Promise<Vote[]>;
   getUserStats(userId: string): Promise<{ totalVideos: number; totalVotesReceived: number; totalVotesCast: number }>;
   getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number; totalJudgeScore: number; rank: number })[]>;
+  
+  createLike(like: InsertLike): Promise<Like>;
+  getVideoLikeCount(videoId: string): Promise<number>;
+  getUserLikesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Like[]>;
+  getUserLikes(userId: string): Promise<Like[]>;
   
   createVotePurchase(purchase: InsertVotePurchase): Promise<VotePurchase>;
   getVotePurchaseByTxRef(txRef: string): Promise<VotePurchase | undefined>;
@@ -348,6 +354,35 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.votes)
       .where(eq(schema.votes.userId, userId))
       .orderBy(desc(schema.votes.createdAt));
+  }
+
+  async createLike(insertLike: InsertLike): Promise<Like> {
+    const [like] = await db.insert(schema.likes).values(insertLike).returning();
+    return like;
+  }
+
+  async getVideoLikeCount(videoId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.likes)
+      .where(eq(schema.likes.videoId, videoId));
+    return result[0]?.count || 0;
+  }
+
+  async getUserLikesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Like[]> {
+    if (userId) {
+      return await db.select().from(schema.likes)
+        .where(and(eq(schema.likes.videoId, videoId), eq(schema.likes.userId, userId)));
+    } else if (ipAddress) {
+      return await db.select().from(schema.likes)
+        .where(and(eq(schema.likes.videoId, videoId), eq(schema.likes.ipAddress, ipAddress)));
+    }
+    return [];
+  }
+
+  async getUserLikes(userId: string): Promise<Like[]> {
+    return await db.select().from(schema.likes)
+      .where(eq(schema.likes.userId, userId))
+      .orderBy(desc(schema.likes.createdAt));
   }
 
   async createVotePurchase(insertPurchase: InsertVotePurchase): Promise<VotePurchase> {
