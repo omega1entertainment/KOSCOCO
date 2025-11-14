@@ -1353,17 +1353,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             readStream.pipe(writeStream);
           });
 
-          // Clean up temp file
+          res.json({ photoUrl: photoPath });
+        } catch (error: any) {
+          console.error("Error uploading photo:", error);
+          res.status(500).json({ message: error.message || "Failed to upload photo" });
+        } finally {
+          // Always clean up temp file
           try {
             await fs.unlink(photoFile.filepath);
           } catch (unlinkError) {
             console.error("Error cleaning up temp file:", unlinkError);
           }
-
-          res.json({ photoUrl: photoPath });
-        } catch (error: any) {
-          console.error("Error uploading photo:", error);
-          res.status(500).json({ message: error.message || "Failed to upload photo" });
         }
       });
     } catch (error: any) {

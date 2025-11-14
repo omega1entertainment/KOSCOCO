@@ -11,13 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Play, Clock, CheckCircle, AlertCircle, Upload, User as UserIcon } from "lucide-react";
-import type { VideoForJudging, JudgeScoreWithVideo } from "@shared/schema";
+import type { VideoForJudging, JudgeScoreWithVideo, User } from "@shared/schema";
+import { useEffect } from "react";
 
 //Profile form schema
 const profileFormSchema = z.object({
@@ -29,7 +29,6 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function JudgeDashboard() {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("pending");
   
@@ -37,6 +36,11 @@ export default function JudgeDashboard() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Subscribe to auth user query for reactive updates
+  const { data: authUser, isLoading: authUserLoading } = useQuery<User>({
+    queryKey: ['/api/auth/user'],
+  });
 
   // Fetch pending videos
   const { data: pendingVideos, isLoading: pendingLoading } = useQuery<VideoForJudging[]>({
@@ -59,10 +63,27 @@ export default function JudgeDashboard() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      judgeName: user?.judgeName || "",
-      judgeBio: user?.judgeBio || "",
+      judgeName: "",
+      judgeBio: "",
     },
   });
+  
+  // Sync form with auth user data when it changes
+  useEffect(() => {
+    if (authUser) {
+      profileForm.reset({
+        judgeName: authUser.judgeName || "",
+        judgeBio: authUser.judgeBio || "",
+      });
+    }
+  }, [authUser, profileForm]);
+  
+  // Clear local photo preview when server URL is available
+  useEffect(() => {
+    if (authUser?.judgePhotoUrl && photoPreview) {
+      setPhotoPreview(null);
+    }
+  }, [authUser?.judgePhotoUrl, photoPreview]);
 
   // Photo upload mutation
   const uploadPhotoMutation = useMutation({
@@ -83,16 +104,22 @@ export default function JudgeDashboard() {
       
       return await response.json();
     },
-    onSuccess: (data: { photoUrl: string }) => {
-      setPhotoPreview(URL.createObjectURL(photoFile!));
-      // Update the profile with new photo
-      updateProfileMutation.mutate({ judgePhotoUrl: data.photoUrl });
+    onSuccess: async (data: { photoUrl: string }) => {
+      // Update the profile with new photo and get updated user
+      const updatedUser = await apiRequest("/api/judge/profile", "PATCH", { judgePhotoUrl: data.photoUrl });
+      
+      // Update cache with fresh user data
+      // The useEffect will clear photoPreview when authUser.judgePhotoUrl updates
+      queryClient.setQueryData(['/api/auth/user'], updatedUser);
+      
       toast({
         title: "Photo Uploaded",
         description: "Your profile photo has been updated successfully",
       });
     },
     onError: (error: any) => {
+      setPhotoPreview(null);
+      setPhotoFile(null);
       toast({
         title: "Upload Failed",
         description: error.message || "Failed to upload photo",
@@ -103,11 +130,14 @@ export default function JudgeDashboard() {
 
   // Profile update mutation
   const updateProfileMutation = useMutation({
-    mutationFn: async (updates: Partial<ProfileFormValues & { judgePhotoUrl?: string }>) => {
+    mutationFn: async (updates: Partial<ProfileFormValues>) => {
       return await apiRequest("/api/judge/profile", "PATCH", updates);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    onSuccess: (updatedUser: any) => {
+      // Update cache with fresh user data from response
+      // The useEffect will automatically reset the form when authUser changes
+      queryClient.setQueryData(['/api/auth/user'], updatedUser);
+      
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully",
@@ -146,7 +176,11 @@ export default function JudgeDashboard() {
       return;
     }
     
+    // Set preview immediately for instant feedback
     setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    
+    // Upload file
     uploadPhotoMutation.mutate(file);
   };
 
@@ -591,13 +625,18 @@ export default function JudgeDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
+                {authUserLoading ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">Loading profile...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
                   {/* Photo Upload Section */}
                   <div className="flex flex-col items-center gap-4 pb-6 border-b">
                     <Avatar className="h-32 w-32" data-testid="avatar-profile">
                       <AvatarImage 
-                        src={photoPreview || user?.judgePhotoUrl || undefined} 
-                        alt={user?.judgeName || "Judge"} 
+                        src={photoPreview || authUser?.judgePhotoUrl || undefined} 
+                        alt={authUser?.judgeName || "Judge"} 
                       />
                       <AvatarFallback className="text-3xl">
                         <UserIcon className="h-16 w-16" />
@@ -689,6 +728,7 @@ export default function JudgeDashboard() {
                     </form>
                   </Form>
                 </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
