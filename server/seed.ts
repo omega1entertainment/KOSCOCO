@@ -42,33 +42,45 @@ async function seed() {
 
   const phases = [
     {
-      name: "TOP 100",
+      name: "TOP 500",
       description: "Initial submissions",
       number: 1,
       status: "active",
     },
     {
-      name: "TOP 50",
-      description: "Top performers advance",
+      name: "TOP 100",
+      description: "Best entries advance",
       number: 2,
+      status: "upcoming",
+    },
+    {
+      name: "TOP 50",
+      description: "Top performers",
+      number: 3,
+      status: "upcoming",
+    },
+    {
+      name: "TOP 25",
+      description: "Elite contenders",
+      number: 4,
       status: "upcoming",
     },
     {
       name: "TOP 10",
       description: "Final selections",
-      number: 3,
+      number: 5,
       status: "upcoming",
     },
     {
       name: "TOP 3",
       description: "Category winners",
-      number: 4,
+      number: 6,
       status: "upcoming",
     },
     {
-      name: "GRAND FINALE",
-      description: "Ultimate winner",
-      number: 5,
+      name: "GRANDE FINALE",
+      description: "Ultimate champion",
+      number: 7,
       status: "upcoming",
     },
   ];

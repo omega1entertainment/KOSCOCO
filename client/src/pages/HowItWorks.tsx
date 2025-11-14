@@ -53,7 +53,7 @@ export default function HowItWorks() {
     {
       number: "05",
       title: "Progress Through Phases",
-      description: "Compete through 5 exciting phases: TOP 100 → TOP 50 → TOP 10 → TOP 3 → GRAND FINALE",
+      description: "Compete through 7 exciting phases: TOP 500 → TOP 100 → TOP 50 → TOP 25 → TOP 10 → TOP 3 → GRANDE FINALE",
       image: stepImage5,
       highlights: ["Phase-based progression", "Multiple chances to shine", "Fair competition"]
     },
@@ -68,7 +68,7 @@ export default function HowItWorks() {
 
   const features = [
     { icon: Users, title: "5 Categories", description: "Multiple talent categories to choose from" },
-    { icon: Trophy, title: "5 Phases", description: "Exciting progression through competition stages" },
+    { icon: Trophy, title: "7 Phases", description: "Exciting progression through competition stages" },
     { icon: Sparkles, title: "Public Voting", description: "60% of score from audience votes" },
     { icon: Award, title: "Judge Scores", description: "40% from creativity and quality assessment" }
   ];

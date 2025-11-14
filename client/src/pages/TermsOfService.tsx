@@ -47,13 +47,15 @@ export default function TermsOfService() {
 
           <section>
             <h3 className="text-xl font-semibold mb-3">4. Competition Structure</h3>
-            <p className="mb-2">4.1. The Competition will run for approximately <strong>8–10 weeks</strong> and will consist of <strong>four (4) phases</strong>:</p>
+            <p className="mb-2">4.1. The Competition will run for approximately <strong>10 weeks</strong> and will consist of <strong>seven (7) phases</strong>:</p>
             <ul className="list-disc pl-6 mb-2">
-              <li><strong>Phase 1 (Top 100):</strong> Initial submissions, in search of the top 100 in each category advancing.</li>
-              <li><strong>Phase 2 (Top 50):</strong> in search of the top 50 in each category advancing.</li>
-              <li><strong>Phase 3 (Top 10):</strong> in search of the top 10 in each category advancing</li>
-              <li><strong>Phase 4 (Top 3):</strong> where the top 3 participants in each category are crowned as winners, cash prize amounts will be announced on the website; www.kozzii.africa</li>
-              <li><strong>Phase 5 (The Ultimate Winner) – GRAND FINALE:</strong> The top 3 winners from each of the 5 categories will compete for the "ULTIMATE PRIZE" and will be crowned Cameroon's Next Big Content Creator & influencer.</li>
+              <li><strong>Phase 1 (Top 500):</strong> Initial submissions, in search of the top 500 in each category advancing.</li>
+              <li><strong>Phase 2 (Top 100):</strong> In search of the top 100 in each category advancing.</li>
+              <li><strong>Phase 3 (Top 50):</strong> In search of the top 50 in each category advancing.</li>
+              <li><strong>Phase 4 (Top 25):</strong> In search of the top 25 in each category advancing.</li>
+              <li><strong>Phase 5 (Top 10):</strong> In search of the top 10 in each category advancing.</li>
+              <li><strong>Phase 6 (Top 3):</strong> Where the top 3 participants in each category are crowned as winners, cash prize amounts will be announced on the website; www.kozzii.africa</li>
+              <li><strong>Phase 7 (The Ultimate Winner) – GRANDE FINALE:</strong> The top 3 winners from each of the 5 categories will compete for the "ULTIMATE PRIZE" and will be crowned Cameroon's Next Big Content Creator & influencer.</li>
             </ul>
             <p>4.2. Detailed weekly schedules will be announced on the official platform <strong>kozzii.africa</strong> and other official communication channels.</p>
           </section>

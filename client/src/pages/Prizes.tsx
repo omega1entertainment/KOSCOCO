@@ -11,7 +11,7 @@ export default function Prizes() {
 
   const prizeStructure = [
     {
-      phase: "GRAND FINALE",
+      phase: "GRANDE FINALE",
       badge: "1st Place Overall",
       image: grandFinaleImg,
       prize: "5,000,000 FCFA",
@@ -68,7 +68,7 @@ export default function Prizes() {
               Win Big with KOSCOCO
             </h1>
             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-prizes-description">
-              Compete for amazing prizes across 5 categories and 5 exciting phases. 
+              Compete for amazing prizes across 5 categories and 7 exciting phases. 
               The more you advance, the bigger the rewards!
             </p>
           </div>
