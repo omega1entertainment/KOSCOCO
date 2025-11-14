@@ -7,7 +7,7 @@ import type {
   Category, InsertCategory,
   Phase, InsertPhase,
   Registration, InsertRegistration,
-  Video, InsertVideo,
+  Video, InsertVideo, VideoWithStats,
   Vote, InsertVote,
   VotePurchase, InsertVotePurchase,
   PaidVote, InsertPaidVote,
@@ -57,7 +57,7 @@ export interface IStorage {
   createVideo(video: InsertVideo): Promise<Video>;
   getVideoById(id: string): Promise<Video | undefined>;
   getVideosByUser(userId: string): Promise<Video[]>;
-  getVideosByCategory(categoryId: string): Promise<Video[]>;
+  getVideosByCategory(categoryId: string): Promise<VideoWithStats[]>;
   getPendingVideos(): Promise<Video[]>;
   getVideosWithoutThumbnails(): Promise<Video[]>;
   updateVideoStatus(id: string, status: string): Promise<Video | undefined>;
@@ -269,10 +269,44 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.videos).where(eq(schema.videos.userId, userId)).orderBy(desc(schema.videos.createdAt));
   }
 
-  async getVideosByCategory(categoryId: string): Promise<Video[]> {
-    return await db.select().from(schema.videos)
+  async getVideosByCategory(categoryId: string): Promise<VideoWithStats[]> {
+    const results = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        likeCount: sql<number>`(
+          SELECT COALESCE(COUNT(*), 0)
+          FROM ${schema.likes}
+          WHERE ${schema.likes.videoId} = ${schema.videos.id}
+        )`,
+        voteCount: sql<number>`(
+          (SELECT COALESCE(COUNT(*), 0)
+           FROM ${schema.votes}
+           WHERE ${schema.votes.videoId} = ${schema.videos.id})
+          +
+          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
+           FROM ${schema.paidVotes}
+           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
+        )`,
+      })
+      .from(schema.videos)
       .where(and(eq(schema.videos.categoryId, categoryId), eq(schema.videos.status, 'approved')))
       .orderBy(desc(schema.videos.createdAt));
+    
+    return results as VideoWithStats[];
   }
 
   async getCategoryVideoCounts(): Promise<Record<string, number>> {

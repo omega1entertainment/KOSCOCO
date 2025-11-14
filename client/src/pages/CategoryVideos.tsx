@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Eye, ThumbsUp, ArrowLeft, Filter } from "lucide-react";
-import type { Category, Video } from "@shared/schema";
+import { Play, Eye, ThumbsUp, ArrowLeft, Filter, Check } from "lucide-react";
+import type { Category, VideoWithStats } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CategoryVideos() {
   const [, setLocation] = useLocation();
@@ -18,9 +20,33 @@ export default function CategoryVideos() {
     queryKey: ["/api/categories"],
   });
 
-  const { data: videos, isLoading: videosLoading } = useQuery<Video[]>({
+  const { data: videos, isLoading: videosLoading } = useQuery<VideoWithStats[]>({
     queryKey: ["/api/videos/category", categoryId],
     enabled: !!categoryId,
+  });
+
+  const { toast } = useToast();
+
+  const likeMutation = useMutation({
+    mutationFn: async (videoId: string) => {
+      return await apiRequest(`/api/likes`, "POST", { videoId });
+    },
+    onSuccess: (_, videoId) => {
+      toast({
+        title: "Liked!",
+        description: "You liked this video.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/likes/video", videoId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos/category", categoryId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", videoId] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Like Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const category = categories?.find(c => c.id === categoryId);
@@ -129,15 +155,32 @@ export default function CategoryVideos() {
                       <Badge variant="outline" className="mb-3 text-xs">
                         {video.subcategory}
                       </Badge>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {video.views.toLocaleString()}
+                      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1" title="Views">
+                            <Eye className="w-4 h-4" />
+                            {video.views.toLocaleString()}
+                          </div>
+                          <div className="flex items-center gap-1" title="Competition votes">
+                            <Check className="w-4 h-4" />
+                            {video.voteCount}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <ThumbsUp className="w-4 h-4" />
-                          0
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 hover-elevate active-elevate-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            likeMutation.mutate(video.id);
+                          }}
+                          disabled={likeMutation.isPending}
+                          title="Like this video"
+                          data-testid={`button-like-${video.id}`}
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                          {video.likeCount}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
