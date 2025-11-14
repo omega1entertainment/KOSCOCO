@@ -35,6 +35,20 @@ function isAdmin(req: any, res: any, next: any) {
   next();
 }
 
+// Judge middleware
+function isJudge(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = req.user as SelectUser;
+  if (!user.isJudge) {
+    return res.status(403).json({ message: "Forbidden: Judge access required" });
+  }
+  
+  next();
+}
+
 // Email verified middleware
 function isEmailVerified(req: any, res: any, next: any) {
   if (!req.user) {
