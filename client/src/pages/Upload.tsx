@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Upload as UploadIcon, Video, CheckCircle2, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { DragDropUpload } from "@/components/DragDropUpload";
 import type { Category, Registration, Video as VideoType } from "@shared/schema";
 
 export default function Upload() {
@@ -88,10 +89,7 @@ export default function Upload() {
   const categoryVideoCount = userVideos?.filter(v => v.categoryId === selectedCategory).length || 0;
   const canUploadToCategory = categoryVideoCount < 2;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleVideoFileSelect = (file: File) => {
     const ALLOWED_TYPES = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
@@ -152,10 +150,7 @@ export default function Upload() {
     video.src = URL.createObjectURL(file);
   };
 
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleThumbnailFileSelect = (file: File) => {
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
@@ -506,21 +501,25 @@ export default function Upload() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="video">Video File *</Label>
-                <div className="flex items-center gap-4">
-                  <Input
-                    id="video"
-                    type="file"
-                    accept="video/mp4,video/mpeg,video/webm,video/quicktime,video/x-flv"
-                    onChange={handleFileChange}
-                    disabled={isUploading || !canUploadToCategory}
-                    data-testid="input-video"
-                  />
-                </div>
+                <Label>Video File *</Label>
+                <DragDropUpload
+                  accept="video/mp4,video/mpeg,video/webm,video/quicktime,video/x-flv"
+                  onFileSelect={handleVideoFileSelect}
+                  disabled={isUploading || !canUploadToCategory}
+                  currentFile={videoFile}
+                  onClear={() => {
+                    setVideoFile(null);
+                    setVideoMetadata(null);
+                  }}
+                  label="Upload Video"
+                  description="Drag and drop your video here or click to browse"
+                  type="video"
+                  maxSizeMB={512}
+                />
                 {videoFile && videoMetadata && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    {videoFile.name} - {Math.floor(videoMetadata.duration / 60)}:{(videoMetadata.duration % 60).toString().padStart(2, '0')} - {(videoMetadata.fileSize / (1024 * 1024)).toFixed(2)}MB
+                    Duration: {Math.floor(videoMetadata.duration / 60)}:{(videoMetadata.duration % 60).toString().padStart(2, '0')} • Size: {(videoMetadata.fileSize / (1024 * 1024)).toFixed(2)}MB
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
@@ -529,44 +528,34 @@ export default function Upload() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnail">Thumbnail *</Label>
-                <div className="space-y-3">
-                  <Input
-                    id="thumbnail"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleThumbnailChange}
-                    disabled={isUploading || !canUploadToCategory}
-                    data-testid="input-thumbnail"
-                  />
-                  {thumbnailPreview && (
-                    <div className="relative w-full max-w-xs">
-                      <img 
-                        src={thumbnailPreview} 
-                        alt="Thumbnail preview" 
-                        className="w-full rounded-md border"
-                        data-testid="img-thumbnail-preview"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => {
-                          setThumbnailFile(null);
-                          setThumbnailPreview(null);
-                        }}
-                        disabled={isUploading}
-                        data-testid="button-remove-thumbnail"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Accepted formats: JPEG, PNG, WebP. Max 2MB.
-                  </p>
-                </div>
+                <Label>Thumbnail *</Label>
+                <DragDropUpload
+                  accept="image/jpeg,image/png,image/webp"
+                  onFileSelect={handleThumbnailFileSelect}
+                  disabled={isUploading || !canUploadToCategory}
+                  currentFile={thumbnailFile}
+                  onClear={() => {
+                    setThumbnailFile(null);
+                    setThumbnailPreview(null);
+                  }}
+                  label="Upload Thumbnail"
+                  description="Drag and drop your thumbnail image here or click to browse"
+                  type="image"
+                  maxSizeMB={2}
+                />
+                {thumbnailPreview && (
+                  <div className="relative w-full max-w-xs">
+                    <img 
+                      src={thumbnailPreview} 
+                      alt="Thumbnail preview" 
+                      className="w-full rounded-md border"
+                      data-testid="img-thumbnail-preview"
+                    />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Accepted formats: JPEG, PNG, WebP. Max 2MB.
+                </p>
               </div>
 
               {isUploading && (
