@@ -319,6 +319,17 @@ export type VideoWithStats = Video & {
   voteCount: number;
 };
 
+// Leaderboard entry with scoring formula
+export type LeaderboardEntry = Video & {
+  voteCount: number;
+  totalJudgeScore: number;
+  rank: number;
+  normalizedVotes: number;
+  avgCreativityScore: number;
+  avgQualityScore: number;
+  overallScore: number;
+};
+
 export type InsertVote = z.infer<typeof insertVoteSchema>;
 export type Vote = typeof votes.$inferSelect;
 
