@@ -306,26 +306,31 @@ export class DbStorage implements IStorage {
         views: schema.videos.views,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
-        likeCount: sql<number>`(
+        likeCount: sql<string>`CAST((
           SELECT COALESCE(COUNT(*), 0)
-          FROM ${schema.likes}
-          WHERE ${schema.likes.videoId} = ${schema.videos.id}
-        )`,
-        voteCount: sql<number>`(
+          FROM likes
+          WHERE likes.video_id = videos.id
+        ) AS text)`,
+        voteCount: sql<string>`CAST((
           (SELECT COALESCE(COUNT(*), 0)
-           FROM ${schema.votes}
-           WHERE ${schema.votes.videoId} = ${schema.videos.id})
+           FROM votes
+           WHERE votes.video_id = videos.id)
           +
-          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
-           FROM ${schema.paidVotes}
-           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
-        )`,
+          (SELECT COALESCE(SUM(paid_votes.quantity), 0)
+           FROM paid_votes
+           WHERE paid_votes.video_id = videos.id)
+        ) AS text)`,
       })
       .from(schema.videos)
       .where(and(eq(schema.videos.categoryId, categoryId), eq(schema.videos.status, 'approved')))
       .orderBy(desc(schema.videos.createdAt));
     
-    return results as VideoWithStats[];
+    // Convert string aggregates to numbers
+    return results.map(video => ({
+      ...video,
+      likeCount: parseInt(video.likeCount, 10),
+      voteCount: parseInt(video.voteCount, 10),
+    })) as VideoWithStats[];
   }
 
   async getCategoryVideoCounts(): Promise<Record<string, number>> {

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface VotePaymentModalProps {
   open: boolean;
@@ -111,6 +111,12 @@ export default function VotePaymentModal({
               description: `Your ${data.voteCount} vote${data.voteCount > 1 ? 's' : ''} will be recorded shortly.`,
             });
             setVoteCount(1);
+            
+            // Invalidate all queries related to this video to refresh vote counts
+            queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
+            queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
+            queryClient.invalidateQueries({ queryKey: ["/api/videos/category"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
           } else {
             toast({
               title: "Payment Failed",
