@@ -539,30 +539,35 @@ export class DbStorage implements IStorage {
         views: schema.videos.views,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
-        voteCount: sql<string>`(
+        voteCount: sql<string>`CAST((
           (SELECT COALESCE(COUNT(*), 0)
-           FROM ${schema.votes}
-           WHERE ${schema.votes.videoId} = ${schema.videos.id})
+           FROM votes
+           WHERE votes.video_id = videos.id)
           +
-          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
-           FROM ${schema.paidVotes}
-           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
-        )`,
-        totalJudgeScore: sql<string>`(
-          SELECT COALESCE(SUM(${schema.judgeScores.creativityScore} + ${schema.judgeScores.qualityScore}), 0)
-          FROM ${schema.judgeScores}
-          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
-        )`,
-        avgCreativityScore: sql<string>`(
-          SELECT COALESCE(AVG(${schema.judgeScores.creativityScore}), 0)
-          FROM ${schema.judgeScores}
-          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
-        )`,
-        avgQualityScore: sql<string>`(
-          SELECT COALESCE(AVG(${schema.judgeScores.qualityScore}), 0)
-          FROM ${schema.judgeScores}
-          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
-        )`,
+          (SELECT COALESCE(SUM(paid_votes.quantity), 0)
+           FROM paid_votes
+           WHERE paid_votes.video_id = videos.id)
+        ) AS text)`,
+        likeCount: sql<string>`CAST((
+          SELECT COALESCE(COUNT(*), 0)
+          FROM likes
+          WHERE likes.video_id = videos.id
+        ) AS text)`,
+        totalJudgeScore: sql<string>`CAST((
+          SELECT COALESCE(SUM(judge_scores.creativity_score + judge_scores.quality_score), 0)
+          FROM judge_scores
+          WHERE judge_scores.video_id = videos.id
+        ) AS text)`,
+        avgCreativityScore: sql<string>`CAST((
+          SELECT COALESCE(AVG(judge_scores.creativity_score), 0)
+          FROM judge_scores
+          WHERE judge_scores.video_id = videos.id
+        ) AS text)`,
+        avgQualityScore: sql<string>`CAST((
+          SELECT COALESCE(AVG(judge_scores.quality_score), 0)
+          FROM judge_scores
+          WHERE judge_scores.video_id = videos.id
+        ) AS text)`,
       })
       .from(schema.videos)
       .where(and(...conditions));
@@ -571,6 +576,7 @@ export class DbStorage implements IStorage {
     const processedVideos = videosWithScores.map(video => ({
       ...video,
       voteCount: parseInt(video.voteCount, 10),
+      likeCount: parseInt(video.likeCount, 10),
       totalJudgeScore: parseFloat(video.totalJudgeScore),
       avgCreativityScore: parseFloat(video.avgCreativityScore),
       avgQualityScore: parseFloat(video.avgQualityScore),

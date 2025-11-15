@@ -322,6 +322,7 @@ export type VideoWithStats = Video & {
 // Leaderboard entry with scoring formula
 export type LeaderboardEntry = Video & {
   voteCount: number;
+  likeCount: number;
   totalJudgeScore: number;
   rank: number;
   normalizedVotes: number;

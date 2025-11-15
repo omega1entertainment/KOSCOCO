@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trophy, Check, Eye, Play, Star, Award } from "lucide-react";
+import { Trophy, Check, Eye, Play, Star, Award, Heart } from "lucide-react";
 import { useState } from "react";
 import type { LeaderboardEntry, Category, Phase } from "@shared/schema";
 
@@ -180,6 +180,10 @@ export default function Leaderboard() {
                             <div className="flex items-center gap-1 font-semibold text-primary" data-testid={`text-votes-${rank}`}>
                               <Check className="w-4 h-4" />
                               {video.voteCount.toLocaleString()} votes
+                            </div>
+                            <div className="flex items-center gap-1 text-red-500" data-testid={`text-likes-${rank}`}>
+                              <Heart className="w-4 h-4 fill-red-500" />
+                              {video.likeCount.toLocaleString()} likes
                             </div>
                             <div className="flex items-center gap-1" data-testid={`text-creativity-${rank}`}>
                               <Star className="w-4 h-4 text-yellow-500" />
