@@ -10,11 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trophy, Check, Eye, Play } from "lucide-react";
+import { Trophy, Check, Eye, Play, Star, Award } from "lucide-react";
 import { useState } from "react";
-import type { Video, Category, Phase } from "@shared/schema";
-
-type LeaderboardVideo = Video & { voteCount: number };
+import type { LeaderboardEntry, Category, Phase } from "@shared/schema";
 
 export default function Leaderboard() {
   const [, setLocation] = useLocation();
@@ -39,7 +37,7 @@ export default function Leaderboard() {
   const queryString = queryParams.toString();
   const leaderboardUrl = `/api/leaderboard${queryString ? `?${queryString}` : ""}`;
 
-  const { data: leaderboard = [], isLoading } = useQuery<LeaderboardVideo[]>({
+  const { data: leaderboard = [], isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: [leaderboardUrl],
   });
 
@@ -64,7 +62,7 @@ export default function Leaderboard() {
               Leaderboard
             </h1>
             <p className="text-muted-foreground">
-              Top videos ranked by votes
+              Rankings based on: 60% Votes + 30% Creativity + 10% Quality
             </p>
           </div>
 
@@ -118,11 +116,17 @@ export default function Leaderboard() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {leaderboard.map((video, index) => {
-                const rank = index + 1;
+              {leaderboard.map((video) => {
+                const rank = video.rank;
                 const videoUrl = video.videoUrl.startsWith('/objects/') 
                   ? video.videoUrl 
                   : `/objects/${video.videoUrl}`;
+
+                // Calculate contributions to overall score
+                // Judge scores are in 0-10 scale, multiply by 10 to get 0-100 scale
+                const voteContribution = 0.60 * video.normalizedVotes;
+                const creativityContribution = 0.30 * (video.avgCreativityScore * 10);
+                const qualityContribution = 0.10 * (video.avgQualityScore * 10);
 
                 return (
                   <Card 
@@ -158,6 +162,9 @@ export default function Leaderboard() {
                             <div className="flex flex-wrap items-center gap-2 mb-2">
                               <Badge variant="outline">{getCategoryName(video.categoryId)}</Badge>
                               <Badge variant="outline">{video.subcategory}</Badge>
+                              <Badge variant="default" className="font-bold" data-testid={`badge-overall-score-${rank}`}>
+                                {video.overallScore.toFixed(1)}% Overall
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -168,17 +175,30 @@ export default function Leaderboard() {
                           </p>
                         )}
 
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1 font-semibold text-primary" title="Competition votes (ranking based on this)">
-                            <Check className="w-4 h-4" />
-                            {video.voteCount.toLocaleString()} votes
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-4 text-sm">
+                            <div className="flex items-center gap-1 font-semibold text-primary" data-testid={`text-votes-${rank}`}>
+                              <Check className="w-4 h-4" />
+                              {video.voteCount.toLocaleString()} votes
+                            </div>
+                            <div className="flex items-center gap-1" data-testid={`text-creativity-${rank}`}>
+                              <Star className="w-4 h-4 text-yellow-500" />
+                              {video.avgCreativityScore.toFixed(1)}/10 Creativity
+                            </div>
+                            <div className="flex items-center gap-1" data-testid={`text-quality-${rank}`}>
+                              <Award className="w-4 h-4 text-blue-500" />
+                              {video.avgQualityScore.toFixed(1)}/10 Quality
+                            </div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Eye className="w-4 h-4" />
+                              {video.views.toLocaleString()} views
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Eye className="w-4 h-4" />
-                            {video.views.toLocaleString()} views
-                          </div>
-                          <div className="text-muted-foreground">
-                            {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+
+                          <div className="text-xs text-muted-foreground flex gap-3">
+                            <span>Votes: {voteContribution.toFixed(1)}%</span>
+                            <span>Creativity: {creativityContribution.toFixed(1)}%</span>
+                            <span>Quality: {qualityContribution.toFixed(1)}%</span>
                           </div>
                         </div>
                       </div>

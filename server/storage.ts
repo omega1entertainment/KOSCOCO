@@ -512,7 +512,7 @@ export class DbStorage implements IStorage {
     };
   }
 
-  async getLeaderboard(categoryId?: string, phaseId?: string, limit: number = 50): Promise<(Video & { voteCount: number; totalJudgeScore: number; rank: number })[]> {
+  async getLeaderboard(categoryId?: string, phaseId?: string, limit: number = 50): Promise<schema.LeaderboardEntry[]> {
     const conditions = [eq(schema.videos.status, 'approved')];
     if (categoryId) {
       conditions.push(eq(schema.videos.categoryId, categoryId));
@@ -522,7 +522,6 @@ export class DbStorage implements IStorage {
     }
 
     // Use subqueries to aggregate votes and judge scores separately
-    // This avoids cartesian product and is efficient (single query)
     const videosWithScores = await db
       .select({
         id: schema.videos.id,
@@ -540,7 +539,7 @@ export class DbStorage implements IStorage {
         views: schema.videos.views,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
-        voteCount: sql<number>`(
+        voteCount: sql<string>`(
           (SELECT COALESCE(COUNT(*), 0)
            FROM ${schema.votes}
            WHERE ${schema.votes.videoId} = ${schema.videos.id})
@@ -549,40 +548,78 @@ export class DbStorage implements IStorage {
            FROM ${schema.paidVotes}
            WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
         )`,
-        totalJudgeScore: sql<number>`(
+        totalJudgeScore: sql<string>`(
           SELECT COALESCE(SUM(${schema.judgeScores.creativityScore} + ${schema.judgeScores.qualityScore}), 0)
+          FROM ${schema.judgeScores}
+          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
+        )`,
+        avgCreativityScore: sql<string>`(
+          SELECT COALESCE(AVG(${schema.judgeScores.creativityScore}), 0)
+          FROM ${schema.judgeScores}
+          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
+        )`,
+        avgQualityScore: sql<string>`(
+          SELECT COALESCE(AVG(${schema.judgeScores.qualityScore}), 0)
           FROM ${schema.judgeScores}
           WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
         )`,
       })
       .from(schema.videos)
-      .where(and(...conditions))
-      .orderBy(
-        desc(sql`(
-          SELECT COALESCE(SUM(${schema.judgeScores.creativityScore} + ${schema.judgeScores.qualityScore}), 0)
-          FROM ${schema.judgeScores}
-          WHERE ${schema.judgeScores.videoId} = ${schema.videos.id}
-        )`),
-        desc(sql`(
-          (SELECT COALESCE(COUNT(*), 0)
-           FROM ${schema.votes}
-           WHERE ${schema.votes.videoId} = ${schema.videos.id})
-          +
-          (SELECT COALESCE(SUM(${schema.paidVotes.quantity}), 0)
-           FROM ${schema.paidVotes}
-           WHERE ${schema.paidVotes.videoId} = ${schema.videos.id})
-        )`),
-        desc(schema.videos.views)
-      )
-      .limit(limit);
+      .where(and(...conditions));
 
-    // Add rank to results
-    const rankedVideos = videosWithScores.map((video, index) => ({
+    // Convert string aggregates to numbers and find Vmax
+    const processedVideos = videosWithScores.map(video => ({
+      ...video,
+      voteCount: parseInt(video.voteCount, 10),
+      totalJudgeScore: parseFloat(video.totalJudgeScore),
+      avgCreativityScore: parseFloat(video.avgCreativityScore),
+      avgQualityScore: parseFloat(video.avgQualityScore),
+    }));
+
+    // Find maximum vote count (Vmax)
+    const Vmax = Math.max(...processedVideos.map(v => v.voteCount), 0);
+
+    // Calculate overall score using the formula
+    const videosWithOverallScore = processedVideos.map(video => {
+      // Vnorm = (V / Vmax) * 100
+      const normalizedVotes = Vmax > 0 ? (video.voteCount / Vmax) * 100 : 0;
+      
+      // Judge scores are already 0-10, convert to 0-100 scale
+      const creativityScore100 = video.avgCreativityScore * 10;
+      const qualityScore100 = video.avgQualityScore * 10;
+      
+      // Overall = (0.60 * Vnorm) + (0.30 * C) + (0.10 * Q)
+      // where C and Q are on 0-100 scale
+      const overallScore = (0.60 * normalizedVotes) + (0.30 * creativityScore100) + (0.10 * qualityScore100);
+
+      return {
+        ...video,
+        normalizedVotes,
+        avgCreativityScore: video.avgCreativityScore, // Keep in 0-10 scale
+        avgQualityScore: video.avgQualityScore, // Keep in 0-10 scale
+        overallScore,
+      };
+    });
+
+    // Sort by overall score (desc), then by voteCount (desc), then by views (desc)
+    const sortedVideos = videosWithOverallScore.sort((a, b) => {
+      if (b.overallScore !== a.overallScore) {
+        return b.overallScore - a.overallScore;
+      }
+      if (b.voteCount !== a.voteCount) {
+        return b.voteCount - a.voteCount;
+      }
+      return b.views - a.views;
+    });
+
+    // Apply limit and add rank
+    const limitedVideos = sortedVideos.slice(0, limit);
+    const rankedVideos = limitedVideos.map((video, index) => ({
       ...video,
       rank: index + 1,
     }));
 
-    return rankedVideos as (Video & { voteCount: number; totalJudgeScore: number; rank: number })[];
+    return rankedVideos as schema.LeaderboardEntry[];
   }
 
   async createJudgeScore(insertScore: InsertJudgeScore): Promise<JudgeScore> {
