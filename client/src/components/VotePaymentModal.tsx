@@ -82,6 +82,9 @@ export default function VotePaymentModal({
 
       await loadFlutterwaveScript();
 
+      // Close the vote modal before opening Flutterwave to prevent freezing
+      onOpenChange(false);
+
       const modal = window.FlutterwaveCheckout({
         public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
         tx_ref: data.txRef,
@@ -107,7 +110,6 @@ export default function VotePaymentModal({
               title: "Payment Successful!",
               description: `Your ${data.voteCount} vote${data.voteCount > 1 ? 's' : ''} will be recorded shortly.`,
             });
-            onOpenChange(false);
             setVoteCount(1);
           } else {
             toast({
@@ -121,6 +123,8 @@ export default function VotePaymentModal({
         onclose: () => {
           console.log("Payment modal closed");
           setIsProcessing(false);
+          // Reset vote count when user closes Flutterwave modal
+          setVoteCount(1);
         },
       });
 
