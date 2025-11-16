@@ -75,9 +75,8 @@ export default function AdvertiserDashboard() {
 
   const deleteCampaignMutation = useMutation({
     mutationFn: async (campaignId: string) => {
-      return apiRequest(`/api/advertiser/campaigns/${campaignId}`, {
-        method: "DELETE",
-      });
+      const response = await apiRequest(`/api/advertiser/campaigns/${campaignId}`, "DELETE");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/advertiser/campaigns"] });

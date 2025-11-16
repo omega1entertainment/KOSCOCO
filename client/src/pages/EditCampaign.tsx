@@ -66,10 +66,8 @@ export default function EditCampaign() {
 
   const updateCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
-      return apiRequest(`/api/advertiser/campaigns/${campaignId}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest(`/api/advertiser/campaigns/${campaignId}`, "PATCH", data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/advertiser/campaigns"] });

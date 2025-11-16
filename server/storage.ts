@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@shared/schema";
-import { eq, and, desc, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, sql, isNull, inArray } from "drizzle-orm";
 import type {
   User, InsertUser,
   Category, InsertCategory,
@@ -1252,8 +1252,22 @@ export class DbStorage implements IStorage {
   }
 
   async deleteCampaign(id: string): Promise<void> {
-    await db.delete(schema.ads).where(eq(schema.ads.campaignId, id));
-    await db.delete(schema.adCampaigns).where(eq(schema.adCampaigns.id, id));
+    await db.transaction(async (tx) => {
+      const campaignAds = await tx.select({ id: schema.ads.id })
+        .from(schema.ads)
+        .where(eq(schema.ads.campaignId, id));
+      
+      const adIds = campaignAds.map(ad => ad.id);
+      
+      if (adIds.length > 0) {
+        await tx.delete(schema.adClicks).where(inArray(schema.adClicks.adId, adIds));
+        await tx.delete(schema.adImpressions).where(inArray(schema.adImpressions.adId, adIds));
+      }
+      
+      await tx.delete(schema.adPayments).where(eq(schema.adPayments.campaignId, id));
+      await tx.delete(schema.ads).where(eq(schema.ads.campaignId, id));
+      await tx.delete(schema.adCampaigns).where(eq(schema.adCampaigns.id, id));
+    });
   }
 
   // Ad methods
