@@ -7,6 +7,7 @@ import PhaseTimeline from "@/components/PhaseTimeline";
 import VideoCard from "@/components/VideoCard";
 import StatsCard from "@/components/StatsCard";
 import VotePaymentModal from "@/components/VotePaymentModal";
+import VideoOfTheDay from "@/components/home/VideoOfTheDay";
 import { Users, Video, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -140,6 +141,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <VideoOfTheDay />
       
       <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
