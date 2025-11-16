@@ -1,12 +1,16 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube, SiLinkedin } from "react-icons/si";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TopBarProps {
   currentPhase?: string;
 }
 
 export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopBarProps) {
+  const { language, setLanguage } = useLanguage();
+  
   const socialLinks = [
     { name: "Facebook", icon: SiFacebook, url: "https://facebook.com/koscoco", testId: "link-social-facebook" },
     { name: "Instagram", icon: SiInstagram, url: "https://instagram.com/koscoco", testId: "link-social-instagram" },
@@ -15,6 +19,10 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
     { name: "YouTube", icon: SiYoutube, url: "https://youtube.com/@koscoco", testId: "link-social-youtube" },
     { name: "LinkedIn", icon: SiLinkedin, url: "https://linkedin.com/company/koscoco", testId: "link-social-linkedin" },
   ];
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'fr' : 'en');
+  };
 
   return (
     <div className="bg-muted border-b">
@@ -55,6 +63,16 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
                 <social.icon className="w-3.5 h-3.5" />
               </a>
             ))}
+            <div className="w-px h-5 bg-border mx-1" />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={toggleLanguage}
+              className="h-7 px-2 text-xs font-semibold text-muted-foreground hover:text-primary"
+              data-testid="button-language-toggle"
+            >
+              {language === 'en' ? 'EN' : 'FR'}
+            </Button>
           </div>
         </div>
       </div>
