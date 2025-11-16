@@ -28,6 +28,7 @@ export default function VideoPlayer() {
   const [preRollAdCompleted, setPreRollAdCompleted] = useState(false);
   const [showOverlayAd, setShowOverlayAd] = useState(true);
   const [isPiPSupported, setIsPiPSupported] = useState(false);
+  const [watchHistoryRecorded, setWatchHistoryRecorded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
@@ -130,6 +131,19 @@ export default function VideoPlayer() {
     },
   });
 
+  const watchHistoryMutation = useMutation({
+    mutationFn: async ({ watchDuration, completed }: { watchDuration?: number; completed: boolean }) => {
+      return await apiRequest(`/api/watch-history`, "POST", {
+        videoId,
+        watchDuration,
+        completed,
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Failed to record watch history:", error);
+    },
+  });
+
   useEffect(() => {
     if (videoRef.current && video && !videoLoading && preRollAdCompleted) {
       videoRef.current.play().catch(() => {
@@ -146,6 +160,56 @@ export default function VideoPlayer() {
       videoRef.current !== null
     );
   }, [preRollAdCompleted, videoRef]);
+
+  useEffect(() => {
+    if (!videoRef.current || !user || !videoId || !video) return;
+
+    const videoElement = videoRef.current;
+    let watchStartTime = 0;
+    let hasRecordedInitialWatch = false;
+
+    const handleTimeUpdate = () => {
+      if (!videoElement || watchHistoryRecorded || hasRecordedInitialWatch) return;
+
+      const currentTime = videoElement.currentTime;
+      const duration = videoElement.duration;
+
+      // Record watch history after 30 seconds OR 50% of video (whichever comes first)
+      const watchThreshold = Math.min(30, duration * 0.5);
+      
+      if (currentTime >= watchThreshold && !hasRecordedInitialWatch) {
+        hasRecordedInitialWatch = true;
+        watchHistoryMutation.mutate({
+          watchDuration: Math.floor(currentTime),
+          completed: false,
+        });
+      }
+    };
+
+    const handleEnded = () => {
+      if (!watchHistoryRecorded && videoElement) {
+        setWatchHistoryRecorded(true);
+        watchHistoryMutation.mutate({
+          watchDuration: Math.floor(videoElement.duration),
+          completed: true,
+        });
+      }
+    };
+
+    const handlePlay = () => {
+      watchStartTime = Date.now();
+    };
+
+    videoElement.addEventListener('timeupdate', handleTimeUpdate);
+    videoElement.addEventListener('ended', handleEnded);
+    videoElement.addEventListener('play', handlePlay);
+
+    return () => {
+      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+      videoElement.removeEventListener('ended', handleEnded);
+      videoElement.removeEventListener('play', handlePlay);
+    };
+  }, [videoId, video, user, watchHistoryRecorded, watchHistoryMutation]);
 
   const handlePreRollAdComplete = () => {
     setShowPreRollAd(false);
