@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
+import { setupAuth, isAuthenticated, isAdvertiser } from "./auth";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
@@ -2449,6 +2449,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'error',
         message: "Failed to verify payment" 
       });
+    }
+  });
+
+  // Advertiser Routes
+  app.get("/api/advertiser/campaigns", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const campaigns = await storage.getAdvertiserCampaigns(advertiser.id);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Get campaigns error:", error);
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.get("/api/advertiser/stats", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const stats = await storage.getAdvertiserStats(advertiser.id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Get advertiser stats error:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
 

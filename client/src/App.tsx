@@ -34,6 +34,9 @@ import VerifyEmail from "@/pages/VerifyEmail";
 import JudgeDashboard from "@/pages/JudgeDashboard";
 import Judges from "@/pages/Judges";
 import JudgeProfile from "@/pages/JudgeProfile";
+import AdvertiserLogin from "@/pages/AdvertiserLogin";
+import AdvertiserSignup from "@/pages/AdvertiserSignup";
+import AdvertiserDashboard from "@/pages/AdvertiserDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -90,6 +93,9 @@ function Router() {
           <Route path="/judge-dashboard" component={JudgeDashboard} />
           <Route path="/judges" component={Judges} />
           <Route path="/judges/:id" component={JudgeProfile} />
+          <Route path="/advertiser/login" component={AdvertiserLogin} />
+          <Route path="/advertiser/signup" component={AdvertiserSignup} />
+          <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
           <Route component={NotFound} />
         </Switch>
       </main>
