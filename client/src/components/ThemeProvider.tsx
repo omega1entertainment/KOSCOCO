@@ -12,6 +12,14 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
+    // Check if we need to migrate from old default (light) to new default (dark)
+    const themeVersion = localStorage.getItem("theme-version");
+    if (!themeVersion || themeVersion === "1") {
+      // First time or old version - set to dark mode as new default
+      localStorage.setItem("theme-version", "2");
+      return "dark";
+    }
+    
     const stored = localStorage.getItem("theme") as Theme | null;
     if (stored) return stored;
     
