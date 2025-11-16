@@ -19,7 +19,7 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
   return (
     <div className="bg-muted border-b">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 py-2 md:h-10 md:py-0 text-sm">
+        <div className="flex flex-wrap items-center justify-center md:justify-between gap-2 py-2 md:h-10 md:py-0 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Mail className="w-4 h-4" />
             <a 
