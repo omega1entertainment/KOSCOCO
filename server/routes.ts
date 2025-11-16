@@ -918,6 +918,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fix ACL policies for all approved videos - admin only
+  app.post('/api/admin/fix-video-acls', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const approvedVideos = await db
+        .select()
+        .from(schema.videos)
+        .where(eq(schema.videos.status, 'approved'));
+      
+      console.log(`[ACL Fix] Found ${approvedVideos.length} approved videos`);
+      
+      const objectStorageService = new ObjectStorageService();
+      let fixed = 0;
+      let errors = 0;
+      
+      for (const video of approvedVideos) {
+        try {
+          // Fix video ACL
+          if (video.videoUrl) {
+            await objectStorageService.trySetObjectEntityAclPolicy(
+              video.videoUrl,
+              {
+                owner: video.userId,
+                visibility: "public",
+              }
+            );
+          }
+          
+          // Fix thumbnail ACL
+          if (video.thumbnailUrl) {
+            await objectStorageService.trySetObjectEntityAclPolicy(
+              video.thumbnailUrl,
+              {
+                owner: video.userId,
+                visibility: "public",
+              }
+            );
+          }
+          
+          fixed++;
+          console.log(`[ACL Fix] Fixed video ${video.id}: ${video.title}`);
+        } catch (error) {
+          errors++;
+          console.error(`[ACL Fix] Error fixing video ${video.id}:`, error);
+        }
+      }
+      
+      res.json({
+        message: `Fixed ACL policies for ${fixed} videos`,
+        total: approvedVideos.length,
+        fixed,
+        errors,
+      });
+    } catch (error) {
+      console.error('[ACL Fix] Error:', error);
+      res.status(500).json({ message: 'Failed to fix ACL policies' });
+    }
+  });
+
   // Generate thumbnails for all videos without thumbnails - admin only
   app.post('/api/admin/generate-thumbnails', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
