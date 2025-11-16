@@ -16,7 +16,13 @@ import type {
   Referral, InsertReferral,
   PayoutRequest, InsertPayoutRequest,
   Like, InsertLike,
-  Report, InsertReport
+  Report, InsertReport,
+  Advertiser, InsertAdvertiser,
+  AdCampaign, InsertAdCampaign, CampaignWithStats,
+  Ad, InsertAd, AdWithStats,
+  AdPayment, InsertAdPayment,
+  AdImpression, InsertAdImpression,
+  AdClick, InsertAdClick
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -118,6 +124,44 @@ export interface IStorage {
   getAllReports(): Promise<Report[]>;
   getReportsByVideo(videoId: string): Promise<Report[]>;
   updateReportStatus(id: string, status: string, reviewedBy: string): Promise<Report | undefined>;
+  
+  // Advertiser methods
+  getAdvertiser(id: string): Promise<Advertiser | undefined>;
+  getAdvertiserByEmail(email: string): Promise<Advertiser | undefined>;
+  createAdvertiser(advertiser: InsertAdvertiser): Promise<Advertiser>;
+  updateAdvertiser(id: string, updates: Partial<InsertAdvertiser>): Promise<Advertiser | undefined>;
+  getAllAdvertisers(): Promise<Advertiser[]>;
+  updateAdvertiserStatus(id: string, status: string): Promise<Advertiser | undefined>;
+  
+  // Ad Campaign methods
+  createAdCampaign(campaign: InsertAdCampaign): Promise<AdCampaign>;
+  getAdCampaign(id: string): Promise<AdCampaign | undefined>;
+  getAdvertiserCampaigns(advertiserId: string): Promise<CampaignWithStats[]>;
+  updateAdCampaign(id: string, updates: Partial<InsertAdCampaign>): Promise<AdCampaign | undefined>;
+  
+  // Ad methods
+  createAd(ad: InsertAd): Promise<Ad>;
+  getAd(id: string): Promise<Ad | undefined>;
+  getAdvertiserAds(advertiserId: string): Promise<Ad[]>;
+  getCampaignAds(campaignId: string): Promise<Ad[]>;
+  getPendingAds(): Promise<Ad[]>;
+  getApprovedAds(adType?: string): Promise<Ad[]>;
+  updateAd(id: string, updates: Partial<InsertAd>): Promise<Ad | undefined>;
+  approveAd(id: string, approvedBy: string): Promise<Ad | undefined>;
+  rejectAd(id: string, reason: string): Promise<Ad | undefined>;
+  getAdStats(adId: string): Promise<AdWithStats | undefined>;
+  
+  // Ad Payment methods
+  createAdPayment(payment: InsertAdPayment): Promise<AdPayment>;
+  getAdPaymentByTxRef(txRef: string): Promise<AdPayment | undefined>;
+  updateAdPayment(id: string, updates: Partial<AdPayment>): Promise<AdPayment | undefined>;
+  getAdvertiserPayments(advertiserId: string): Promise<AdPayment[]>;
+  
+  // Ad Tracking methods
+  createAdImpression(impression: InsertAdImpression): Promise<AdImpression>;
+  createAdClick(click: InsertAdClick): Promise<AdClick>;
+  getAdImpressions(adId: string): Promise<number>;
+  getAdClicks(adId: string): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -1089,6 +1133,298 @@ export class DbStorage implements IStorage {
       .where(eq(schema.reports.id, id))
       .returning();
     return report;
+  }
+
+  // Advertiser methods
+  async getAdvertiser(id: string): Promise<Advertiser | undefined> {
+    const [advertiser] = await db.select().from(schema.advertisers).where(eq(schema.advertisers.id, id));
+    return advertiser;
+  }
+
+  async getAdvertiserByEmail(email: string): Promise<Advertiser | undefined> {
+    const [advertiser] = await db.select().from(schema.advertisers).where(eq(schema.advertisers.email, email));
+    return advertiser;
+  }
+
+  async createAdvertiser(insertAdvertiser: InsertAdvertiser): Promise<Advertiser> {
+    const [advertiser] = await db.insert(schema.advertisers).values(insertAdvertiser).returning();
+    return advertiser;
+  }
+
+  async updateAdvertiser(id: string, updates: Partial<InsertAdvertiser>): Promise<Advertiser | undefined> {
+    const [advertiser] = await db.update(schema.advertisers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.advertisers.id, id))
+      .returning();
+    return advertiser;
+  }
+
+  async getAllAdvertisers(): Promise<Advertiser[]> {
+    const advertisers = await db.select()
+      .from(schema.advertisers)
+      .orderBy(desc(schema.advertisers.createdAt));
+    return advertisers;
+  }
+
+  async updateAdvertiserStatus(id: string, status: string): Promise<Advertiser | undefined> {
+    const updates: any = { status, updatedAt: new Date() };
+    if (status === 'active') {
+      updates.verifiedAt = new Date();
+    }
+    const [advertiser] = await db.update(schema.advertisers)
+      .set(updates)
+      .where(eq(schema.advertisers.id, id))
+      .returning();
+    return advertiser;
+  }
+
+  // Ad Campaign methods
+  async createAdCampaign(insertCampaign: InsertAdCampaign): Promise<AdCampaign> {
+    const [campaign] = await db.insert(schema.adCampaigns).values(insertCampaign).returning();
+    return campaign;
+  }
+
+  async getAdCampaign(id: string): Promise<AdCampaign | undefined> {
+    const [campaign] = await db.select().from(schema.adCampaigns).where(eq(schema.adCampaigns.id, id));
+    return campaign;
+  }
+
+  async getAdvertiserCampaigns(advertiserId: string): Promise<CampaignWithStats[]> {
+    const campaigns = await db.select({
+      id: schema.adCampaigns.id,
+      advertiserId: schema.adCampaigns.advertiserId,
+      name: schema.adCampaigns.name,
+      objective: schema.adCampaigns.objective,
+      budget: schema.adCampaigns.budget,
+      budgetType: schema.adCampaigns.budgetType,
+      startDate: schema.adCampaigns.startDate,
+      endDate: schema.adCampaigns.endDate,
+      status: schema.adCampaigns.status,
+      totalSpent: schema.adCampaigns.totalSpent,
+      createdAt: schema.adCampaigns.createdAt,
+      updatedAt: schema.adCampaigns.updatedAt,
+    })
+    .from(schema.adCampaigns)
+    .where(eq(schema.adCampaigns.advertiserId, advertiserId))
+    .orderBy(desc(schema.adCampaigns.createdAt));
+
+    const campaignsWithStats: CampaignWithStats[] = await Promise.all(
+      campaigns.map(async (campaign) => {
+        const adsResult = await db.select({
+          activeAds: sql<number>`COUNT(CASE WHEN ${schema.ads.status} = 'active' THEN 1 END)`,
+          totalImpressions: sql<number>`COALESCE(SUM(${schema.ads.totalImpressions}), 0)`,
+          totalClicks: sql<number>`COALESCE(SUM(${schema.ads.totalClicks}), 0)`,
+          totalViews: sql<number>`COALESCE(SUM(${schema.ads.totalViews}), 0)`,
+        })
+        .from(schema.ads)
+        .where(eq(schema.ads.campaignId, campaign.id));
+
+        const stats = adsResult[0] || { activeAds: 0, totalImpressions: 0, totalClicks: 0, totalViews: 0 };
+        const averageCtr = stats.totalImpressions > 0 ? (stats.totalClicks / stats.totalImpressions) * 100 : 0;
+
+        return {
+          ...campaign,
+          activeAds: Number(stats.activeAds),
+          totalImpressions: Number(stats.totalImpressions),
+          totalClicks: Number(stats.totalClicks),
+          totalViews: Number(stats.totalViews),
+          averageCtr,
+        };
+      })
+    );
+
+    return campaignsWithStats;
+  }
+
+  async updateAdCampaign(id: string, updates: Partial<InsertAdCampaign>): Promise<AdCampaign | undefined> {
+    const [campaign] = await db.update(schema.adCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.adCampaigns.id, id))
+      .returning();
+    return campaign;
+  }
+
+  // Ad methods
+  async createAd(insertAd: InsertAd): Promise<Ad> {
+    const [ad] = await db.insert(schema.ads).values(insertAd).returning();
+    return ad;
+  }
+
+  async getAd(id: string): Promise<Ad | undefined> {
+    const [ad] = await db.select().from(schema.ads).where(eq(schema.ads.id, id));
+    return ad;
+  }
+
+  async getAdvertiserAds(advertiserId: string): Promise<Ad[]> {
+    const ads = await db.select()
+      .from(schema.ads)
+      .where(eq(schema.ads.advertiserId, advertiserId))
+      .orderBy(desc(schema.ads.createdAt));
+    return ads;
+  }
+
+  async getCampaignAds(campaignId: string): Promise<Ad[]> {
+    const ads = await db.select()
+      .from(schema.ads)
+      .where(eq(schema.ads.campaignId, campaignId))
+      .orderBy(desc(schema.ads.createdAt));
+    return ads;
+  }
+
+  async getPendingAds(): Promise<Ad[]> {
+    const ads = await db.select()
+      .from(schema.ads)
+      .where(eq(schema.ads.approvalStatus, 'pending'))
+      .orderBy(desc(schema.ads.createdAt));
+    return ads;
+  }
+
+  async getApprovedAds(adType?: string): Promise<Ad[]> {
+    const conditions = [
+      eq(schema.ads.approvalStatus, 'approved'),
+      eq(schema.ads.status, 'active')
+    ];
+    
+    if (adType) {
+      conditions.push(eq(schema.ads.adType, adType));
+    }
+
+    const ads = await db.select()
+      .from(schema.ads)
+      .where(and(...conditions))
+      .orderBy(desc(schema.ads.createdAt));
+    return ads;
+  }
+
+  async updateAd(id: string, updates: Partial<InsertAd>): Promise<Ad | undefined> {
+    const [ad] = await db.update(schema.ads)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.ads.id, id))
+      .returning();
+    return ad;
+  }
+
+  async approveAd(id: string, approvedBy: string): Promise<Ad | undefined> {
+    const [ad] = await db.update(schema.ads)
+      .set({
+        approvalStatus: 'approved',
+        status: 'active',
+        approvedAt: new Date(),
+        approvedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.ads.id, id))
+      .returning();
+    return ad;
+  }
+
+  async rejectAd(id: string, reason: string): Promise<Ad | undefined> {
+    const [ad] = await db.update(schema.ads)
+      .set({
+        approvalStatus: 'rejected',
+        status: 'paused',
+        rejectionReason: reason,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.ads.id, id))
+      .returning();
+    return ad;
+  }
+
+  async getAdStats(adId: string): Promise<AdWithStats | undefined> {
+    const [ad] = await db.select().from(schema.ads).where(eq(schema.ads.id, adId));
+    if (!ad) return undefined;
+
+    const impressionsResult = await db.select({
+      avgDuration: sql<number>`AVG(${schema.adImpressions.viewDuration})`,
+    })
+    .from(schema.adImpressions)
+    .where(eq(schema.adImpressions.adId, adId));
+
+    const ctr = ad.totalImpressions > 0 ? (ad.totalClicks / ad.totalImpressions) * 100 : 0;
+    const averageViewDuration = impressionsResult[0]?.avgDuration || 0;
+    const conversionRate = ad.totalViews > 0 ? (ad.totalClicks / ad.totalViews) * 100 : 0;
+
+    return {
+      ...ad,
+      ctr,
+      averageViewDuration: Number(averageViewDuration),
+      conversionRate,
+    };
+  }
+
+  // Ad Payment methods
+  async createAdPayment(insertPayment: InsertAdPayment): Promise<AdPayment> {
+    const [payment] = await db.insert(schema.adPayments).values(insertPayment).returning();
+    return payment;
+  }
+
+  async getAdPaymentByTxRef(txRef: string): Promise<AdPayment | undefined> {
+    const [payment] = await db.select().from(schema.adPayments).where(eq(schema.adPayments.txRef, txRef));
+    return payment;
+  }
+
+  async updateAdPayment(id: string, updates: Partial<AdPayment>): Promise<AdPayment | undefined> {
+    const [payment] = await db.update(schema.adPayments)
+      .set(updates)
+      .where(eq(schema.adPayments.id, id))
+      .returning();
+    return payment;
+  }
+
+  async getAdvertiserPayments(advertiserId: string): Promise<AdPayment[]> {
+    const payments = await db.select()
+      .from(schema.adPayments)
+      .where(eq(schema.adPayments.advertiserId, advertiserId))
+      .orderBy(desc(schema.adPayments.createdAt));
+    return payments;
+  }
+
+  // Ad Tracking methods
+  async createAdImpression(insertImpression: InsertAdImpression): Promise<AdImpression> {
+    const [impression] = await db.insert(schema.adImpressions).values(insertImpression).returning();
+    
+    // Update ad total impressions
+    await db.update(schema.ads)
+      .set({
+        totalImpressions: sql`${schema.ads.totalImpressions} + 1`,
+      })
+      .where(eq(schema.ads.id, impression.adId));
+
+    return impression;
+  }
+
+  async createAdClick(insertClick: InsertAdClick): Promise<AdClick> {
+    const [click] = await db.insert(schema.adClicks).values(insertClick).returning();
+    
+    // Update ad total clicks
+    await db.update(schema.ads)
+      .set({
+        totalClicks: sql`${schema.ads.totalClicks} + 1`,
+      })
+      .where(eq(schema.ads.id, click.adId));
+
+    return click;
+  }
+
+  async getAdImpressions(adId: string): Promise<number> {
+    const result = await db.select({
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(schema.adImpressions)
+    .where(eq(schema.adImpressions.adId, adId));
+    
+    return Number(result[0]?.count || 0);
+  }
+
+  async getAdClicks(adId: string): Promise<number> {
+    const result = await db.select({
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(schema.adClicks)
+    .where(eq(schema.adClicks.adId, adId));
+    
+    return Number(result[0]?.count || 0);
   }
 }
 
