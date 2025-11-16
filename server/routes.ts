@@ -1784,6 +1784,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/watch-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const { videoId, watchDuration, completed } = req.body;
+      
+      if (!videoId) {
+        return res.status(400).json({ message: "Video ID is required" });
+      }
+
+      const watchHistory = await storage.createWatchHistory({
+        userId,
+        videoId,
+        watchDuration: watchDuration || null,
+        completed: completed || false,
+      });
+
+      res.json({ success: true, watchHistory });
+    } catch (error) {
+      console.error("Error creating watch history:", error);
+      res.status(500).json({ message: "Failed to record watch history" });
+    }
+  });
+
+  app.get('/api/watch-history/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const watchHistory = await storage.getUserWatchHistory(userId, limit);
+      res.json(watchHistory);
+    } catch (error) {
+      console.error("Error fetching watch history:", error);
+      res.status(500).json({ message: "Failed to fetch watch history" });
+    }
+  });
+
+  app.get('/api/watch-history/check/:videoId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const { videoId } = req.params;
+      const watched = await storage.checkIfWatched(userId, videoId);
+      res.json({ watched });
+    } catch (error) {
+      console.error("Error checking watch history:", error);
+      res.status(500).json({ message: "Failed to check watch history" });
+    }
+  });
+
   app.get('/api/stats/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
