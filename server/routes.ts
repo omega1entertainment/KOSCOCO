@@ -2464,6 +2464,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/advertiser/campaigns", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const { name, objective, budget, budgetType, startDate, endDate, targetAudience, targetLocations } = req.body;
+
+      if (!name || !objective || !budget || !budgetType || !startDate || !endDate) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      if (budget < 5000) {
+        return res.status(400).json({ message: "Minimum budget is 5,000 XAF" });
+      }
+
+      const campaign = await storage.createAdCampaign({
+        advertiserId: advertiser.id,
+        name,
+        objective,
+        budget,
+        budgetType,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        targetAudience: targetAudience || null,
+        targetLocations: targetLocations || null,
+        status: 'draft',
+      });
+
+      res.json(campaign);
+    } catch (error) {
+      console.error("Create campaign error:", error);
+      res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
   app.get("/api/advertiser/stats", isAdvertiser, async (req, res) => {
     try {
       const advertiser = req.user as any;

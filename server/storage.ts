@@ -162,6 +162,12 @@ export interface IStorage {
   createAdClick(click: InsertAdClick): Promise<AdClick>;
   getAdImpressions(adId: string): Promise<number>;
   getAdClicks(adId: string): Promise<number>;
+  getAdvertiserStats(advertiserId: string): Promise<{
+    totalImpressions: number;
+    totalClicks: number;
+    ctr: string;
+    totalSpend: number;
+  }>;
 }
 
 export class DbStorage implements IStorage {
@@ -1425,6 +1431,43 @@ export class DbStorage implements IStorage {
     .where(eq(schema.adClicks.adId, adId));
     
     return Number(result[0]?.count || 0);
+  }
+
+  async getAdvertiserStats(advertiserId: string): Promise<{
+    totalImpressions: number;
+    totalClicks: number;
+    ctr: string;
+    totalSpend: number;
+  }> {
+    // Get all ads for this advertiser
+    const ads = await db.select()
+      .from(schema.ads)
+      .innerJoin(schema.adCampaigns, eq(schema.ads.campaignId, schema.adCampaigns.id))
+      .where(eq(schema.adCampaigns.advertiserId, advertiserId));
+
+    // Sum up impressions and clicks
+    const totalImpressions = ads.reduce((sum, ad) => sum + (ad.ads.totalImpressions || 0), 0);
+    const totalClicks = ads.reduce((sum, ad) => sum + (ad.ads.totalClicks || 0), 0);
+
+    // Calculate CTR
+    const ctr = totalImpressions > 0 
+      ? ((totalClicks / totalImpressions) * 100).toFixed(2)
+      : '0.00';
+
+    // Get total spend from payments
+    const payments = await db.select()
+      .from(schema.adPayments)
+      .where(eq(schema.adPayments.advertiserId, advertiserId))
+      .where(eq(schema.adPayments.status, 'successful'));
+
+    const totalSpend = payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+
+    return {
+      totalImpressions,
+      totalClicks,
+      ctr,
+      totalSpend,
+    };
   }
 }
 
