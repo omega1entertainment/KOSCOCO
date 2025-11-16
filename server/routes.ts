@@ -2675,18 +2675,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Media file is required" });
       }
 
-      // Copy media file to public object storage so it can be accessed by browsers
+      // Upload media file to public object storage so it can be accessed by browsers
       const fileName = `ad-${Date.now()}-${mediaFile.originalFilename}`;
       const publicDirs = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',') || [];
       const publicDir = publicDirs[0] || '/public';
-      const destination = `${publicDir}/ads/${fileName}`;
+      const objectPath = `${publicDir}/ads/${fileName}`;
       
-      // Ensure ads directory exists
-      const adsDir = `${publicDir}/ads`;
-      await fs.mkdir(adsDir, { recursive: true }).catch(() => {});
+      // Upload to object storage using streams
+      const { bucketName, objectName } = parseObjectPath(objectPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const fileObj = bucket.file(objectName);
       
-      await fs.copyFile(mediaFile.filepath, destination);
-      await fs.unlink(mediaFile.filepath);
+      await new Promise((resolve, reject) => {
+        const readStream = createReadStream(mediaFile.filepath);
+        const writeStream = fileObj.createWriteStream({
+          metadata: {
+            contentType: mediaFile.mimetype || (adType === 'skippable_instream' ? 'video/mp4' : 'image/jpeg'),
+            cacheControl: 'public, max-age=31536000',
+          },
+        });
+
+        readStream.on('error', (error: Error) => {
+          console.error("Error reading media file:", error);
+          reject(new Error('Failed to read media file'));
+        });
+
+        writeStream.on('error', (error: Error) => {
+          console.error("Error writing to storage:", error);
+          reject(new Error('Failed to upload to storage'));
+        });
+
+        writeStream.on('finish', () => {
+          resolve(undefined);
+        });
+
+        readStream.pipe(writeStream);
+      });
+      
+      // Clean up temp file
+      await fs.unlink(mediaFile.filepath).catch(() => {});
       
       // Store relative URL that browser can access
       const mediaUrl = `/ads/${fileName}`;
