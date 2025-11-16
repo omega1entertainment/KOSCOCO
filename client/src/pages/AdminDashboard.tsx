@@ -61,6 +61,10 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/ads/pending"],
   });
 
+  const { data: advertisers = [], isLoading: advertisersLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/advertisers"],
+  });
+
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -189,6 +193,47 @@ function AdminDashboardContent() {
     }
     rejectAdMutation.mutate({ adId: selectedAdId, rejectionReason: adRejectionReason });
   };
+
+  // Advertiser approval/rejection mutations
+  const approveAdvertiserMutation = useMutation({
+    mutationFn: async (advertiserId: string) => {
+      return await apiRequest(`/api/admin/advertisers/${advertiserId}/approve`, "POST", {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Advertiser Approved",
+        description: "The advertiser account has been approved and is now active.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/advertisers"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Approval Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const suspendAdvertiserMutation = useMutation({
+    mutationFn: async (advertiserId: string) => {
+      return await apiRequest(`/api/admin/advertisers/${advertiserId}/reject`, "POST", {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Advertiser Suspended",
+        description: "The advertiser account has been suspended.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/advertisers"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Suspension Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ videoId, status }: { videoId: string; status: string }) => {
@@ -425,7 +470,7 @@ function AdminDashboardContent() {
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-6 gap-1">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-7 gap-1">
           <TabsTrigger value="phases" data-testid="tab-phases">
             {t('admin.tabs.phases')}
           </TabsTrigger>
@@ -439,6 +484,14 @@ function AdminDashboardContent() {
           </TabsTrigger>
           <TabsTrigger value="judges" data-testid="tab-judges">
             {t('admin.tabs.judges')}
+          </TabsTrigger>
+          <TabsTrigger value="advertisers" data-testid="tab-advertisers">
+            Advertisers
+            {advertisers.filter((a: any) => a.status === 'pending').length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {advertisers.filter((a: any) => a.status === 'pending').length}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="ads" data-testid="tab-ads">
             Ads
@@ -721,6 +774,125 @@ function AdminDashboardContent() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="advertisers" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advertiser Accounts ({advertisers.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {advertisersLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Loading advertisers...</p>
+                </div>
+              ) : advertisers.length === 0 ? (
+                <div className="text-center py-12">
+                  <h3 className="text-xl font-semibold mb-2">No Advertisers Yet</h3>
+                  <p className="text-muted-foreground">
+                    No advertiser accounts have been created yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {advertisers.map((advertiser: any) => (
+                    <Card key={advertiser.id} className="p-4" data-testid={`advertiser-item-${advertiser.id}`}>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-lg" data-testid={`text-company-name-${advertiser.id}`}>
+                              {advertiser.companyName}
+                            </h4>
+                            <Badge 
+                              variant={
+                                advertiser.status === 'active' ? 'default' : 
+                                advertiser.status === 'pending' ? 'secondary' : 
+                                'destructive'
+                              }
+                            >
+                              {advertiser.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            <strong>Email:</strong> {advertiser.email}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            <strong>Contact:</strong> {advertiser.contactName} {advertiser.contactPhone && `(${advertiser.contactPhone})`}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            <strong>Business Type:</strong> {advertiser.businessType} | <strong>Country:</strong> {advertiser.country}
+                          </p>
+                          {advertiser.companyWebsite && (
+                            <p className="text-sm text-muted-foreground mb-1">
+                              <strong>Website:</strong> <a href={advertiser.companyWebsite} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{advertiser.companyWebsite}</a>
+                            </p>
+                          )}
+                          {advertiser.companyDescription && (
+                            <p className="text-sm mt-2">{advertiser.companyDescription}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Created: {new Date(advertiser.createdAt).toLocaleDateString()}
+                            {advertiser.verifiedAt && ` | Verified: ${new Date(advertiser.verifiedAt).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {advertiser.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => approveAdvertiserMutation.mutate(advertiser.id)}
+                                disabled={approveAdvertiserMutation.isPending}
+                                data-testid={`button-approve-advertiser-${advertiser.id}`}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => suspendAdvertiserMutation.mutate(advertiser.id)}
+                                disabled={suspendAdvertiserMutation.isPending}
+                                data-testid={`button-suspend-advertiser-${advertiser.id}`}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Suspend
+                              </Button>
+                            </>
+                          )}
+                          {advertiser.status === 'active' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => suspendAdvertiserMutation.mutate(advertiser.id)}
+                              disabled={suspendAdvertiserMutation.isPending}
+                              data-testid={`button-suspend-advertiser-${advertiser.id}`}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Suspend
+                            </Button>
+                          )}
+                          {advertiser.status === 'suspended' && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => approveAdvertiserMutation.mutate(advertiser.id)}
+                              disabled={approveAdvertiserMutation.isPending}
+                              data-testid={`button-reactivate-advertiser-${advertiser.id}`}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Reactivate
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="videos" className="mt-6">

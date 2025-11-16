@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, db } from "./storage";
+import * as schema from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { setupAuth, isAuthenticated, isAdvertiser } from "./auth";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
@@ -2197,7 +2199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verify the user exists and is a judge
-      const judge = await storage.getUserById(judgeId);
+      const judge = await storage.getUser(judgeId);
       if (!judge) {
         return res.status(404).json({ message: "Judge not found" });
       }
@@ -2216,6 +2218,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting judge:", error);
       res.status(500).json({ message: "Failed to delete judge account" });
+    }
+  });
+
+  // Admin: Get all advertisers
+  app.get('/api/admin/advertisers', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const advertisers = await storage.getAllAdvertisers();
+      // Sanitize to exclude passwords
+      const sanitizedAdvertisers = advertisers.map(advertiser => ({
+        id: advertiser.id,
+        email: advertiser.email,
+        companyName: advertiser.companyName,
+        companyWebsite: advertiser.companyWebsite,
+        companyDescription: advertiser.companyDescription,
+        contactName: advertiser.contactName,
+        contactPhone: advertiser.contactPhone,
+        businessType: advertiser.businessType,
+        country: advertiser.country,
+        status: advertiser.status,
+        createdAt: advertiser.createdAt,
+        verifiedAt: advertiser.verifiedAt,
+      }));
+      res.json(sanitizedAdvertisers);
+    } catch (error) {
+      console.error("Error fetching advertisers:", error);
+      res.status(500).json({ message: "Failed to fetch advertisers" });
+    }
+  });
+
+  // Admin: Approve advertiser account
+  app.post('/api/admin/advertisers/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const advertiser = await storage.updateAdvertiserStatus(id, 'active');
+      if (!advertiser) {
+        return res.status(404).json({ message: "Advertiser not found" });
+      }
+
+      res.json({ 
+        message: "Advertiser approved successfully",
+        advertiser: {
+          id: advertiser.id,
+          companyName: advertiser.companyName,
+          status: advertiser.status,
+        }
+      });
+    } catch (error) {
+      console.error("Error approving advertiser:", error);
+      res.status(500).json({ message: "Failed to approve advertiser" });
+    }
+  });
+
+  // Admin: Reject/Suspend advertiser account
+  app.post('/api/admin/advertisers/:id/reject', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const advertiser = await storage.updateAdvertiserStatus(id, 'suspended');
+      if (!advertiser) {
+        return res.status(404).json({ message: "Advertiser not found" });
+      }
+
+      res.json({ 
+        message: "Advertiser suspended successfully",
+        advertiser: {
+          id: advertiser.id,
+          companyName: advertiser.companyName,
+          status: advertiser.status,
+        }
+      });
+    } catch (error) {
+      console.error("Error suspending advertiser:", error);
+      res.status(500).json({ message: "Failed to suspend advertiser" });
     }
   });
 

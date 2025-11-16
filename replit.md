@@ -33,6 +33,14 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Advertiser Account Approval System** (Nov 16, 2024): Added complete advertiser account management to Admin Dashboard:
+  - New "Advertisers" tab in AdminDashboard displaying all advertiser accounts with status badges
+  - Backend routes: GET /api/admin/advertisers, POST /api/admin/advertisers/:id/approve, POST /api/admin/advertisers/:id/reject
+  - Admin can approve pending accounts (status changes to 'active'), suspend active accounts, or reactivate suspended accounts
+  - Comprehensive advertiser details displayed: company name, email, contact info, business type, country, website, description
+  - Status tracking: pending (awaiting approval), active (approved and can create campaigns), suspended (blocked)
+  - Badge indicators for pending accounts in tab trigger for admin visibility
+  - Session deserialization bug fix: gracefully handles missing users/advertisers instead of crashing
 - **MVP Ad System Complete** (Nov 16, 2024): Successfully implemented simplified 2-ad-type MVP advertising system:
   - Database schema: advertisers, ad_campaigns, ads, ad_payments, ad_impressions, ad_clicks tables
   - Implemented ad types: Skippable In-Stream Video (pre-roll), Overlay Banner
