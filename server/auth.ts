@@ -68,7 +68,9 @@ export async function setupAuth(app: Express) {
       },
       async (email, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Normalize email to lowercase for case-insensitive lookup
+          const normalizedEmail = email.toLowerCase().trim();
+          const user = await storage.getUserByEmail(normalizedEmail);
           
           if (!user) {
             return done(null, false, { message: "Invalid email or password" });
@@ -110,7 +112,8 @@ export async function setupAuth(app: Express) {
               // Check if user exists with same email
               const email = profile.emails?.[0]?.value;
               if (email) {
-                user = await storage.getUserByEmail(email);
+                const normalizedEmail = email.toLowerCase().trim();
+                user = await storage.getUserByEmail(normalizedEmail);
                 if (user) {
                   // Link Google account to existing user
                   user = await storage.updateUserGoogleId(user.id, profile.id);
@@ -129,8 +132,9 @@ export async function setupAuth(app: Express) {
                 return done(new Error('Email not provided by Google'));
               }
 
+              const normalizedEmail = email.toLowerCase().trim();
               user = await storage.createUser({
-                email,
+                email: normalizedEmail,
                 googleId: profile.id,
                 firstName,
                 lastName,
@@ -166,7 +170,8 @@ export async function setupAuth(app: Express) {
               // Check if user exists with same email
               const email = profile.emails?.[0]?.value;
               if (email) {
-                user = await storage.getUserByEmail(email);
+                const normalizedEmail = email.toLowerCase().trim();
+                user = await storage.getUserByEmail(normalizedEmail);
                 if (user) {
                   // Link Facebook account to existing user
                   user = await storage.updateUserFacebookId(user.id, profile.id);
@@ -185,8 +190,9 @@ export async function setupAuth(app: Express) {
                 return done(new Error('Email not provided by Facebook'));
               }
 
+              const normalizedEmail = email.toLowerCase().trim();
               user = await storage.createUser({
-                email,
+                email: normalizedEmail,
                 facebookId: profile.id,
                 firstName,
                 lastName,
@@ -274,8 +280,11 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Parental consent required for users under 18" });
       }
 
+      // Normalize email to lowercase for case-insensitive storage and lookup
+      const normalizedEmail = email.toLowerCase().trim();
+
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
+      const existingUser = await storage.getUserByEmail(normalizedEmail);
       if (existingUser) {
         return res.status(409).json({ message: "An account with this email already exists" });
       }
@@ -285,7 +294,7 @@ export async function setupAuth(app: Express) {
 
       // Create user with auto-verified email
       const user = await storage.createUser({
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         firstName,
         lastName,
@@ -360,7 +369,9 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email is required" });
       }
 
-      const user = await storage.getUserByEmail(email);
+      // Normalize email to lowercase for case-insensitive lookup
+      const normalizedEmail = email.toLowerCase().trim();
+      const user = await storage.getUserByEmail(normalizedEmail);
       
       if (!user) {
         // Don't reveal if user exists
@@ -444,8 +455,11 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Password must be at least 8 characters long" });
       }
 
+      // Normalize email to lowercase for case-insensitive storage and lookup
+      const normalizedEmail = email.toLowerCase().trim();
+
       // Check if advertiser already exists
-      const existingAdvertiser = await storage.getAdvertiserByEmail(email);
+      const existingAdvertiser = await storage.getAdvertiserByEmail(normalizedEmail);
       if (existingAdvertiser) {
         return res.status(409).json({ message: "An advertiser account with this email already exists" });
       }
@@ -455,7 +469,7 @@ export async function setupAuth(app: Express) {
 
       // Create advertiser (status defaults to 'pending' for admin approval)
       const advertiser = await storage.createAdvertiser({
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         companyName,
         companyWebsite: companyWebsite || null,
@@ -490,7 +504,9 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      const advertiser = await storage.getAdvertiserByEmail(email);
+      // Normalize email to lowercase for case-insensitive lookup
+      const normalizedEmail = email.toLowerCase().trim();
+      const advertiser = await storage.getAdvertiserByEmail(normalizedEmail);
       
       if (!advertiser) {
         return res.status(401).json({ message: "Invalid email or password" });
