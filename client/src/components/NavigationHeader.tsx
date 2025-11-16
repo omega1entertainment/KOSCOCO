@@ -7,7 +7,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +31,6 @@ export default function NavigationHeader({
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { t } = useLanguage();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -42,34 +40,34 @@ export default function NavigationHeader({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
-        title: t('nav.loggedOut'),
-        description: t('nav.loggedOutDesc'),
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
       });
       setLocation("/");
     },
     onError: () => {
       toast({
-        title: t('nav.logoutFailed'),
-        description: t('nav.logoutFailedDesc'),
+        title: "Logout Failed",
+        description: "Failed to logout. Please try again.",
         variant: "destructive",
       });
     },
   });
   
   const navItems = [
-    { label: t('nav.watch'), path: '/categories' },
-    { label: t('nav.judges'), path: '/judges' },
-    { label: t('nav.howItWorks'), path: '/how-it-works' },
+    { label: 'Watch', path: '/categories' },
+    { label: 'Judges', path: '/judges' },
+    { label: 'How It Works', path: '/how-it-works' },
   ];
   
   const leaderboardMenuItems = [
-    { label: t('nav.viewLeaderboard'), path: '/leaderboard' },
-    { label: t('nav.prizes'), path: '/prizes' },
+    { label: 'View Leaderboard', path: '/leaderboard' },
+    { label: 'Prizes', path: '/prizes' },
   ];
   
   const affiliateMenuItems = [
-    { label: t('nav.joinProgram'), path: '/affiliate' },
-    { label: t('nav.myDashboard'), path: '/affiliate/dashboard' },
+    { label: 'Join Program', path: '/affiliate' },
+    { label: 'My Dashboard', path: '/affiliate/dashboard' },
   ];
   
   return (
@@ -104,7 +102,7 @@ export default function NavigationHeader({
                   className="min-h-11"
                   data-testid="link-leaderboard"
                 >
-                  {t('nav.leaderboard')}
+                  Leaderboard
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
@@ -128,7 +126,7 @@ export default function NavigationHeader({
                   className="min-h-11"
                   data-testid="link-affiliate"
                 >
-                  {t('nav.affiliate')}
+                  Affiliate
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
@@ -155,7 +153,7 @@ export default function NavigationHeader({
                   onClick={() => setLocation("/register")}
                   data-testid="button-register"
                 >
-                  {t('nav.register')}
+                  Register
                 </Button>
                 <Button 
                   variant="outline"
@@ -163,27 +161,27 @@ export default function NavigationHeader({
                   onClick={onUploadClick}
                   data-testid="button-upload-nav"
                 >
-                  {t('nav.uploadVideo')}
+                  Upload Video
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="min-h-11" data-testid="button-user-menu">
                       <User className="w-4 h-4 mr-2" />
-                      {user?.firstName || t('nav.user')}
+                      {user?.firstName || 'User'}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onNavigate?.('/dashboard')} data-testid="menu-dashboard">
-                      {t('nav.dashboard')}
+                      Dashboard
                     </DropdownMenuItem>
                     {user?.isJudge && (
                       <DropdownMenuItem onClick={() => onNavigate?.('/judge-dashboard')} data-testid="menu-judge-dashboard">
-                        {t('nav.judgeDashboard')}
+                        Judge Dashboard
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => logoutMutation.mutate()} data-testid="menu-logout">
                       <LogOut className="w-4 h-4 mr-2" />
-                      {t('nav.logout')}
+                      Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -196,14 +194,14 @@ export default function NavigationHeader({
                   onClick={() => setLocation("/login")}
                   data-testid="button-login"
                 >
-                  {t('nav.login')}
+                  Login
                 </Button>
                 <Button
                   className="min-h-11"
                   onClick={() => setLocation("/register")}
                   data-testid="button-register"
                 >
-                  {t('nav.register')}
+                  Register
                 </Button>
               </>
             )}
@@ -240,7 +238,7 @@ export default function NavigationHeader({
             
             <div className="mt-2">
               <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                {t('nav.leaderboard')}
+                Leaderboard
               </div>
               {leaderboardMenuItems.map((item) => (
                 <Button
@@ -260,7 +258,7 @@ export default function NavigationHeader({
             
             <div className="mt-2">
               <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                {t('nav.affiliate')}
+                Affiliate
               </div>
               {affiliateMenuItems.map((item) => (
                 <Button
@@ -280,7 +278,7 @@ export default function NavigationHeader({
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-sm font-semibold text-muted-foreground">{t('common.theme')}</span>
+                <span className="text-sm font-semibold text-muted-foreground">Theme</span>
                 <ThemeToggle />
               </div>
               {isAuthenticated ? (
@@ -293,7 +291,7 @@ export default function NavigationHeader({
                     }}
                     data-testid="mobile-button-register"
                   >
-                    {t('nav.register')}
+                    Register
                   </Button>
                   <Button 
                     variant="outline"
@@ -304,7 +302,7 @@ export default function NavigationHeader({
                     }}
                     data-testid="mobile-button-upload"
                   >
-                    {t('nav.uploadVideo')}
+                    Upload Video
                   </Button>
                   <Button 
                     variant="ghost"
@@ -316,7 +314,7 @@ export default function NavigationHeader({
                     data-testid="mobile-button-dashboard"
                   >
                     <User className="w-4 h-4 mr-2" />
-                    {t('nav.dashboard')}
+                    Dashboard
                   </Button>
                   <Button 
                     variant="ghost"
@@ -328,7 +326,7 @@ export default function NavigationHeader({
                     data-testid="mobile-button-logout"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    {t('nav.logout')}
+                    Logout
                   </Button>
                 </>
               ) : (
@@ -342,17 +340,17 @@ export default function NavigationHeader({
                     }}
                     data-testid="mobile-button-login"
                   >
-                    {t('nav.login')}
+                    Login
                   </Button>
                   <Button
                     className="min-h-11"
-                    onClick(() => {
+                    onClick={() => {
                       setLocation("/register");
                       setMobileMenuOpen(false);
                     }}
                     data-testid="mobile-button-register"
                   >
-                    {t('nav.register')}
+                    Register
                   </Button>
                 </>
               )}
