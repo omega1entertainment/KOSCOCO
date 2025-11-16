@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Phase {
   number: number;
@@ -12,32 +13,36 @@ interface PhaseTimelineProps {
   phases?: Phase[];
 }
 
-const defaultPhases: Phase[] = [
-  { number: 1, name: 'TOP 500', description: 'Initial submissions', status: 'completed' },
-  { number: 2, name: 'TOP 100', description: 'Best entries advance', status: 'active' },
-  { number: 3, name: 'TOP 50', description: 'Top performers', status: 'upcoming' },
-  { number: 4, name: 'TOP 25', description: 'Elite contenders', status: 'upcoming' },
-  { number: 5, name: 'TOP 10', description: 'Final selections', status: 'upcoming' },
-  { number: 6, name: 'TOP 3', description: 'Category winners', status: 'upcoming' },
-  { number: 7, name: 'GRANDE FINALE', description: 'Ultimate champion', status: 'upcoming' },
-];
+export default function PhaseTimeline({ phases }: PhaseTimelineProps) {
+  const { t } = useLanguage();
+  
+  const translatedPhases: Phase[] = [
+    { number: 1, name: t('phaseTimeline.phase1Name'), description: t('phaseTimeline.phase1Desc'), status: 'completed' },
+    { number: 2, name: t('phaseTimeline.phase2Name'), description: t('phaseTimeline.phase2Desc'), status: 'active' },
+    { number: 3, name: t('phaseTimeline.phase3Name'), description: t('phaseTimeline.phase3Desc'), status: 'upcoming' },
+    { number: 4, name: t('phaseTimeline.phase4Name'), description: t('phaseTimeline.phase4Desc'), status: 'upcoming' },
+    { number: 5, name: t('phaseTimeline.phase5Name'), description: t('phaseTimeline.phase5Desc'), status: 'upcoming' },
+    { number: 6, name: t('phaseTimeline.phase6Name'), description: t('phaseTimeline.phase6Desc'), status: 'upcoming' },
+    { number: 7, name: t('phaseTimeline.phase7Name'), description: t('phaseTimeline.phase7Desc'), status: 'upcoming' },
+  ];
 
-export default function PhaseTimeline({ phases = defaultPhases }: PhaseTimelineProps) {
+  const displayPhases = phases ?? translatedPhases;
+
   return (
     <div className="py-24">
       <div className="max-w-7xl mx-auto px-4">
         <h2 className="font-display text-5xl md:text-6xl text-center mb-4 uppercase tracking-wide">
-          Competition Flow
+          {t('phaseTimeline.title')}
         </h2>
         <p className="text-center text-muted-foreground mb-16 max-w-2xl mx-auto">
-          Follow the journey from submission to ultimate victory across 7 exciting phases
+          {t('phaseTimeline.description')}
         </p>
         
         <div className="relative">
           <div className="hidden xl:block absolute top-12 left-0 right-0 h-0.5 bg-border" />
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-6 md:gap-4 lg:gap-5 xl:gap-3 relative">
-            {phases.map((phase, idx) => (
+            {displayPhases.map((phase, idx) => (
               <div key={phase.number} className="relative">
                 <div className="flex flex-col items-center text-center">
                   <div 
@@ -63,7 +68,7 @@ export default function PhaseTimeline({ phases = defaultPhases }: PhaseTimelineP
                       className="mb-3 font-bold text-xs"
                       data-testid="badge-active"
                     >
-                      ACTIVE NOW
+                      {t('phaseTimeline.activeNow')}
                     </Badge>
                   )}
                   
@@ -75,7 +80,7 @@ export default function PhaseTimeline({ phases = defaultPhases }: PhaseTimelineP
                   </p>
                 </div>
                 
-                {idx < phases.length - 1 && (
+                {idx < displayPhases.length - 1 && (
                   <ChevronRight className="hidden xl:block absolute top-8 -right-6 2xl:-right-10 w-6 h-6 2xl:w-8 2xl:h-8 text-muted-foreground/30" />
                 )}
               </div>
