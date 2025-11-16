@@ -2035,6 +2035,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get approved ads
+  app.get('/api/admin/ads/approved', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const approvedAds = await storage.getApprovedAds();
+      res.json(approvedAds);
+    } catch (error) {
+      console.error("Error fetching approved ads:", error);
+      res.status(500).json({ message: "Failed to fetch approved ads" });
+    }
+  });
+
   // Admin: Approve ad
   app.post('/api/admin/ads/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
