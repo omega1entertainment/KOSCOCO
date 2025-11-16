@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Play, Star, ThumbsUp, Trophy } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { VideoWithStats } from "@shared/schema";
+import type { VideoWithStats, Category } from "@shared/schema";
 
 export default function VideoOfTheDay() {
   const [, setLocation] = useLocation();
@@ -15,7 +15,7 @@ export default function VideoOfTheDay() {
     queryKey: ["/api/videos/video-of-the-day"],
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
@@ -35,7 +35,7 @@ export default function VideoOfTheDay() {
     return null;
   }
 
-  const category = categories.find((c: any) => c.id === video.categoryId);
+  const category = categories.find((c) => c.id === video.categoryId);
 
   return (
     <section className="py-12 bg-gradient-to-b from-muted/50 to-background" data-testid="section-video-of-the-day">
@@ -91,7 +91,7 @@ export default function VideoOfTheDay() {
                   )}
                   <Badge variant="outline" data-testid="badge-featured">
                     <Star className="w-3 h-3 mr-1 fill-current" />
-                    Featured
+                    {t('home.videoOfTheDay.featured')}
                   </Badge>
                 </div>
 
