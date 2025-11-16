@@ -188,6 +188,19 @@ export const likes = pgTable("likes", {
   index("idx_likes_video_id").on(table.videoId),
 ]);
 
+export const watchHistory = pgTable("watch_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  watchedAt: timestamp("watched_at").defaultNow().notNull(),
+  watchDuration: integer("watch_duration"),
+  completed: boolean("completed").default(false).notNull(),
+}, (table) => [
+  index("idx_watch_history_user_id").on(table.userId),
+  index("idx_watch_history_video_id").on(table.videoId),
+  index("idx_watch_history_watched_at").on(table.watchedAt),
+]);
+
 export const reports = pgTable("reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   videoId: varchar("video_id").notNull().references(() => videos.id),
@@ -409,6 +422,11 @@ export const insertLikeSchema = createInsertSchema(likes).omit({
   createdAt: true,
 });
 
+export const insertWatchHistorySchema = createInsertSchema(watchHistory).omit({
+  id: true,
+  watchedAt: true,
+});
+
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,
   createdAt: true,
@@ -551,6 +569,9 @@ export type PayoutRequest = typeof payoutRequests.$inferSelect;
 
 export type InsertLike = z.infer<typeof insertLikeSchema>;
 export type Like = typeof likes.$inferSelect;
+
+export type InsertWatchHistory = z.infer<typeof insertWatchHistorySchema>;
+export type WatchHistory = typeof watchHistory.$inferSelect;
 
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
