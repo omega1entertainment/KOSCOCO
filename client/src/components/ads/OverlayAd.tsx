@@ -20,7 +20,7 @@ export function OverlayAd({ ad, onClose, onImpression, onClick }: OverlayAdProps
 
   // Track impression on mount (in useEffect to avoid render loops)
   React.useEffect(() => {
-    if (!impressionTracked) {
+    if (!impressionTracked && ad.id) {
       onImpression(ad.id);
       setImpressionTracked(true);
     }

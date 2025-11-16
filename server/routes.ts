@@ -2599,6 +2599,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ad Serving API: Get an ad to display with rotation logic
+  app.get("/api/ads/serve", async (req, res) => {
+    try {
+      const adType = req.query.adType as string | undefined;
+      
+      // Get all active approved ads (optionally filtered by type)
+      const activeAds = await storage.getApprovedAds(adType);
+      
+      if (activeAds.length === 0) {
+        return res.status(404).json({ message: "No ads available" });
+      }
+
+      // Filter ads with available budget and active campaigns
+      const adsWithBudget = await Promise.all(
+        activeAds.map(async (ad) => {
+          const campaign = await storage.getAdCampaign(ad.campaignId);
+          if (!campaign) return null;
+          
+          // Check campaign status
+          if (campaign.status !== 'active') return null;
+          
+          // Check if campaign has remaining budget
+          const remainingBudget = campaign.budget - (campaign.totalSpent || 0);
+          if (remainingBudget <= 0) return null;
+          
+          // Check if ad status is still active
+          if (ad.status !== 'active') return null;
+          
+          return ad;
+        })
+      );
+
+      const eligibleAds = adsWithBudget.filter((ad): ad is typeof activeAds[0] => ad !== null);
+
+      if (eligibleAds.length === 0) {
+        return res.status(404).json({ message: "No ads with available budget" });
+      }
+
+      // Weighted random selection based on bid amount
+      // Higher bid = higher chance of being selected
+      const totalBidWeight = eligibleAds.reduce((sum, ad) => sum + (ad.bidAmount || 0), 0);
+      
+      if (totalBidWeight === 0) {
+        // If all bids are 0, select randomly
+        const randomAd = eligibleAds[Math.floor(Math.random() * eligibleAds.length)];
+        return res.json(randomAd);
+      }
+
+      // Select ad using weighted random
+      let randomValue = Math.random() * totalBidWeight;
+      let selectedAd = eligibleAds[0];
+      
+      for (const ad of eligibleAds) {
+        randomValue -= ad.bidAmount || 0;
+        if (randomValue <= 0) {
+          selectedAd = ad;
+          break;
+        }
+      }
+
+      res.json(selectedAd);
+    } catch (error) {
+      console.error("Error serving ad:", error);
+      res.status(500).json({ message: "Failed to serve ad" });
+    }
+  });
+
+  // Track ad impression (with deduplication and validation)
+  app.post("/api/ads/:adId/impression", async (req, res) => {
+    try {
+      const adId = req.params.adId;
+      const userAgent = req.headers['user-agent'];
+      const ipAddress = req.ip || req.socket.remoteAddress;
+
+      // Require valid IP and user agent to prevent abuse
+      if (!ipAddress || !userAgent) {
+        return res.status(400).json({ message: "Missing required headers" });
+      }
+
+      // Verify ad exists and is active
+      const ad = await storage.getAd(adId);
+      if (!ad || ad.status !== 'active') {
+        return res.status(404).json({ message: "Ad not found or inactive" });
+      }
+
+      // Check for recent duplicate impressions (within last 30 seconds)
+      const recentImpressions = await db.select()
+        .from(schema.adImpressions)
+        .where(
+          and(
+            eq(schema.adImpressions.adId, adId),
+            eq(schema.adImpressions.ipAddress, ipAddress),
+            sql`${schema.adImpressions.createdAt} > NOW() - INTERVAL '30 seconds'`
+          )
+        );
+
+      if (recentImpressions.length > 0) {
+        // Skip duplicate impression within 30 second window
+        return res.json({ success: true, deduplicated: true });
+      }
+
+      await storage.createAdImpression({
+        adId,
+        userId: req.user?.id || null,
+        userAgent,
+        ipAddress,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking ad impression:", error);
+      res.status(500).json({ message: "Failed to track impression" });
+    }
+  });
+
+  // Track ad click (with deduplication and validation)
+  app.post("/api/ads/:adId/click", async (req, res) => {
+    try {
+      const adId = req.params.adId;
+      const userAgent = req.headers['user-agent'];
+      const ipAddress = req.ip || req.socket.remoteAddress;
+
+      // Require valid IP and user agent to prevent abuse
+      if (!ipAddress || !userAgent) {
+        return res.status(400).json({ message: "Missing required headers" });
+      }
+
+      // Verify ad exists and is active
+      const ad = await storage.getAd(adId);
+      if (!ad || ad.status !== 'active') {
+        return res.status(404).json({ message: "Ad not found or inactive" });
+      }
+
+      // Check for recent duplicate clicks (within last 60 seconds)
+      const recentClicks = await db.select()
+        .from(schema.adClicks)
+        .where(
+          and(
+            eq(schema.adClicks.adId, adId),
+            eq(schema.adClicks.ipAddress, ipAddress),
+            sql`${schema.adClicks.createdAt} > NOW() - INTERVAL '60 seconds'`
+          )
+        );
+
+      if (recentClicks.length > 0) {
+        // Skip duplicate click within 60 second window
+        return res.json({ success: true, deduplicated: true });
+      }
+
+      await storage.createAdClick({
+        adId,
+        userId: req.user?.id || null,
+        userAgent,
+        ipAddress,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking ad click:", error);
+      res.status(500).json({ message: "Failed to track click" });
+    }
+  });
+
   // Serve ad media files from public object storage
   app.get("/ads/:filename", async (req, res) => {
     try {

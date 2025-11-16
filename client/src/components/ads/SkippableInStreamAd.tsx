@@ -32,7 +32,7 @@ export function SkippableInStreamAd({
 
   // Track impression on mount
   useEffect(() => {
-    if (!impressionTracked) {
+    if (!impressionTracked && ad.id) {
       onImpression(ad.id);
       setImpressionTracked(true);
     }
