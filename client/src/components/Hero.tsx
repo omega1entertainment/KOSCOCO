@@ -35,6 +35,14 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           Unleash Creativity & Embrace the Spotlight
         </p>
         
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg px-6 py-3 shadow-lg inline-block" data-testid="banner-cash-prize">
+            <p className="text-black text-lg sm:text-xl md:text-2xl font-bold" style={{ fontFamily: 'Play, sans-serif' }}>
+              Ultimate cash prize: <span className="text-primary animate-bounce inline-block">5 million</span> Francs CFA
+            </p>
+          </div>
+        </div>
+        
         <div className="flex items-center justify-center gap-6 text-white/80 text-sm md:text-base mb-12 flex-wrap">
           <span className="font-semibold">5 Categories</span>
           <span className="w-1 h-1 bg-white/60 rounded-full"></span>
