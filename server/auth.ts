@@ -215,13 +215,20 @@ export async function setupAuth(app: Express) {
     try {
       if (sessionData.type === 'advertiser') {
         const advertiser = await storage.getAdvertiser(sessionData.id);
+        if (!advertiser) {
+          return cb(null, false);
+        }
         cb(null, advertiser);
       } else {
         const user = await storage.getUser(sessionData.id);
+        if (!user) {
+          return cb(null, false);
+        }
         cb(null, user);
       }
     } catch (error) {
-      cb(error);
+      console.error('Session deserialization error:', error);
+      cb(null, false);
     }
   });
 
