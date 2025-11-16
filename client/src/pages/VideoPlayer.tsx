@@ -10,7 +10,7 @@ import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
 import { OverlayAd } from "@/components/ads/OverlayAd";
 import { SkippableInStreamAd } from "@/components/ads/SkippableInStreamAd";
-import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink, PictureInPicture2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -27,6 +27,7 @@ export default function VideoPlayer() {
   const [showPreRollAd, setShowPreRollAd] = useState(true);
   const [preRollAdCompleted, setPreRollAdCompleted] = useState(false);
   const [showOverlayAd, setShowOverlayAd] = useState(true);
+  const [isPiPSupported, setIsPiPSupported] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
@@ -137,6 +138,14 @@ export default function VideoPlayer() {
     }
   }, [videoId, video, videoLoading, preRollAdCompleted]);
 
+  useEffect(() => {
+    // Check if Picture-in-Picture is supported
+    setIsPiPSupported(
+      document.pictureInPictureEnabled &&
+      videoRef.current !== null
+    );
+  }, []);
+
   const handlePreRollAdComplete = () => {
     setShowPreRollAd(false);
     setPreRollAdCompleted(true);
@@ -155,6 +164,25 @@ export default function VideoPlayer() {
       await apiRequest(`/api/ads/${adId}/click`, "POST", {});
     } catch (error) {
       console.error("Failed to track ad click:", error);
+    }
+  };
+
+  const handlePictureInPicture = async () => {
+    if (!videoRef.current) return;
+
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await videoRef.current.requestPictureInPicture();
+      }
+    } catch (error) {
+      console.error("Picture-in-Picture failed:", error);
+      toast({
+        title: t('videoPlayer.pipFailed'),
+        description: t('videoPlayer.pipFailedDescription'),
+        variant: "destructive",
+      });
     }
   };
 
@@ -454,6 +482,16 @@ export default function VideoPlayer() {
                     >
                       <Share2 className="w-4 h-4" />
                     </Button>
+                    {isPiPSupported && (
+                      <Button
+                        variant="outline"
+                        onClick={handlePictureInPicture}
+                        data-testid="button-pip"
+                        title={t('videoPlayer.pictureInPicture')}
+                      >
+                        <PictureInPicture2 className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => setReportDialogOpen(true)}
