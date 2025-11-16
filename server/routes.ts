@@ -2720,6 +2720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const adData: any = {
         campaignId,
+        advertiserId: advertiser.id,
         adType,
         name,
         mediaUrl,
