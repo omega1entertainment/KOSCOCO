@@ -53,7 +53,7 @@ export default function LanguageSelectionModal() {
         style={{ maxWidth: '512px', maxHeight: '256px' }}
         data-testid="dialog-language-selection"
       >
-        <DialogTitle className="text-2xl font-bold text-center mb-6" style={{ fontFamily: 'Play, sans-serif' }}>
+        <DialogTitle className="sr-only">
           Choose Your Language / Choisissez Votre Langue
         </DialogTitle>
         <DialogDescription className="sr-only">
