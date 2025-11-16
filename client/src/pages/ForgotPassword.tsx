@@ -8,8 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ForgotPassword() {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [resetToken, setResetToken] = useState("");
@@ -21,7 +23,7 @@ export default function ForgotPassword() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Reset Email Sent",
+        title: t('auth.resetEmailSent'),
         description: data.message,
       });
       // In development, show the token
@@ -31,7 +33,7 @@ export default function ForgotPassword() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed",
+        title: t('auth.failed'),
         description: error.message,
         variant: "destructive",
       });
@@ -43,8 +45,8 @@ export default function ForgotPassword() {
     
     if (!email) {
       toast({
-        title: "Missing Information",
-        description: "Please enter your email address.",
+        title: t('auth.missingInfo'),
+        description: t('auth.enterEmailAddress'),
         variant: "destructive",
       });
       return;
@@ -59,31 +61,31 @@ export default function ForgotPassword() {
         <div className="max-w-md mx-auto">
           <Link href="/login" className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-6" data-testid="link-back-to-login">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Login
+            {t('auth.backToLogin')}
           </Link>
 
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2 font-['Bebas_Neue']">Forgot Password</h1>
+            <h1 className="text-4xl font-bold mb-2 font-['Bebas_Neue']">{t('auth.forgotPasswordTitle')}</h1>
             <p className="text-muted-foreground">
-              Enter your email to receive a password reset link
+              {t('auth.forgotPasswordDescription')}
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Reset Your Password</CardTitle>
+              <CardTitle>{t('auth.resetYourPassword')}</CardTitle>
               <CardDescription>
-                We'll send you instructions to reset your password
+                {t('auth.resetInstructions')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t('auth.emailAddress')}</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     data-testid="input-forgot-email"
@@ -96,15 +98,15 @@ export default function ForgotPassword() {
                   disabled={forgotPasswordMutation.isPending}
                   data-testid="button-forgot-submit"
                 >
-                  {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
+                  {forgotPasswordMutation.isPending ? t('auth.sending') : t('auth.sendResetLink')}
                 </Button>
 
                 {resetToken && (
                   <div className="mt-4 p-4 bg-muted rounded-md">
-                    <p className="text-sm font-medium mb-2">Development Mode - Reset Token:</p>
+                    <p className="text-sm font-medium mb-2">{t('auth.devModeResetToken')}</p>
                     <code className="text-xs break-all">{resetToken}</code>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Use this token at <Link href={`/reset-password?token=${resetToken}`} className="text-primary hover:underline">Reset Password</Link>
+                      {t('auth.useThisToken')} <Link href={`/reset-password?token=${resetToken}`} className="text-primary hover:underline">{t('auth.resetPassword')}</Link>
                     </p>
                   </div>
                 )}

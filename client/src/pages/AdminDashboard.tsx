@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import PhaseManagement from "@/components/PhaseManagement";
 import { CheckCircle, XCircle, Eye, Clock, DollarSign, Flag, ExternalLink, UserCog, Upload, Trash2 } from "lucide-react";
 import {
@@ -34,6 +35,7 @@ import type { Video, Category, PayoutRequest, Report, JudgeProfile } from "@shar
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const { data: pendingVideos = [], isLoading, error } = useQuery<Video[]>({
     queryKey: ["/api/videos/pending"],
@@ -74,14 +76,14 @@ function AdminDashboardContent() {
     },
     onSuccess: () => {
       toast({
-        title: "Payout Approved",
-        description: "The payout request has been approved",
+        title: t('admin.toast.payoutApproved'),
+        description: t('admin.toast.payoutApprovedDescription'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/payouts"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Approval Failed",
+        title: t('admin.toast.approvalFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -94,8 +96,8 @@ function AdminDashboardContent() {
     },
     onSuccess: () => {
       toast({
-        title: "Payout Rejected",
-        description: "The payout request has been rejected",
+        title: t('admin.toast.payoutRejected'),
+        description: t('admin.toast.payoutRejectedDescription'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/payouts"] });
       setRejectionDialogOpen(false);
@@ -104,7 +106,7 @@ function AdminDashboardContent() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Rejection Failed",
+        title: t('admin.toast.rejectionFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -114,8 +116,8 @@ function AdminDashboardContent() {
   const handleRejectPayout = () => {
     if (!selectedPayoutId || !rejectionReason) {
       toast({
-        title: "Rejection Reason Required",
-        description: "Please provide a reason for rejection",
+        title: t('admin.toast.rejectionReasonRequired'),
+        description: t('admin.toast.provideRejectionReason'),
         variant: "destructive",
       });
       return;
@@ -129,14 +131,14 @@ function AdminDashboardContent() {
     },
     onSuccess: (_, { status }) => {
       toast({
-        title: "Video Updated",
-        description: `Video has been ${status}`,
+        title: t('admin.toast.videoUpdated'),
+        description: `${t('admin.toast.videoStatusUpdated')} ${status}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos/pending"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Update Failed",
+        title: t('admin.toast.updateFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -149,14 +151,14 @@ function AdminDashboardContent() {
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Thumbnail Generation Complete",
+        title: t('admin.toast.thumbnailGenerationComplete'),
         description: data.message,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos/pending"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Thumbnail Generation Failed",
+        title: t('admin.toast.thumbnailGenerationFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -169,14 +171,14 @@ function AdminDashboardContent() {
     },
     onSuccess: (_, { status }) => {
       toast({
-        title: "Report Updated",
-        description: `Report has been marked as ${status}`,
+        title: t('admin.toast.reportUpdated'),
+        description: `${t('admin.toast.reportStatusUpdated')} ${status}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/reports"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Update Failed",
+        title: t('admin.toast.updateFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -185,13 +187,13 @@ function AdminDashboardContent() {
 
   const createJudgeSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    username: z.string().min(3, "Username must be at least 3 characters"),
-    judgeName: z.string().min(1, "Judge name is required"),
+    password: z.string().min(8, t('admin.validation.passwordMinLength')),
+    firstName: z.string().min(1, t('admin.validation.firstNameRequired')),
+    lastName: z.string().min(1, t('admin.validation.lastNameRequired')),
+    username: z.string().min(3, t('admin.validation.usernameMinLength')),
+    judgeName: z.string().min(1, t('admin.validation.judgeNameRequired')),
     judgeBio: z.string().optional(),
-    judgePhotoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    judgePhotoUrl: z.string().url(t('admin.validation.validUrl')).optional().or(z.literal("")),
   });
 
   const judgeForm = useForm<z.infer<typeof createJudgeSchema>>({
@@ -231,13 +233,13 @@ function AdminDashboardContent() {
       judgeForm.setValue("judgePhotoUrl", data.photoUrl);
       setJudgePhotoPreview(URL.createObjectURL(judgePhotoFile!));
       toast({
-        title: "Photo Uploaded",
-        description: "Judge photo has been uploaded successfully",
+        title: t('admin.toast.photoUploaded'),
+        description: t('admin.toast.photoUploadedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Upload Failed",
+        title: t('admin.toast.uploadFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -252,8 +254,8 @@ function AdminDashboardContent() {
     },
     onSuccess: () => {
       toast({
-        title: "Judge Created",
-        description: "Judge account has been created successfully",
+        title: t('admin.toast.judgeCreated'),
+        description: t('admin.toast.judgeCreatedDescription'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
       judgeForm.reset();
@@ -262,7 +264,7 @@ function AdminDashboardContent() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Creation Failed",
+        title: t('admin.toast.creationFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -286,8 +288,8 @@ function AdminDashboardContent() {
     },
     onSuccess: () => {
       toast({
-        title: "Judge Deleted",
-        description: "Judge account has been deleted successfully",
+        title: t('admin.toast.judgeDeleted'),
+        description: t('admin.toast.judgeDeletedDescription'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
       setDeleteDialogOpen(false);
@@ -295,7 +297,7 @@ function AdminDashboardContent() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Deletion Failed",
+        title: t('admin.toast.deletionFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -309,8 +311,8 @@ function AdminDashboardContent() {
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid Format",
-        description: "Please upload an image in JPEG, PNG, or WebP format.",
+        title: t('admin.toast.invalidFormat'),
+        description: t('admin.toast.invalidImageFormat'),
         variant: "destructive",
       });
       return;
@@ -319,8 +321,8 @@ function AdminDashboardContent() {
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
       toast({
-        title: "File Too Large",
-        description: "Photo must be under 5MB.",
+        title: t('admin.toast.fileTooLarge'),
+        description: t('admin.toast.photoSizeLimit'),
         variant: "destructive",
       });
       return;
@@ -340,7 +342,7 @@ function AdminDashboardContent() {
   };
 
   const getCategoryName = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.name || "Unknown";
+    return categories.find(c => c.id === categoryId)?.name || t('admin.common.unknown');
   };
 
   // Check if error is a 403 by inspecting the error object
@@ -350,20 +352,20 @@ function AdminDashboardContent() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold mb-2" data-testid="text-admin-title">
-          Admin Dashboard
+          {t('admin.dashboard')}
         </h1>
         <p className="text-muted-foreground">
-          Manage competition phases and moderate video submissions
+          {t('admin.dashboardSubtitle')}
         </p>
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
         <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-5 gap-1">
           <TabsTrigger value="phases" data-testid="tab-phases">
-            Phase Management
+            {t('admin.tabs.phases')}
           </TabsTrigger>
           <TabsTrigger value="videos" data-testid="tab-videos">
-            Video Moderation
+            {t('admin.tabs.videos')}
             {pendingVideos.length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {pendingVideos.length}
@@ -371,10 +373,10 @@ function AdminDashboardContent() {
             )}
           </TabsTrigger>
           <TabsTrigger value="judges" data-testid="tab-judges">
-            Judges
+            {t('admin.tabs.judges')}
           </TabsTrigger>
           <TabsTrigger value="payouts" data-testid="tab-payouts">
-            Payout Requests
+            {t('admin.tabs.payouts')}
             {payoutRequests.filter(p => p.status === 'pending').length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {payoutRequests.filter(p => p.status === 'pending').length}
@@ -382,7 +384,7 @@ function AdminDashboardContent() {
             )}
           </TabsTrigger>
           <TabsTrigger value="reports" data-testid="tab-reports">
-            Reports
+            {t('admin.tabs.reports')}
             {reports.filter(r => r.status === 'pending').length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {reports.filter(r => r.status === 'pending').length}
@@ -401,7 +403,7 @@ function AdminDashboardContent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UserCog className="w-5 h-5" />
-                  Create Judge Account
+                  {t('admin.judges.createTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -413,7 +415,7 @@ function AdminDashboardContent() {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>First Name</FormLabel>
+                            <FormLabel>{t('admin.judges.firstName')}</FormLabel>
                             <FormControl>
                               <Input {...field} data-testid="input-judge-firstname" />
                             </FormControl>
@@ -426,7 +428,7 @@ function AdminDashboardContent() {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Last Name</FormLabel>
+                            <FormLabel>{t('admin.judges.lastName')}</FormLabel>
                             <FormControl>
                               <Input {...field} data-testid="input-judge-lastname" />
                             </FormControl>
@@ -440,7 +442,7 @@ function AdminDashboardContent() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t('admin.judges.email')}</FormLabel>
                           <FormControl>
                             <Input {...field} type="email" data-testid="input-judge-email" />
                           </FormControl>
@@ -453,7 +455,7 @@ function AdminDashboardContent() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>{t('admin.judges.username')}</FormLabel>
                           <FormControl>
                             <Input {...field} data-testid="input-judge-username" />
                           </FormControl>
@@ -466,7 +468,7 @@ function AdminDashboardContent() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>{t('admin.judges.password')}</FormLabel>
                           <FormControl>
                             <Input {...field} type="password" data-testid="input-judge-password" />
                           </FormControl>
@@ -479,9 +481,9 @@ function AdminDashboardContent() {
                       name="judgeName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Judge Name (Public Display)</FormLabel>
+                          <FormLabel>{t('admin.judges.judgeName')}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Prof. John Doe" data-testid="input-judge-name" />
+                            <Input {...field} placeholder={t('admin.judges.judgeNamePlaceholder')} data-testid="input-judge-name" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -492,9 +494,9 @@ function AdminDashboardContent() {
                       name="judgeBio"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Judge Bio (Optional)</FormLabel>
+                          <FormLabel>{t('admin.judges.judgeBio')}</FormLabel>
                           <FormControl>
-                            <Textarea {...field} placeholder="Brief biography" data-testid="input-judge-bio" />
+                            <Textarea {...field} placeholder={t('admin.judges.judgeBioPlaceholder')} data-testid="input-judge-bio" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -505,7 +507,7 @@ function AdminDashboardContent() {
                       name="judgePhotoUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Profile Photo (Optional)</FormLabel>
+                          <FormLabel>{t('admin.judges.profilePhoto')}</FormLabel>
                           <FormControl>
                             <div className="space-y-2">
                               <input
@@ -533,7 +535,7 @@ function AdminDashboardContent() {
                                       data-testid="button-change-photo"
                                     >
                                       <Upload className="w-4 h-4 mr-2" />
-                                      Change Photo
+                                      {t('admin.judges.changePhoto')}
                                     </Button>
                                     <Button
                                       type="button"
@@ -544,7 +546,7 @@ function AdminDashboardContent() {
                                       data-testid="button-remove-photo"
                                     >
                                       <XCircle className="w-4 h-4 mr-2" />
-                                      Remove
+                                      {t('admin.judges.remove')}
                                     </Button>
                                   </div>
                                 </div>
@@ -557,11 +559,11 @@ function AdminDashboardContent() {
                                   data-testid="button-upload-photo"
                                 >
                                   {uploadJudgePhotoMutation.isPending ? (
-                                    <>Uploading...</>
+                                    <>{t('admin.judges.uploading')}</>
                                   ) : (
                                     <>
                                       <Upload className="w-4 h-4 mr-2" />
-                                      Upload Photo
+                                      {t('admin.judges.uploadPhoto')}
                                     </>
                                   )}
                                 </Button>
@@ -579,7 +581,7 @@ function AdminDashboardContent() {
                       disabled={createJudgeMutation.isPending}
                       data-testid="button-create-judge"
                     >
-                      {createJudgeMutation.isPending ? "Creating..." : "Create Judge Account"}
+                      {createJudgeMutation.isPending ? t('admin.judges.creating') : t('admin.judges.createButton')}
                     </Button>
                   </form>
                 </Form>
@@ -588,20 +590,20 @@ function AdminDashboardContent() {
 
             <Card data-testid="card-judge-list">
               <CardHeader>
-                <CardTitle>Current Judges ({judges.length})</CardTitle>
+                <CardTitle>{t('admin.judges.currentJudges')} ({judges.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 {judgesLoading ? (
                   <div className="text-center py-12">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <p className="mt-4 text-muted-foreground">Loading judges...</p>
+                    <p className="mt-4 text-muted-foreground">{t('admin.judges.loadingJudges')}</p>
                   </div>
                 ) : judges.length === 0 ? (
                   <div className="text-center py-12">
                     <UserCog className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-xl font-semibold mb-2">No Judges Yet</h3>
+                    <h3 className="text-xl font-semibold mb-2">{t('admin.judges.noJudgesTitle')}</h3>
                     <p className="text-muted-foreground">
-                      Create judge accounts using the form
+                      {t('admin.judges.noJudgesDescription')}
                     </p>
                   </div>
                 ) : (
@@ -636,7 +638,7 @@ function AdminDashboardContent() {
                             data-testid={`button-delete-judge-${judge.id}`}
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('admin.judges.delete')}
                           </Button>
                         </div>
                       </Card>
@@ -652,19 +654,18 @@ function AdminDashboardContent() {
           {isLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Loading pending videos...</p>
+              <p className="mt-4 text-muted-foreground">{t('admin.videos.loadingPending')}</p>
             </div>
           ) : is403Error ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <XCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
-                <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('admin.videos.accessDeniedTitle')}</h3>
                 <p className="text-muted-foreground mb-6">
-                  You do not have permission to access the admin dashboard.
-                  Please contact an administrator if you believe this is an error.
+                  {t('admin.videos.accessDeniedDescription')}
                 </p>
                 <Button onClick={() => setLocation("/")} data-testid="button-go-home">
-                  Go to Home
+                  {t('admin.videos.goHome')}
                 </Button>
               </CardContent>
             </Card>
@@ -672,12 +673,12 @@ function AdminDashboardContent() {
             <Card>
               <CardContent className="p-12 text-center">
                 <XCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
-                <h3 className="text-xl font-semibold mb-2">Error Loading Videos</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('admin.videos.errorLoadingTitle')}</h3>
                 <p className="text-muted-foreground mb-6">
-                  Failed to load pending videos. Please try again later or contact support if the problem persists.
+                  {t('admin.videos.errorLoadingDescription')}
                 </p>
                 <Button onClick={() => window.location.reload()} data-testid="button-retry">
-                  Retry
+                  {t('admin.videos.retry')}
                 </Button>
               </CardContent>
             </Card>
@@ -685,9 +686,9 @@ function AdminDashboardContent() {
             <Card>
               <CardContent className="p-12 text-center">
                 <Clock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No Pending Videos</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('admin.videos.noPendingTitle')}</h3>
                 <p className="text-muted-foreground">
-                  All video submissions have been reviewed
+                  {t('admin.videos.noPendingDescription')}
                 </p>
               </CardContent>
             </Card>
@@ -695,7 +696,7 @@ function AdminDashboardContent() {
             <div className="space-y-6">
               <div className="flex items-center justify-between gap-4 mb-4">
                 <Badge variant="outline" className="text-base">
-                  {pendingVideos.length} Pending {pendingVideos.length === 1 ? 'Video' : 'Videos'}
+                  {pendingVideos.length} {t('admin.videos.pending')} {pendingVideos.length === 1 ? t('admin.videos.video') : t('admin.videos.videos')}
                 </Badge>
                 <Button 
                   onClick={() => generateThumbnailsMutation.mutate()}
@@ -703,7 +704,7 @@ function AdminDashboardContent() {
                   variant="outline"
                   data-testid="button-generate-thumbnails"
                 >
-                  {generateThumbnailsMutation.isPending ? "Generating Thumbnails..." : "Generate Missing Thumbnails"}
+                  {generateThumbnailsMutation.isPending ? t('admin.videos.generatingThumbnails') : t('admin.videos.generateThumbnails')}
                 </Button>
               </div>
 
@@ -728,7 +729,7 @@ function AdminDashboardContent() {
                             </video>
                           </div>
                           <div className="mt-3 text-sm text-muted-foreground">
-                            Duration: {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                            {t('admin.videos.duration')}: {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
                           </div>
                         </div>
 
@@ -751,7 +752,7 @@ function AdminDashboardContent() {
 
                           {video.description && (
                             <div className="mb-4">
-                              <h4 className="font-medium text-sm mb-1">Description</h4>
+                              <h4 className="font-medium text-sm mb-1">{t('admin.videos.description')}</h4>
                               <p className="text-sm text-muted-foreground whitespace-pre-wrap" data-testid={`text-video-description-${video.id}`}>
                                 {video.description}
                               </p>
@@ -760,13 +761,13 @@ function AdminDashboardContent() {
 
                           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                             <div>
-                              <span className="text-muted-foreground">File Size:</span>
+                              <span className="text-muted-foreground">{t('admin.videos.fileSize')}:</span>
                               <span className="ml-2 font-medium">
-                                {(video.fileSize / (1024 * 1024)).toFixed(2)} MB
+                                {(video.fileSize / (1024 * 1024)).toFixed(2)} {t('admin.common.mb')}
                               </span>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Views:</span>
+                              <span className="text-muted-foreground">{t('admin.videos.views')}:</span>
                               <span className="ml-2 font-medium">{video.views}</span>
                             </div>
                           </div>
@@ -779,7 +780,7 @@ function AdminDashboardContent() {
                               data-testid={`button-preview-${video.id}`}
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              Preview Full Video
+                              {t('admin.videos.previewFull')}
                             </Button>
                             <Button
                               onClick={() => updateStatusMutation.mutate({ videoId: video.id, status: 'approved' })}
@@ -788,7 +789,7 @@ function AdminDashboardContent() {
                               data-testid={`button-approve-${video.id}`}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              {updateStatusMutation.isPending ? "Processing..." : "Approve"}
+                              {updateStatusMutation.isPending ? t('admin.videos.processing') : t('admin.approve')}
                             </Button>
                             <Button
                               onClick={() => updateStatusMutation.mutate({ videoId: video.id, status: 'rejected' })}
@@ -798,7 +799,7 @@ function AdminDashboardContent() {
                               data-testid={`button-reject-${video.id}`}
                             >
                               <XCircle className="w-4 h-4 mr-2" />
-                              {updateStatusMutation.isPending ? "Processing..." : "Reject"}
+                              {updateStatusMutation.isPending ? t('admin.videos.processing') : t('admin.reject')}
                             </Button>
                           </div>
                         </div>
@@ -815,15 +816,15 @@ function AdminDashboardContent() {
           {payoutsLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Loading payout requests...</p>
+              <p className="mt-4 text-muted-foreground">{t('admin.payouts.loadingRequests')}</p>
             </div>
           ) : payoutRequests.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <DollarSign className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No Payout Requests</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('admin.payouts.noRequestsTitle')}</h3>
                 <p className="text-muted-foreground">
-                  There are no payout requests from affiliates at this time
+                  {t('admin.payouts.noRequestsDescription')}
                 </p>
               </CardContent>
             </Card>
@@ -831,10 +832,10 @@ function AdminDashboardContent() {
             <div className="space-y-6">
               <div className="flex items-center gap-4 mb-4">
                 <Badge variant="outline" className="text-base">
-                  {payoutRequests.length} Total {payoutRequests.length === 1 ? 'Request' : 'Requests'}
+                  {payoutRequests.length} {t('admin.payouts.total')} {payoutRequests.length === 1 ? t('admin.payouts.request') : t('admin.payouts.requests')}
                 </Badge>
                 <Badge variant="secondary" className="text-base">
-                  {payoutRequests.filter(p => p.status === 'pending').length} Pending
+                  {payoutRequests.filter(p => p.status === 'pending').length} {t('admin.pending')}
                 </Badge>
               </div>
 
@@ -848,7 +849,7 @@ function AdminDashboardContent() {
                             {payout.amount.toLocaleString()} FCFA
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Requested on {new Date(payout.requestedAt).toLocaleDateString()}
+                            {t('admin.payouts.requestedOn')} {new Date(payout.requestedAt).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge 
@@ -870,17 +871,17 @@ function AdminDashboardContent() {
                       <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-sm text-muted-foreground">Payment Method</p>
+                            <p className="text-sm text-muted-foreground">{t('admin.payouts.paymentMethod')}</p>
                             <p className="font-medium">{payout.paymentMethod}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Affiliate ID</p>
+                            <p className="text-sm text-muted-foreground">{t('admin.payouts.affiliateId')}</p>
                             <p className="font-mono text-sm">{payout.affiliateId}</p>
                           </div>
                         </div>
 
                         <div>
-                          <p className="text-sm text-muted-foreground mb-1">Account Details</p>
+                          <p className="text-sm text-muted-foreground mb-1">{t('admin.payouts.accountDetails')}</p>
                           <div className="bg-muted p-3 rounded-md">
                             <p className="text-sm font-mono whitespace-pre-wrap">{payout.accountDetails}</p>
                           </div>
@@ -888,7 +889,7 @@ function AdminDashboardContent() {
 
                         {payout.status === 'rejected' && payout.rejectionReason && (
                           <div>
-                            <p className="text-sm text-muted-foreground mb-1">Rejection Reason</p>
+                            <p className="text-sm text-muted-foreground mb-1">{t('admin.payouts.rejectionReason')}</p>
                             <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
                               <p className="text-sm text-destructive">{payout.rejectionReason}</p>
                             </div>
@@ -898,7 +899,7 @@ function AdminDashboardContent() {
                         {payout.status === 'approved' && payout.processedAt && (
                           <div>
                             <p className="text-sm text-muted-foreground">
-                              Approved on {new Date(payout.processedAt).toLocaleDateString()}
+                              {t('admin.payouts.approvedOn')} {new Date(payout.processedAt).toLocaleDateString()}
                             </p>
                           </div>
                         )}
@@ -912,7 +913,7 @@ function AdminDashboardContent() {
                               data-testid={`button-approve-payout-${payout.id}`}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              {approvePayoutMutation.isPending ? "Processing..." : "Approve"}
+                              {approvePayoutMutation.isPending ? t('admin.videos.processing') : t('admin.approve')}
                             </Button>
                             <Button
                               onClick={() => {
@@ -925,7 +926,7 @@ function AdminDashboardContent() {
                               data-testid={`button-reject-payout-${payout.id}`}
                             >
                               <XCircle className="w-4 h-4 mr-2" />
-                              Reject
+                              {t('admin.reject')}
                             </Button>
                           </div>
                         )}
@@ -938,17 +939,17 @@ function AdminDashboardContent() {
               <Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Reject Payout Request</DialogTitle>
+                    <DialogTitle>{t('admin.payouts.rejectTitle')}</DialogTitle>
                     <DialogDescription>
-                      Please provide a reason for rejecting this payout request.
+                      {t('admin.payouts.rejectDescription')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="rejection-reason">Rejection Reason</Label>
+                      <Label htmlFor="rejection-reason">{t('admin.payouts.rejectionReason')}</Label>
                       <Textarea
                         id="rejection-reason"
-                        placeholder="Enter the reason for rejection..."
+                        placeholder={t('admin.payouts.rejectPlaceholder')}
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         rows={4}
@@ -965,7 +966,7 @@ function AdminDashboardContent() {
                         variant="outline"
                         className="flex-1"
                       >
-                        Cancel
+                        {t('admin.common.cancel')}
                       </Button>
                       <Button
                         onClick={handleRejectPayout}
@@ -974,7 +975,7 @@ function AdminDashboardContent() {
                         className="flex-1"
                         data-testid="button-confirm-reject"
                       >
-                        {rejectPayoutMutation.isPending ? "Processing..." : "Confirm Rejection"}
+                        {rejectPayoutMutation.isPending ? t('admin.videos.processing') : t('admin.payouts.confirmRejection')}
                       </Button>
                     </div>
                   </div>
@@ -988,15 +989,15 @@ function AdminDashboardContent() {
           {reportsLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Loading reports...</p>
+              <p className="mt-4 text-muted-foreground">{t('admin.reports.loadingReports')}</p>
             </div>
           ) : reports.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <Flag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No Reports</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('admin.reports.noReportsTitle')}</h3>
                 <p className="text-muted-foreground">
-                  There are no video reports at this time
+                  {t('admin.reports.noReportsDescription')}
                 </p>
               </CardContent>
             </Card>
@@ -1004,10 +1005,10 @@ function AdminDashboardContent() {
             <div className="space-y-6">
               <div className="flex items-center gap-4 mb-4">
                 <Badge variant="outline" className="text-base">
-                  {reports.length} Total {reports.length === 1 ? 'Report' : 'Reports'}
+                  {reports.length} {t('admin.reports.total')} {reports.length === 1 ? t('admin.reports.report') : t('admin.reports.reports')}
                 </Badge>
                 <Badge variant="secondary" className="text-base">
-                  {reports.filter(r => r.status === 'pending').length} Pending
+                  {reports.filter(r => r.status === 'pending').length} {t('admin.pending')}
                 </Badge>
               </div>
 
@@ -1019,10 +1020,10 @@ function AdminDashboardContent() {
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-xl flex items-center gap-2">
                             <Flag className="w-5 h-5 text-destructive flex-shrink-0" />
-                            <span className="truncate">Video Report</span>
+                            <span className="truncate">{t('admin.reports.videoReport')}</span>
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
-                            Reported on {new Date(report.createdAt).toLocaleDateString()} at {new Date(report.createdAt).toLocaleTimeString()}
+                            {t('admin.reports.reportedOn')} {new Date(report.createdAt).toLocaleDateString()} {t('admin.reports.at')} {new Date(report.createdAt).toLocaleTimeString()}
                           </p>
                         </div>
                         <Badge 
@@ -1042,7 +1043,7 @@ function AdminDashboardContent() {
                     <CardContent>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm text-muted-foreground mb-2">Report Reason</p>
+                          <p className="text-sm text-muted-foreground mb-2">{t('admin.reports.reportReason')}</p>
                           <div className="bg-muted p-4 rounded-md">
                             <p className="text-sm whitespace-pre-wrap">{report.reason}</p>
                           </div>
@@ -1056,14 +1057,14 @@ function AdminDashboardContent() {
                             data-testid={`button-view-video-${report.id}`}
                           >
                             <ExternalLink className="w-4 h-4" />
-                            View Reported Video
+                            {t('admin.reports.viewReportedVideo')}
                           </Button>
                         </div>
 
                         {report.reviewedAt && report.reviewedBy && (
                           <div className="pt-4 border-t">
                             <p className="text-sm text-muted-foreground">
-                              Reviewed on {new Date(report.reviewedAt).toLocaleDateString()}
+                              {t('admin.reports.reviewedOn')} {new Date(report.reviewedAt).toLocaleDateString()}
                             </p>
                           </div>
                         )}
@@ -1078,7 +1079,7 @@ function AdminDashboardContent() {
                               data-testid={`button-mark-reviewed-${report.id}`}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              {reviewReportMutation.isPending ? "Processing..." : "Mark Reviewed"}
+                              {reviewReportMutation.isPending ? t('admin.videos.processing') : t('admin.reports.markReviewed')}
                             </Button>
                             <Button
                               onClick={() => reviewReportMutation.mutate({ reportId: report.id, status: 'action_taken' })}
@@ -1086,7 +1087,7 @@ function AdminDashboardContent() {
                               className="flex-1"
                               data-testid={`button-action-taken-${report.id}`}
                             >
-                              Action Taken
+                              {t('admin.reports.actionTaken')}
                             </Button>
                             <Button
                               onClick={() => reviewReportMutation.mutate({ reportId: report.id, status: 'dismissed' })}
@@ -1095,7 +1096,7 @@ function AdminDashboardContent() {
                               className="flex-1"
                               data-testid={`button-dismiss-${report.id}`}
                             >
-                              Dismiss
+                              {t('admin.reports.dismiss')}
                             </Button>
                           </div>
                         )}
@@ -1113,15 +1114,15 @@ function AdminDashboardContent() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent data-testid="dialog-delete-judge">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Judge Account?</AlertDialogTitle>
+            <AlertDialogTitle>{t('admin.judges.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the judge account for{" "}
+              {t('admin.judges.deleteDescription')}{" "}
               <strong>{judgeToDelete?.judgeName || judgeToDelete?.email}</strong>?
-              This action cannot be undone and will remove all their data from the system.
+              {" "}{t('admin.judges.deleteWarning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('admin.common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (judgeToDelete) {
@@ -1132,7 +1133,7 @@ function AdminDashboardContent() {
               disabled={deleteJudgeMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteJudgeMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteJudgeMutation.isPending ? t('admin.judges.deleting') : t('admin.judges.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1144,6 +1145,7 @@ function AdminDashboardContent() {
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   // Show loading spinner while auth is being checked
   if (authLoading) {
@@ -1151,7 +1153,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">{t('admin.common.loading')}</p>
         </div>
       </div>
     );
@@ -1163,12 +1165,12 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('admin.common.authRequired')}</h2>
             <p className="text-muted-foreground mb-6">
-              Please sign in to access the admin dashboard
+              {t('admin.common.authDescription')}
             </p>
             <Button onClick={() => setLocation("/")}>
-              Go to Home
+              {t('admin.videos.goHome')}
             </Button>
           </CardContent>
         </Card>

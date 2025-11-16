@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Video } from "lucide-react";
 import type { Category } from "@shared/schema";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 import musicImage from "@assets/generated_images/Music_and_Dance_category_e223aa7f.png";
 import comedyImage from "@assets/generated_images/Comedy_and_Performing_Arts_ede3bf3d.png";
@@ -21,6 +22,7 @@ const categoryImages: Record<string, string> = {
 };
 
 export default function Categories() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
 
   const { data: categories, isLoading } = useQuery<Category[]>({
@@ -36,7 +38,7 @@ export default function Categories() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading categories...</p>
+          <p className="mt-4 text-muted-foreground">{t('categories.loading')}</p>
         </div>
       </div>
     );
@@ -48,10 +50,10 @@ export default function Categories() {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl uppercase tracking-wide mb-4">
-                Competition Categories
+                {t('categories.pageTitle')}
               </h1>
               <p className="text-base md:text-lg text-muted-foreground">
-                Browse videos across all five competition categories
+                {t('categories.pageDescription')}
               </p>
             </div>
           </div>
@@ -94,13 +96,13 @@ export default function Categories() {
                       ))}
                       {category.subcategories.length > 3 && (
                         <Badge variant="outline" className="text-xs">
-                          +{category.subcategories.length - 3} more
+                          +{category.subcategories.length - 3} {t('categories.moreSubcategories')}
                         </Badge>
                       )}
                     </div>
                     <div className="mb-4 pt-2 border-t">
                       <p className="text-sm text-muted-foreground" data-testid={`text-video-count-${category.id}`}>
-                        {videoCounts?.[category.id] || 0} video{(videoCounts?.[category.id] || 0) !== 1 ? 's' : ''}
+                        {videoCounts?.[category.id] || 0} {(videoCounts?.[category.id] || 0) !== 1 ? t('categories.videoCountPlural') : t('categories.videoCount')}
                       </p>
                     </div>
                     <Button 
@@ -110,7 +112,7 @@ export default function Categories() {
                       data-testid={`button-view-category-${category.id}`}
                     >
                       <Video className="w-4 h-4 mr-2" />
-                      View Videos
+                      {t('categories.viewVideosButton')}
                       <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                     </Button>
                   </CardContent>

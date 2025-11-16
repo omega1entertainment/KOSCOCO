@@ -14,11 +14,13 @@ import { Upload as UploadIcon, Video, CheckCircle2, AlertCircle } from "lucide-r
 import { Progress } from "@/components/ui/progress";
 import { DragDropUpload } from "@/components/DragDropUpload";
 import type { Category, Registration, Video as VideoType } from "@shared/schema";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Upload() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading, login } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [title, setTitle] = useState("");
@@ -44,7 +46,7 @@ export default function Upload() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -55,14 +57,14 @@ export default function Upload() {
       <div className="flex items-center justify-center min-h-screen px-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
+            <CardTitle>{t('upload.authRequired')}</CardTitle>
             <CardDescription>
-              Please log in to upload videos to the competition
+              {t('upload.authDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Button onClick={login} className="w-full" data-testid="button-login">
-              Log In to Continue
+              {t('upload.loginToContinue')}
             </Button>
           </CardContent>
         </Card>
@@ -93,8 +95,8 @@ export default function Upload() {
     const ALLOWED_TYPES = ['video/mp4', 'video/mpeg', 'video/webm', 'video/quicktime', 'video/x-flv'];
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid Format",
-        description: "Please upload a video in MP4, MPEG4, WebM, MOV, or FLV format.",
+        title: t('upload.error.invalidFormat'),
+        description: t('upload.error.invalidVideoFormat'),
         variant: "destructive",
       });
       return;
@@ -103,8 +105,8 @@ export default function Upload() {
     const MAX_SIZE = 512 * 1024 * 1024; // 512MB
     if (file.size > MAX_SIZE) {
       toast({
-        title: "File Too Large",
-        description: "Video must be under 512MB.",
+        title: t('upload.error.fileTooLarge'),
+        description: t('upload.error.videoTooLarge'),
         variant: "destructive",
       });
       return;
@@ -119,8 +121,8 @@ export default function Upload() {
 
       if (duration < 60 || duration > 180) {
         toast({
-          title: "Invalid Duration",
-          description: "Video must be between 1 and 3 minutes long.",
+          title: t('upload.error.invalidDuration'),
+          description: t('upload.error.durationRequirement'),
           variant: "destructive",
         });
         return;
@@ -134,15 +136,15 @@ export default function Upload() {
       });
 
       toast({
-        title: "Video Validated",
-        description: `Duration: ${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}, Size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+        title: t('upload.success.videoValidated'),
+        description: `${t('upload.duration')}: ${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}, ${t('upload.size')}: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
       });
     };
 
     video.onerror = () => {
       toast({
-        title: "Error",
-        description: "Could not load video file. Please try another file.",
+        title: t('upload.toast.error'),
+        description: t('upload.error.videoLoadError'),
         variant: "destructive",
       });
     };
@@ -154,8 +156,8 @@ export default function Upload() {
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid Format",
-        description: "Please upload an image in JPEG, PNG, or WebP format.",
+        title: t('upload.error.invalidFormat'),
+        description: t('upload.error.invalidImageFormat'),
         variant: "destructive",
       });
       return;
@@ -164,8 +166,8 @@ export default function Upload() {
     const MAX_SIZE = 2 * 1024 * 1024; // 2MB
     if (file.size > MAX_SIZE) {
       toast({
-        title: "File Too Large",
-        description: "Thumbnail must be under 2MB.",
+        title: t('upload.error.fileTooLarge'),
+        description: t('upload.error.thumbnailTooLarge'),
         variant: "destructive",
       });
       return;
@@ -180,7 +182,7 @@ export default function Upload() {
     reader.readAsDataURL(file);
 
     toast({
-      title: "Thumbnail Selected",
+      title: t('upload.success.thumbnailSelected'),
       description: `${file.name} - ${(file.size / 1024).toFixed(2)}KB`,
     });
   };
@@ -188,10 +190,10 @@ export default function Upload() {
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!videoFile || !videoMetadata || !selectedCategory || !selectedSubcategory || !title) {
-        throw new Error("Please fill in all required fields");
+        throw new Error(t('upload.error.requiredFields'));
       }
       if (!thumbnailFile) {
-        throw new Error("Please select a thumbnail image for your video");
+        throw new Error(t('upload.error.thumbnailRequired'));
       }
 
       setIsUploading(true);
@@ -224,15 +226,15 @@ export default function Upload() {
           } else {
             try {
               const errorData = JSON.parse(xhr.responseText);
-              reject(new Error(errorData.message || 'Upload failed'));
+              reject(new Error(errorData.message || t('upload.error.uploadFailed')));
             } catch {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
+              reject(new Error(`${t('upload.error.uploadFailedStatus')} ${xhr.status}`));
             }
           }
         });
 
-        xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
-        xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+        xhr.addEventListener('error', () => reject(new Error(t('upload.error.networkError'))));
+        xhr.addEventListener('abort', () => reject(new Error(t('upload.error.uploadCancelled'))));
 
         xhr.open('POST', '/api/videos/upload');
         xhr.send(formData);
@@ -258,8 +260,8 @@ export default function Upload() {
     },
     onSuccess: (videoData: VideoType) => {
       toast({
-        title: "Video Uploaded!",
-        description: "Your video has been submitted for review. You can preview it below.",
+        title: t('upload.success.videoUploaded'),
+        description: t('upload.success.videoSubmitted'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos/user"] });
       setUploadedVideo(videoData);
@@ -268,7 +270,7 @@ export default function Upload() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Upload Failed",
+        title: t('upload.toast.uploadFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -282,7 +284,7 @@ export default function Upload() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -293,12 +295,12 @@ export default function Upload() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Sign In Required</CardTitle>
-            <CardDescription>Please sign in to upload videos</CardDescription>
+            <CardTitle>{t('upload.signInRequired')}</CardTitle>
+            <CardDescription>{t('upload.signInDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={login} className="w-full" data-testid="button-login">
-              Sign In with Replit
+              {t('upload.signInWithReplit')}
             </Button>
           </CardContent>
         </Card>
@@ -311,14 +313,14 @@ export default function Upload() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>No Registrations Found</CardTitle>
+            <CardTitle>{t('upload.noRegistrations')}</CardTitle>
             <CardDescription>
-              You must register for at least one category before uploading videos
+              {t('upload.noRegistrationsDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => setLocation("/register")} className="w-full" data-testid="button-register">
-              Register Now
+              {t('upload.registerNow')}
             </Button>
           </CardContent>
         </Card>
@@ -333,9 +335,9 @@ export default function Upload() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Upload Video</h1>
+            <h1 className="text-2xl font-bold">{t('upload.pageTitle')}</h1>
             <Button variant="outline" onClick={() => setLocation("/")} data-testid="button-back">
-              Back to Home
+              {t('upload.backToHome')}
             </Button>
           </div>
         </div>
@@ -348,10 +350,10 @@ export default function Upload() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  Upload Successful!
+                  {t('upload.uploadSuccessful')}
                 </CardTitle>
                 <CardDescription>
-                  Your video has been uploaded and is pending review. You can preview it below.
+                  {t('upload.uploadSuccessDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -362,7 +364,7 @@ export default function Upload() {
                     src={uploadedVideo.videoUrl}
                     data-testid="video-player"
                   >
-                    Your browser does not support the video tag.
+                    {t('upload.browserNotSupported')}
                   </video>
                 </div>
                 <div className="space-y-2">
@@ -371,8 +373,8 @@ export default function Upload() {
                     <p className="text-sm text-muted-foreground">{uploadedVideo.description}</p>
                   )}
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Duration: {Math.floor(uploadedVideo.duration / 60)}:{(uploadedVideo.duration % 60).toString().padStart(2, '0')}</span>
-                    <span>Size: {(uploadedVideo.fileSize / (1024 * 1024)).toFixed(2)}MB</span>
+                    <span>{t('upload.duration')}: {Math.floor(uploadedVideo.duration / 60)}:{(uploadedVideo.duration % 60).toString().padStart(2, '0')}</span>
+                    <span>{t('upload.size')}: {(uploadedVideo.fileSize / (1024 * 1024)).toFixed(2)}MB</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -392,7 +394,7 @@ export default function Upload() {
                     className="flex-1"
                     data-testid="button-upload-another"
                   >
-                    Upload Another Video
+                    {t('upload.uploadAnother')}
                   </Button>
                   <Button
                     variant="outline"
@@ -400,7 +402,7 @@ export default function Upload() {
                     className="flex-1"
                     data-testid="button-go-home"
                   >
-                    Back to Home
+                    {t('upload.backToHome')}
                   </Button>
                 </div>
               </CardContent>
@@ -412,28 +414,28 @@ export default function Upload() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UploadIcon className="w-5 h-5" />
-                  Submit Your Video
+                  {t('upload.submitTitle')}
                 </CardTitle>
                 <CardDescription>
-                  Upload your competition entry. Videos must be 1-3 minutes long and under 512MB.
+                  {t('upload.submitDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category">{t('upload.categoryLabel')}</Label>
                 <Select value={selectedCategory} onValueChange={(value) => {
                   setSelectedCategory(value);
                   setSelectedSubcategory("");
                 }} disabled={isUploading}>
                   <SelectTrigger id="category" data-testid="select-category">
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t('upload.categoryPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCategories.map(category => {
                       const videoCount = userVideos?.filter(v => v.categoryId === category.id).length || 0;
                       return (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.name} ({videoCount}/2 videos)
+                          {category.name} ({videoCount}/2 {t('upload.videoCountLabel')})
                         </SelectItem>
                       );
                     })}
@@ -448,20 +450,20 @@ export default function Upload() {
                       <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
                       <div>
                         <p className="text-sm font-medium text-destructive">
-                          Maximum Videos Reached
+                          {t('upload.maxVideosReached')}
                         </p>
                         <p className="text-sm text-destructive/80">
-                          You have already uploaded 2 videos for this category.
+                          {t('upload.maxVideosDescription')}
                         </p>
                       </div>
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="subcategory">Subcategory *</Label>
+                    <Label htmlFor="subcategory">{t('upload.subcategoryLabel')}</Label>
                     <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory} disabled={isUploading || !canUploadToCategory}>
                       <SelectTrigger id="subcategory" data-testid="select-subcategory">
-                        <SelectValue placeholder="Select a subcategory" />
+                        <SelectValue placeholder={t('upload.subcategoryPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {selectedCategoryData.subcategories.map(sub => (
@@ -476,24 +478,24 @@ export default function Upload() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="title">Video Title *</Label>
+                <Label htmlFor="title">{t('upload.videoTitleLabel')}</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter a catchy title for your video"
+                  placeholder={t('upload.videoTitlePlaceholder')}
                   disabled={isUploading || !canUploadToCategory}
                   data-testid="input-title"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description">{t('upload.descriptionLabel')}</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tell viewers what your video is about"
+                  placeholder={t('upload.descriptionPlaceholder')}
                   rows={4}
                   disabled={isUploading || !canUploadToCategory}
                   data-testid="input-description"
@@ -501,7 +503,7 @@ export default function Upload() {
               </div>
 
               <div className="space-y-2">
-                <Label>Video File *</Label>
+                <Label>{t('upload.videoFileLabel')}</Label>
                 <DragDropUpload
                   accept="video/mp4,video/mpeg,video/webm,video/quicktime,video/x-flv"
                   onFileSelect={handleVideoFileSelect}
@@ -511,24 +513,24 @@ export default function Upload() {
                     setVideoFile(null);
                     setVideoMetadata(null);
                   }}
-                  label="Upload Video"
-                  description="Drag and drop your video here or click to browse"
+                  label={t('upload.uploadVideo')}
+                  description={t('upload.dragDropVideo')}
                   type="video"
                   maxSizeMB={512}
                 />
                 {videoFile && videoMetadata && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    Duration: {Math.floor(videoMetadata.duration / 60)}:{(videoMetadata.duration % 60).toString().padStart(2, '0')} • Size: {(videoMetadata.fileSize / (1024 * 1024)).toFixed(2)}MB
+                    {t('upload.duration')}: {Math.floor(videoMetadata.duration / 60)}:{(videoMetadata.duration % 60).toString().padStart(2, '0')} • {t('upload.size')}: {(videoMetadata.fileSize / (1024 * 1024)).toFixed(2)}MB
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Accepted formats: MP4, MPEG4, WebM, MOV, FLV. Max 512MB, 1-3 minutes duration.
+                  {t('upload.videoRequirements')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Thumbnail *</Label>
+                <Label>{t('upload.thumbnailLabel')}</Label>
                 <DragDropUpload
                   accept="image/jpeg,image/png,image/webp"
                   onFileSelect={handleThumbnailFileSelect}
@@ -538,8 +540,8 @@ export default function Upload() {
                     setThumbnailFile(null);
                     setThumbnailPreview(null);
                   }}
-                  label="Upload Thumbnail"
-                  description="Drag and drop your thumbnail image here or click to browse"
+                  label={t('upload.uploadThumbnail')}
+                  description={t('upload.dragDropThumbnail')}
                   type="image"
                   maxSizeMB={2}
                 />
@@ -547,21 +549,21 @@ export default function Upload() {
                   <div className="relative w-full max-w-xs">
                     <img 
                       src={thumbnailPreview} 
-                      alt="Thumbnail preview" 
+                      alt={t('upload.thumbnailPreview')} 
                       className="w-full rounded-md border"
                       data-testid="img-thumbnail-preview"
                     />
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Accepted formats: JPEG, PNG, WebP. Max 2MB.
+                  {t('upload.thumbnailRequirements')}
                 </p>
               </div>
 
               {isUploading && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Uploading...</span>
+                    <span>{t('upload.uploading')}</span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <Progress value={uploadProgress} />
@@ -577,12 +579,12 @@ export default function Upload() {
                 {isUploading ? (
                   <>
                     <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Uploading...
+                    {t('upload.uploading')}
                   </>
                 ) : (
                   <>
                     <Video className="w-4 h-4 mr-2" />
-                    Submit Video
+                    {t('upload.submitVideo')}
                   </>
                 )}
               </Button>

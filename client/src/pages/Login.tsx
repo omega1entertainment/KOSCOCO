@@ -12,10 +12,12 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { SiFacebook, SiGoogle } from "react-icons/si";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -40,15 +42,15 @@ export default function Login() {
     },
     onSuccess: () => {
       toast({
-        title: "Welcome Back!",
-        description: "You have successfully logged in.",
+        title: t("auth.welcomeBack"),
+        description: t("auth.loginSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       setLocation("/");
     },
     onError: (error: Error) => {
       toast({
-        title: "Login Failed",
+        title: t("auth.loginFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -69,15 +71,15 @@ export default function Login() {
     },
     onSuccess: () => {
       toast({
-        title: "Account Created!",
-        description: "Welcome to KOSCOCO! You're now logged in.",
+        title: t("auth.accountCreated"),
+        description: t("auth.signupSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       setLocation("/");
     },
     onError: (error: Error) => {
       toast({
-        title: "Signup Failed",
+        title: t("auth.signupFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -89,8 +91,8 @@ export default function Login() {
     
     if (!loginEmail || !loginPassword) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all fields.",
+        title: t("auth.missingInfo"),
+        description: t("auth.fillAllFields"),
         variant: "destructive",
       });
       return;
@@ -104,8 +106,8 @@ export default function Login() {
     
     if (!signupEmail || !signupPassword || !signupFirstName || !signupLastName) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: t("auth.missingInfo"),
+        description: t("auth.fillRequiredFields"),
         variant: "destructive",
       });
       return;
@@ -113,8 +115,8 @@ export default function Login() {
 
     if (signupPassword.length < 8) {
       toast({
-        title: "Weak Password",
-        description: "Password must be at least 8 characters long.",
+        title: t("auth.weakPassword"),
+        description: t("auth.passwordMinLength"),
         variant: "destructive",
       });
       return;
@@ -123,8 +125,8 @@ export default function Login() {
     const age = signupAge ? parseInt(signupAge) : null;
     if (age && age < 18 && !signupParentalConsent) {
       toast({
-        title: "Parental Consent Required",
-        description: "Users under 18 must have parental consent.",
+        title: t("auth.parentalConsentRequired"),
+        description: t("auth.parentalConsentMessage"),
         variant: "destructive",
       });
       return;
@@ -132,8 +134,8 @@ export default function Login() {
 
     if (!acceptTerms) {
       toast({
-        title: "Accept Terms Required",
-        description: "You must accept the Terms of Service and Privacy Policy to create an account.",
+        title: t("auth.acceptTermsRequired"),
+        description: t("auth.acceptTermsMessage"),
         variant: "destructive",
       });
       return;
@@ -147,34 +149,34 @@ export default function Login() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2 font-['Bebas_Neue']">Welcome to KOSCOCO</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2 font-['Bebas_Neue']">{t("auth.welcomeTitle")}</h1>
             <p className="text-muted-foreground text-sm md:text-base">
-              Login to your account or create a new one
+              {t("auth.welcomeDescription")}
             </p>
           </div>
 
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" data-testid="tab-login">Login</TabsTrigger>
-              <TabsTrigger value="signup" data-testid="tab-signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login" data-testid="tab-login">{t("auth.login")}</TabsTrigger>
+              <TabsTrigger value="signup" data-testid="tab-signup">{t("auth.signUp")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
               <Card>
                 <CardHeader>
-                  <CardTitle>Login</CardTitle>
+                  <CardTitle>{t("auth.login")}</CardTitle>
                   <CardDescription>
-                    Enter your email and password to access your account
+                    {t("auth.loginDescription")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
+                      <Label htmlFor="login-email">{t("auth.email")}</Label>
                       <Input
                         id="login-email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         data-testid="input-login-email"
@@ -182,11 +184,11 @@ export default function Login() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <Label htmlFor="login-password">{t("auth.password")}</Label>
                       <Input
                         id="login-password"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={t("auth.passwordPlaceholder")}
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         data-testid="input-login-password"
@@ -195,7 +197,7 @@ export default function Login() {
 
                     <div className="flex justify-end">
                       <Link href="/forgot-password" className="text-sm text-primary hover:underline" data-testid="link-forgot-password">
-                        Forgot password?
+                        {t("auth.forgotPassword")}
                       </Link>
                     </div>
 
@@ -205,13 +207,13 @@ export default function Login() {
                       disabled={loginMutation.isPending}
                       data-testid="button-login-submit"
                     >
-                      {loginMutation.isPending ? "Logging in..." : "Login"}
+                      {loginMutation.isPending ? t("auth.loggingIn") : t("auth.login")}
                     </Button>
 
                     <div className="relative my-6">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-sm text-muted-foreground">
-                        Or continue with
+                        {t("auth.orContinueWith")}
                       </span>
                     </div>
 
@@ -224,7 +226,7 @@ export default function Login() {
                         className="w-full"
                       >
                         <SiGoogle className="mr-2 h-4 w-4" />
-                        Google
+                        {t("auth.google")}
                       </Button>
                       <Button
                         type="button"
@@ -234,7 +236,7 @@ export default function Login() {
                         className="w-full"
                       >
                         <SiFacebook className="mr-2 h-4 w-4" />
-                        Facebook
+                        {t("auth.facebook")}
                       </Button>
                     </div>
                   </form>
@@ -245,20 +247,20 @@ export default function Login() {
             <TabsContent value="signup">
               <Card>
                 <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
+                  <CardTitle>{t("auth.createAccount")}</CardTitle>
                   <CardDescription>
-                    Fill in your details to create a new account
+                    {t("auth.signupDescription")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="signup-firstname">First Name *</Label>
+                        <Label htmlFor="signup-firstname">{t("auth.firstNameRequired")}</Label>
                         <Input
                           id="signup-firstname"
                           type="text"
-                          placeholder="John"
+                          placeholder={t("auth.firstNamePlaceholder")}
                           value={signupFirstName}
                           onChange={(e) => setSignupFirstName(e.target.value)}
                           data-testid="input-signup-firstname"
@@ -266,11 +268,11 @@ export default function Login() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="signup-lastname">Last Name *</Label>
+                        <Label htmlFor="signup-lastname">{t("auth.lastNameRequired")}</Label>
                         <Input
                           id="signup-lastname"
                           type="text"
-                          placeholder="Doe"
+                          placeholder={t("auth.lastNamePlaceholder")}
                           value={signupLastName}
                           onChange={(e) => setSignupLastName(e.target.value)}
                           data-testid="input-signup-lastname"
@@ -279,11 +281,11 @@ export default function Login() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email *</Label>
+                      <Label htmlFor="signup-email">{t("auth.emailRequired")}</Label>
                       <Input
                         id="signup-email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
                         data-testid="input-signup-email"
@@ -291,26 +293,26 @@ export default function Login() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password *</Label>
+                      <Label htmlFor="signup-password">{t("auth.passwordRequired")}</Label>
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="At least 8 characters"
+                        placeholder={t("auth.passwordPlaceholderSignup")}
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
                         data-testid="input-signup-password"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Must be at least 8 characters long
+                        {t("auth.passwordHint")}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-age">Age (Optional)</Label>
+                      <Label htmlFor="signup-age">{t("auth.ageOptional")}</Label>
                       <Input
                         id="signup-age"
                         type="number"
-                        placeholder="18"
+                        placeholder={t("auth.agePlaceholder")}
                         value={signupAge}
                         onChange={(e) => setSignupAge(e.target.value)}
                         data-testid="input-signup-age"
@@ -326,7 +328,7 @@ export default function Login() {
                           data-testid="checkbox-parental-consent"
                         />
                         <Label htmlFor="parental-consent" className="text-sm cursor-pointer">
-                          I have parental consent to participate (required for users under 18)
+                          {t("auth.parentalConsentLabel")}
                         </Label>
                       </div>
                     )}
@@ -339,7 +341,7 @@ export default function Login() {
                         data-testid="checkbox-accept-terms"
                       />
                       <Label htmlFor="accept-terms" className="text-sm cursor-pointer">
-                        I agree to the{" "}
+                        {t("auth.acceptTermsLabel")}{" "}
                         <a 
                           href="/terms-of-service" 
                           target="_blank" 
@@ -347,9 +349,9 @@ export default function Login() {
                           className="text-primary hover:underline" 
                           data-testid="link-terms-signup"
                         >
-                          Terms of Service
+                          {t("auth.termsOfService")}
                         </a>
-                        {" "}and{" "}
+                        {" "}{t("auth.and")}{" "}
                         <a 
                           href="/privacy-policy" 
                           target="_blank" 
@@ -357,7 +359,7 @@ export default function Login() {
                           className="text-primary hover:underline" 
                           data-testid="link-privacy-signup"
                         >
-                          Privacy Policy
+                          {t("auth.privacyPolicy")}
                         </a>
                       </Label>
                     </div>
@@ -368,13 +370,13 @@ export default function Login() {
                       disabled={signupMutation.isPending}
                       data-testid="button-signup-submit"
                     >
-                      {signupMutation.isPending ? "Creating Account..." : "Create Account"}
+                      {signupMutation.isPending ? t("auth.creatingAccount") : t("auth.createAccount")}
                     </Button>
 
                     <div className="relative my-6">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-sm text-muted-foreground">
-                        Or sign up with
+                        {t("auth.orSignUpWith")}
                       </span>
                     </div>
 
@@ -387,7 +389,7 @@ export default function Login() {
                         className="w-full"
                       >
                         <SiGoogle className="mr-2 h-4 w-4" />
-                        Google
+                        {t("auth.google")}
                       </Button>
                       <Button
                         type="button"
@@ -397,7 +399,7 @@ export default function Login() {
                         className="w-full"
                       >
                         <SiFacebook className="mr-2 h-4 w-4" />
-                        Facebook
+                        {t("auth.facebook")}
                       </Button>
                     </div>
                   </form>

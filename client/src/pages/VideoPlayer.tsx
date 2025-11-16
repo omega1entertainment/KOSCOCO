@@ -11,6 +11,7 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
@@ -18,6 +19,7 @@ export default function VideoPlayer() {
   const videoId = params?.id;
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -76,15 +78,15 @@ export default function VideoPlayer() {
     },
     onSuccess: () => {
       toast({
-        title: "Vote Submitted!",
-        description: "Your vote has been counted.",
+        title: t('videoPlayer.voteSubmitted'),
+        description: t('videoPlayer.voteCountedDescription'),
       });
       queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Vote Failed",
+        title: t('videoPlayer.voteFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -99,15 +101,15 @@ export default function VideoPlayer() {
     },
     onSuccess: () => {
       toast({
-        title: "Liked!",
-        description: "You liked this video.",
+        title: t('videoPlayer.liked'),
+        description: t('videoPlayer.likedVideoDescription'),
       });
       queryClient.invalidateQueries({ queryKey: [`/api/likes/video/${videoId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Like Failed",
+        title: t('videoPlayer.likeFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -127,7 +129,7 @@ export default function VideoPlayer() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading video...</p>
+          <p className="mt-4 text-muted-foreground">{t('videoPlayer.loadingVideo')}</p>
         </div>
       </div>
     );
@@ -165,7 +167,7 @@ export default function VideoPlayer() {
               data-testid="button-back-category"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to {category?.name}
+              {t('videoPlayer.backTo')} {category?.name}
             </Button>
 
             <Card className="border-destructive">
@@ -179,24 +181,23 @@ export default function VideoPlayer() {
                   
                   <div className="space-y-3">
                     <h1 className="text-3xl font-bold text-destructive">
-                      Content Policy Violation
+                      {t('videoPlayer.rejectedTitle')}
                     </h1>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                      This video has been automatically blocked because it violates our Terms and Conditions.
+                      {t('videoPlayer.rejectedDescription')}
                     </p>
                   </div>
 
                   {video.moderationReason && (
                     <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-md max-w-2xl mx-auto">
-                      <p className="text-sm font-semibold mb-2">Reason for Removal:</p>
+                      <p className="text-sm font-semibold mb-2">{t('videoPlayer.reasonForRemoval')}</p>
                       <p className="text-sm">{video.moderationReason}</p>
                     </div>
                   )}
 
                   <div className="space-y-4 pt-6">
                     <p className="text-sm text-muted-foreground">
-                      Our automated content moderation system detected policy violations in this content.
-                      All uploads are subject to review to ensure compliance with platform guidelines.
+                      {t('videoPlayer.rejectedNotice')}
                     </p>
                     
                     <Button
@@ -206,7 +207,7 @@ export default function VideoPlayer() {
                       data-testid="button-view-terms"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      View Terms and Conditions
+                      {t('videoPlayer.viewTerms')}
                     </Button>
                   </div>
                 </div>
@@ -229,7 +230,7 @@ export default function VideoPlayer() {
             data-testid="button-back-category"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to {category?.name}
+            {t('videoPlayer.backTo')} {category?.name}
           </Button>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -243,7 +244,7 @@ export default function VideoPlayer() {
                     data-testid="video-player"
                   >
                     <source src={videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
+                    {t('videoPlayer.browserNotSupported')}
                   </video>
                 </div>
                 <CardContent className="p-6">
@@ -254,17 +255,17 @@ export default function VideoPlayer() {
                       </h1>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <Badge variant="outline">{video.subcategory}</Badge>
-                        <div className="flex items-center gap-1" title="Competition votes">
+                        <div className="flex items-center gap-1" title={t('videoPlayer.competitionVotesTooltip')}>
                           <Check className="w-4 h-4" />
-                          {voteData?.voteCount || 0} votes
+                          {voteData?.voteCount || 0} {t('video.votes')}
                         </div>
-                        <div className="flex items-center gap-1" title="Likes">
+                        <div className="flex items-center gap-1" title={t('videoPlayer.likesTooltip')}>
                           <ThumbsUp className="w-4 h-4" />
-                          {likeData?.likeCount || 0} likes
+                          {likeData?.likeCount || 0} {t('video.likes')}
                         </div>
                         <div className="flex items-center gap-1">
                           <Eye className="w-4 h-4" />
-                          {video.views.toLocaleString()} views
+                          {video.views.toLocaleString()} {t('video.views')}
                         </div>
                       </div>
                     </div>
@@ -272,7 +273,7 @@ export default function VideoPlayer() {
 
                   {video.description && (
                     <div className="mb-6">
-                      <h3 className="font-semibold mb-2">Description</h3>
+                      <h3 className="font-semibold mb-2">{t('videoPlayer.description')}</h3>
                       <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-video-description">
                         {video.description}
                       </p>
@@ -284,15 +285,15 @@ export default function VideoPlayer() {
                     <div className="mb-6 p-4 bg-muted/30 rounded-lg border" data-testid="section-judge-scores">
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <Check className="w-4 h-4" />
-                        Judge Scores
+                        {t('videoPlayer.judgeScores')}
                       </h3>
                       
                       {/* Average Score Display */}
                       <div className="mb-4 p-3 bg-background rounded-md border">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm text-muted-foreground">Average Judge Score</p>
-                            <p className="text-xs text-muted-foreground">{judgeScoresData.count} {judgeScoresData.count === 1 ? 'judge' : 'judges'}</p>
+                            <p className="text-sm text-muted-foreground">{t('videoPlayer.averageJudgeScore')}</p>
+                            <p className="text-xs text-muted-foreground">{judgeScoresData.count} {judgeScoresData.count === 1 ? t('videoPlayer.judge') : t('videoPlayer.judges')}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-3xl font-bold text-primary" data-testid="text-avg-judge-score">
@@ -307,7 +308,7 @@ export default function VideoPlayer() {
                         {judgeScoresData.scores.map((score) => {
                           const judgeName = score.judge?.judgeName || 
                             `${score.judge?.firstName} ${score.judge?.lastName}` || 
-                            'Anonymous Judge';
+                            t('videoPlayer.anonymousJudge');
                           const totalScore = score.creativityScore + score.qualityScore;
 
                           return (
@@ -319,8 +320,8 @@ export default function VideoPlayer() {
                               <div className="flex-1">
                                 <p className="text-sm font-medium">{judgeName}</p>
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                  <span>Creativity: {score.creativityScore}/10</span>
-                                  <span>Quality: {score.qualityScore}/10</span>
+                                  <span>{t('videoPlayer.creativity')} {score.creativityScore}/10</span>
+                                  <span>{t('videoPlayer.quality')} {score.qualityScore}/10</span>
                                 </div>
                                 {score.comments && (
                                   <p className="text-xs text-muted-foreground mt-1 italic line-clamp-2">
@@ -345,8 +346,8 @@ export default function VideoPlayer() {
                       onClick={() => {
                         if (!user) {
                           toast({
-                            title: "Sign In Required",
-                            description: "Please sign in to vote for videos",
+                            title: t('videoPlayer.signInRequired'),
+                            description: t('videoPlayer.signInToVote'),
                             variant: "destructive",
                           });
                           return;
@@ -355,18 +356,18 @@ export default function VideoPlayer() {
                       }}
                       className="flex-1"
                       data-testid="button-vote"
-                      title="Vote for this video in the competition"
+                      title={t('videoPlayer.voteTooltip')}
                     >
                       <Check className="w-4 h-4 mr-2" />
-                      Vote
+                      {t('videoPlayer.vote')}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => {
                         if (!user) {
                           toast({
-                            title: "Sign In Required",
-                            description: "Please sign in to like videos",
+                            title: t('videoPlayer.signInRequired'),
+                            description: t('videoPlayer.signInToLike'),
                             variant: "destructive",
                           });
                           return;
@@ -374,24 +375,24 @@ export default function VideoPlayer() {
                         likeMutation.mutate();
                       }}
                       data-testid="button-like"
-                      title="Show appreciation for this video"
+                      title={t('videoPlayer.likeTooltip')}
                       disabled={likeMutation.isPending}
                     >
                       <ThumbsUp className="w-4 h-4 mr-2" />
-                      Like
+                      {t('videoPlayer.like')}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => {
                         navigator.share?.({
                           title: video.title,
-                          text: `Check out this video: ${video.title}`,
+                          text: `${t('videoPlayer.checkOutVideo')} ${video.title}`,
                           url: window.location.href,
                         }).catch(() => {
                           navigator.clipboard.writeText(window.location.href);
                           toast({
-                            title: "Link Copied",
-                            description: "Video link copied to clipboard",
+                            title: t('videoPlayer.linkCopied'),
+                            description: t('videoPlayer.linkCopiedDescription'),
                           });
                         });
                       }}
@@ -413,12 +414,12 @@ export default function VideoPlayer() {
 
             <div className="lg:col-span-1">
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Related Videos</h3>
+                <h3 className="font-semibold text-lg">{t('videoPlayer.relatedVideos')}</h3>
                 
                 {otherVideos.length === 0 ? (
                   <Card>
                     <CardContent className="p-6 text-center text-muted-foreground">
-                      No other videos in this category yet
+                      {t('videoPlayer.noOtherVideos')}
                     </CardContent>
                   </Card>
                 ) : (
@@ -446,7 +447,7 @@ export default function VideoPlayer() {
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                  No thumbnail
+                                  {t('videoPlayer.noThumbnail')}
                                 </div>
                               )}
                               <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">

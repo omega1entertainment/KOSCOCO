@@ -9,8 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ResetPassword() {
+  const { t } = useLanguage();
   const [, setLocationPath] = useLocation();
   const { toast } = useToast();
   const [token, setToken] = useState("");
@@ -35,7 +37,7 @@ export default function ResetPassword() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Success!",
+        title: t('auth.success'),
         description: data.message,
       });
       setTimeout(() => {
@@ -44,7 +46,7 @@ export default function ResetPassword() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed",
+        title: t('auth.failed'),
         description: error.message,
         variant: "destructive",
       });
@@ -56,8 +58,8 @@ export default function ResetPassword() {
     
     if (!token) {
       toast({
-        title: "Missing Token",
-        description: "Invalid or missing reset token.",
+        title: t('auth.missingToken'),
+        description: t('auth.invalidResetToken'),
         variant: "destructive",
       });
       return;
@@ -65,8 +67,8 @@ export default function ResetPassword() {
 
     if (!password || !confirmPassword) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all fields.",
+        title: t('auth.missingInfo'),
+        description: t('auth.fillAllFields'),
         variant: "destructive",
       });
       return;
@@ -74,8 +76,8 @@ export default function ResetPassword() {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords Don't Match",
-        description: "Please make sure both passwords match.",
+        title: t('auth.passwordsDontMatch'),
+        description: t('auth.passwordsMatchError'),
         variant: "destructive",
       });
       return;
@@ -83,8 +85,8 @@ export default function ResetPassword() {
 
     if (password.length < 8) {
       toast({
-        title: "Weak Password",
-        description: "Password must be at least 8 characters long.",
+        title: t('auth.weakPassword'),
+        description: t('auth.passwordMinLength'),
         variant: "destructive",
       });
       return;
@@ -99,46 +101,46 @@ export default function ResetPassword() {
         <div className="max-w-md mx-auto">
           <Link href="/login" className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-6" data-testid="link-back-to-login">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Login
+            {t('auth.backToLogin')}
           </Link>
 
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2 font-['Bebas_Neue']">Reset Password</h1>
+            <h1 className="text-4xl font-bold mb-2 font-['Bebas_Neue']">{t('auth.resetPasswordTitle')}</h1>
             <p className="text-muted-foreground">
-              Enter your new password below
+              {t('auth.enterNewPassword')}
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Create New Password</CardTitle>
+              <CardTitle>{t('auth.createNewPassword')}</CardTitle>
               <CardDescription>
-                Choose a strong password for your account
+                {t('auth.chooseStrongPassword')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
+                  <Label htmlFor="password">{t('auth.newPassword')}</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="At least 8 characters"
+                    placeholder={t('auth.passwordPlaceholderSignup')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     data-testid="input-new-password"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Must be at least 8 characters long
+                    {t('auth.passwordHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Label htmlFor="confirm-password">{t('auth.confirmPassword')}</Label>
                   <Input
                     id="confirm-password"
                     type="password"
-                    placeholder="Re-enter your password"
+                    placeholder={t('auth.reenterPassword')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     data-testid="input-confirm-password"
@@ -151,7 +153,7 @@ export default function ResetPassword() {
                   disabled={resetPasswordMutation.isPending}
                   data-testid="button-reset-submit"
                 >
-                  {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+                  {resetPasswordMutation.isPending ? t('auth.resetting') : t('auth.resetPassword')}
                 </Button>
               </form>
             </CardContent>

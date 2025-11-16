@@ -9,8 +9,10 @@ import { Play, Eye, ThumbsUp, ArrowLeft, Filter, Check } from "lucide-react";
 import type { Category, VideoWithStats } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function CategoryVideos() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/category/:id");
   const categoryId = params?.id;
@@ -33,8 +35,8 @@ export default function CategoryVideos() {
     },
     onSuccess: (_, videoId) => {
       toast({
-        title: "Liked!",
-        description: "You liked this video.",
+        title: t("categoryVideos.likedTitle"),
+        description: t("categoryVideos.likedDescription"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/likes/video", videoId] });
       queryClient.invalidateQueries({ queryKey: ["/api/videos/category", categoryId] });
@@ -42,7 +44,7 @@ export default function CategoryVideos() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Like Failed",
+        title: t("categoryVideos.likeFailedTitle"),
         description: error.message,
         variant: "destructive",
       });
@@ -60,7 +62,7 @@ export default function CategoryVideos() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading videos...</p>
+          <p className="mt-4 text-muted-foreground">{t("categoryVideos.loading")}</p>
         </div>
       </div>
     );
@@ -78,7 +80,7 @@ export default function CategoryVideos() {
               data-testid="button-back-categories"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Categories
+              {t("categoryVideos.backToCategories")}
             </Button>
 
             <div className="max-w-4xl">
@@ -96,10 +98,10 @@ export default function CategoryVideos() {
                   <Filter className="w-4 h-4 text-muted-foreground" />
                   <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
                     <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-subcategory-filter">
-                      <SelectValue placeholder="Filter by subcategory" />
+                      <SelectValue placeholder={t("categoryVideos.filterPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Subcategories</SelectItem>
+                      <SelectItem value="all">{t("categoryVideos.allSubcategories")}</SelectItem>
                       {category.subcategories.map(sub => (
                         <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                       ))}
@@ -107,7 +109,7 @@ export default function CategoryVideos() {
                   </Select>
                 </div>
                 <Badge variant="outline" data-testid="badge-video-count">
-                  {filteredVideos?.length || 0} videos
+                  {filteredVideos?.length || 0} {t("categoryVideos.videosCount")}
                 </Badge>
               </div>
             </div>
@@ -157,11 +159,11 @@ export default function CategoryVideos() {
                       </Badge>
                       <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1" title="Views">
+                          <div className="flex items-center gap-1" title={t("categoryVideos.viewsTooltip")}>
                             <Eye className="w-4 h-4" />
                             {video.views.toLocaleString()}
                           </div>
-                          <div className="flex items-center gap-1" title="Competition votes">
+                          <div className="flex items-center gap-1" title={t("categoryVideos.votesTooltip")}>
                             <Check className="w-4 h-4" />
                             {video.voteCount}
                           </div>
@@ -175,7 +177,7 @@ export default function CategoryVideos() {
                             likeMutation.mutate(video.id);
                           }}
                           disabled={likeMutation.isPending}
-                          title="Like this video"
+                          title={t("categoryVideos.likeTooltip")}
                           data-testid={`button-like-${video.id}`}
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
@@ -191,12 +193,14 @@ export default function CategoryVideos() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
                   <Play className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">No Videos Yet</h3>
+                <h3 className="text-xl font-semibold mb-2">{t("categoryVideos.emptyTitle")}</h3>
                 <p className="text-muted-foreground mb-6">
-                  Be the first to upload a video in this {selectedSubcategory === "all" ? "category" : "subcategory"}!
+                  {selectedSubcategory === "all" 
+                    ? t("categoryVideos.emptyDescriptionCategory")
+                    : t("categoryVideos.emptyDescriptionSubcategory")}
                 </p>
                 <Button onClick={() => setLocation("/upload")} data-testid="button-upload-first">
-                  Upload Your Video
+                  {t("categoryVideos.uploadButton")}
                 </Button>
               </div>
             )}

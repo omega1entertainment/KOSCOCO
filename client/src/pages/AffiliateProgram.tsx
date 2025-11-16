@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { 
   Gift,
   UserPlus,
@@ -22,25 +23,28 @@ import {
 } from "lucide-react";
 import type { Affiliate } from "@shared/schema";
 
-const affiliateFormSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+const createAffiliateFormSchema = (t: (key: string) => string) => z.object({
+  firstName: z.string().min(2, t('affiliateProgram.validation.firstNameMin')),
+  lastName: z.string().min(2, t('affiliateProgram.validation.lastNameMin')),
+  email: z.string().email(t('affiliateProgram.validation.invalidEmail')),
+  username: z.string().min(3, t('affiliateProgram.validation.usernameMin')),
+  password: z.string().min(6, t('affiliateProgram.validation.passwordMin')),
   website: z.string().optional(),
-  promotionMethod: z.string().min(10, "Please describe how you plan to promote KOSCOCO (minimum 10 characters)"),
+  promotionMethod: z.string().min(10, t('affiliateProgram.validation.promotionMethodMin')),
   agreeToTerms: z.boolean().refine(val => val === true, {
-    message: "You must agree to the terms and conditions"
+    message: t('affiliateProgram.validation.termsRequired')
   })
 });
 
-type AffiliateFormData = z.infer<typeof affiliateFormSchema>;
+type AffiliateFormData = z.infer<ReturnType<typeof createAffiliateFormSchema>>;
 
 export default function AffiliateProgram() {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useLanguage();
+
+  const affiliateFormSchema = createAffiliateFormSchema(t);
 
   const form = useForm<AffiliateFormData>({
     resolver: zodResolver(affiliateFormSchema),
@@ -70,8 +74,8 @@ export default function AffiliateProgram() {
     },
     onSuccess: () => {
       toast({
-        title: "Enrolled Successfully!",
-        description: "You're now part of our affiliate program. Redirecting to your dashboard...",
+        title: t('affiliateProgram.toast.enrolledTitle'),
+        description: t('affiliateProgram.toast.enrolledDescription'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/affiliate/status"] });
       setTimeout(() => {
@@ -80,7 +84,7 @@ export default function AffiliateProgram() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Enrollment Failed",
+        title: t('affiliateProgram.toast.enrollmentFailed'),
         description: error.message,
         variant: "destructive",
       });
@@ -109,7 +113,7 @@ export default function AffiliateProgram() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">{t('affiliateProgram.loading')}</p>
         </div>
       </div>
     );
@@ -124,10 +128,10 @@ export default function AffiliateProgram() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-2" data-testid="heading-affiliate">
-            Join the KOSCOCO Affiliate Program
+            {t('affiliateProgram.title')}
           </h1>
           <p className="text-muted-foreground text-lg">
-            Earn 20% commission by referring new participants to KOSCOCO
+            {t('affiliateProgram.subtitle')}
           </p>
         </div>
 
@@ -137,11 +141,11 @@ export default function AffiliateProgram() {
             <Card>
               <CardHeader className="pb-3">
                 <DollarSign className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-xl">20% Commission</CardTitle>
+                <CardTitle className="text-xl">{t('affiliateProgram.benefits.commission.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Earn 500 FCFA for every participant you refer (20% of 2,500 FCFA registration fee)
+                  {t('affiliateProgram.benefits.commission.description')}
                 </p>
               </CardContent>
             </Card>
@@ -149,11 +153,11 @@ export default function AffiliateProgram() {
             <Card>
               <CardHeader className="pb-3">
                 <Users className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-xl">Easy Sharing</CardTitle>
+                <CardTitle className="text-xl">{t('affiliateProgram.benefits.sharing.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Get your unique referral link and share it on social media, websites, or anywhere online
+                  {t('affiliateProgram.benefits.sharing.description')}
                 </p>
               </CardContent>
             </Card>
@@ -161,11 +165,11 @@ export default function AffiliateProgram() {
             <Card>
               <CardHeader className="pb-3">
                 <TrendingUp className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-xl">Track Earnings</CardTitle>
+                <CardTitle className="text-xl">{t('affiliateProgram.benefits.tracking.title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Monitor your referrals and earnings in real-time through your affiliate dashboard
+                  {t('affiliateProgram.benefits.tracking.description')}
                 </p>
               </CardContent>
             </Card>
@@ -174,15 +178,15 @@ export default function AffiliateProgram() {
           {/* How It Works */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="text-2xl">How It Works</CardTitle>
+              <CardTitle className="text-2xl">{t('affiliateProgram.howItWorks.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-                <li>Fill out the form below to join the affiliate program (it's free!)</li>
-                <li>Get your unique referral link from your affiliate dashboard</li>
-                <li>Share your link with friends, followers, and your network</li>
-                <li>Earn 500 FCFA commission for every participant who registers using your link</li>
-                <li>Track all your referrals and earnings in your dashboard</li>
+                <li>{t('affiliateProgram.howItWorks.step1')}</li>
+                <li>{t('affiliateProgram.howItWorks.step2')}</li>
+                <li>{t('affiliateProgram.howItWorks.step3')}</li>
+                <li>{t('affiliateProgram.howItWorks.step4')}</li>
+                <li>{t('affiliateProgram.howItWorks.step5')}</li>
               </ol>
             </CardContent>
           </Card>
@@ -192,10 +196,10 @@ export default function AffiliateProgram() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Gift className="h-6 w-6" />
-                Create Your Affiliate Account
+                {t('affiliateProgram.form.title')}
               </CardTitle>
               <CardDescription>
-                Fill in the details below to get started
+                {t('affiliateProgram.form.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -205,7 +209,7 @@ export default function AffiliateProgram() {
                     <>
                       <div className="bg-muted/50 rounded-lg p-4 mb-6">
                         <p className="text-sm text-muted-foreground">
-                          <strong className="text-foreground">New to KOSCOCO?</strong> Fill in your details below to create an account and join our affiliate program in one step!
+                          <strong className="text-foreground">{t('affiliateProgram.form.newUserMessage')}</strong>{t('affiliateProgram.form.newUserDescription')}
                         </p>
                       </div>
 
@@ -215,10 +219,10 @@ export default function AffiliateProgram() {
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>First Name</FormLabel>
+                              <FormLabel>{t('affiliateProgram.form.firstName')}</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="John" 
+                                  placeholder={t('affiliateProgram.form.firstNamePlaceholder')}
                                   {...field}
                                   data-testid="input-first-name"
                                 />
@@ -233,10 +237,10 @@ export default function AffiliateProgram() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Last Name</FormLabel>
+                              <FormLabel>{t('affiliateProgram.form.lastName')}</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="Doe" 
+                                  placeholder={t('affiliateProgram.form.lastNamePlaceholder')}
                                   {...field}
                                   data-testid="input-last-name"
                                 />
@@ -252,11 +256,11 @@ export default function AffiliateProgram() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>{t('affiliateProgram.form.email')}</FormLabel>
                             <FormControl>
                               <Input 
                                 type="email"
-                                placeholder="john@example.com" 
+                                placeholder={t('affiliateProgram.form.emailPlaceholder')}
                                 {...field}
                                 data-testid="input-email"
                               />
@@ -272,10 +276,10 @@ export default function AffiliateProgram() {
                           name="username"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Username</FormLabel>
+                              <FormLabel>{t('affiliateProgram.form.username')}</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="johndoe" 
+                                  placeholder={t('affiliateProgram.form.usernamePlaceholder')}
                                   {...field}
                                   data-testid="input-username"
                                 />
@@ -290,17 +294,17 @@ export default function AffiliateProgram() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Password</FormLabel>
+                              <FormLabel>{t('affiliateProgram.form.password')}</FormLabel>
                               <FormControl>
                                 <Input 
                                   type="password"
-                                  placeholder="••••••••" 
+                                  placeholder={t('affiliateProgram.form.passwordPlaceholder')}
                                   {...field}
                                   data-testid="input-password"
                                 />
                               </FormControl>
                               <FormDescription>
-                                Minimum 6 characters
+                                {t('affiliateProgram.form.passwordHint')}
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -313,7 +317,7 @@ export default function AffiliateProgram() {
                   {user && (
                     <div className="grid md:grid-cols-2 gap-6">
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>{t('affiliateProgram.form.name')}</FormLabel>
                         <FormControl>
                           <Input 
                             value={`${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || ""} 
@@ -322,12 +326,12 @@ export default function AffiliateProgram() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Your name from your account
+                          {t('affiliateProgram.form.nameDescription')}
                         </FormDescription>
                       </FormItem>
 
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t('affiliateProgram.form.email')}</FormLabel>
                         <FormControl>
                           <Input 
                             value={user.email || ""} 
@@ -336,7 +340,7 @@ export default function AffiliateProgram() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Your email from your account
+                          {t('affiliateProgram.form.emailDescription')}
                         </FormDescription>
                       </FormItem>
                     </div>
@@ -347,16 +351,16 @@ export default function AffiliateProgram() {
                     name="website"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Website or Social Media (Optional)</FormLabel>
+                        <FormLabel>{t('affiliateProgram.form.website')}</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="https://yourwebsite.com or @yoursocialmedia" 
+                            placeholder={t('affiliateProgram.form.websitePlaceholder')}
                             {...field}
                             data-testid="input-website"
                           />
                         </FormControl>
                         <FormDescription>
-                          Where will you share your referral link? (optional)
+                          {t('affiliateProgram.form.websiteDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -368,17 +372,17 @@ export default function AffiliateProgram() {
                     name="promotionMethod"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>How Will You Promote KOSCOCO?</FormLabel>
+                        <FormLabel>{t('affiliateProgram.form.promotionMethod')}</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Tell us about your promotion strategy (e.g., social media posts, blog articles, email newsletters, WhatsApp groups, etc.)"
+                            placeholder={t('affiliateProgram.form.promotionMethodPlaceholder')}
                             className="min-h-[100px]"
                             {...field}
                             data-testid="textarea-promotion-method"
                           />
                         </FormControl>
                         <FormDescription>
-                          Describe your plan to promote KOSCOCO to potential participants
+                          {t('affiliateProgram.form.promotionMethodDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -399,7 +403,7 @@ export default function AffiliateProgram() {
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>
-                            I agree to the{" "}
+                            {t('affiliateProgram.form.agreeToTerms')}{" "}
                             <a 
                               href="/affiliate-terms" 
                               target="_blank" 
@@ -407,11 +411,11 @@ export default function AffiliateProgram() {
                               className="text-primary hover:underline" 
                               data-testid="link-affiliate-terms"
                             >
-                              Affiliate Terms of Use
+                              {t('affiliateProgram.form.affiliateTerms')}
                             </a>
                           </FormLabel>
                           <FormDescription>
-                            By joining the affiliate program, you agree to promote KOSCOCO ethically and follow our guidelines.
+                            {t('affiliateProgram.form.agreeDescription')}
                           </FormDescription>
                           <FormMessage />
                         </div>
@@ -427,7 +431,7 @@ export default function AffiliateProgram() {
                       data-testid="button-submit-affiliate"
                     >
                       <UserPlus className="w-5 h-5 mr-2" />
-                      {optInMutation.isPending ? "Creating Account..." : "Create Affiliate Account"}
+                      {optInMutation.isPending ? t('affiliateProgram.form.submitting') : t('affiliateProgram.form.submitButton')}
                     </Button>
                   </div>
                 </form>

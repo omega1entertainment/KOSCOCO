@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import {
 import type { Registration, Video, Vote, Category } from "@shared/schema";
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading, login } = useAuth();
 
@@ -56,7 +58,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -67,14 +69,14 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-screen px-4">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
+            <CardTitle>{t('dashboard.authRequired')}</CardTitle>
             <CardDescription>
-              Please log in to view your dashboard
+              {t('dashboard.authDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Button onClick={login} className="w-full" data-testid="button-login">
-              Log In to Continue
+              {t('dashboard.loginToContinue')}
             </Button>
           </CardContent>
         </Card>
@@ -83,26 +85,26 @@ export default function Dashboard() {
   }
 
   const getCategoryName = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.name || "Unknown Category";
+    return categories.find(c => c.id === categoryId)?.name || t('dashboard.unknownCategory');
   };
 
   const getStatusBadge = (status: string) => {
     if (status === 'approved') {
-      return <Badge className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>;
+      return <Badge className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />{t('dashboard.status.approved')}</Badge>;
     } else if (status === 'pending') {
-      return <Badge className="bg-yellow-600"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+      return <Badge className="bg-yellow-600"><Clock className="w-3 h-3 mr-1" />{t('dashboard.status.pending')}</Badge>;
     } else {
-      return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+      return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />{t('dashboard.status.rejected')}</Badge>;
     }
   };
 
   const getPaymentStatusBadge = (status: string) => {
     if (status === 'approved') {
-      return <Badge className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>;
+      return <Badge className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />{t('dashboard.payment.paid')}</Badge>;
     } else if (status === 'pending') {
-      return <Badge className="bg-yellow-600"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+      return <Badge className="bg-yellow-600"><Clock className="w-3 h-3 mr-1" />{t('dashboard.payment.pending')}</Badge>;
     } else {
-      return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+      return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />{t('dashboard.payment.rejected')}</Badge>;
     }
   };
 
@@ -112,16 +114,16 @@ export default function Dashboard() {
     <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" data-testid="heading-dashboard">My Dashboard</h1>
+          <h1 className="text-4xl font-bold mb-2" data-testid="heading-dashboard">{t('dashboard.title')}</h1>
           <p className="text-muted-foreground">
-            Track your competition progress, videos, and voting activity
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
         {isLoading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+            <p className="mt-4 text-muted-foreground">{t('dashboard.loadingDashboard')}</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -129,34 +131,34 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card data-testid="card-stat-videos">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Videos</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.stats.totalVideos')}</CardTitle>
                   <VideoIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.totalVideos || 0}</div>
-                  <p className="text-xs text-muted-foreground">Videos uploaded</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.stats.videosUploaded')}</p>
                 </CardContent>
               </Card>
 
               <Card data-testid="card-stat-votes-received">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Votes Received</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.stats.votesReceived')}</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.totalVotesReceived || 0}</div>
-                  <p className="text-xs text-muted-foreground">Total support</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.stats.totalSupport')}</p>
                 </CardContent>
               </Card>
 
               <Card data-testid="card-stat-votes-cast">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Votes Cast</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.stats.votesCast')}</CardTitle>
                   <Check className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.totalVotesCast || 0}</div>
-                  <p className="text-xs text-muted-foreground">Competition votes</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.stats.competitionVotes')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -164,17 +166,17 @@ export default function Dashboard() {
             {/* Registrations */}
             <Card data-testid="card-registrations">
               <CardHeader>
-                <CardTitle>My Registrations</CardTitle>
+                <CardTitle>{t('dashboard.registrations.title')}</CardTitle>
                 <CardDescription>
-                  Categories you've registered for
+                  {t('dashboard.registrations.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {registrations.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">No registrations yet</p>
+                    <p className="text-muted-foreground mb-4">{t('dashboard.registrations.empty')}</p>
                     <Button onClick={() => setLocation("/register")} data-testid="button-register-now">
-                      Register Now
+                      {t('dashboard.registrations.registerNow')}
                     </Button>
                   </div>
                 ) : (
@@ -190,7 +192,7 @@ export default function Dashboard() {
                             {registration.categoryIds.map(id => getCategoryName(id)).join(", ")}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Amount: {registration.totalFee.toLocaleString()} FCFA
+                            {t('dashboard.registrations.amount')}: {registration.totalFee.toLocaleString()} FCFA
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -214,20 +216,20 @@ export default function Dashboard() {
             <Card data-testid="card-videos">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>My Videos</CardTitle>
+                  <CardTitle>{t('dashboard.videos.title')}</CardTitle>
                   <CardDescription>
-                    Your uploaded competition entries
+                    {t('dashboard.videos.description')}
                   </CardDescription>
                 </div>
                 <Button onClick={() => setLocation("/upload")} data-testid="button-upload-video">
                   <UploadIcon className="w-4 h-4 mr-2" />
-                  Upload Video
+                  {t('dashboard.videos.uploadButton')}
                 </Button>
               </CardHeader>
               <CardContent>
                 {videos.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No videos uploaded yet</p>
+                    <p className="text-muted-foreground">{t('dashboard.videos.empty')}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,7 +248,7 @@ export default function Dashboard() {
                           {getCategoryName(video.categoryId)} - {video.subcategory}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1" title="Views">
+                          <span className="flex items-center gap-1" title={t('dashboard.videos.views')}>
                             <Eye className="w-4 h-4" />
                             {video.views}
                           </span>
@@ -261,15 +263,15 @@ export default function Dashboard() {
             {/* Recent Votes */}
             <Card data-testid="card-recent-votes">
               <CardHeader>
-                <CardTitle>Recent Votes</CardTitle>
+                <CardTitle>{t('dashboard.votes.title')}</CardTitle>
                 <CardDescription>
-                  Videos you've recently voted for
+                  {t('dashboard.votes.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {votes.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No votes cast yet</p>
+                    <p className="text-muted-foreground">{t('dashboard.votes.empty')}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -280,7 +282,7 @@ export default function Dashboard() {
                         data-testid={`vote-${vote.id}`}
                       >
                         <div>
-                          <p className="text-sm">Voted for video</p>
+                          <p className="text-sm">{t('dashboard.votes.votedFor')}</p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(vote.createdAt).toLocaleDateString()}
                           </p>
@@ -291,7 +293,7 @@ export default function Dashboard() {
                           onClick={() => setLocation(`/video/${vote.videoId}`)}
                           data-testid={`button-view-video-${vote.id}`}
                         >
-                          View Video
+                          {t('dashboard.votes.viewVideo')}
                         </Button>
                       </div>
                     ))}

@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Award, TrendingUp, Star } from "lucide-react";
 import type { JudgeProfile } from "@shared/schema";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Judges() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
 
   const { data: judges, isLoading } = useQuery<JudgeProfile[]>({
@@ -22,11 +24,11 @@ export default function Judges() {
           <div className="flex items-center gap-3 mb-2">
             <Award className="w-10 h-10 text-primary" />
             <h1 className="text-4xl font-bold" data-testid="heading-judges">
-              Competition Judges
+              {t('judges.title')}
             </h1>
           </div>
           <p className="text-muted-foreground text-lg" data-testid="text-judges-description">
-            Meet our panel of expert judges evaluating KOSCOCO competition entries
+            {t('judges.description')}
           </p>
         </div>
 
@@ -47,9 +49,9 @@ export default function Judges() {
           <Card>
             <CardContent className="p-12 text-center">
               <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No Judges Yet</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('judges.emptyTitle')}</h3>
               <p className="text-muted-foreground">
-                Judges will be announced soon
+                {t('judges.emptyDescription')}
               </p>
             </CardContent>
           </Card>
@@ -80,7 +82,7 @@ export default function Judges() {
                         {displayName}
                       </CardTitle>
                       <CardDescription>
-                        Competition Judge
+                        {t('judges.judgeRole')}
                       </CardDescription>
                     </div>
                   </CardHeader>
@@ -91,7 +93,7 @@ export default function Judges() {
                       </p>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center italic mb-4">
-                        No bio available
+                        {t('judges.noBio')}
                       </p>
                     )}
                     <Button
@@ -103,7 +105,7 @@ export default function Judges() {
                       }}
                       data-testid={`button-view-judge-${judge.id}`}
                     >
-                      View Profile
+                      {t('judges.viewProfile')}
                     </Button>
                   </CardContent>
                 </Card>

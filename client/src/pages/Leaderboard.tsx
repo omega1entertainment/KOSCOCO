@@ -13,8 +13,10 @@ import {
 import { Trophy, Check, Eye, Play, Star, Award, Heart } from "lucide-react";
 import { useState } from "react";
 import type { LeaderboardEntry, Category, Phase } from "@shared/schema";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Leaderboard() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
@@ -42,7 +44,7 @@ export default function Leaderboard() {
   });
 
   const getCategoryName = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.name || "Unknown";
+    return categories.find(c => c.id === categoryId)?.name || t('leaderboard.unknownCategory');
   };
 
   const getRankColor = (rank: number) => {
@@ -59,20 +61,20 @@ export default function Leaderboard() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-2" data-testid="text-leaderboard-title">
               <Trophy className="w-8 h-8 text-yellow-500" />
-              Leaderboard
+              {t('leaderboard.title')}
             </h1>
             <p className="text-muted-foreground">
-              Rankings based on: 60% Votes + 30% Creativity + 10% Quality
+              {t('leaderboard.description')}
             </p>
           </div>
 
           <div className="mb-6 flex flex-col md:flex-row gap-4">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full md:w-64" data-testid="select-category">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={t('leaderboard.selectCategory')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t('leaderboard.allCategories')}</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -83,10 +85,10 @@ export default function Leaderboard() {
 
             <Select value={selectedPhase} onValueChange={setSelectedPhase}>
               <SelectTrigger className="w-full md:w-64" data-testid="select-phase">
-                <SelectValue placeholder="Select phase" />
+                <SelectValue placeholder={t('leaderboard.selectPhase')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Phases</SelectItem>
+                <SelectItem value="all">{t('leaderboard.allPhases')}</SelectItem>
                 {phases.map((phase) => (
                   <SelectItem key={phase.id} value={phase.id}>
                     {phase.name}
@@ -99,18 +101,18 @@ export default function Leaderboard() {
           {isLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Loading leaderboard...</p>
+              <p className="mt-4 text-muted-foreground">{t('leaderboard.loading')}</p>
             </div>
           ) : leaderboard.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No Videos Yet</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('leaderboard.emptyTitle')}</h3>
                 <p className="text-muted-foreground mb-6">
-                  Be the first to submit a video and climb the leaderboard!
+                  {t('leaderboard.emptyDescription')}
                 </p>
                 <Button onClick={() => setLocation("/upload")} data-testid="button-upload-first">
-                  Upload Your Video
+                  {t('leaderboard.uploadYourVideo')}
                 </Button>
               </CardContent>
             </Card>
@@ -163,7 +165,7 @@ export default function Leaderboard() {
                               <Badge variant="outline">{getCategoryName(video.categoryId)}</Badge>
                               <Badge variant="outline">{video.subcategory}</Badge>
                               <Badge variant="default" className="font-bold" data-testid={`badge-overall-score-${rank}`}>
-                                {video.overallScore.toFixed(1)}% Overall
+                                {video.overallScore.toFixed(1)}% {t('leaderboard.overall')}
                               </Badge>
                             </div>
                           </div>
@@ -179,30 +181,30 @@ export default function Leaderboard() {
                           <div className="flex flex-wrap items-center gap-4 text-sm">
                             <div className="flex items-center gap-1 font-semibold text-primary" data-testid={`text-votes-${rank}`}>
                               <Check className="w-4 h-4" />
-                              {video.voteCount.toLocaleString()} votes
+                              {video.voteCount.toLocaleString()} {t('leaderboard.votes').toLowerCase()}
                             </div>
                             <div className="flex items-center gap-1 text-red-500" data-testid={`text-likes-${rank}`}>
                               <Heart className="w-4 h-4 fill-red-500" />
-                              {video.likeCount.toLocaleString()} likes
+                              {video.likeCount.toLocaleString()} {t('leaderboard.likes')}
                             </div>
                             <div className="flex items-center gap-1" data-testid={`text-creativity-${rank}`}>
                               <Star className="w-4 h-4 text-yellow-500" />
-                              {video.avgCreativityScore.toFixed(1)}/10 Creativity
+                              {video.avgCreativityScore.toFixed(1)}/10 {t('leaderboard.creativity')}
                             </div>
                             <div className="flex items-center gap-1" data-testid={`text-quality-${rank}`}>
                               <Award className="w-4 h-4 text-blue-500" />
-                              {video.avgQualityScore.toFixed(1)}/10 Quality
+                              {video.avgQualityScore.toFixed(1)}/10 {t('leaderboard.quality')}
                             </div>
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Eye className="w-4 h-4" />
-                              {video.views.toLocaleString()} views
+                              {video.views.toLocaleString()} {t('leaderboard.views')}
                             </div>
                           </div>
 
                           <div className="text-xs text-muted-foreground flex gap-3">
-                            <span>Votes: {voteContribution.toFixed(1)}%</span>
-                            <span>Creativity: {creativityContribution.toFixed(1)}%</span>
-                            <span>Quality: {qualityContribution.toFixed(1)}%</span>
+                            <span>{t('leaderboard.scoreBreakdown.votes')} {voteContribution.toFixed(1)}%</span>
+                            <span>{t('leaderboard.scoreBreakdown.creativity')} {creativityContribution.toFixed(1)}%</span>
+                            <span>{t('leaderboard.scoreBreakdown.quality')} {qualityContribution.toFixed(1)}%</span>
                           </div>
                         </div>
                       </div>

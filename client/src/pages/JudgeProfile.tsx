@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Award, Video, Star, TrendingUp } from "lucide-react";
 import type { JudgeWithStats } from "@shared/schema";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function JudgeProfile() {
+  const { t } = useLanguage();
   const { id } = useParams();
   const [, setLocation] = useLocation();
 
@@ -43,13 +45,13 @@ export default function JudgeProfile() {
         <div className="max-w-4xl mx-auto p-6">
           <Card>
             <CardContent className="p-12 text-center">
-              <h3 className="text-xl font-semibold mb-2">Judge Not Found</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('judgeProfile.notFoundTitle')}</h3>
               <p className="text-muted-foreground mb-4">
-                The judge you're looking for doesn't exist
+                {t('judgeProfile.notFoundDescription')}
               </p>
               <Button onClick={() => setLocation("/judges")} data-testid="button-back-to-judges">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Judges
+                {t('judgeProfile.backToJudges')}
               </Button>
             </CardContent>
           </Card>
@@ -74,7 +76,7 @@ export default function JudgeProfile() {
           data-testid="button-back"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Judges
+          {t('judgeProfile.backToJudges')}
         </Button>
 
         {/* Judge Profile Card */}
@@ -97,7 +99,7 @@ export default function JudgeProfile() {
                   </h1>
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <Award className="w-3 h-3" />
-                    Competition Judge
+                    {t('judgeProfile.competitionJudge')}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -109,7 +111,7 @@ export default function JudgeProfile() {
                   </p>
                 ) : (
                   <p className="text-muted-foreground italic">
-                    No bio available
+                    {t('judgeProfile.noBioAvailable')}
                   </p>
                 )}
               </div>
@@ -122,7 +124,7 @@ export default function JudgeProfile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Judging Statistics
+              {t('judgeProfile.judgingStatistics')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -131,7 +133,7 @@ export default function JudgeProfile() {
               <Card data-testid="card-stat-videos-scored">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Videos Scored
+                    {t('judgeProfile.videosScored')}
                   </CardTitle>
                   <Video className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -140,7 +142,7 @@ export default function JudgeProfile() {
                     {judge.totalVideosScored}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Total evaluations
+                    {t('judgeProfile.totalEvaluations')}
                   </p>
                 </CardContent>
               </Card>
@@ -149,16 +151,16 @@ export default function JudgeProfile() {
               <Card data-testid="card-stat-creativity">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Avg. Creativity
+                    {t('judgeProfile.avgCreativity')}
                   </CardTitle>
                   <Star className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-avg-creativity">
-                    {judge.averageCreativityScore ? Number(judge.averageCreativityScore).toFixed(1) : 'N/A'}/10
+                    {judge.averageCreativityScore ? Number(judge.averageCreativityScore).toFixed(1) : t('judgeProfile.notAvailable')}/10
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Average score given
+                    {t('judgeProfile.averageScoreGiven')}
                   </p>
                 </CardContent>
               </Card>
@@ -167,16 +169,16 @@ export default function JudgeProfile() {
               <Card data-testid="card-stat-quality">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Avg. Quality
+                    {t('judgeProfile.avgQuality')}
                   </CardTitle>
                   <Award className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="text-avg-quality">
-                    {judge.averageQualityScore ? Number(judge.averageQualityScore).toFixed(1) : 'N/A'}/10
+                    {judge.averageQualityScore ? Number(judge.averageQualityScore).toFixed(1) : t('judgeProfile.notAvailable')}/10
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Average score given
+                    {t('judgeProfile.averageScoreGiven')}
                   </p>
                 </CardContent>
               </Card>
@@ -188,16 +190,16 @@ export default function JudgeProfile() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Overall Average Score
+                      {t('judgeProfile.overallAverageScore')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Combined creativity and quality
+                      {t('judgeProfile.combinedCreativityQuality')}
                     </p>
                   </div>
                   <div className="text-3xl font-bold text-primary" data-testid="text-overall-avg">
                     {(judge.averageCreativityScore && judge.averageQualityScore) 
                       ? ((Number(judge.averageCreativityScore) + Number(judge.averageQualityScore)) / 2).toFixed(1) 
-                      : 'N/A'}/10
+                      : t('judgeProfile.notAvailable')}/10
                   </div>
                 </div>
               </CardContent>

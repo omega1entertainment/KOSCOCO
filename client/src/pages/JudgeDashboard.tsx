@@ -18,19 +18,22 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Play, Clock, CheckCircle, AlertCircle, Upload, User as UserIcon } from "lucide-react";
 import type { VideoForJudging, JudgeScoreWithVideo, User } from "@shared/schema";
 import { useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-//Profile form schema
-const profileFormSchema = z.object({
-  judgeName: z.string().min(2, "Name must be at least 2 characters").max(80, "Name must be less than 80 characters"),
-  judgeBio: z.string().max(500, "Bio must be less than 500 characters").optional(),
+//Profile form schema - will be created with translations inside component
+const createProfileFormSchema = (t: (key: string) => string) => z.object({
+  judgeName: z.string().min(2, t('judge.validation.nameMin')).max(80, t('judge.validation.nameMax')),
+  judgeBio: z.string().max(500, t('judge.validation.bioMax')).optional(),
 });
 
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
-
 export default function JudgeDashboard() {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("pending");
+  
+  const profileFormSchema = createProfileFormSchema(t);
+  type ProfileFormValues = ReturnType<typeof createProfileFormSchema>['_output'];
   
   // Profile photo upload state
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -113,16 +116,16 @@ export default function JudgeDashboard() {
       queryClient.setQueryData(['/api/auth/user'], updatedUser);
       
       toast({
-        title: "Photo Uploaded",
-        description: "Your profile photo has been updated successfully",
+        title: t('judge.photoUploaded'),
+        description: t('judge.photoUploadedSuccess'),
       });
     },
     onError: (error: any) => {
       setPhotoPreview(null);
       setPhotoFile(null);
       toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload photo",
+        title: t('judge.uploadFailed'),
+        description: error.message || t('judge.failedToUploadPhoto'),
         variant: "destructive",
       });
     },
@@ -139,14 +142,14 @@ export default function JudgeDashboard() {
       queryClient.setQueryData(['/api/auth/user'], updatedUser);
       
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully",
+        title: t('judge.profileUpdated'),
+        description: t('judge.profileUpdatedSuccess'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update profile",
+        title: t('judge.updateFailed'),
+        description: error.message || t('judge.failedToUpdateProfile'),
         variant: "destructive",
       });
     },
@@ -159,8 +162,8 @@ export default function JudgeDashboard() {
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       toast({
-        title: "Invalid File Type",
-        description: "Please upload a JPEG, PNG, or WebP image",
+        title: t('judge.invalidFileType'),
+        description: t('judge.uploadJpegPngWebp'),
         variant: "destructive",
       });
       return;
@@ -169,8 +172,8 @@ export default function JudgeDashboard() {
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
-        title: "File Too Large",
-        description: "Photo must be less than 5MB",
+        title: t('judge.fileTooLarge'),
+        description: t('judge.photoSizeLimit'),
         variant: "destructive",
       });
       return;
@@ -209,8 +212,8 @@ export default function JudgeDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Score Submitted",
-        description: "Your score has been recorded successfully",
+        title: t('judge.scoreSubmitted'),
+        description: t('judge.scoreRecordedSuccess'),
       });
       setScoringVideoId(null);
       setCreativityScore("");
@@ -222,8 +225,8 @@ export default function JudgeDashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to submit score",
+        title: t('judge.error'),
+        description: error.message || t('judge.failedToSubmitScore'),
         variant: "destructive",
       });
     },
@@ -235,8 +238,8 @@ export default function JudgeDashboard() {
 
     if (isNaN(creativity) || isNaN(quality)) {
       toast({
-        title: "Invalid Input",
-        description: "Please enter valid numbers for both scores",
+        title: t('judge.invalidInput'),
+        description: t('judge.enterValidNumbers'),
         variant: "destructive",
       });
       return;
@@ -244,8 +247,8 @@ export default function JudgeDashboard() {
 
     if (creativity < 0 || creativity > 10 || quality < 0 || quality > 10) {
       toast({
-        title: "Invalid Range",
-        description: "Scores must be between 0 and 10",
+        title: t('judge.invalidRange'),
+        description: t('judge.scoresMustBe0to10'),
         variant: "destructive",
       });
       return;
@@ -264,10 +267,10 @@ export default function JudgeDashboard() {
       <div className="max-w-7xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2" data-testid="heading-judge-dashboard">
-            Judge Dashboard
+            {t('judge.dashboard')}
           </h1>
           <p className="text-muted-foreground" data-testid="text-dashboard-description">
-            Review and score competition videos
+            {t('judge.description')}
           </p>
         </div>
 
@@ -275,27 +278,27 @@ export default function JudgeDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card data-testid="card-stat-pending">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Videos</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('judge.pendingVideos')}</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" data-testid="text-pending-count">
                 {summary?.pendingCount || 0}
               </div>
-              <p className="text-xs text-muted-foreground">Videos awaiting your score</p>
+              <p className="text-xs text-muted-foreground">{t('judge.videosAwaitingScore')}</p>
             </CardContent>
           </Card>
 
           <Card data-testid="card-stat-completed">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('judge.completed')}</CardTitle>
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold" data-testid="text-completed-count">
                 {summary?.completedCount || 0}
               </div>
-              <p className="text-xs text-muted-foreground">Videos you've scored</p>
+              <p className="text-xs text-muted-foreground">{t('judge.videosScored')}</p>
             </CardContent>
           </Card>
         </div>
@@ -304,13 +307,13 @@ export default function JudgeDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full md:w-[600px] grid-cols-3">
             <TabsTrigger value="pending" data-testid="tab-pending">
-              Pending ({summary?.pendingCount || 0})
+              {t('judge.pending')} ({summary?.pendingCount || 0})
             </TabsTrigger>
             <TabsTrigger value="completed" data-testid="tab-completed">
-              Completed ({summary?.completedCount || 0})
+              {t('judge.completed')} ({summary?.completedCount || 0})
             </TabsTrigger>
             <TabsTrigger value="profile" data-testid="tab-profile">
-              Profile
+              {t('judge.profile')}
             </TabsTrigger>
           </TabsList>
 
@@ -319,16 +322,16 @@ export default function JudgeDashboard() {
             {pendingLoading ? (
               <Card>
                 <CardContent className="p-12 text-center">
-                  <p className="text-muted-foreground">Loading pending videos...</p>
+                  <p className="text-muted-foreground">{t('judge.loadingPendingVideos')}</p>
                 </CardContent>
               </Card>
             ) : !pendingVideos || pendingVideos.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <CheckCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">All Caught Up!</h3>
+                  <h3 className="text-xl font-semibold mb-2">{t('judge.allCaughtUp')}</h3>
                   <p className="text-muted-foreground">
-                    You've scored all available videos
+                    {t('judge.scoredAllVideos')}
                   </p>
                 </CardContent>
               </Card>
@@ -377,14 +380,14 @@ export default function JudgeDashboard() {
                             )}
                           </div>
                           <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-                            <span>Duration: {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}</span>
+                            <span>{t('judge.duration')}: {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}</span>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => setLocation(`/video/${video.id}`)}
                               data-testid={`button-view-full-${video.id}`}
                             >
-                              View Full
+                              {t('judge.viewFull')}
                             </Button>
                           </div>
                         </div>
@@ -407,7 +410,7 @@ export default function JudgeDashboard() {
                             </div>
                             {video.creator && (
                               <p className="text-sm text-muted-foreground mb-2">
-                                By: {video.creator.firstName} {video.creator.lastName}
+                                {t('judge.by')} {video.creator.firstName} {video.creator.lastName}
                               </p>
                             )}
                             {video.description && (
@@ -423,7 +426,7 @@ export default function JudgeDashboard() {
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                   <Label htmlFor={`creativity-${video.id}`}>
-                                    Creativity Score (0-10)
+                                    {t('judge.creativityScore')}
                                   </Label>
                                   <Input
                                     id={`creativity-${video.id}`}
@@ -438,7 +441,7 @@ export default function JudgeDashboard() {
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`quality-${video.id}`}>
-                                    Quality Score (0-10)
+                                    {t('judge.qualityScore')}
                                   </Label>
                                   <Input
                                     id={`quality-${video.id}`}
@@ -454,13 +457,13 @@ export default function JudgeDashboard() {
                               </div>
                               <div className="space-y-2">
                                 <Label htmlFor={`comments-${video.id}`}>
-                                  Comments (Optional)
+                                  {t('judge.commentsOptional')}
                                 </Label>
                                 <Textarea
                                   id={`comments-${video.id}`}
                                   value={comments}
                                   onChange={(e) => setComments(e.target.value)}
-                                  placeholder="Add any comments about this video..."
+                                  placeholder={t('judge.commentsPlaceholder')}
                                   rows={3}
                                   data-testid={`textarea-comments-${video.id}`}
                                 />
@@ -471,7 +474,7 @@ export default function JudgeDashboard() {
                                   disabled={scoreMutation.isPending}
                                   data-testid={`button-submit-score-${video.id}`}
                                 >
-                                  {scoreMutation.isPending ? "Submitting..." : "Submit Score"}
+                                  {scoreMutation.isPending ? t('judge.submitting') : t('judge.submitScore')}
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -483,7 +486,7 @@ export default function JudgeDashboard() {
                                   }}
                                   data-testid={`button-cancel-score-${video.id}`}
                                 >
-                                  Cancel
+                                  {t('judge.cancel')}
                                 </Button>
                               </div>
                             </div>
@@ -493,7 +496,7 @@ export default function JudgeDashboard() {
                               className="mt-4"
                               data-testid={`button-score-video-${video.id}`}
                             >
-                              Score This Video
+                              {t('judge.scoreThisVideo')}
                             </Button>
                           )}
                         </div>
@@ -510,16 +513,16 @@ export default function JudgeDashboard() {
             {completedLoading ? (
               <Card>
                 <CardContent className="p-12 text-center">
-                  <p className="text-muted-foreground">Loading completed scores...</p>
+                  <p className="text-muted-foreground">{t('judge.loadingCompletedScores')}</p>
                 </CardContent>
               </Card>
             ) : !completedScores || completedScores.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <AlertCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">No Completed Scores</h3>
+                  <h3 className="text-xl font-semibold mb-2">{t('judge.noCompletedScores')}</h3>
                   <p className="text-muted-foreground">
-                    You haven't scored any videos yet
+                    {t('judge.noScoredVideos')}
                   </p>
                 </CardContent>
               </Card>
@@ -569,26 +572,26 @@ export default function JudgeDashboard() {
                           </div>
                           {video.creator && (
                             <p className="text-sm text-muted-foreground mb-4">
-                              By: {video.creator.firstName} {video.creator.lastName}
+                              {t('judge.by')} {video.creator.firstName} {video.creator.lastName}
                             </p>
                           )}
 
                           <div className="space-y-3 border-t pt-4">
                             <div className="grid grid-cols-3 gap-4">
                               <div>
-                                <p className="text-sm text-muted-foreground mb-1">Creativity</p>
+                                <p className="text-sm text-muted-foreground mb-1">{t('judge.creativity')}</p>
                                 <p className="text-2xl font-bold" data-testid={`text-creativity-score-${score.id}`}>
                                   {score.creativityScore}/10
                                 </p>
                               </div>
                               <div>
-                                <p className="text-sm text-muted-foreground mb-1">Quality</p>
+                                <p className="text-sm text-muted-foreground mb-1">{t('judge.quality')}</p>
                                 <p className="text-2xl font-bold" data-testid={`text-quality-score-${score.id}`}>
                                   {score.qualityScore}/10
                                 </p>
                               </div>
                               <div>
-                                <p className="text-sm text-muted-foreground mb-1">Total</p>
+                                <p className="text-sm text-muted-foreground mb-1">{t('judge.total')}</p>
                                 <p className="text-2xl font-bold text-primary" data-testid={`text-total-score-${score.id}`}>
                                   {totalScore}/20
                                 </p>
@@ -596,14 +599,14 @@ export default function JudgeDashboard() {
                             </div>
                             {score.comments && (
                               <div>
-                                <p className="text-sm text-muted-foreground mb-1">Your Comments</p>
+                                <p className="text-sm text-muted-foreground mb-1">{t('judge.yourComments')}</p>
                                 <p className="text-sm" data-testid={`text-comments-${score.id}`}>
                                   {score.comments}
                                 </p>
                               </div>
                             )}
                             <p className="text-xs text-muted-foreground">
-                              Scored on {new Date(score.createdAt!).toLocaleDateString()}
+                              {t('judge.scoredOn')} {new Date(score.createdAt!).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
@@ -619,15 +622,15 @@ export default function JudgeDashboard() {
           <TabsContent value="profile" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle data-testid="heading-profile">My Profile</CardTitle>
+                <CardTitle data-testid="heading-profile">{t('judge.myProfile')}</CardTitle>
                 <CardDescription>
-                  Update your judge profile information
+                  {t('judge.updateProfileInfo')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {authUserLoading ? (
                   <div className="text-center py-12">
-                    <p className="text-muted-foreground">Loading profile...</p>
+                    <p className="text-muted-foreground">{t('judge.loadingProfile')}</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -659,16 +662,16 @@ export default function JudgeDashboard() {
                         data-testid="button-upload-photo"
                       >
                         {uploadPhotoMutation.isPending ? (
-                          <>Uploading...</>
+                          <>{t('judge.uploading')}</>
                         ) : (
                           <>
                             <Upload className="w-4 h-4 mr-2" />
-                            Upload New Photo
+                            {t('judge.uploadNewPhoto')}
                           </>
                         )}
                       </Button>
                       <p className="text-xs text-muted-foreground mt-2">
-                        JPEG, PNG, or WebP • Max 5MB
+                        {t('judge.photoRequirements')}
                       </p>
                     </div>
                   </div>
@@ -681,10 +684,10 @@ export default function JudgeDashboard() {
                         name="judgeName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Judge Name</FormLabel>
+                            <FormLabel>{t('judge.judgeName')}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="Your display name" 
+                                placeholder={t('judge.judgeNamePlaceholder')}
                                 {...field} 
                                 data-testid="input-judge-name"
                               />
@@ -699,10 +702,10 @@ export default function JudgeDashboard() {
                         name="judgeBio"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Bio</FormLabel>
+                            <FormLabel>{t('judge.bio')}</FormLabel>
                             <FormControl>
                               <Textarea 
-                                placeholder="Tell the contestants about yourself..."
+                                placeholder={t('judge.bioPlaceholder')}
                                 rows={5}
                                 className="resize-none"
                                 {...field}
@@ -711,7 +714,7 @@ export default function JudgeDashboard() {
                             </FormControl>
                             <FormMessage />
                             <p className="text-xs text-muted-foreground">
-                              {(field.value?.length || 0)}/500 characters
+                              {t('judge.charactersCount').replace('{count}', String(field.value?.length || 0))}
                             </p>
                           </FormItem>
                         )}
@@ -723,7 +726,7 @@ export default function JudgeDashboard() {
                         disabled={updateProfileMutation.isPending || !profileForm.formState.isDirty}
                         data-testid="button-save-profile"
                       >
-                        {updateProfileMutation.isPending ? "Saving..." : "Save Profile"}
+                        {updateProfileMutation.isPending ? t('judge.saving') : t('judge.saveProfile')}
                       </Button>
                     </form>
                   </Form>

@@ -2,53 +2,55 @@ import { Trophy, Medal, Award, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 import grandFinaleImg from "@assets/generated_images/Grand_finale_winner_trophy_e9b20746.png";
 import top3Img from "@assets/generated_images/Top_3_category_winners_podium_0b933e0e.png";
 import top10Img from "@assets/generated_images/Top_10_finalists_rewards_a3219779.png";
 
 export default function Prizes() {
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   const prizeStructure = [
     {
-      phase: "GRANDE FINALE",
-      badge: "1st Place Overall",
+      phase: t('prizes.grandFinale.phase'),
+      badge: t('prizes.grandFinale.badge'),
       image: grandFinaleImg,
-      prize: "5,000,000 FCFA",
-      description: "The ultimate champion across all categories",
+      prize: t('prizes.grandFinale.prize'),
+      description: t('prizes.grandFinale.description'),
       icon: Trophy,
       gradient: "from-yellow-400 to-yellow-600",
     },
     {
-      phase: "TOP 3 FINALISTS",
-      badge: "Per Category",
+      phase: t('prizes.top3.phase'),
+      badge: t('prizes.top3.badge'),
       image: top3Img,
-      prize: "500,000 FCFA",
-      description: "1st place winner in each of the 5 categories",
+      prize: t('prizes.top3.prize'),
+      description: t('prizes.top3.description'),
       icon: Medal,
       gradient: "from-gray-300 to-gray-500",
       secondary: [
-        { place: "2nd Place", amount: "300,000 FCFA" },
-        { place: "3rd Place", amount: "150,000 FCFA" },
+        { place: t('prizes.top3.secondPlace'), amount: t('prizes.top3.secondPrize') },
+        { place: t('prizes.top3.thirdPlace'), amount: t('prizes.top3.thirdPrize') },
       ],
     },
     {
-      phase: "TOP 10 FINALISTS",
-      badge: "Recognition Prize",
+      phase: t('prizes.top10.phase'),
+      badge: t('prizes.top10.badge'),
       image: top10Img,
-      prize: "50,000 FCFA",
-      description: "Each finalist advancing to TOP 10 phase",
+      prize: t('prizes.top10.prize'),
+      description: t('prizes.top10.description'),
       icon: Award,
       gradient: "from-orange-400 to-orange-600",
     },
   ];
 
   const categories = [
-    "Music & Dance",
-    "Comedy & Performing Arts",
-    "Fashion & Lifestyle",
-    "Education & Learning",
-    "Gospel Choirs",
+    t('prizes.categories.musicDance'),
+    t('prizes.categories.comedyPerforming'),
+    t('prizes.categories.fashionLifestyle'),
+    t('prizes.categories.educationLearning'),
+    t('prizes.categories.gospelChoirs'),
   ];
 
   return (
@@ -62,14 +64,13 @@ export default function Prizes() {
               className="mb-4 text-sm font-bold"
               data-testid="badge-prizes-hero"
             >
-              COMPETITION PRIZES
+              {t('prizes.hero.badge')}
             </Badge>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4" data-testid="heading-prizes">
-              Win Big with KOSCOCO
+              {t('prizes.hero.title')}
             </h1>
             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto" data-testid="text-prizes-description">
-              Compete for amazing prizes across 5 categories and 7 exciting phases. 
-              The more you advance, the bigger the rewards!
+              {t('prizes.hero.description')}
             </p>
           </div>
         </section>
@@ -127,7 +128,7 @@ export default function Prizes() {
 
                       {prize.secondary && (
                         <div className="space-y-2 mt-4 pt-4 border-t">
-                          <p className="font-semibold text-sm text-muted-foreground">Additional Category Prizes:</p>
+                          <p className="font-semibold text-sm text-muted-foreground">{t('prizes.top3.additionalPrizesLabel')}</p>
                           {prize.secondary.map((sec, i) => (
                             <div 
                               key={i} 
@@ -152,10 +153,10 @@ export default function Prizes() {
         <section className="bg-muted/30 py-16">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-4" data-testid="heading-categories">
-              5 Competition Categories
+              {t('prizes.categoriesSection.title')}
             </h2>
             <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Each category offers equal prize opportunities. Choose your passion and compete for glory!
+              {t('prizes.categoriesSection.description')}
             </p>
             
             <div className="grid md:grid-cols-5 gap-4 max-w-5xl mx-auto">
@@ -179,15 +180,14 @@ export default function Prizes() {
           <div className="container mx-auto px-4 text-center">
             <Card className="max-w-2xl mx-auto bg-primary/5 border-primary/20">
               <CardHeader>
-                <CardDescription className="text-sm">TOTAL PRIZE POOL</CardDescription>
+                <CardDescription className="text-sm">{t('prizes.totalPool.label')}</CardDescription>
                 <CardTitle className="text-5xl font-bold text-primary" data-testid="text-total-pool">
-                  15,000,000+ FCFA
+                  {t('prizes.totalPool.amount')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  With prizes distributed across 5 categories and multiple phases, 
-                  this is Cameroon's biggest short content competition!
+                  {t('prizes.totalPool.description')}
                 </p>
               </CardContent>
             </Card>
@@ -198,9 +198,9 @@ export default function Prizes() {
         <section className="bg-primary text-white py-16">
           <div className="container mx-auto px-4 text-center">
             <Trophy className="w-16 h-16 mx-auto mb-4" />
-            <h2 className="text-4xl font-bold mb-4">Ready to Compete?</h2>
+            <h2 className="text-4xl font-bold mb-4">{t('prizes.cta.title')}</h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-              Register now and start your journey to becoming KOSCOCO's next champion!
+              {t('prizes.cta.description')}
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -208,14 +208,14 @@ export default function Prizes() {
                 className="bg-white text-primary px-8 py-3 rounded-md font-bold hover:bg-white/90 transition-colors"
                 data-testid="button-register-now"
               >
-                Register Now
+                {t('prizes.cta.registerButton')}
               </button>
               <button
                 onClick={() => setLocation("/categories")}
                 className="bg-white/10 backdrop-blur-sm text-white border-2 border-white px-8 py-3 rounded-md font-bold hover:bg-white/20 transition-colors"
                 data-testid="button-view-categories"
               >
-                View Categories
+                {t('prizes.cta.viewCategoriesButton')}
               </button>
             </div>
           </div>

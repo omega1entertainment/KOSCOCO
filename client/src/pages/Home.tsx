@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
 import PhaseTimeline from "@/components/PhaseTimeline";
@@ -16,6 +17,7 @@ import educationImage from "@assets/generated_images/Education_and_Learning_cate
 import gospelImage from "@assets/generated_images/Gospel_Choirs_category_e7d0b06c.png";
 
 export default function Home() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
@@ -27,33 +29,33 @@ export default function Home() {
 
   const categories = [
     {
-      title: 'Music & Dance',
+      title: t('home.categoryMusicDance'),
       image: musicImage,
-      subcategories: ['Singing', 'Dancing'],
+      subcategories: [t('home.subcategorySinging'), t('home.subcategoryDancing')],
       entryCount: 234,
     },
     {
-      title: 'Comedy & Performing Arts',
+      title: t('home.categoryComedyArts'),
       image: comedyImage,
-      subcategories: ['Skits', 'Stand-up', 'Monologue', 'Acting', 'Movie content'],
+      subcategories: [t('home.subcategorySkits'), t('home.subcategoryStandup'), t('home.subcategoryMonologue'), t('home.subcategoryActing'), t('home.subcategoryMovieContent')],
       entryCount: 187,
     },
     {
-      title: 'Fashion & Lifestyle',
+      title: t('home.categoryFashionLifestyle'),
       image: fashionImage,
-      subcategories: ['Cooking', 'Events', 'Decor', 'Sports', 'Travel', 'Vlogging', 'Fashion', 'Hair', 'Makeup', 'Beauty', 'Reviews'],
+      subcategories: [t('home.subcategoryCooking'), t('home.subcategoryEvents'), t('home.subcategoryDecor'), t('home.subcategorySports'), t('home.subcategoryTravel'), t('home.subcategoryVlogging'), t('home.subcategoryFashion'), t('home.subcategoryHair'), t('home.subcategoryMakeup'), t('home.subcategoryBeauty'), t('home.subcategoryReviews')],
       entryCount: 312,
     },
     {
-      title: 'Education & Learning',
+      title: t('home.categoryEducationLearning'),
       image: educationImage,
-      subcategories: ['DIY', 'Tutorials', 'Documentary', 'Business & Finance', 'News', 'Motivational Speaking'],
+      subcategories: [t('home.subcategoryDIY'), t('home.subcategoryTutorials'), t('home.subcategoryDocumentary'), t('home.subcategoryBusinessFinance'), t('home.subcategoryNews'), t('home.subcategoryMotivational')],
       entryCount: 156,
     },
     {
-      title: 'Gospel Choirs',
+      title: t('home.categoryGospelChoirs'),
       image: gospelImage,
-      subcategories: ['Acapella', 'Choir Music'],
+      subcategories: [t('home.subcategoryAcapella'), t('home.subcategoryChoirMusic')],
       entryCount: 89,
     },
   ];
@@ -61,47 +63,51 @@ export default function Home() {
   const featuredVideos = [
     {
       id: '1',
-      title: 'Amazing Afrobeats Dance Routine',
+      title: t('home.sampleVideo1Title'),
       thumbnail: musicImage,
-      creator: { name: 'Marie Kouam' },
-      category: 'Music & Dance',
+      creator: { name: t('home.sampleVideo1Creator') },
+      category: t('home.categoryMusicDance'),
       votes: 1247,
+      likes: 423,
       views: 5832,
     },
     {
       id: '2',
-      title: 'Hilarious Cameroonian Comedy Skit',
+      title: t('home.sampleVideo2Title'),
       thumbnail: comedyImage,
-      creator: { name: 'Jean Baptiste' },
-      category: 'Comedy',
+      creator: { name: t('home.sampleVideo2Creator') },
+      category: t('home.sampleVideo2Category'),
       votes: 892,
+      likes: 367,
       views: 4125,
     },
     {
       id: '3',
-      title: 'Traditional Fashion Showcase',
+      title: t('home.sampleVideo3Title'),
       thumbnail: fashionImage,
-      creator: { name: 'Grace Nkeng' },
-      category: 'Fashion & Lifestyle',
+      creator: { name: t('home.sampleVideo3Creator') },
+      category: t('home.categoryFashionLifestyle'),
       votes: 1056,
+      likes: 512,
       views: 6234,
     },
     {
       id: '4',
-      title: 'Tech Tutorial: Web Development',
+      title: t('home.sampleVideo4Title'),
       thumbnail: educationImage,
-      creator: { name: 'Paul Ndikum' },
-      category: 'Education',
+      creator: { name: t('home.sampleVideo4Creator') },
+      category: t('home.sampleVideo4Category'),
       votes: 743,
+      likes: 298,
       views: 3892,
     },
   ];
 
   const stats = [
-    { icon: Users, label: 'Total Participants', value: '1,247', trend: { value: '12%', positive: true } },
-    { icon: Video, label: 'Videos Submitted', value: '978', trend: { value: '8%', positive: true } },
-    { icon: Trophy, label: 'Categories', value: '5', trend: undefined },
-    { icon: TrendingUp, label: 'Total Votes', value: '45.2K', trend: { value: '24%', positive: true } },
+    { icon: Users, label: t('home.statTotalParticipants'), value: '1,247', trend: { value: '12%', positive: true } },
+    { icon: Video, label: t('home.statVideosSubmitted'), value: '978', trend: { value: '8%', positive: true } },
+    { icon: Trophy, label: t('home.statCategories'), value: '5', trend: undefined },
+    { icon: TrendingUp, label: t('home.statTotalVotes'), value: '45.2K', trend: { value: '24%', positive: true } },
   ];
 
   return (
@@ -124,10 +130,10 @@ export default function Home() {
       <section className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 uppercase tracking-wide">
-            Competition Categories
+            {t('home.categoriesTitle')}
           </h2>
           <p className="text-center text-muted-foreground mb-8 md:mb-12 max-w-2xl mx-auto text-sm md:text-base">
-            Choose your category and showcase your talent to Cameroon and the world
+            {t('home.categoriesDescription')}
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
@@ -149,14 +155,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
             <div>
               <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide mb-2">
-                Trending Entries
+                {t('home.trendingTitle')}
               </h2>
               <p className="text-muted-foreground text-sm md:text-base">
-                Watch the most popular submissions this week
+                {t('home.trendingDescription')}
               </p>
             </div>
             <Button variant="outline" data-testid="button-view-all" className="w-full sm:w-auto">
-              View All
+              {t('home.viewAll')}
             </Button>
           </div>
           
@@ -186,10 +192,10 @@ export default function Home() {
       <section className="py-12 md:py-20">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide mb-4 md:mb-6">
-            Ready to Compete?
+            {t('home.ctaTitle')}
           </h2>
           <p className="text-base md:text-lg text-muted-foreground mb-6 md:mb-8">
-            Register now for just 2,500 FCFA per category and join Cameroon's biggest content competition
+            {t('home.ctaDescription')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
@@ -198,7 +204,7 @@ export default function Home() {
               onClick={() => setLocation("/register")}
               data-testid="button-register-now"
             >
-              Register Now
+              {t('home.registerNow')}
             </Button>
             <Button 
               size="lg" 
@@ -207,7 +213,7 @@ export default function Home() {
               onClick={() => console.log("Learn more")}
               data-testid="button-learn-more"
             >
-              Learn More
+              {t('home.learnMore')}
             </Button>
           </div>
         </div>

@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Award
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import stepImage1 from "@assets/generated_images/Registration_and_category_selection_1a167c42.png";
 import stepImage2 from "@assets/generated_images/Video_upload_and_content_creation_862fb653.png";
 import stepImage3 from "@assets/generated_images/Content_approval_and_moderation_42c462a4.png";
@@ -20,57 +21,84 @@ import stepImage6 from "@assets/generated_images/Winning_prizes_and_celebration_
 
 export default function HowItWorks() {
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   const steps = [
     {
       number: "01",
-      title: "Register & Choose Categories",
-      description: "Sign up and select from 5 exciting categories. Pay just 2,500 FCFA per category to enter the competition.",
+      title: t('howItWorks.step1.title'),
+      description: t('howItWorks.step1.description'),
       image: stepImage1,
-      highlights: ["Music & Dance", "Comedy & Performing Arts", "Fashion & Lifestyle", "Education & Learning", "Gospel Choirs"]
+      highlights: [
+        t('howItWorks.step1.highlight1'),
+        t('howItWorks.step1.highlight2'),
+        t('howItWorks.step1.highlight3'),
+        t('howItWorks.step1.highlight4'),
+        t('howItWorks.step1.highlight5')
+      ]
     },
     {
       number: "02",
-      title: "Upload Your Best Content",
-      description: "Create and upload your 1-3 minute video showcasing your talent. Up to 2 videos per category!",
+      title: t('howItWorks.step2.title'),
+      description: t('howItWorks.step2.description'),
       image: stepImage2,
-      highlights: ["1-3 minutes duration", "512MB max file size", "MP4, WebM, MOV supported"]
+      highlights: [
+        t('howItWorks.step2.highlight1'),
+        t('howItWorks.step2.highlight2'),
+        t('howItWorks.step2.highlight3')
+      ]
     },
     {
       number: "03",
-      title: "Get Approved & Go Live",
-      description: "Our team reviews your submission to ensure quality. Once approved, your video goes live for the world to see!",
+      title: t('howItWorks.step3.title'),
+      description: t('howItWorks.step3.description'),
       image: stepImage3,
-      highlights: ["Quick review process", "Quality assurance", "Public visibility"]
+      highlights: [
+        t('howItWorks.step3.highlight1'),
+        t('howItWorks.step3.highlight2'),
+        t('howItWorks.step3.highlight3')
+      ]
     },
     {
       number: "04",
-      title: "Public Voting Begins",
-      description: "Share your video and gather votes! Public votes count for 60% of your total score. Get your network engaged!",
+      title: t('howItWorks.step4.title'),
+      description: t('howItWorks.step4.description'),
       image: stepImage4,
-      highlights: ["60% of total score", "Share on social media", "Unlimited voting"]
+      highlights: [
+        t('howItWorks.step4.highlight1'),
+        t('howItWorks.step4.highlight2'),
+        t('howItWorks.step4.highlight3')
+      ]
     },
     {
       number: "05",
-      title: "Progress Through Phases",
-      description: "Compete through 7 exciting phases: TOP 500 → TOP 100 → TOP 50 → TOP 25 → TOP 10 → TOP 3 → GRANDE FINALE",
+      title: t('howItWorks.step5.title'),
+      description: t('howItWorks.step5.description'),
       image: stepImage5,
-      highlights: ["Phase-based progression", "Multiple chances to shine", "Fair competition"]
+      highlights: [
+        t('howItWorks.step5.highlight1'),
+        t('howItWorks.step5.highlight2'),
+        t('howItWorks.step5.highlight3')
+      ]
     },
     {
       number: "06",
-      title: "Win Amazing Prizes!",
-      description: "Top performers in each category and the grand winner receive incredible prizes and recognition!",
+      title: t('howItWorks.step6.title'),
+      description: t('howItWorks.step6.description'),
       image: stepImage6,
-      highlights: ["Category winners", "Grand prize", "Fame & recognition"]
+      highlights: [
+        t('howItWorks.step6.highlight1'),
+        t('howItWorks.step6.highlight2'),
+        t('howItWorks.step6.highlight3')
+      ]
     }
   ];
 
   const features = [
-    { icon: Users, title: "5 Categories", description: "Multiple talent categories to choose from" },
-    { icon: Trophy, title: "7 Phases", description: "Exciting progression through competition stages" },
-    { icon: Sparkles, title: "Public Voting", description: "60% of score from audience votes" },
-    { icon: Award, title: "Judge Scores", description: "40% from creativity and quality assessment" }
+    { icon: Users, title: t('howItWorks.features.categories.title'), description: t('howItWorks.features.categories.description') },
+    { icon: Trophy, title: t('howItWorks.features.phases.title'), description: t('howItWorks.features.phases.description') },
+    { icon: Sparkles, title: t('howItWorks.features.voting.title'), description: t('howItWorks.features.voting.description') },
+    { icon: Award, title: t('howItWorks.features.judges.title'), description: t('howItWorks.features.judges.description') }
   ];
 
   return (
@@ -84,10 +112,10 @@ export default function HowItWorks() {
               <Sparkles className="w-16 h-16 text-primary mx-auto" />
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6" data-testid="heading-how-it-works">
-              How KOSCOCO Works
+              {t('howItWorks.hero.title')}
             </h1>
             <p className="text-base md:text-xl text-muted-foreground mb-8">
-              Your journey from registration to stardom in 6 simple steps
+              {t('howItWorks.hero.subtitle')}
             </p>
             <div>
               <Button 
@@ -96,7 +124,7 @@ export default function HowItWorks() {
                 className="group"
                 data-testid="button-get-started"
               >
-                Get Started Now
+                {t('howItWorks.hero.getStarted')}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -132,10 +160,10 @@ export default function HowItWorks() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">Step by Step Guide</Badge>
-            <h2 className="text-4xl font-bold mb-4">Your Path to Victory</h2>
+            <Badge variant="outline" className="mb-4">{t('howItWorks.steps.badge')}</Badge>
+            <h2 className="text-4xl font-bold mb-4">{t('howItWorks.steps.heading')}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Follow these six steps to showcase your talent and compete for amazing prizes
+              {t('howItWorks.steps.description')}
             </p>
           </div>
 
@@ -192,8 +220,8 @@ export default function HowItWorks() {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">How Winners Are Chosen</h2>
-            <p className="text-muted-foreground text-lg">Your score is based on three key factors</p>
+            <h2 className="text-4xl font-bold mb-4">{t('howItWorks.scoring.heading')}</h2>
+            <p className="text-muted-foreground text-lg">{t('howItWorks.scoring.description')}</p>
           </div>
 
           <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
@@ -206,11 +234,11 @@ export default function HowItWorks() {
                     </div>
                   </div>
                   <CardTitle className="text-5xl font-bold text-primary mb-2">60%</CardTitle>
-                  <CardTitle>Public Votes</CardTitle>
+                  <CardTitle>{t('howItWorks.scoring.publicVotes.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    The audience decides! Share your video to get maximum votes from supporters.
+                    {t('howItWorks.scoring.publicVotes.description')}
                   </p>
                 </CardContent>
               </Card>
@@ -225,11 +253,11 @@ export default function HowItWorks() {
                     </div>
                   </div>
                   <CardTitle className="text-5xl font-bold text-primary mb-2">30%</CardTitle>
-                  <CardTitle>Creativity</CardTitle>
+                  <CardTitle>{t('howItWorks.scoring.creativity.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Our judges assess your originality, uniqueness, and creative expression.
+                    {t('howItWorks.scoring.creativity.description')}
                   </p>
                 </CardContent>
               </Card>
@@ -244,11 +272,11 @@ export default function HowItWorks() {
                     </div>
                   </div>
                   <CardTitle className="text-5xl font-bold text-primary mb-2">10%</CardTitle>
-                  <CardTitle>Quality</CardTitle>
+                  <CardTitle>{t('howItWorks.scoring.quality.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Judges evaluate production quality, clarity, and overall execution.
+                    {t('howItWorks.scoring.quality.description')}
                   </p>
                 </CardContent>
               </Card>
@@ -266,10 +294,10 @@ export default function HowItWorks() {
             </div>
             
             <h2 className="text-4xl font-bold mb-4">
-              Ready to Showcase Your Talent?
+              {t('howItWorks.cta.title')}
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Join thousands of creators competing for amazing prizes. Register now and start your journey to stardom!
+              {t('howItWorks.cta.description')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -280,7 +308,7 @@ export default function HowItWorks() {
                   className="group"
                   data-testid="button-register-now"
                 >
-                  Register Now
+                  {t('howItWorks.cta.registerNow')}
                   <DollarSign className="ml-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 </Button>
               </div>
@@ -292,7 +320,7 @@ export default function HowItWorks() {
                   onClick={() => setLocation("/categories")}
                   data-testid="button-browse-categories"
                 >
-                  Browse Categories
+                  {t('howItWorks.cta.browseCategories')}
                 </Button>
               </div>
             </div>

@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function VerifyEmail() {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
@@ -17,7 +19,7 @@ export default function VerifyEmail() {
 
       if (!token) {
         setStatus("error");
-        setMessage("Verification token is missing from the URL.");
+        setMessage(t('auth.verificationTokenMissing'));
         return;
       }
 
@@ -26,15 +28,15 @@ export default function VerifyEmail() {
         const data = await response.json();
         
         setStatus("success");
-        setMessage(data.message || "Email verified successfully!");
+        setMessage(data.message || t('auth.emailVerifiedSuccess'));
       } catch (error: any) {
         setStatus("error");
-        setMessage(error.message || "Failed to verify email. The link may be invalid or expired.");
+        setMessage(error.message || t('auth.verificationError'));
       }
     };
 
     verifyEmail();
-  }, []);
+  }, [t]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -45,9 +47,9 @@ export default function VerifyEmail() {
               <div className="flex justify-center mb-4">
                 <Loader2 className="w-16 h-16 text-primary animate-spin" />
               </div>
-              <CardTitle>Verifying Email...</CardTitle>
+              <CardTitle>{t('auth.verifyingEmail')}</CardTitle>
               <CardDescription>
-                Please wait while we verify your email address
+                {t('auth.verifyEmailWait')}
               </CardDescription>
             </>
           )}
@@ -57,7 +59,7 @@ export default function VerifyEmail() {
               <div className="flex justify-center mb-4">
                 <CheckCircle2 className="w-16 h-16 text-green-500" />
               </div>
-              <CardTitle className="text-green-700">Email Verified!</CardTitle>
+              <CardTitle className="text-green-700">{t('auth.emailVerified')}</CardTitle>
               <CardDescription>
                 {message}
               </CardDescription>
@@ -69,7 +71,7 @@ export default function VerifyEmail() {
               <div className="flex justify-center mb-4">
                 <XCircle className="w-16 h-16 text-destructive" />
               </div>
-              <CardTitle className="text-destructive">Verification Failed</CardTitle>
+              <CardTitle className="text-destructive">{t('auth.verificationFailed')}</CardTitle>
               <CardDescription>
                 {message}
               </CardDescription>
@@ -85,7 +87,7 @@ export default function VerifyEmail() {
                 className="w-full"
                 data-testid="button-goto-dashboard"
               >
-                Go to Dashboard
+                {t('auth.goToDashboard')}
               </Button>
               <Button
                 variant="outline"
@@ -93,7 +95,7 @@ export default function VerifyEmail() {
                 className="w-full"
                 data-testid="button-goto-home"
               >
-                Go to Home
+                {t('auth.goToHome')}
               </Button>
             </>
           )}
@@ -105,7 +107,7 @@ export default function VerifyEmail() {
                 className="w-full"
                 data-testid="button-goto-dashboard-error"
               >
-                Go to Dashboard
+                {t('auth.goToDashboard')}
               </Button>
               <Button
                 variant="outline"
@@ -113,7 +115,7 @@ export default function VerifyEmail() {
                 className="w-full"
                 data-testid="button-goto-login"
               >
-                Go to Login
+                {t('auth.goToLogin')}
               </Button>
             </>
           )}
