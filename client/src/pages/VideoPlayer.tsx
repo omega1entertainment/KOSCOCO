@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
+import { OverlayAd } from "@/components/ads/OverlayAd";
+import { SkippableInStreamAd } from "@/components/ads/SkippableInStreamAd";
 import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -22,6 +24,9 @@ export default function VideoPlayer() {
   const { t } = useLanguage();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [showPreRollAd, setShowPreRollAd] = useState(true);
+  const [preRollAdCompleted, setPreRollAdCompleted] = useState(false);
+  const [showOverlayAd, setShowOverlayAd] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
@@ -68,6 +73,14 @@ export default function VideoPlayer() {
   const { data: relatedVideos = [] } = useQuery<Video[]>({
     queryKey: [`/api/videos/category/${video?.categoryId}`],
     enabled: !!video?.categoryId,
+  });
+
+  const { data: overlayAd } = useQuery<any>({
+    queryKey: ["/api/ads/serve/overlay"],
+  });
+
+  const { data: preRollAd } = useQuery<any>({
+    queryKey: ["/api/ads/serve/skippable_in_stream"],
   });
 
   const voteMutation = useMutation({
@@ -117,12 +130,33 @@ export default function VideoPlayer() {
   });
 
   useEffect(() => {
-    if (videoRef.current && video && !videoLoading) {
+    if (videoRef.current && video && !videoLoading && preRollAdCompleted) {
       videoRef.current.play().catch(() => {
         // Autoplay might be blocked by browser, ignore error
       });
     }
-  }, [videoId, video, videoLoading]);
+  }, [videoId, video, videoLoading, preRollAdCompleted]);
+
+  const handlePreRollAdComplete = () => {
+    setShowPreRollAd(false);
+    setPreRollAdCompleted(true);
+  };
+
+  const handleAdImpression = async (adId: string) => {
+    try {
+      await apiRequest(`/api/ads/${adId}/impression`, "POST", {});
+    } catch (error) {
+      console.error("Failed to track ad impression:", error);
+    }
+  };
+
+  const handleAdClick = async (adId: string) => {
+    try {
+      await apiRequest(`/api/ads/${adId}/click`, "POST", {});
+    } catch (error) {
+      console.error("Failed to track ad click:", error);
+    }
+  };
 
   if (videoLoading || !video) {
     return (
@@ -237,15 +271,35 @@ export default function VideoPlayer() {
             <div className="lg:col-span-2">
               <Card className="overflow-hidden">
                 <div className="aspect-video bg-black relative">
-                  <video
-                    ref={videoRef}
-                    controls
-                    className="w-full h-full"
-                    data-testid="video-player"
-                  >
-                    <source src={videoUrl} type="video/mp4" />
-                    {t('videoPlayer.browserNotSupported')}
-                  </video>
+                  {showPreRollAd && preRollAd ? (
+                    <SkippableInStreamAd
+                      ad={preRollAd}
+                      onComplete={handlePreRollAdComplete}
+                      onSkip={handlePreRollAdComplete}
+                      onImpression={() => handleAdImpression(preRollAd.id)}
+                      onClick={() => handleAdClick(preRollAd.id)}
+                    />
+                  ) : (
+                    <>
+                      <video
+                        ref={videoRef}
+                        controls
+                        className="w-full h-full"
+                        data-testid="video-player"
+                      >
+                        <source src={videoUrl} type="video/mp4" />
+                        {t('videoPlayer.browserNotSupported')}
+                      </video>
+                      {overlayAd && showOverlayAd && (
+                        <OverlayAd
+                          ad={overlayAd}
+                          onClose={() => setShowOverlayAd(false)}
+                          onImpression={() => handleAdImpression(overlayAd.id)}
+                          onClick={() => handleAdClick(overlayAd.id)}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
