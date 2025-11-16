@@ -38,6 +38,7 @@ import AdvertiserLogin from "@/pages/AdvertiserLogin";
 import AdvertiserSignup from "@/pages/AdvertiserSignup";
 import AdvertiserDashboard from "@/pages/AdvertiserDashboard";
 import CreateCampaign from "@/pages/CreateCampaign";
+import EditCampaign from "@/pages/EditCampaign";
 import CreateAd from "@/pages/CreateAd";
 import NotFound from "@/pages/not-found";
 
@@ -99,6 +100,7 @@ function Router() {
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
           <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
           <Route path="/advertiser/campaign/create" component={CreateCampaign} />
+          <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route component={NotFound} />
         </Switch>
