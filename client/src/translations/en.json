@@ -320,6 +320,12 @@
   "dashboard.votes.empty": "No votes cast yet",
   "dashboard.votes.votedFor": "Voted for video",
   "dashboard.votes.viewVideo": "View Video",
+
+  "dashboard.watchHistory.title": "Watch History",
+  "dashboard.watchHistory.description": "Videos you've recently watched",
+  "dashboard.watchHistory.empty": "No videos watched yet",
+  "dashboard.watchHistory.watchedOn": "Watched on",
+  "dashboard.watchHistory.completed": "Completed",
   
   "dashboard.myDashboard": "My Dashboard",
   "dashboard.myVideos": "My Videos",

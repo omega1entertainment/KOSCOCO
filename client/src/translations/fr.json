@@ -320,6 +320,12 @@
   "dashboard.votes.empty": "Aucun vote émis pour le moment",
   "dashboard.votes.votedFor": "Voté pour la vidéo",
   "dashboard.votes.viewVideo": "Voir la Vidéo",
+
+  "dashboard.watchHistory.title": "Historique de Visionnage",
+  "dashboard.watchHistory.description": "Vidéos que vous avez récemment regardées",
+  "dashboard.watchHistory.empty": "Aucune vidéo regardée pour le moment",
+  "dashboard.watchHistory.watchedOn": "Regardée le",
+  "dashboard.watchHistory.completed": "Terminée",
   
   "dashboard.myDashboard": "Mon Tableau de Bord",
   "dashboard.myVideos": "Mes Vidéos",
