@@ -2722,8 +2722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         campaignId,
         advertiserId: advertiser.id,
         adType,
-        name,
-        mediaUrl,
+        title: name,
         destinationUrl,
         pricingModel,
         bidAmount: parseFloat(bidAmount),
@@ -2731,10 +2730,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'inactive',
       };
 
-      if (adType === 'overlay') {
-        adData.altText = fields.altText?.[0] || '';
-      } else if (adType === 'skippable_instream') {
-        adData.skipAfterSeconds = parseInt(fields.skipAfterSeconds?.[0] || '5');
+      // Add type-specific fields
+      switch (adType) {
+        case 'overlay':
+          adData.imageUrl = mediaUrl;
+          break;
+        case 'skippable_instream':
+          adData.videoUrl = mediaUrl;
+          break;
+        case 'non_skippable_instream':
+          adData.videoUrl = mediaUrl;
+          break;
+        case 'bumper':
+          adData.duration = parseInt(fields.duration?.[0] || '6');
+          adData.videoUrl = mediaUrl;
+          break;
+        case 'in_feed':
+          adData.description = fields.description?.[0] || '';
+          adData.ctaText = fields.ctaText?.[0] || 'Learn More';
+          adData.videoUrl = mediaUrl;
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid ad type" });
       }
 
       const ad = await storage.createAd(adData);

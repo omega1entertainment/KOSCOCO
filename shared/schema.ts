@@ -253,6 +253,7 @@ export const ads = pgTable("ads", {
   destinationUrl: text("destination_url").notNull(),
   ctaText: text("cta_text"),
   duration: integer("duration"),
+  skipAfterSeconds: integer("skip_after_seconds"),
   targetAudience: jsonb("target_audience"),
   pricingModel: text("pricing_model").notNull(),
   bidAmount: integer("bid_amount").notNull(),
