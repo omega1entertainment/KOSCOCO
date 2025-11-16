@@ -15,9 +15,10 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Eye
+  Eye,
+  History
 } from "lucide-react";
-import type { Registration, Video, Vote, Category } from "@shared/schema";
+import type { Registration, Video, Vote, Category, WatchHistory } from "@shared/schema";
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -46,6 +47,11 @@ export default function Dashboard() {
 
   const { data: votes = [], isLoading: votesLoading } = useQuery<Vote[]>({
     queryKey: ["/api/votes/user"],
+    enabled: !!user,
+  });
+
+  const { data: watchHistory = [], isLoading: watchHistoryLoading } = useQuery<(WatchHistory & { video: Video })[]>({
+    queryKey: ["/api/watch-history/user"],
     enabled: !!user,
   });
 
@@ -295,6 +301,60 @@ export default function Dashboard() {
                         >
                           {t('dashboard.votes.viewVideo')}
                         </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Watch History */}
+            <Card data-testid="card-watch-history">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5" />
+                  {t('dashboard.watchHistory.title')}
+                </CardTitle>
+                <CardDescription>
+                  {t('dashboard.watchHistory.description')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {watchHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">{t('dashboard.watchHistory.empty')}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {watchHistory.slice(0, 10).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-4 p-3 border rounded-lg hover-elevate cursor-pointer"
+                        onClick={() => setLocation(`/video/${item.videoId}`)}
+                        data-testid={`watch-history-${item.id}`}
+                      >
+                        {item.video.thumbnailUrl && (
+                          <img
+                            src={item.video.thumbnailUrl}
+                            alt={item.video.title}
+                            className="w-32 h-20 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">{item.video.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {getCategoryName(item.video.categoryId)} - {item.video.subcategory}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{t('dashboard.watchHistory.watchedOn')} {new Date(item.watchedAt).toLocaleDateString()}</span>
+                            {item.completed && (
+                              <Badge variant="secondary" className="text-xs">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                {t('dashboard.watchHistory.completed')}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
