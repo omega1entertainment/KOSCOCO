@@ -2904,70 +2904,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function for ad serving logic
+  const serveAd = async (adType: string | undefined): Promise<any> => {
+    // Get all active approved ads (optionally filtered by type)
+    const activeAds = await storage.getApprovedAds(adType);
+    
+    if (activeAds.length === 0) {
+      return null;
+    }
+
+    // Filter ads with available budget and active campaigns
+    const adsWithBudget = await Promise.all(
+      activeAds.map(async (ad) => {
+        const campaign = await storage.getAdCampaign(ad.campaignId);
+        if (!campaign) return null;
+        
+        // Check campaign status
+        if (campaign.status !== 'active') return null;
+        
+        // Check if campaign has remaining budget
+        const remainingBudget = campaign.budget - (campaign.totalSpent || 0);
+        if (remainingBudget <= 0) return null;
+        
+        // Check if ad status is still active
+        if (ad.status !== 'active') return null;
+        
+        return ad;
+      })
+    );
+
+    const eligibleAds = adsWithBudget.filter((ad): ad is typeof activeAds[0] => ad !== null);
+
+    if (eligibleAds.length === 0) {
+      return null;
+    }
+
+    // Weighted random selection based on bid amount
+    // Higher bid = higher chance of being selected
+    const totalBidWeight = eligibleAds.reduce((sum, ad) => sum + (ad.bidAmount || 0), 0);
+    
+    if (totalBidWeight === 0) {
+      // If all bids are 0, select randomly
+      return eligibleAds[Math.floor(Math.random() * eligibleAds.length)];
+    }
+
+    // Select ad using weighted random
+    let randomValue = Math.random() * totalBidWeight;
+    let selectedAd = eligibleAds[0];
+    
+    for (const ad of eligibleAds) {
+      randomValue -= ad.bidAmount || 0;
+      if (randomValue <= 0) {
+        selectedAd = ad;
+        break;
+      }
+    }
+
+    return selectedAd;
+  };
+
   // Ad Serving API: Get an ad to display with rotation logic
   app.get("/api/ads/serve", async (req, res) => {
     try {
       const adType = req.query.adType as string | undefined;
+      const ad = await serveAd(adType);
       
-      // Get all active approved ads (optionally filtered by type)
-      const activeAds = await storage.getApprovedAds(adType);
-      
-      if (activeAds.length === 0) {
+      if (!ad) {
         return res.status(404).json({ message: "No ads available" });
       }
 
-      // Filter ads with available budget and active campaigns
-      const adsWithBudget = await Promise.all(
-        activeAds.map(async (ad) => {
-          const campaign = await storage.getAdCampaign(ad.campaignId);
-          if (!campaign) return null;
-          
-          // Check campaign status
-          if (campaign.status !== 'active') return null;
-          
-          // Check if campaign has remaining budget
-          const remainingBudget = campaign.budget - (campaign.totalSpent || 0);
-          if (remainingBudget <= 0) return null;
-          
-          // Check if ad status is still active
-          if (ad.status !== 'active') return null;
-          
-          return ad;
-        })
-      );
-
-      const eligibleAds = adsWithBudget.filter((ad): ad is typeof activeAds[0] => ad !== null);
-
-      if (eligibleAds.length === 0) {
-        return res.status(404).json({ message: "No ads with available budget" });
-      }
-
-      // Weighted random selection based on bid amount
-      // Higher bid = higher chance of being selected
-      const totalBidWeight = eligibleAds.reduce((sum, ad) => sum + (ad.bidAmount || 0), 0);
-      
-      if (totalBidWeight === 0) {
-        // If all bids are 0, select randomly
-        const randomAd = eligibleAds[Math.floor(Math.random() * eligibleAds.length)];
-        return res.json(randomAd);
-      }
-
-      // Select ad using weighted random
-      let randomValue = Math.random() * totalBidWeight;
-      let selectedAd = eligibleAds[0];
-      
-      for (const ad of eligibleAds) {
-        randomValue -= ad.bidAmount || 0;
-        if (randomValue <= 0) {
-          selectedAd = ad;
-          break;
-        }
-      }
-
-      res.json(selectedAd);
+      res.json(ad);
     } catch (error) {
       console.error("Error serving ad:", error);
       res.status(500).json({ message: "Failed to serve ad" });
+    }
+  });
+
+  // Ad Serving API: Get overlay ad
+  app.get("/api/ads/serve/overlay", async (req, res) => {
+    try {
+      const ad = await serveAd('overlay');
+      
+      if (!ad) {
+        return res.status(404).json({ message: "No overlay ads available" });
+      }
+
+      res.json(ad);
+    } catch (error) {
+      console.error("Error serving overlay ad:", error);
+      res.status(500).json({ message: "Failed to serve overlay ad" });
+    }
+  });
+
+  // Ad Serving API: Get skippable in-stream ad
+  app.get("/api/ads/serve/skippable_in_stream", async (req, res) => {
+    try {
+      const ad = await serveAd('skippable_in_stream');
+      
+      if (!ad) {
+        return res.status(404).json({ message: "No skippable in-stream ads available" });
+      }
+
+      res.json(ad);
+    } catch (error) {
+      console.error("Error serving skippable in-stream ad:", error);
+      res.status(500).json({ message: "Failed to serve skippable in-stream ad" });
     }
   });
 

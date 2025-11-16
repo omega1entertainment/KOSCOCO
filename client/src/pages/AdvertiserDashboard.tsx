@@ -30,7 +30,9 @@ import {
   TrendingUp,
   Loader2,
   Edit,
-  Trash2
+  Trash2,
+  Play,
+  Pause
 } from "lucide-react";
 
 export default function AdvertiserDashboard() {
@@ -96,6 +98,27 @@ export default function AdvertiserDashboard() {
     },
   });
 
+  const toggleCampaignStatusMutation = useMutation({
+    mutationFn: async ({ campaignId, newStatus }: { campaignId: string; newStatus: string }) => {
+      return await apiRequest(`/api/advertiser/campaigns/${campaignId}`, "PATCH", { status: newStatus });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/advertiser/campaigns"] });
+      const statusLabel = variables.newStatus === 'active' ? 'activated' : variables.newStatus === 'paused' ? 'paused' : 'set to draft';
+      toast({
+        title: "Campaign status updated",
+        description: `Campaign ${statusLabel} successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update campaign status",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDeleteClick = (campaignId: string) => {
     setCampaignToDelete(campaignId);
     setDeleteDialogOpen(true);
@@ -105,6 +128,18 @@ export default function AdvertiserDashboard() {
     if (campaignToDelete) {
       deleteCampaignMutation.mutate(campaignToDelete);
     }
+  };
+
+  const handleToggleCampaignStatus = (campaignId: string, currentStatus: string) => {
+    let newStatus = 'draft';
+    if (currentStatus === 'draft') {
+      newStatus = 'active';
+    } else if (currentStatus === 'active') {
+      newStatus = 'paused';
+    } else if (currentStatus === 'paused') {
+      newStatus = 'active';
+    }
+    toggleCampaignStatusMutation.mutate({ campaignId, newStatus });
   };
 
   if (isLoadingAdvertiser) {
@@ -339,6 +374,20 @@ export default function AdvertiserDashboard() {
                             <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
                               {campaign.status}
                             </Badge>
+                            <Button
+                              variant={campaign.status === 'active' ? 'default' : 'outline'}
+                              size="icon"
+                              onClick={() => handleToggleCampaignStatus(campaign.id, campaign.status)}
+                              disabled={toggleCampaignStatusMutation.isPending}
+                              title={campaign.status === 'active' ? 'Pause campaign' : 'Activate campaign'}
+                              data-testid={`button-toggle-campaign-${campaign.id}`}
+                            >
+                              {campaign.status === 'active' ? (
+                                <Pause className="w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4" />
+                              )}
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
