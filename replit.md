@@ -33,6 +33,14 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Video of the Day Feature** (Nov 16, 2024): Implemented daily rotating featured video on homepage:
+  - Backend storage method: `getVideoOfTheDay()` uses deterministic daily rotation based on days since epoch
+  - API endpoint: GET /api/videos/video-of-the-day returns featured video with stats
+  - VideoOfTheDay component: Responsive card display with thumbnail, title, description, stats (likes/votes)
+  - Fully bilingual: All UI text including "Featured" badge properly localized (English/French)
+  - Positioned below promo video section on homepage for prominent visibility
+  - Automatic daily rotation through all approved videos
+  - Clicking video navigates to full video player page
 - **Campaign Edit & Delete Functionality** (Nov 16, 2024): Implemented complete campaign management:
   - EditCampaign page with pre-filled form for updating campaign details (name, budget, dates, targeting)
   - Campaign deletion with full cascade cleanup across all related tables (ads, clicks, impressions, payments)
