@@ -1954,6 +1954,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get pending ads for approval
+  app.get('/api/admin/ads/pending', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const pendingAds = await storage.getPendingAds();
+      res.json(pendingAds);
+    } catch (error) {
+      console.error("Error fetching pending ads:", error);
+      res.status(500).json({ message: "Failed to fetch pending ads" });
+    }
+  });
+
+  // Admin: Approve ad
+  app.post('/api/admin/ads/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = (req.user as SelectUser).id;
+
+      const approvedAd = await storage.approveAd(id, adminId);
+      
+      if (!approvedAd) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+
+      res.json(approvedAd);
+    } catch (error) {
+      console.error("Error approving ad:", error);
+      res.status(500).json({ message: "Failed to approve ad" });
+    }
+  });
+
+  // Admin: Reject ad
+  app.post('/api/admin/ads/:id/reject', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { rejectionReason } = req.body;
+
+      if (!rejectionReason) {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+
+      const rejectedAd = await storage.rejectAd(id, rejectionReason);
+      
+      if (!rejectedAd) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+
+      res.json(rejectedAd);
+    } catch (error) {
+      console.error("Error rejecting ad:", error);
+      res.status(500).json({ message: "Failed to reject ad" });
+    }
+  });
+
   // Admin: Create judge account
   app.post('/api/admin/judges', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

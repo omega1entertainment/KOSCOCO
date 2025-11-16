@@ -57,9 +57,18 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/judges"],
   });
 
+  const { data: pendingAds = [], isLoading: adsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/ads/pending"],
+  });
+
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  
+  // Ad rejection state
+  const [adRejectionDialogOpen, setAdRejectionDialogOpen] = useState(false);
+  const [selectedAdId, setSelectedAdId] = useState<string | null>(null);
+  const [adRejectionReason, setAdRejectionReason] = useState("");
   
   // Judge photo upload state
   const [judgePhotoFile, setJudgePhotoFile] = useState<File | null>(null);
@@ -123,6 +132,62 @@ function AdminDashboardContent() {
       return;
     }
     rejectPayoutMutation.mutate({ payoutId: selectedPayoutId, rejectionReason });
+  };
+
+  // Ad approval/rejection mutations
+  const approveAdMutation = useMutation({
+    mutationFn: async (adId: string) => {
+      return await apiRequest(`/api/admin/ads/${adId}/approve`, "POST", {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Ad Approved",
+        description: "The ad has been approved and is now active.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ads/pending"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Approval Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectAdMutation = useMutation({
+    mutationFn: async ({ adId, rejectionReason }: { adId: string; rejectionReason: string }) => {
+      return await apiRequest(`/api/admin/ads/${adId}/reject`, "POST", { rejectionReason });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Ad Rejected",
+        description: "The ad has been rejected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ads/pending"] });
+      setAdRejectionDialogOpen(false);
+      setSelectedAdId(null);
+      setAdRejectionReason("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Rejection Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRejectAd = () => {
+    if (!selectedAdId || !adRejectionReason) {
+      toast({
+        title: "Rejection Reason Required",
+        description: "Please provide a reason for rejecting this ad.",
+        variant: "destructive",
+      });
+      return;
+    }
+    rejectAdMutation.mutate({ adId: selectedAdId, rejectionReason: adRejectionReason });
   };
 
   const updateStatusMutation = useMutation({
@@ -360,7 +425,7 @@ function AdminDashboardContent() {
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-5 gap-1">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-6 gap-1">
           <TabsTrigger value="phases" data-testid="tab-phases">
             {t('admin.tabs.phases')}
           </TabsTrigger>
@@ -374,6 +439,14 @@ function AdminDashboardContent() {
           </TabsTrigger>
           <TabsTrigger value="judges" data-testid="tab-judges">
             {t('admin.tabs.judges')}
+          </TabsTrigger>
+          <TabsTrigger value="ads" data-testid="tab-ads">
+            Ads
+            {pendingAds.length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {pendingAds.length}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="payouts" data-testid="tab-payouts">
             {t('admin.tabs.payouts')}
@@ -1107,6 +1180,152 @@ function AdminDashboardContent() {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="ads" className="mt-6">
+          {adsLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">Loading ads...</p>
+            </div>
+          ) : pendingAds.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <CheckCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">No Pending Ads</h3>
+                <p className="text-muted-foreground">
+                  All ads have been reviewed. New ads awaiting approval will appear here.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 mb-4">
+                <Badge variant="outline" className="text-base">
+                  {pendingAds.length} Total Pending
+                </Badge>
+              </div>
+
+              <div className="grid gap-6">
+                {pendingAds.map((ad) => (
+                  <Card key={ad.id} data-testid={`ad-card-${ad.id}`}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-xl flex items-center gap-2">
+                            <span className="truncate">{ad.name}</span>
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Type: {ad.adType === 'overlay' ? 'Overlay Banner' : 'Skippable In-Stream Video'} • 
+                            Created {new Date(ad.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-sm flex-shrink-0">
+                          {ad.pricingModel.toUpperCase()} • {ad.bidAmount} XAF
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Destination URL</p>
+                          <div className="bg-muted p-4 rounded-md">
+                            <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">
+                              {ad.destinationUrl}
+                            </a>
+                          </div>
+                        </div>
+
+                        {ad.mediaUrl && (
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Media Preview</p>
+                            <div className="bg-muted p-4 rounded-md">
+                              {ad.adType === 'overlay' ? (
+                                <img src={ad.mediaUrl} alt={ad.altText || 'Ad image'} className="max-w-full max-h-64 rounded" />
+                              ) : (
+                                <video src={ad.mediaUrl} controls className="max-w-full max-h-64 rounded" />
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {ad.altText && (
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Alt Text</p>
+                            <div className="bg-muted p-4 rounded-md">
+                              <p className="text-sm">{ad.altText}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 pt-4 border-t">
+                          <Button
+                            onClick={() => approveAdMutation.mutate(ad.id)}
+                            disabled={approveAdMutation.isPending}
+                            variant="default"
+                            className="flex-1"
+                            data-testid={`button-approve-ad-${ad.id}`}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {approveAdMutation.isPending ? 'Approving...' : 'Approve Ad'}
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setSelectedAdId(ad.id);
+                              setAdRejectionDialogOpen(true);
+                            }}
+                            disabled={rejectAdMutation.isPending}
+                            variant="destructive"
+                            className="flex-1"
+                            data-testid={`button-reject-ad-${ad.id}`}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            {rejectAdMutation.isPending ? 'Rejecting...' : 'Reject Ad'}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ad Rejection Dialog */}
+          <AlertDialog open={adRejectionDialogOpen} onOpenChange={setAdRejectionDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reject Ad</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please provide a reason for rejecting this ad. This will be sent to the advertiser.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Textarea
+                value={adRejectionReason}
+                onChange={(e) => setAdRejectionReason(e.target.value)}
+                placeholder="Enter rejection reason..."
+                className="min-h-24"
+                data-testid="textarea-ad-rejection-reason"
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => {
+                  setAdRejectionDialogOpen(false);
+                  setSelectedAdId(null);
+                  setAdRejectionReason("");
+                }}>
+                  Cancel
+                </AlertDialogCancel>
+                <Button
+                  onClick={handleRejectAd}
+                  disabled={!adRejectionReason || rejectAdMutation.isPending}
+                  variant="destructive"
+                  data-testid="button-confirm-reject-ad"
+                >
+                  {rejectAdMutation.isPending ? 'Rejecting...' : 'Confirm Rejection'}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
       </Tabs>
 
