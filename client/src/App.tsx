@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import LanguageSelectionModal from "@/components/LanguageSelectionModal";
 import { useAuth } from "@/hooks/useAuth";
 import TopBar from "@/components/TopBar";
 import NavigationHeader from "@/components/NavigationHeader";
@@ -59,6 +61,7 @@ function Router() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <LanguageSelectionModal />
       <TopBar />
       <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
       <main className="flex-1">
@@ -98,12 +101,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
