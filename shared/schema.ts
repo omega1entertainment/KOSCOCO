@@ -202,6 +202,125 @@ export const reports = pgTable("reports", {
   index("idx_reports_status").on(table.status),
 ]);
 
+export const advertisers = pgTable("advertisers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(),
+  companyName: text("company_name").notNull(),
+  companyWebsite: text("company_website"),
+  companyDescription: text("company_description"),
+  contactName: text("contact_name").notNull(),
+  contactPhone: text("contact_phone"),
+  businessType: text("business_type").notNull(),
+  country: text("country").notNull(),
+  logoUrl: text("logo_url"),
+  status: text("status").notNull().default('pending'),
+  verifiedAt: timestamp("verified_at"),
+  totalSpent: integer("total_spent").default(0).notNull(),
+  walletBalance: integer("wallet_balance").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const adCampaigns = pgTable("ad_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  advertiserId: varchar("advertiser_id").notNull().references(() => advertisers.id),
+  name: text("name").notNull(),
+  objective: text("objective").notNull(),
+  budget: integer("budget").notNull(),
+  budgetType: text("budget_type").notNull().default('total'),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  status: text("status").notNull().default('draft'),
+  totalSpent: integer("total_spent").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_campaigns_advertiser").on(table.advertiserId),
+  index("idx_campaigns_status").on(table.status),
+]);
+
+export const ads = pgTable("ads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => adCampaigns.id),
+  advertiserId: varchar("advertiser_id").notNull().references(() => advertisers.id),
+  adType: text("ad_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  videoUrl: text("video_url"),
+  imageUrl: text("image_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  destinationUrl: text("destination_url").notNull(),
+  ctaText: text("cta_text"),
+  duration: integer("duration"),
+  targetAudience: jsonb("target_audience"),
+  pricingModel: text("pricing_model").notNull(),
+  bidAmount: integer("bid_amount").notNull(),
+  dailyBudget: integer("daily_budget"),
+  status: text("status").notNull().default('pending'),
+  approvalStatus: text("approval_status").notNull().default('pending'),
+  rejectionReason: text("rejection_reason"),
+  totalImpressions: integer("total_impressions").default(0).notNull(),
+  totalClicks: integer("total_clicks").default(0).notNull(),
+  totalViews: integer("total_views").default(0).notNull(),
+  totalSpent: integer("total_spent").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+}, (table) => [
+  index("idx_ads_campaign").on(table.campaignId),
+  index("idx_ads_advertiser").on(table.advertiserId),
+  index("idx_ads_status").on(table.status),
+  index("idx_ads_type").on(table.adType),
+  index("idx_ads_approval").on(table.approvalStatus),
+]);
+
+export const adPayments = pgTable("ad_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  advertiserId: varchar("advertiser_id").notNull().references(() => advertisers.id),
+  campaignId: varchar("campaign_id").references(() => adCampaigns.id),
+  amount: integer("amount").notNull(),
+  paymentType: text("payment_type").notNull(),
+  txRef: text("tx_ref").notNull().unique(),
+  flwRef: text("flw_ref").unique(),
+  status: text("status").notNull().default('pending'),
+  paymentData: jsonb("payment_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_payments_advertiser").on(table.advertiserId),
+  index("idx_payments_status").on(table.status),
+]);
+
+export const adImpressions = pgTable("ad_impressions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adId: varchar("ad_id").notNull().references(() => ads.id),
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  country: text("country"),
+  deviceType: text("device_type"),
+  viewDuration: integer("view_duration"),
+  wasSkipped: boolean("was_skipped").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_impressions_ad").on(table.adId),
+  index("idx_impressions_created").on(table.createdAt),
+]);
+
+export const adClicks = pgTable("ad_clicks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adId: varchar("ad_id").notNull().references(() => ads.id),
+  impressionId: varchar("impression_id").references(() => adImpressions.id),
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_clicks_ad").on(table.adId),
+  index("idx_clicks_created").on(table.createdAt),
+]);
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -296,6 +415,52 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   reviewedBy: true,
 });
 
+export const insertAdvertiserSchema = createInsertSchema(advertisers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  totalSpent: true,
+  walletBalance: true,
+  verifiedAt: true,
+});
+
+export const insertAdCampaignSchema = createInsertSchema(adCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  totalSpent: true,
+});
+
+export const insertAdSchema = createInsertSchema(ads).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  totalImpressions: true,
+  totalClicks: true,
+  totalViews: true,
+  totalSpent: true,
+  approvedAt: true,
+  approvedBy: true,
+});
+
+export const insertAdPaymentSchema = createInsertSchema(adPayments).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+  flwRef: true,
+  paymentData: true,
+});
+
+export const insertAdImpressionSchema = createInsertSchema(adImpressions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdClickSchema = createInsertSchema(adClicks).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -388,3 +553,39 @@ export type Like = typeof likes.$inferSelect;
 
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
+
+export type InsertAdvertiser = z.infer<typeof insertAdvertiserSchema>;
+export type Advertiser = typeof advertisers.$inferSelect;
+
+export type InsertAdCampaign = z.infer<typeof insertAdCampaignSchema>;
+export type AdCampaign = typeof adCampaigns.$inferSelect;
+
+export type InsertAd = z.infer<typeof insertAdSchema>;
+export type Ad = typeof ads.$inferSelect;
+
+export type InsertAdPayment = z.infer<typeof insertAdPaymentSchema>;
+export type AdPayment = typeof adPayments.$inferSelect;
+
+export type InsertAdImpression = z.infer<typeof insertAdImpressionSchema>;
+export type AdImpression = typeof adImpressions.$inferSelect;
+
+export type InsertAdClick = z.infer<typeof insertAdClickSchema>;
+export type AdClick = typeof adClicks.$inferSelect;
+
+export type AdWithCampaign = Ad & {
+  campaign: AdCampaign | null;
+};
+
+export type AdWithStats = Ad & {
+  ctr: number;
+  averageViewDuration: number;
+  conversionRate: number;
+};
+
+export type CampaignWithStats = AdCampaign & {
+  activeAds: number;
+  totalImpressions: number;
+  totalClicks: number;
+  totalViews: number;
+  averageCtr: number;
+};

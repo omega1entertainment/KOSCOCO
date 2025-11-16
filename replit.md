@@ -33,6 +33,12 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Comprehensive Ad System Implementation** (Nov 16, 2024): Building comprehensive advertising platform with 8 ad types, advertiser portal, payment integration, and admin management:
+  - Database schema: advertisers, ad_campaigns, ads, ad_payments, ad_impressions, ad_clicks tables
+  - Ad types: Skippable In-Stream, Non-Skippable In-Stream, Bumper, In-Feed Video, Masthead, Overlay, Sponsored Cards, Shorts
+  - Africa-appropriate pricing (XAF): CPM 500-2,000, CPC 50-200, CPV 10-50, Masthead 500,000-2,000,000
+  - Features: separate advertiser authentication, campaign management, ad creation wizard, payment integration, analytics dashboard
+- **Language-Specific Promo Videos** (Nov 16, 2024): Added promo video section below hero on home page that automatically switches between English and French videos based on selected language
 - **Default Dark Mode** (Nov 16, 2024): Changed the default theme mode to dark mode for better user experience. Users can still toggle to light mode using the theme toggle in the navigation header.
 - **Vote & Like Count Display Fix** (Nov 16, 2024): Fixed vote and like counts displaying as strings by adding parseInt/parseFloat conversions. Fixed query cache invalidation to update counts in real-time after vote purchases.
 - **TypeScript Error Fixes** (Nov 16, 2024): Resolved all LSP errors by flattening nested object selection in Drizzle queries for judge score history retrieval.
