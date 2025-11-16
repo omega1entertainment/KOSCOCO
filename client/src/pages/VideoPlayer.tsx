@@ -155,14 +155,16 @@ export default function VideoPlayer() {
   useEffect(() => {
     // Check if Picture-in-Picture is supported
     // Recheck after video element is mounted (after pre-roll ad completes)
-    setIsPiPSupported(
-      document.pictureInPictureEnabled &&
-      videoRef.current !== null
-    );
-  }, [preRollAdCompleted, videoRef]);
+    if (preRollAdCompleted && videoRef.current) {
+      setIsPiPSupported(
+        document.pictureInPictureEnabled === true &&
+        typeof videoRef.current.requestPictureInPicture === 'function'
+      );
+    }
+  }, [preRollAdCompleted, video, videoLoading]);
 
   useEffect(() => {
-    if (!videoRef.current || !user || !videoId || !video) return;
+    if (!videoRef.current || !user || !videoId || !video || !preRollAdCompleted) return;
 
     const videoElement = videoRef.current;
     let watchStartTime = 0;
@@ -209,7 +211,7 @@ export default function VideoPlayer() {
       videoElement.removeEventListener('ended', handleEnded);
       videoElement.removeEventListener('play', handlePlay);
     };
-  }, [videoId, video, user, watchHistoryRecorded, watchHistoryMutation]);
+  }, [videoId, video, user, watchHistoryRecorded, preRollAdCompleted]);
 
   const handlePreRollAdComplete = () => {
     setShowPreRollAd(false);
