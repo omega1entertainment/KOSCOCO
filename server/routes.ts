@@ -2467,7 +2467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/advertiser/campaigns", isAdvertiser, async (req, res) => {
     try {
       const advertiser = req.user as any;
-      const { name, objective, budget, budgetType, startDate, endDate, targetAudience, targetLocations } = req.body;
+      const { name, objective, budget, budgetType, startDate, endDate } = req.body;
 
       if (!name || !objective || !budget || !budgetType || !startDate || !endDate) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -2484,9 +2484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         budget,
         budgetType,
         startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        targetAudience: targetAudience || null,
-        targetLocations: targetLocations || null,
+        endDate: endDate ? new Date(endDate) : undefined,
         status: 'draft',
       });
 
@@ -2494,6 +2492,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Create campaign error:", error);
       res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  app.get("/api/advertiser/campaigns/:id", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const campaignId = req.params.id;
+      
+      const campaign = await storage.getAdCampaign(campaignId);
+      
+      if (!campaign || campaign.advertiserId !== advertiser.id) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      console.error("Get campaign error:", error);
+      res.status(500).json({ message: "Failed to fetch campaign" });
+    }
+  });
+
+  app.post("/api/advertiser/campaigns/:campaignId/ads", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const campaignId = req.params.campaignId;
+
+      // Verify campaign ownership
+      const campaign = await storage.getAdCampaign(campaignId);
+      if (!campaign || campaign.advertiserId !== advertiser.id) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      const form = formidable({
+        maxFileSize: 50 * 1024 * 1024, // 50MB
+        keepExtensions: true,
+      });
+
+      const [fields, files] = await form.parse(req);
+
+      const adType = fields.adType?.[0];
+      const name = fields.name?.[0];
+      const destinationUrl = fields.destinationUrl?.[0];
+      const pricingModel = fields.pricingModel?.[0];
+      const bidAmount = fields.bidAmount?.[0];
+      const mediaFile = files.mediaFile?.[0];
+
+      if (!adType || !name || !destinationUrl || !pricingModel || !bidAmount) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      if (!mediaFile) {
+        return res.status(400).json({ message: "Media file is required" });
+      }
+
+      // Copy media file to public object storage so it can be accessed by browsers
+      const fileName = `ad-${Date.now()}-${mediaFile.originalFilename}`;
+      const publicDirs = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',') || [];
+      const publicDir = publicDirs[0] || '/public';
+      const destination = `${publicDir}/ads/${fileName}`;
+      
+      // Ensure ads directory exists
+      const adsDir = `${publicDir}/ads`;
+      await fs.mkdir(adsDir, { recursive: true }).catch(() => {});
+      
+      await fs.copyFile(mediaFile.filepath, destination);
+      await fs.unlink(mediaFile.filepath);
+      
+      // Store relative URL that browser can access
+      const mediaUrl = `/ads/${fileName}`;
+
+      const adData: any = {
+        campaignId,
+        adType,
+        name,
+        mediaUrl,
+        destinationUrl,
+        pricingModel,
+        bidAmount: parseFloat(bidAmount),
+        approvalStatus: 'pending',
+        status: 'inactive',
+      };
+
+      if (adType === 'overlay') {
+        adData.altText = fields.altText?.[0] || '';
+      } else if (adType === 'skippable_instream') {
+        adData.skipAfterSeconds = parseInt(fields.skipAfterSeconds?.[0] || '5');
+      }
+
+      const ad = await storage.createAd(adData);
+      res.json(ad);
+    } catch (error) {
+      console.error("Create ad error:", error);
+      res.status(500).json({ message: "Failed to create ad" });
     }
   });
 
@@ -2505,6 +2596,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get advertiser stats error:", error);
       res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Serve ad media files from public object storage
+  app.get("/ads/:filename", async (req, res) => {
+    try {
+      const filename = req.params.filename;
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(`ads/${filename}`);
+      
+      if (!file) {
+        return res.status(404).json({ message: "Ad media not found" });
+      }
+
+      const stream = file.createReadStream();
+      
+      // Set appropriate content type based on file extension
+      const ext = path.extname(filename).toLowerCase();
+      const contentTypes: Record<string, string> = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.webp': 'image/webp',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+      };
+      const contentType = contentTypes[ext] || 'application/octet-stream';
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      stream.pipe(res);
+    } catch (error) {
+      console.error("Error serving ad media:", error);
+      res.status(500).json({ message: "Failed to serve ad media" });
     }
   });
 

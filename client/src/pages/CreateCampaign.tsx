@@ -20,8 +20,6 @@ const campaignSchema = z.object({
   budgetType: z.enum(["daily", "total"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  targetAudience: z.string().optional(),
-  targetLocations: z.string().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
@@ -40,8 +38,6 @@ export default function CreateCampaign() {
       budgetType: "total",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      targetAudience: "",
-      targetLocations: "Cameroon",
     },
   });
 
@@ -232,48 +228,6 @@ export default function CreateCampaign() {
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="targetAudience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Target Audience</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe your target audience (age, interests, demographics...)"
-                          {...field}
-                          data-testid="input-target-audience"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Help us understand who should see your ads
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="targetLocations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Target Locations</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Cameroon, Nigeria, Ghana..."
-                          {...field}
-                          data-testid="input-target-locations"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Countries or regions to show your ads
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <div className="flex justify-end gap-3">
                   <Button
