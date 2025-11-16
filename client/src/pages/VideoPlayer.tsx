@@ -144,6 +144,14 @@ export default function VideoPlayer() {
     },
   });
 
+  // Reset states when video changes
+  useEffect(() => {
+    setShowPreRollAd(true);
+    setPreRollAdCompleted(false);
+    setShowOverlayAd(true);
+    setWatchHistoryRecorded(false);
+  }, [videoId]);
+
   useEffect(() => {
     // If there's no pre-roll ad (query completed and no ad data), mark it as completed immediately
     if (!isPreRollAdLoading && !preRollAd && !preRollAdCompleted) {
