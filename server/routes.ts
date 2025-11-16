@@ -1578,6 +1578,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/votes/purchase/callback', isAuthenticated, async (req: any, res) => {
+    try {
+      const { txRef, transactionId } = req.body;
+      const userId = (req.user as SelectUser).id;
+
+      if (!txRef || !transactionId) {
+        return res.status(400).json({ message: "Transaction reference and ID are required" });
+      }
+
+      const purchase = await storage.getVotePurchaseByTxRef(txRef);
+      if (!purchase) {
+        return res.status(404).json({ message: "Purchase not found" });
+      }
+
+      if (purchase.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden - Not your purchase" });
+      }
+
+      if (purchase.status === 'successful') {
+        return res.json({ success: true, message: "Already processed" });
+      }
+
+      const flwClient = new Flutterwave(
+        process.env.FLW_PUBLIC_KEY!,
+        process.env.FLW_SECRET_KEY!
+      );
+
+      const verifyResponse = await flwClient.Transaction.verify({ id: transactionId });
+
+      if (verifyResponse.status !== 'success') {
+        return res.status(400).json({ message: "Payment verification failed with Flutterwave" });
+      }
+
+      const paymentData = verifyResponse.data;
+
+      if (paymentData.status !== 'successful') {
+        await storage.updateVotePurchase(purchase.id, {
+          status: 'failed',
+          paymentData: { data: paymentData },
+        });
+        return res.status(400).json({ message: `Payment not successful: ${paymentData.status}` });
+      }
+
+      if (paymentData.tx_ref !== txRef) {
+        return res.status(400).json({ message: "Transaction reference mismatch" });
+      }
+
+      if (paymentData.currency !== 'XAF') {
+        return res.status(400).json({ message: "Invalid payment currency" });
+      }
+
+      if (Math.abs(paymentData.amount - purchase.amount) > 0.01) {
+        return res.status(400).json({ message: "Payment amount mismatch" });
+      }
+
+      if (Math.abs(paymentData.charged_amount - purchase.amount) > 0.01) {
+        return res.status(400).json({ message: "Charged amount mismatch" });
+      }
+
+      const COST_PER_VOTE = 50;
+      const verifiedVoteCount = Math.floor(paymentData.amount / COST_PER_VOTE);
+      if (verifiedVoteCount !== purchase.voteCount) {
+        return res.status(400).json({ message: "Vote count mismatch" });
+      }
+
+      await storage.updateVotePurchase(purchase.id, {
+        status: 'successful',
+        flwRef: paymentData.flw_ref,
+        completedAt: new Date(),
+        paymentData: { data: paymentData },
+      });
+
+      await storage.createPaidVote({
+        purchaseId: purchase.id,
+        videoId: purchase.videoId,
+        quantity: verifiedVoteCount,
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Payment verified successfully",
+        voteCount: verifiedVoteCount
+      });
+    } catch (error: any) {
+      console.error("Vote purchase callback error:", error);
+      res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
   app.post('/api/votes/purchase/webhook', async (req, res) => {
     try {
       const payload = req.body;
@@ -1793,12 +1882,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Video ID is required" });
       }
 
+      // First create watch history record
       const watchHistory = await storage.createWatchHistory({
         userId,
         videoId,
         watchDuration: watchDuration || null,
         completed: completed || false,
       });
+
+      // Only increment view count after successfully creating watch history
+      await storage.incrementVideoViews(videoId);
 
       res.json({ success: true, watchHistory });
     } catch (error) {

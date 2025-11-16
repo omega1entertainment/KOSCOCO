@@ -101,22 +101,45 @@ export default function VotePaymentModal({
           description: `${data.voteCount} vote${data.voteCount > 1 ? 's' : ''} for "${videoTitle}"`,
           logo: '',
         },
-        callback: (response: any) => {
+        callback: async (response: any) => {
           console.log("Payment callback:", response);
           modal.close();
           
           if (response.status === "successful") {
-            toast({
-              title: "Payment Successful!",
-              description: `Your ${data.voteCount} vote${data.voteCount > 1 ? 's' : ''} will be recorded shortly.`,
-            });
-            setVoteCount(1);
-            
-            // Invalidate all queries related to this video to refresh vote counts
-            queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
-            queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
-            queryClient.invalidateQueries({ queryKey: ["/api/videos/category"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
+            try {
+              // Verify payment and create votes immediately
+              const verifyResponse = await apiRequest("/api/votes/purchase/callback", "POST", {
+                txRef: data.txRef,
+                transactionId: response.transaction_id,
+              });
+
+              const verifyData = await verifyResponse.json();
+
+              if (verifyResponse.ok && verifyData.success) {
+                toast({
+                  title: "Payment Successful!",
+                  description: `Your ${verifyData.voteCount || data.voteCount} vote${(verifyData.voteCount || data.voteCount) > 1 ? 's have' : ' has'} been added!`,
+                });
+                setVoteCount(1);
+                
+                // Invalidate all queries related to this video to refresh vote counts
+                queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
+                queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
+                queryClient.invalidateQueries({ queryKey: ["/api/videos/category"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
+              } else {
+                toast({
+                  title: "Verification Pending",
+                  description: "Your payment is being verified. Votes will be added shortly.",
+                });
+              }
+            } catch (error) {
+              console.error("Verification error:", error);
+              toast({
+                title: "Verification Pending",
+                description: "Your payment is being verified. Votes will be added shortly.",
+              });
+            }
           } else {
             toast({
               title: "Payment Failed",
