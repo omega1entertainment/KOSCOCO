@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, Upload, Video, Image as ImageIcon } from "lucide-react";
@@ -45,6 +46,8 @@ export default function CreateAd() {
   const [selectedType, setSelectedType] = useState<"overlay" | "skippable_instream">("overlay");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: campaign, isLoading: loadingCampaign } = useQuery<{ id: string; name: string }>({
     queryKey: ["/api/advertiser/campaigns", campaignId],
@@ -77,16 +80,52 @@ export default function CreateAd() {
 
   const createAdMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch(`/api/advertiser/campaigns/${campaignId}/ads`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          setIsUploading(false);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response);
+            } catch (e) {
+              reject(new Error('Invalid response from server'));
+            }
+          } else {
+            try {
+              const error = JSON.parse(xhr.responseText);
+              reject(new Error(error.message || 'Upload failed'));
+            } catch (e) {
+              reject(new Error('Upload failed'));
+            }
+          }
+        });
+        
+        xhr.addEventListener('error', () => {
+          setIsUploading(false);
+          reject(new Error('Network error occurred'));
+        });
+        
+        xhr.addEventListener('abort', () => {
+          setIsUploading(false);
+          reject(new Error('Upload cancelled'));
+        });
+        
+        xhr.open('POST', `/api/advertiser/campaigns/${campaignId}/ads`);
+        xhr.withCredentials = true;
+        setIsUploading(true);
+        setUploadProgress(0);
+        xhr.send(formData);
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/advertiser/campaigns", campaignId] });
@@ -94,6 +133,7 @@ export default function CreateAd() {
         title: "Ad created successfully!",
         description: "Your ad is pending admin approval.",
       });
+      setUploadProgress(0);
       setLocation("/advertiser/dashboard");
     },
     onError: (error: any) => {
@@ -102,6 +142,8 @@ export default function CreateAd() {
         description: error.message,
         variant: "destructive",
       });
+      setUploadProgress(0);
+      setIsUploading(false);
     },
   });
 
@@ -355,18 +397,29 @@ export default function CreateAd() {
                       />
                     </div>
 
+                    {isUploading && (
+                      <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress-overlay">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">Uploading ad...</span>
+                          <span className="text-muted-foreground">{uploadProgress}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2" />
+                      </div>
+                    )}
+
                     <div className="flex justify-end gap-3">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setLocation("/advertiser/dashboard")}
+                        disabled={isUploading}
                         data-testid="button-cancel-overlay"
                       >
                         Cancel
                       </Button>
                       <Button
                         type="submit"
-                        disabled={createAdMutation.isPending}
+                        disabled={createAdMutation.isPending || isUploading}
                         data-testid="button-submit-overlay"
                       >
                         {createAdMutation.isPending && (
@@ -521,18 +574,29 @@ export default function CreateAd() {
                       />
                     </div>
 
+                    {isUploading && (
+                      <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress-video">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">Uploading ad...</span>
+                          <span className="text-muted-foreground">{uploadProgress}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2" />
+                      </div>
+                    )}
+
                     <div className="flex justify-end gap-3">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setLocation("/advertiser/dashboard")}
+                        disabled={isUploading}
                         data-testid="button-cancel-video"
                       >
                         Cancel
                       </Button>
                       <Button
                         type="submit"
-                        disabled={createAdMutation.isPending}
+                        disabled={createAdMutation.isPending || isUploading}
                         data-testid="button-submit-video"
                       >
                         {createAdMutation.isPending && (
