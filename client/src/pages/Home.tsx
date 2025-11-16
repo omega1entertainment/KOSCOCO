@@ -122,7 +122,7 @@ export default function Home() {
       <section className="py-12 md:py-16 bg-background">
         <div className="max-w-5xl mx-auto px-4">
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-center mb-6 md:mb-8 uppercase tracking-wide">
-            {language === 'en' ? 'Koscoco Promo Video English' : 'Koscoco Promo Video French'}
+            {language === 'en' ? 'Koscoco Promo Video English' : 'VIDÉO PROMOTIONNELLE KOSCOCO EN FRANÇAIS'}
           </h2>
           <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
             <video 
