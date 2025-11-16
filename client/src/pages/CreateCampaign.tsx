@@ -16,7 +16,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 const campaignSchema = z.object({
   name: z.string().min(3, "Campaign name must be at least 3 characters"),
   objective: z.string().min(1, "Campaign objective is required"),
-  budget: z.number().min(5000, "Minimum budget is 5,000 XAF"),
+  budget: z.coerce.number().min(5000, "Minimum budget is 5,000 XAF"),
   budgetType: z.enum(["daily", "total"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),

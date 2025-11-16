@@ -37,6 +37,7 @@ import JudgeProfile from "@/pages/JudgeProfile";
 import AdvertiserLogin from "@/pages/AdvertiserLogin";
 import AdvertiserSignup from "@/pages/AdvertiserSignup";
 import AdvertiserDashboard from "@/pages/AdvertiserDashboard";
+import CreateCampaign from "@/pages/CreateCampaign";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -96,6 +97,7 @@ function Router() {
           <Route path="/advertiser/login" component={AdvertiserLogin} />
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
           <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
+          <Route path="/advertiser/campaign/create" component={CreateCampaign} />
           <Route component={NotFound} />
         </Switch>
       </main>
