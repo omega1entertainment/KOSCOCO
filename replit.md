@@ -33,6 +33,14 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Campaign Edit & Delete Functionality** (Nov 16, 2024): Implemented complete campaign management:
+  - EditCampaign page with pre-filled form for updating campaign details (name, budget, dates, targeting)
+  - Campaign deletion with full cascade cleanup across all related tables (ads, clicks, impressions, payments)
+  - Delete confirmation dialog to prevent accidental removals
+  - Edit and delete buttons in AdvertiserDashboard for easy campaign management
+  - Backend routes: PATCH /api/advertiser/campaigns/:id (update), DELETE /api/advertiser/campaigns/:id (delete)
+  - Storage layer properly cascades deletions without transactions (neon-http driver doesn't support transactions)
+  - Deletion order: ad_clicks → ad_impressions → ad_payments → ads → campaign
 - **Advertiser Account Approval System** (Nov 16, 2024): Added complete advertiser account management to Admin Dashboard:
   - New "Advertisers" tab in AdminDashboard displaying all advertiser accounts with status badges
   - Backend routes: GET /api/admin/advertisers, POST /api/admin/advertisers/:id/approve, POST /api/admin/advertisers/:id/reject
