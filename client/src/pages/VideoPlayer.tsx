@@ -81,7 +81,7 @@ export default function VideoPlayer() {
     queryKey: ["/api/ads/serve/overlay"],
   });
 
-  const { data: preRollAd } = useQuery<any>({
+  const { data: preRollAd, isLoading: isPreRollAdLoading } = useQuery<any>({
     queryKey: ["/api/ads/serve/skippable_in_stream"],
   });
 
@@ -145,6 +145,13 @@ export default function VideoPlayer() {
   });
 
   useEffect(() => {
+    // If there's no pre-roll ad (query completed and no ad data), mark it as completed immediately
+    if (!isPreRollAdLoading && !preRollAd && !preRollAdCompleted) {
+      setPreRollAdCompleted(true);
+    }
+  }, [preRollAd, isPreRollAdLoading, preRollAdCompleted]);
+
+  useEffect(() => {
     if (videoRef.current && video && !videoLoading && preRollAdCompleted) {
       videoRef.current.play().catch(() => {
         // Autoplay might be blocked by browser, ignore error
@@ -154,14 +161,17 @@ export default function VideoPlayer() {
 
   useEffect(() => {
     // Check if Picture-in-Picture is supported
-    // Recheck after video element is mounted (after pre-roll ad completes)
-    if (preRollAdCompleted && videoRef.current) {
+    // Check when video element is available (either no pre-roll ad or after pre-roll completes)
+    // Video is shown when: (showPreRollAd is false) OR (preRollAd is undefined/null)
+    const isVideoShown = !showPreRollAd || !preRollAd;
+    
+    if (isVideoShown && videoRef.current && !videoLoading) {
       setIsPiPSupported(
         document.pictureInPictureEnabled === true &&
         typeof videoRef.current.requestPictureInPicture === 'function'
       );
     }
-  }, [preRollAdCompleted, video, videoLoading]);
+  }, [showPreRollAd, preRollAd, video, videoLoading]);
 
   useEffect(() => {
     if (!videoRef.current || !user || !videoId || !video || !preRollAdCompleted) return;
