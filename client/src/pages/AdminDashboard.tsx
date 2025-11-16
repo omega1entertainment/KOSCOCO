@@ -61,6 +61,10 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/ads/pending"],
   });
 
+  const { data: approvedAds = [], isLoading: approvedAdsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/ads/approved"],
+  });
+
   const { data: advertisers = [], isLoading: advertisersLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/advertisers"],
   });
@@ -149,6 +153,7 @@ function AdminDashboardContent() {
         description: "The ad has been approved and is now active.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ads/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ads/approved"] });
     },
     onError: (error: Error) => {
       toast({
@@ -169,6 +174,7 @@ function AdminDashboardContent() {
         description: "The ad has been rejected.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ads/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ads/approved"] });
       setAdRejectionDialogOpen(false);
       setSelectedAdId(null);
       setAdRejectionReason("");
@@ -1355,31 +1361,52 @@ function AdminDashboardContent() {
         </TabsContent>
 
         <TabsContent value="ads" className="mt-6">
-          {adsLoading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Loading ads...</p>
-            </div>
-          ) : pendingAds.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <CheckCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No Pending Ads</h3>
-                <p className="text-muted-foreground">
-                  All ads have been reviewed. New ads awaiting approval will appear here.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 mb-4">
-                <Badge variant="outline" className="text-base">
-                  {pendingAds.length} Total Pending
-                </Badge>
-              </div>
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="pending" data-testid="tab-pending-ads">
+                Pending
+                {pendingAds.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {pendingAds.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="approved" data-testid="tab-approved-ads">
+                Approved
+                {approvedAds.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {approvedAds.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-              <div className="grid gap-6">
-                {pendingAds.map((ad) => (
+            <TabsContent value="pending">
+              {adsLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Loading ads...</p>
+                </div>
+              ) : pendingAds.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <CheckCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-semibold mb-2">No Pending Ads</h3>
+                    <p className="text-muted-foreground">
+                      All ads have been reviewed. New ads awaiting approval will appear here.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Badge variant="outline" className="text-base">
+                      {pendingAds.length} Total Pending
+                    </Badge>
+                  </div>
+
+                  <div className="grid gap-6">
+                    {pendingAds.map((ad) => (
                   <Card key={ad.id} data-testid={`ad-card-${ad.id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between gap-4">
@@ -1458,10 +1485,106 @@ function AdminDashboardContent() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            </div>
-          )}
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="approved">
+              {approvedAdsLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Loading approved ads...</p>
+                </div>
+              ) : approvedAds.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <CheckCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-semibold mb-2">No Approved Ads</h3>
+                    <p className="text-muted-foreground">
+                      Approved ads will appear here for reference.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Badge variant="outline" className="text-base">
+                      {approvedAds.length} Total Approved
+                    </Badge>
+                  </div>
+
+                  <div className="grid gap-6">
+                    {approvedAds.map((ad) => (
+                      <Card key={ad.id} data-testid={`approved-ad-card-${ad.id}`}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-xl flex items-center gap-2">
+                                <span className="truncate">{ad.name}</span>
+                                <Badge variant="default" className="flex-shrink-0">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Approved
+                                </Badge>
+                              </CardTitle>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Type: {ad.adType === 'overlay' ? 'Overlay Banner' : 'Skippable In-Stream Video'} • 
+                                Approved {new Date(ad.approvedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="text-sm flex-shrink-0">
+                              {ad.pricingModel.toUpperCase()} • {ad.bidAmount} XAF
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-2">Destination URL</p>
+                              <div className="bg-muted p-4 rounded-md">
+                                <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">
+                                  {ad.destinationUrl}
+                                </a>
+                              </div>
+                            </div>
+
+                            {ad.mediaUrl && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-2">Media Preview</p>
+                                <div className="bg-muted p-4 rounded-md">
+                                  {ad.adType === 'overlay' ? (
+                                    <img src={ad.mediaUrl} alt={ad.altText || 'Ad image'} className="max-w-full max-h-64 rounded" />
+                                  ) : (
+                                    <video src={ad.mediaUrl} controls className="max-w-full max-h-64 rounded" />
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {ad.altText && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-2">Alt Text</p>
+                                <div className="bg-muted p-4 rounded-md">
+                                  <p className="text-sm">{ad.altText}</p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="pt-4 border-t">
+                              <p className="text-sm text-muted-foreground">
+                                Status: <Badge variant="default" className="ml-2">{ad.status}</Badge>
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
           {/* Ad Rejection Dialog */}
           <AlertDialog open={adRejectionDialogOpen} onOpenChange={setAdRejectionDialogOpen}>
