@@ -15,9 +15,11 @@ import comedyImage from "@assets/generated_images/Comedy_and_Performing_Arts_ede
 import fashionImage from "@assets/generated_images/Fashion_and_Lifestyle_category_d45cea92.png";
 import educationImage from "@assets/generated_images/Education_and_Learning_category_c4ef1c1d.png";
 import gospelImage from "@assets/generated_images/Gospel_Choirs_category_e7d0b06c.png";
+import promoVideoEnglish from "@assets/Koscoco Promo Video English_1763290871496.mp4";
+import promoVideoFrench from "@assets/Koscoco Promo Video French_1763290871498.mp4";
 
 export default function Home() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [, setLocation] = useLocation();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
@@ -116,6 +118,28 @@ export default function Home() {
         onRegisterClick={() => setLocation("/register")}
         onWatchClick={() => console.log("Watch entries")}
       />
+      
+      <section className="py-12 md:py-16 bg-background">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-center mb-6 md:mb-8 uppercase tracking-wide">
+            {language === 'en' ? 'Koscoco Promo Video English' : 'Koscoco Promo Video French'}
+          </h2>
+          <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+            <video 
+              controls 
+              className="w-full h-full"
+              data-testid="video-promo"
+              poster=""
+            >
+              <source 
+                src={language === 'en' ? promoVideoEnglish : promoVideoFrench} 
+                type="video/mp4" 
+              />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </section>
       
       <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
