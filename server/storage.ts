@@ -138,6 +138,7 @@ export interface IStorage {
   getAdCampaign(id: string): Promise<AdCampaign | undefined>;
   getAdvertiserCampaigns(advertiserId: string): Promise<CampaignWithStats[]>;
   updateAdCampaign(id: string, updates: Partial<InsertAdCampaign>): Promise<AdCampaign | undefined>;
+  deleteCampaign(id: string): Promise<void>;
   
   // Ad methods
   createAd(ad: InsertAd): Promise<Ad>;
@@ -1248,6 +1249,11 @@ export class DbStorage implements IStorage {
       .where(eq(schema.adCampaigns.id, id))
       .returning();
     return campaign;
+  }
+
+  async deleteCampaign(id: string): Promise<void> {
+    await db.delete(schema.ads).where(eq(schema.ads.campaignId, id));
+    await db.delete(schema.adCampaigns).where(eq(schema.adCampaigns.id, id));
   }
 
   // Ad methods

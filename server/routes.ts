@@ -2710,6 +2710,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/advertiser/campaigns/:id", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const campaignId = req.params.id;
+      const { name, objective, budget, budgetType, startDate, endDate, status } = req.body;
+
+      const campaign = await storage.getAdCampaign(campaignId);
+      
+      if (!campaign || campaign.advertiserId !== advertiser.id) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      if (budget !== undefined && budget < 5000) {
+        return res.status(400).json({ message: "Minimum budget is 5,000 XAF" });
+      }
+
+      const updates: Partial<any> = {};
+      if (name !== undefined) updates.name = name;
+      if (objective !== undefined) updates.objective = objective;
+      if (budget !== undefined) updates.budget = budget;
+      if (budgetType !== undefined) updates.budgetType = budgetType;
+      if (startDate !== undefined) updates.startDate = new Date(startDate);
+      if (endDate !== undefined) updates.endDate = endDate ? new Date(endDate) : null;
+      if (status !== undefined) updates.status = status;
+
+      const updatedCampaign = await storage.updateAdCampaign(campaignId, updates);
+      res.json(updatedCampaign);
+    } catch (error) {
+      console.error("Update campaign error:", error);
+      res.status(500).json({ message: "Failed to update campaign" });
+    }
+  });
+
+  app.delete("/api/advertiser/campaigns/:id", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const campaignId = req.params.id;
+
+      const campaign = await storage.getAdCampaign(campaignId);
+      
+      if (!campaign || campaign.advertiserId !== advertiser.id) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      await storage.deleteCampaign(campaignId);
+      res.json({ message: "Campaign deleted successfully" });
+    } catch (error) {
+      console.error("Delete campaign error:", error);
+      res.status(500).json({ message: "Failed to delete campaign" });
+    }
+  });
+
   app.post("/api/advertiser/campaigns/:campaignId/ads", isAdvertiser, async (req, res) => {
     try {
       const advertiser = req.user as any;
