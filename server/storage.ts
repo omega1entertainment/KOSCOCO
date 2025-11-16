@@ -16,6 +16,7 @@ import type {
   Referral, InsertReferral,
   PayoutRequest, InsertPayoutRequest,
   Like, InsertLike,
+  WatchHistory, InsertWatchHistory,
   Report, InsertReport,
   Advertiser, InsertAdvertiser,
   AdCampaign, InsertAdCampaign, CampaignWithStats,
@@ -86,6 +87,11 @@ export interface IStorage {
   getVideoLikeCount(videoId: string): Promise<number>;
   getUserLikesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Like[]>;
   getUserLikes(userId: string): Promise<Like[]>;
+  
+  createWatchHistory(watchHistory: InsertWatchHistory): Promise<WatchHistory>;
+  getUserWatchHistory(userId: string, limit?: number): Promise<(WatchHistory & { video: Video })[]>;
+  checkIfWatched(userId: string, videoId: string): Promise<boolean>;
+  updateWatchHistory(id: string, updates: Partial<InsertWatchHistory>): Promise<WatchHistory | undefined>;
   
   createVotePurchase(purchase: InsertVotePurchase): Promise<VotePurchase>;
   getVotePurchaseByTxRef(txRef: string): Promise<VotePurchase | undefined>;
@@ -549,6 +555,56 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.likes)
       .where(eq(schema.likes.userId, userId))
       .orderBy(desc(schema.likes.createdAt));
+  }
+
+  async createWatchHistory(insertWatchHistory: InsertWatchHistory): Promise<WatchHistory> {
+    const [watchHistory] = await db.insert(schema.watchHistory).values(insertWatchHistory).returning();
+    return watchHistory;
+  }
+
+  async getUserWatchHistory(userId: string, limit: number = 50): Promise<(WatchHistory & { video: Video })[]> {
+    const results = await db
+      .select({
+        id: schema.watchHistory.id,
+        userId: schema.watchHistory.userId,
+        videoId: schema.watchHistory.videoId,
+        watchedAt: schema.watchHistory.watchedAt,
+        watchDuration: schema.watchHistory.watchDuration,
+        completed: schema.watchHistory.completed,
+        video: schema.videos,
+      })
+      .from(schema.watchHistory)
+      .innerJoin(schema.videos, eq(schema.watchHistory.videoId, schema.videos.id))
+      .where(eq(schema.watchHistory.userId, userId))
+      .orderBy(desc(schema.watchHistory.watchedAt))
+      .limit(limit);
+
+    return results;
+  }
+
+  async checkIfWatched(userId: string, videoId: string): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(schema.watchHistory)
+      .where(
+        and(
+          eq(schema.watchHistory.userId, userId),
+          eq(schema.watchHistory.videoId, videoId)
+        )
+      )
+      .limit(1);
+    
+    return result.length > 0;
+  }
+
+  async updateWatchHistory(id: string, updates: Partial<InsertWatchHistory>): Promise<WatchHistory | undefined> {
+    const [updated] = await db
+      .update(schema.watchHistory)
+      .set(updates)
+      .where(eq(schema.watchHistory.id, id))
+      .returning();
+    
+    return updated;
   }
 
   async createVotePurchase(insertPurchase: InsertVotePurchase): Promise<VotePurchase> {
