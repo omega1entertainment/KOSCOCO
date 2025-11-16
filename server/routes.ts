@@ -898,6 +898,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             visibility: "public",
           }
         );
+        
+        if (videoToUpdate.thumbnailUrl) {
+          await objectStorageService.trySetObjectEntityAclPolicy(
+            videoToUpdate.thumbnailUrl,
+            {
+              owner: videoToUpdate.userId,
+              visibility: "public",
+            }
+          );
+        }
       }
 
       const video = await storage.updateVideoStatus(id, status);

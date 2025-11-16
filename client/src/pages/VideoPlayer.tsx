@@ -479,9 +479,11 @@ export default function VideoPlayer() {
                 ) : (
                   <div className="space-y-3">
                     {otherVideos.map((relatedVideo) => {
-                      const thumbnailUrl = relatedVideo.thumbnailUrl?.startsWith('/objects/') 
-                        ? relatedVideo.thumbnailUrl 
-                        : `/objects/${relatedVideo.thumbnailUrl}`;
+                      const thumbnailUrl = relatedVideo.thumbnailUrl
+                        ? (relatedVideo.thumbnailUrl.startsWith('.private/') 
+                          ? `/objects/${relatedVideo.thumbnailUrl.replace('.private/', '')}`
+                          : relatedVideo.thumbnailUrl)
+                        : undefined;
                       
                       return (
                         <Card 
@@ -492,7 +494,7 @@ export default function VideoPlayer() {
                         >
                           <div className="flex gap-3 p-3">
                             <div className="relative w-40 flex-shrink-0 aspect-video bg-muted rounded overflow-hidden">
-                              {relatedVideo.thumbnailUrl ? (
+                              {thumbnailUrl ? (
                                 <img 
                                   src={thumbnailUrl}
                                   alt={relatedVideo.title}

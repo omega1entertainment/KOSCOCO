@@ -352,7 +352,9 @@ export default function JudgeDashboard() {
                             {video.thumbnailUrl ? (
                               <div className="relative w-full h-full">
                                 <img
-                                  src={video.thumbnailUrl}
+                                  src={video.thumbnailUrl.startsWith('.private/') 
+                                    ? `/objects/${video.thumbnailUrl.replace('.private/', '')}`
+                                    : video.thumbnailUrl}
                                   alt={video.title}
                                   className="w-full h-full object-cover"
                                 />
@@ -543,7 +545,9 @@ export default function JudgeDashboard() {
                           >
                             {video.thumbnailUrl ? (
                               <img
-                                src={video.thumbnailUrl}
+                                src={video.thumbnailUrl.startsWith('.private/') 
+                                  ? `/objects/${video.thumbnailUrl.replace('.private/', '')}`
+                                  : video.thumbnailUrl}
                                 alt={video.title}
                                 className="w-full h-full object-cover"
                               />

@@ -130,7 +130,9 @@ export default function CategoryVideos() {
                     <div className="aspect-video relative overflow-hidden bg-muted">
                       {video.thumbnailUrl ? (
                         <img
-                          src={video.thumbnailUrl}
+                          src={video.thumbnailUrl.startsWith('.private/') 
+                            ? `/objects/${video.thumbnailUrl.replace('.private/', '')}`
+                            : video.thumbnailUrl}
                           alt={video.title}
                           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                         />
