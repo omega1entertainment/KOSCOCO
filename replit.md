@@ -33,6 +33,9 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Default Dark Mode** (Nov 16, 2024): Changed the default theme mode to dark mode for better user experience. Users can still toggle to light mode using the theme toggle in the navigation header.
+- **Vote & Like Count Display Fix** (Nov 16, 2024): Fixed vote and like counts displaying as strings by adding parseInt/parseFloat conversions. Fixed query cache invalidation to update counts in real-time after vote purchases.
+- **TypeScript Error Fixes** (Nov 16, 2024): Resolved all LSP errors by flattening nested object selection in Drizzle queries for judge score history retrieval.
 - **Judge Profile Self-Service Editing** (Nov 14, 2024): Judges can now edit their own profiles and upload photos:
   - Added "Profile" tab to JudgeDashboard with reactive form for judgeName and judgeBio editing
   - Photo upload feature with instant preview, validation (JPEG/PNG/WebP, max 5MB), and server-side storage

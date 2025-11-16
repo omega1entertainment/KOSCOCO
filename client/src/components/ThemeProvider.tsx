@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return "dark";
     }
     
-    return "light";
+    return "dark";
   });
 
   useLayoutEffect(() => {
