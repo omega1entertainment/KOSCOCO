@@ -49,19 +49,18 @@ export default function LanguageSelectionModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent 
-        className="sm:max-w-[512px] p-0"
+        className="sm:max-w-[512px] p-8"
         style={{ maxWidth: '512px', maxHeight: '256px' }}
         data-testid="dialog-language-selection"
       >
-        <div className="p-8 text-center">
-          <DialogTitle className="text-2xl font-bold mb-2" style={{ fontFamily: 'Play, sans-serif' }}>
-            Choose Your Language / Choisissez Votre Langue
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Select your preferred language for the application
-          </DialogDescription>
-          
-          <div className="flex items-center justify-center gap-12">
+        <DialogTitle className="text-2xl font-bold text-center mb-6" style={{ fontFamily: 'Play, sans-serif' }}>
+          Choose Your Language / Choisissez Votre Langue
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Select your preferred language for the application
+        </DialogDescription>
+        
+        <div className="flex items-center justify-center gap-12">
             <Card 
               className="p-6 hover-elevate active-elevate-2 cursor-pointer border-2 hover:border-primary transition-colors"
               onClick={() => handleLanguageSelect("en")}
@@ -84,7 +83,6 @@ export default function LanguageSelectionModal() {
               </div>
             </Card>
           </div>
-        </div>
       </DialogContent>
     </Dialog>
   );
