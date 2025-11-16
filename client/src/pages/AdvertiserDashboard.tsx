@@ -6,6 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Building2, 
   LogOut, 
@@ -17,7 +28,9 @@ import {
   Eye,
   MousePointerClick,
   TrendingUp,
-  Loader2
+  Loader2,
+  Edit,
+  Trash2
 } from "lucide-react";
 
 export default function AdvertiserDashboard() {
@@ -25,6 +38,8 @@ export default function AdvertiserDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
 
   const { data: advertiser, isLoading: isLoadingAdvertiser } = useQuery({
     queryKey: ["/api/advertiser/me"],
@@ -57,6 +72,41 @@ export default function AdvertiserDashboard() {
       setLocation("/advertiser/login");
     },
   });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      return apiRequest(`/api/advertiser/campaigns/${campaignId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/advertiser/campaigns"] });
+      toast({
+        title: "Campaign deleted",
+        description: "The campaign and all its ads have been removed.",
+      });
+      setDeleteDialogOpen(false);
+      setCampaignToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete campaign",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteClick = (campaignId: string) => {
+    setCampaignToDelete(campaignId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (campaignToDelete) {
+      deleteCampaignMutation.mutate(campaignToDelete);
+    }
+  };
 
   if (isLoadingAdvertiser) {
     return (
@@ -279,20 +329,38 @@ export default function AdvertiserDashboard() {
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {campaigns.map((campaign: any) => (
-                    <Card key={campaign.id} className="hover-elevate cursor-pointer">
+                    <Card key={campaign.id} className="hover-elevate">
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
                             <CardTitle>{campaign.name}</CardTitle>
                             <CardDescription className="mt-1">{campaign.objective}</CardDescription>
                           </div>
-                          <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                            {campaign.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                              {campaign.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setLocation(`/advertiser/campaign/${campaign.id}/edit`)}
+                              data-testid={`button-edit-campaign-${campaign.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteClick(campaign.id)}
+                              data-testid={`button-delete-campaign-${campaign.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-3 gap-4 text-sm mb-4">
                           <div>
                             <p className="text-muted-foreground">Budget</p>
                             <p className="font-semibold">{campaign.budget?.toLocaleString()} XAF</p>
@@ -308,6 +376,15 @@ export default function AdvertiserDashboard() {
                             </p>
                           </div>
                         </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setLocation(`/advertiser/campaign/${campaign.id}/create-ad`)}
+                          data-testid={`button-manage-ads-${campaign.id}`}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Ads
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -370,6 +447,33 @@ export default function AdvertiserDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Delete Campaign Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Campaign?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the campaign and all associated ads. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteCampaignMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteCampaignMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Campaign
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
