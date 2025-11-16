@@ -203,16 +203,23 @@ export async function setupAuth(app: Express) {
     );
   }
 
-  // Serialize user to session
+  // Serialize user/advertiser to session
   passport.serializeUser((user: Express.User, cb) => {
-    cb(null, (user as User).id);
+    const userData = user as any;
+    // Store both ID and type to differentiate between users and advertisers
+    cb(null, { id: userData.id, type: userData.companyName ? 'advertiser' : 'user' });
   });
 
-  // Deserialize user from session
-  passport.deserializeUser(async (id: string, cb) => {
+  // Deserialize user/advertiser from session
+  passport.deserializeUser(async (sessionData: any, cb) => {
     try {
-      const user = await storage.getUser(id);
-      cb(null, user);
+      if (sessionData.type === 'advertiser') {
+        const advertiser = await storage.getAdvertiser(sessionData.id);
+        cb(null, advertiser);
+      } else {
+        const user = await storage.getUser(sessionData.id);
+        cb(null, user);
+      }
     } catch (error) {
       cb(error);
     }
@@ -405,6 +412,125 @@ export async function setupAuth(app: Express) {
       res.status(500).json({ message: "Failed to reset password" });
     }
   });
+
+  // Advertiser authentication routes
+  app.post("/api/advertiser/signup", async (req, res) => {
+    try {
+      const { 
+        email, 
+        password, 
+        companyName, 
+        companyWebsite,
+        companyDescription,
+        contactName, 
+        contactPhone,
+        businessType,
+        country 
+      } = req.body;
+
+      // Validation
+      if (!email || !password || !companyName || !contactName || !businessType || !country) {
+        return res.status(400).json({ message: "Required fields: email, password, company name, contact name, business type, and country" });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      }
+
+      // Check if advertiser already exists
+      const existingAdvertiser = await storage.getAdvertiserByEmail(email);
+      if (existingAdvertiser) {
+        return res.status(409).json({ message: "An advertiser account with this email already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create advertiser (status defaults to 'pending' for admin approval)
+      const advertiser = await storage.createAdvertiser({
+        email,
+        password: hashedPassword,
+        companyName,
+        companyWebsite: companyWebsite || null,
+        companyDescription: companyDescription || null,
+        contactName,
+        contactPhone: contactPhone || null,
+        businessType,
+        country,
+        status: 'pending',
+      });
+
+      res.json({ 
+        advertiser: { 
+          id: advertiser.id, 
+          email: advertiser.email,
+          companyName: advertiser.companyName,
+          status: advertiser.status 
+        },
+        message: "Advertiser account created! Your account is pending approval." 
+      });
+    } catch (error) {
+      console.error("Advertiser signup error:", error);
+      res.status(500).json({ message: "Failed to create advertiser account" });
+    }
+  });
+
+  app.post("/api/advertiser/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      const advertiser = await storage.getAdvertiserByEmail(email);
+      
+      if (!advertiser) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      if (advertiser.status === 'suspended') {
+        return res.status(403).json({ message: "Your account has been suspended. Please contact support." });
+      }
+
+      if (advertiser.status === 'pending') {
+        return res.status(403).json({ message: "Your account is pending approval. Please wait for admin verification." });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, advertiser.password);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      req.logIn(advertiser, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to establish session" });
+        }
+        
+        const { password: _, ...advertiserWithoutPassword } = advertiser;
+        res.json({ advertiser: advertiserWithoutPassword });
+      });
+    } catch (error) {
+      console.error("Advertiser login error:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  app.post("/api/advertiser/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/advertiser/me", isAdvertiser, async (req, res) => {
+    const advertiser = req.user as any;
+    const { password: _, ...advertiserWithoutPassword } = advertiser;
+    res.json({ advertiser: advertiserWithoutPassword });
+  });
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -412,4 +538,11 @@ export const isAuthenticated: RequestHandler = (req, res, next) => {
     return next();
   }
   res.status(401).json({ message: "Unauthorized" });
+};
+
+export const isAdvertiser: RequestHandler = (req, res, next) => {
+  if (req.isAuthenticated() && (req.user as any)?.companyName) {
+    return next();
+  }
+  res.status(401).json({ message: "Advertiser authentication required" });
 };
