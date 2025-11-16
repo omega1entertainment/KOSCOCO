@@ -837,6 +837,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/videos/video-of-the-day', async (req, res) => {
+    try {
+      const video = await storage.getVideoOfTheDay();
+      
+      if (!video) {
+        return res.status(404).json({ message: "No video of the day available" });
+      }
+
+      res.json(video);
+    } catch (error) {
+      console.error("Error fetching video of the day:", error);
+      res.status(500).json({ message: "Failed to fetch video of the day" });
+    }
+  });
+
   app.get('/api/videos/category/:categoryId', async (req, res) => {
     try {
       const { categoryId } = req.params;
