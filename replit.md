@@ -33,6 +33,14 @@ The platform is built with a modern web stack:
     - **Phase Progression**: Competition organized in 5 phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE) with admin controls to transition between phases. Only one phase can be active at a time. Registration and uploads respect the current active phase.
 
 ## Recent Changes (Latest)
+- **Picture-in-Picture Video Playback** (Nov 16, 2024): Added PiP mode for video player:
+  - PiP button in video controls alongside Share and Report buttons
+  - Browser support detection that runs after video element mounts (post pre-roll ads)
+  - Toggle functionality using browser's Picture-in-Picture API
+  - Error handling with user-friendly toast messages for unsupported browsers or failed requests
+  - Fully bilingual: PiP button label and error messages in English/French
+  - Only visible on browsers supporting document.pictureInPictureEnabled
+  - Allows users to watch videos while browsing other content or switching tabs
 - **Video of the Day Feature** (Nov 16, 2024): Implemented daily rotating featured video on homepage:
   - Backend storage method: `getVideoOfTheDay()` uses deterministic daily rotation based on days since epoch
   - API endpoint: GET /api/videos/video-of-the-day returns featured video with stats
