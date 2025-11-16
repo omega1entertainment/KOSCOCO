@@ -140,11 +140,12 @@ export default function VideoPlayer() {
 
   useEffect(() => {
     // Check if Picture-in-Picture is supported
+    // Recheck after video element is mounted (after pre-roll ad completes)
     setIsPiPSupported(
       document.pictureInPictureEnabled &&
       videoRef.current !== null
     );
-  }, []);
+  }, [preRollAdCompleted, videoRef]);
 
   const handlePreRollAdComplete = () => {
     setShowPreRollAd(false);
