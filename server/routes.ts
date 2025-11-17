@@ -3143,11 +3143,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentData = verifyResponse.data;
 
       if (paymentData.status !== 'successful') {
+        // Terminal failure statuses that should mark payment as failed
+        const terminalFailureStatuses = ['failed', 'cancelled', 'error', 'abandoned', 'reversed'];
+        
+        if (terminalFailureStatuses.includes(paymentData.status)) {
+          await storage.updateAdPayment(payment.id, {
+            status: 'failed',
+            paymentData: { data: paymentData },
+          });
+          return res.status(400).json({ message: `Payment failed: ${paymentData.status}` });
+        }
+        
+        // For pending or other transient states, persist payload but keep status as pending
         await storage.updateAdPayment(payment.id, {
-          status: 'failed',
           paymentData: { data: paymentData },
         });
-        return res.status(400).json({ message: `Payment not successful: ${paymentData.status}` });
+        console.log(`[Wallet Top-up Callback] Payment still pending: ${txRef}, status: ${paymentData.status}`);
+        return res.status(202).json({ message: `Payment not yet complete: ${paymentData.status}` });
       }
 
       if (paymentData.tx_ref !== txRef) {
@@ -3252,12 +3264,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentData = verifyResponse.data;
 
       if (paymentData.status !== 'successful') {
-        console.error(`[Wallet Top-up Webhook] Payment not successful: ${paymentData.status}`);
+        // Terminal failure statuses that should mark payment as failed
+        const terminalFailureStatuses = ['failed', 'cancelled', 'error', 'abandoned', 'reversed'];
+        
+        if (terminalFailureStatuses.includes(paymentData.status)) {
+          console.error(`[Wallet Top-up Webhook] Payment failed: ${paymentData.status}`);
+          await storage.updateAdPayment(payment.id, {
+            status: 'failed',
+            paymentData: { data: paymentData },
+          });
+          return res.json({ success: true, message: "Payment marked as failed" });
+        }
+        
+        // For pending or other transient states, persist payload but keep status as pending
         await storage.updateAdPayment(payment.id, {
-          status: 'failed',
-          paymentData: payload,
+          paymentData: { data: paymentData },
         });
-        return res.json({ success: true, message: "Payment not successful" });
+        console.log(`[Wallet Top-up Webhook] Payment not yet complete: ${txRef}, status: ${paymentData.status}`);
+        return res.json({ success: true, message: "Payment still pending" });
       }
 
       if (paymentData.tx_ref !== txRef) {
@@ -3280,12 +3304,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Charged amount mismatch" });
       }
 
-      await storage.updateAdPayment(payment.id, {
-        status: 'successful',
-        flwRef: flw_ref,
-        completedAt: new Date(),
-        paymentData: payload,
-      });
+      // Use atomic UPDATE WHERE guard to prevent concurrent webhook replay
+      const wasUpdated = await storage.markAdPaymentSuccessful(
+        payment.id,
+        flw_ref,
+        paymentData
+      );
+
+      if (!wasUpdated) {
+        console.log(`[Wallet Top-up Webhook] Payment already processed (race prevented): ${txRef}`);
+        return res.json({ success: true, message: "Already processed" });
+      }
 
       await storage.increaseAdvertiserBalance(payment.advertiserId, payment.amount);
 
