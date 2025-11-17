@@ -3004,6 +3004,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store relative URL that browser can access
       const mediaUrl = `/ads/${fileName}`;
 
+      // Parse targetAudience if provided
+      let targetAudience: any = null;
+      if (fields.targetAudience?.[0]) {
+        try {
+          targetAudience = JSON.parse(fields.targetAudience[0]);
+        } catch (e) {
+          console.error("Failed to parse targetAudience:", e);
+        }
+      }
+
       const adData: any = {
         campaignId,
         advertiserId: advertiser.id,
@@ -3014,6 +3024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bidAmount: parseFloat(bidAmount),
         approvalStatus: 'pending',
         status: 'inactive',
+        targetAudience,
       };
 
       // Add type-specific fields
