@@ -10,10 +10,25 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, Upload, Video, Image as ImageIcon, Zap, Clock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type Category = {
+  id: string;
+  name: string;
+  subcategories: string[];
+};
+
+const targetCategoriesSchema = z.object({
+  categories: z.array(z.object({
+    categoryId: z.string(),
+    categoryName: z.string(),
+    subcategories: z.array(z.string()),
+  })).min(1, "Select at least one category or subcategory"),
+});
 
 const overlayAdSchema = z.object({
   adType: z.literal("overlay"),
@@ -23,6 +38,7 @@ const overlayAdSchema = z.object({
   altText: z.string().min(1, "Alt text is required"),
   pricingModel: z.enum(["cpm", "cpc"]),
   bidAmount: z.coerce.number().min(50, "Minimum bid is 50 XAF"),
+  targetCategories: targetCategoriesSchema,
 });
 
 const skippableVideoAdSchema = z.object({
@@ -33,6 +49,7 @@ const skippableVideoAdSchema = z.object({
   skipAfterSeconds: z.coerce.number().min(5).max(10),
   pricingModel: z.enum(["cpv", "cpm"]),
   bidAmount: z.coerce.number().min(10, "Minimum bid is 10 XAF"),
+  targetCategories: targetCategoriesSchema,
 });
 
 const nonSkippableVideoAdSchema = z.object({
@@ -42,6 +59,7 @@ const nonSkippableVideoAdSchema = z.object({
   videoFile: z.instanceof(File, { message: "Video file is required" }),
   pricingModel: z.enum(["cpv", "cpm"]),
   bidAmount: z.coerce.number().min(20, "Minimum bid is 20 XAF"),
+  targetCategories: targetCategoriesSchema,
 });
 
 const bumperAdSchema = z.object({
@@ -51,6 +69,7 @@ const bumperAdSchema = z.object({
   videoFile: z.instanceof(File, { message: "Video file is required (max 6 seconds)" }),
   pricingModel: z.enum(["cpv", "cpm"]),
   bidAmount: z.coerce.number().min(15, "Minimum bid is 15 XAF"),
+  targetCategories: targetCategoriesSchema,
 });
 
 const inFeedVideoAdSchema = z.object({
@@ -62,6 +81,7 @@ const inFeedVideoAdSchema = z.object({
   ctaText: z.string().min(1, "Call-to-action text is required"),
   pricingModel: z.enum(["cpv", "cpc"]),
   bidAmount: z.coerce.number().min(30, "Minimum bid is 30 XAF"),
+  targetCategories: targetCategoriesSchema,
 });
 
 type OverlayAdFormData = z.infer<typeof overlayAdSchema>;
@@ -89,6 +109,12 @@ export default function CreateAd() {
     enabled: !!campaignId,
   });
 
+  const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>({});
+
   const overlayForm = useForm<OverlayAdFormData>({
     resolver: zodResolver(overlayAdSchema),
     defaultValues: {
@@ -98,6 +124,7 @@ export default function CreateAd() {
       altText: "",
       pricingModel: "cpm",
       bidAmount: 500,
+      targetCategories: { categories: [] },
     },
   });
 
@@ -110,6 +137,7 @@ export default function CreateAd() {
       skipAfterSeconds: 5,
       pricingModel: "cpv",
       bidAmount: 10,
+      targetCategories: { categories: [] },
     },
   });
 
@@ -121,6 +149,7 @@ export default function CreateAd() {
       destinationUrl: "",
       pricingModel: "cpv",
       bidAmount: 20,
+      targetCategories: { categories: [] },
     },
   });
 
@@ -132,6 +161,7 @@ export default function CreateAd() {
       destinationUrl: "",
       pricingModel: "cpv",
       bidAmount: 15,
+      targetCategories: { categories: [] },
     },
   });
 
@@ -145,6 +175,7 @@ export default function CreateAd() {
       ctaText: "Learn More",
       pricingModel: "cpv",
       bidAmount: 30,
+      targetCategories: { categories: [] },
     },
   });
 
@@ -224,6 +255,7 @@ export default function CreateAd() {
     formData.append("altText", data.altText);
     formData.append("pricingModel", data.pricingModel);
     formData.append("bidAmount", data.bidAmount.toString());
+    formData.append("targetAudience", JSON.stringify(data.targetCategories));
     
     if (data.imageFile) {
       formData.append("mediaFile", data.imageFile);
@@ -240,6 +272,7 @@ export default function CreateAd() {
     formData.append("skipAfterSeconds", data.skipAfterSeconds.toString());
     formData.append("pricingModel", data.pricingModel);
     formData.append("bidAmount", data.bidAmount.toString());
+    formData.append("targetAudience", JSON.stringify(data.targetCategories));
     
     if (data.videoFile) {
       formData.append("mediaFile", data.videoFile);
@@ -255,6 +288,7 @@ export default function CreateAd() {
     formData.append("destinationUrl", data.destinationUrl);
     formData.append("pricingModel", data.pricingModel);
     formData.append("bidAmount", data.bidAmount.toString());
+    formData.append("targetAudience", JSON.stringify(data.targetCategories));
     
     if (data.videoFile) {
       formData.append("mediaFile", data.videoFile);
@@ -271,6 +305,7 @@ export default function CreateAd() {
     formData.append("pricingModel", data.pricingModel);
     formData.append("bidAmount", data.bidAmount.toString());
     formData.append("duration", "6");
+    formData.append("targetAudience", JSON.stringify(data.targetCategories));
     
     if (data.videoFile) {
       formData.append("mediaFile", data.videoFile);
@@ -288,6 +323,7 @@ export default function CreateAd() {
     formData.append("ctaText", data.ctaText);
     formData.append("pricingModel", data.pricingModel);
     formData.append("bidAmount", data.bidAmount.toString());
+    formData.append("targetAudience", JSON.stringify(data.targetCategories));
     
     if (data.videoFile) {
       formData.append("mediaFile", data.videoFile);
@@ -328,6 +364,159 @@ export default function CreateAd() {
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
     }
+  };
+
+  const handleCategoryToggle = (categoryId: string, categoryName: string, formSetter: any) => {
+    const currentValue = formSetter.getValues();
+    const currentCategories = currentValue.targetCategories?.categories || [];
+    
+    const existingIndex = currentCategories.findIndex((c: any) => c.categoryId === categoryId);
+    
+    if (existingIndex >= 0) {
+      // Remove category
+      const newCategories = currentCategories.filter((c: any) => c.categoryId !== categoryId);
+      formSetter.setValue("targetCategories", { categories: newCategories });
+      
+      // Update selected categories state
+      const newSelected = { ...selectedCategories };
+      delete newSelected[categoryId];
+      setSelectedCategories(newSelected);
+    } else {
+      // Add category
+      const newCategories = [...currentCategories, {
+        categoryId,
+        categoryName,
+        subcategories: [],
+      }];
+      formSetter.setValue("targetCategories", { categories: newCategories });
+      
+      // Update selected categories state
+      setSelectedCategories({ ...selectedCategories, [categoryId]: [] });
+    }
+  };
+
+  const handleSubcategoryToggle = (categoryId: string, categoryName: string, subcategory: string, formSetter: any) => {
+    const currentValue = formSetter.getValues();
+    const currentCategories = currentValue.targetCategories?.categories || [];
+    
+    const categoryIndex = currentCategories.findIndex((c: any) => c.categoryId === categoryId);
+    
+    if (categoryIndex >= 0) {
+      // Category exists, toggle subcategory
+      const category = currentCategories[categoryIndex];
+      const subcatIndex = category.subcategories.indexOf(subcategory);
+      
+      if (subcatIndex >= 0) {
+        // Remove subcategory
+        category.subcategories = category.subcategories.filter((s: string) => s !== subcategory);
+      } else {
+        // Add subcategory
+        category.subcategories = [...category.subcategories, subcategory];
+      }
+      
+      formSetter.setValue("targetCategories", { categories: currentCategories });
+      
+      // Update selected categories state
+      const currentSubcats = selectedCategories[categoryId] || [];
+      if (subcatIndex >= 0) {
+        setSelectedCategories({
+          ...selectedCategories,
+          [categoryId]: currentSubcats.filter(s => s !== subcategory),
+        });
+      } else {
+        setSelectedCategories({
+          ...selectedCategories,
+          [categoryId]: [...currentSubcats, subcategory],
+        });
+      }
+    } else {
+      // Category doesn't exist, add it with this subcategory
+      const newCategories = [...currentCategories, {
+        categoryId,
+        categoryName,
+        subcategories: [subcategory],
+      }];
+      formSetter.setValue("targetCategories", { categories: newCategories });
+      setSelectedCategories({
+        ...selectedCategories,
+        [categoryId]: [subcategory],
+      });
+    }
+  };
+
+  const renderCategorySelector = (form: any) => {
+    if (!categories || categoriesLoading) {
+      return (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="w-6 h-6 animate-spin" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <FormLabel>Target Categories & Subcategories *</FormLabel>
+        <FormDescription>
+          Select the categories and subcategories where you want your ads to appear.
+          Check a category to show its subcategories.
+        </FormDescription>
+        
+        <div className="space-y-3 border rounded-lg p-4">
+          {categories.map((category) => {
+            const formCategories = form.getValues().targetCategories?.categories || [];
+            const categoryData = formCategories.find((c: any) => c.categoryId === category.id);
+            const isCategorySelected = !!categoryData;
+            const selectedSubcats = categoryData?.subcategories || [];
+
+            return (
+              <div key={category.id} className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`cat-${category.id}`}
+                    checked={isCategorySelected}
+                    onCheckedChange={() => handleCategoryToggle(category.id, category.name, form)}
+                    data-testid={`checkbox-category-${category.id}`}
+                  />
+                  <label
+                    htmlFor={`cat-${category.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {category.name}
+                  </label>
+                </div>
+
+                {isCategorySelected && category.subcategories.length > 0 && (
+                  <div className="ml-6 space-y-2 pl-4 border-l-2">
+                    {category.subcategories.map((subcat) => (
+                      <div key={subcat} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subcat-${category.id}-${subcat}`}
+                          checked={selectedSubcats.includes(subcat)}
+                          onCheckedChange={() => handleSubcategoryToggle(category.id, category.name, subcat, form)}
+                          data-testid={`checkbox-subcategory-${category.id}-${subcat}`}
+                        />
+                        <label
+                          htmlFor={`subcat-${category.id}-${subcat}`}
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {subcat}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {form.formState.errors.targetCategories && (
+          <p className="text-sm font-medium text-destructive">
+            {form.formState.errors.targetCategories.message as string}
+          </p>
+        )}
+      </div>
+    );
   };
 
   if (!campaignId) {
@@ -528,6 +717,8 @@ export default function CreateAd() {
                       />
                     </div>
 
+                    {renderCategorySelector(overlayForm)}
+
                     {isUploading && selectedType === "overlay" && (
                       <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress">
                         <div className="flex items-center justify-between text-sm">
@@ -696,6 +887,8 @@ export default function CreateAd() {
                       />
                     </div>
 
+                    {renderCategorySelector(skippableVideoForm)}
+
                     {isUploading && selectedType === "skippable_instream" && (
                       <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress">
                         <div className="flex items-center justify-between text-sm">
@@ -841,6 +1034,8 @@ export default function CreateAd() {
                         )}
                       />
                     </div>
+
+                    {renderCategorySelector(nonSkippableVideoForm)}
 
                     {isUploading && selectedType === "non_skippable_instream" && (
                       <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress">
@@ -990,6 +1185,8 @@ export default function CreateAd() {
                         )}
                       />
                     </div>
+
+                    {renderCategorySelector(bumperForm)}
 
                     {isUploading && selectedType === "bumper" && (
                       <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress">
@@ -1172,6 +1369,8 @@ export default function CreateAd() {
                         )}
                       />
                     </div>
+
+                    {renderCategorySelector(inFeedForm)}
 
                     {isUploading && selectedType === "in_feed" && (
                       <div className="space-y-2 bg-muted p-4 rounded-lg" data-testid="upload-progress">
