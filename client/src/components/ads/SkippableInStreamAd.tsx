@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 interface SkippableInStreamAdProps {
   ad: {
     id: string;
-    name: string;
-    mediaUrl?: string;
+    title: string;
+    videoUrl?: string;
     destinationUrl: string;
     skipAfterSeconds?: number;
   };
@@ -74,13 +74,13 @@ export function SkippableInStreamAd({
 
   // Guard: Don't render if no media (skip in useEffect to avoid render-time state updates)
   React.useEffect(() => {
-    if (!ad.mediaUrl) {
-      console.error("SkippableInStreamAd: No media URL provided for ad", ad.id);
+    if (!ad.videoUrl) {
+      console.error("SkippableInStreamAd: No video URL provided for ad", ad.id);
       onSkip();
     }
-  }, [ad.mediaUrl, ad.id, onSkip]);
+  }, [ad.videoUrl, ad.id, onSkip]);
 
-  if (!ad.mediaUrl) {
+  if (!ad.videoUrl) {
     return null;
   }
 
@@ -93,7 +93,7 @@ export function SkippableInStreamAd({
         {/* Video Player */}
         <video
             ref={videoRef}
-            src={ad.mediaUrl}
+            src={ad.videoUrl}
             className="w-full h-full object-contain cursor-pointer"
             onClick={handleVideoClick}
             onPlay={() => setIsPlaying(true)}
@@ -136,7 +136,7 @@ export function SkippableInStreamAd({
             onClick={handleVideoClick}
             data-testid="video-ad-info"
           >
-            <p className="text-white font-semibold text-sm mb-1">{ad.name}</p>
+            <p className="text-white font-semibold text-sm mb-1">{ad.title}</p>
             <p className="text-white/70 text-xs">Click to learn more</p>
           </div>
         </div>
