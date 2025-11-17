@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 interface OverlayAdProps {
   ad: {
     id: string;
-    name: string;
-    mediaUrl?: string;
+    title: string;
+    imageUrl?: string;
     destinationUrl: string;
-    altText?: string;
+    description?: string | null;
   };
   onClose: () => void;
   onImpression: (adId: string) => void;
@@ -27,8 +27,8 @@ export function OverlayAd({ ad, onClose, onImpression, onClick }: OverlayAdProps
   }, [impressionTracked, ad.id, onImpression]);
 
   // Guard: Don't render if no media
-  if (!ad.mediaUrl) {
-    console.error("OverlayAd: No media URL provided for ad", ad.id);
+  if (!ad.imageUrl) {
+    console.error("OverlayAd: No image URL provided for ad", ad.id);
     return null;
   }
 
@@ -50,16 +50,16 @@ export function OverlayAd({ ad, onClose, onImpression, onClick }: OverlayAdProps
             onClick={handleClick}
             data-testid="overlay-ad-content"
           >
-            {ad.mediaUrl && (
+            {ad.imageUrl && (
               <img 
-                src={ad.mediaUrl} 
-                alt={ad.altText || ad.name}
+                src={ad.imageUrl} 
+                alt={ad.description || ad.title}
                 className="h-16 md:h-20 object-contain rounded border border-white/10"
               />
             )}
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground mb-1">Advertisement</p>
-              <p className="text-sm text-white font-medium truncate">{ad.name}</p>
+              <p className="text-sm text-white font-medium truncate">{ad.title}</p>
             </div>
           </div>
 
