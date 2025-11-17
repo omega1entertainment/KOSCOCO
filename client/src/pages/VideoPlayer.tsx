@@ -82,7 +82,7 @@ export default function VideoPlayer() {
   });
 
   const { data: preRollAd, isLoading: isPreRollAdLoading } = useQuery<any>({
-    queryKey: ["/api/ads/serve/skippable_in_stream"],
+    queryKey: ["/api/ads/serve/skippable_instream"],
   });
 
   const voteMutation = useMutation({
