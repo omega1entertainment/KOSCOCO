@@ -3430,9 +3430,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Ad Serving API: Get skippable in-stream ad
-  app.get("/api/ads/serve/skippable_in_stream", async (req, res) => {
+  app.get("/api/ads/serve/skippable_instream", async (req, res) => {
     try {
-      const ad = await serveAd('skippable_in_stream');
+      const ad = await serveAd('skippable_instream');
       
       if (!ad) {
         return res.status(404).json({ message: "No skippable in-stream ads available" });
