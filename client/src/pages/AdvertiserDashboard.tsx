@@ -17,6 +17,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { 
   Building2, 
   LogOut, 
@@ -32,8 +50,16 @@ import {
   Edit,
   Trash2,
   Play,
-  Pause
+  Pause,
+  CreditCard,
+  ArrowUpCircle
 } from "lucide-react";
+
+declare global {
+  interface Window {
+    FlutterwaveCheckout: any;
+  }
+}
 
 export default function AdvertiserDashboard() {
   const [, setLocation] = useLocation();
@@ -42,6 +68,9 @@ export default function AdvertiserDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
+  const [topupDialogOpen, setTopupDialogOpen] = useState(false);
+  const [topupAmount, setTopupAmount] = useState("");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const { data: advertiser, isLoading: isLoadingAdvertiser } = useQuery({
     queryKey: ["/api/advertiser/me"],
@@ -56,6 +85,156 @@ export default function AdvertiserDashboard() {
     queryKey: ["/api/advertiser/stats"],
     enabled: !!advertiser,
   });
+
+  const { data: payments = [], isLoading: isLoadingPayments } = useQuery({
+    queryKey: ["/api/advertiser/wallet/payments"],
+    enabled: !!advertiser,
+  });
+
+  const loadFlutterwaveScript = () => {
+    return new Promise<void>((resolve, reject) => {
+      if (window.FlutterwaveCheckout) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.flutterwave.com/v3.js';
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Flutterwave'));
+      document.body.appendChild(script);
+    });
+  };
+
+  const initiateTopupMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const response = await apiRequest("/api/advertiser/wallet/topup/initiate", "POST", { amount });
+      return response.json();
+    },
+    onSuccess: async (data) => {
+      try {
+        setIsProcessingPayment(true);
+        
+        await loadFlutterwaveScript();
+        
+        // Close the top-up dialog before opening Flutterwave
+        setTopupDialogOpen(false);
+
+        const modal = window.FlutterwaveCheckout({
+          public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
+          tx_ref: data.txRef,
+          amount: data.amount,
+          currency: 'XAF',
+          payment_options: 'card,mobilemoney,ussd',
+          customer: {
+            email: data.customer.email,
+            phone_number: data.customer.phone,
+            name: data.customer.name,
+          },
+          customizations: {
+            title: 'KOSCOCO Advertiser Wallet Top-up',
+            description: `Top-up ${data.amount.toLocaleString()} XAF`,
+            logo: '',
+          },
+          callback: async (response: any) => {
+            console.log("Payment callback:", response);
+            modal.close();
+            
+            if (response.status === "successful") {
+              try {
+                const verifyResponse = await apiRequest("/api/advertiser/wallet/topup/callback", "POST", {
+                  txRef: data.txRef,
+                  transactionId: response.transaction_id,
+                });
+
+                const verifyData = await verifyResponse.json();
+
+                if (verifyResponse.ok && verifyData.success) {
+                  toast({
+                    title: "Top-up Successful!",
+                    description: `${verifyData.amount.toLocaleString()} XAF has been added to your wallet.`,
+                  });
+                  setTopupAmount("");
+                  
+                  // Invalidate queries to refresh data
+                  queryClient.invalidateQueries({ queryKey: ["/api/advertiser/me"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/advertiser/wallet/payments"] });
+                } else {
+                  toast({
+                    title: "Verification Pending",
+                    description: "Your payment is being verified. Balance will be updated shortly.",
+                  });
+                }
+              } catch (error) {
+                console.error("Verification error:", error);
+                toast({
+                  title: "Verification Pending",
+                  description: "Your payment is being verified. Balance will be updated shortly.",
+                });
+              } finally {
+                setIsProcessingPayment(false);
+              }
+            } else {
+              toast({
+                title: "Payment Failed",
+                description: "Your payment was not successful. Please try again.",
+                variant: "destructive",
+              });
+              setIsProcessingPayment(false);
+            }
+          },
+          onclose: () => {
+            console.log("Payment modal closed - user cancelled or closed");
+            setIsProcessingPayment(false);
+            // Don't reopen dialog - user intentionally closed payment
+          },
+        });
+      } catch (error) {
+        console.error("Error loading Flutterwave:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load payment gateway. Please try again.",
+          variant: "destructive",
+        });
+        setIsProcessingPayment(false);
+        setTopupDialogOpen(true);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to initiate payment",
+        description: error.message,
+        variant: "destructive",
+      });
+      setTopupDialogOpen(false);
+      setIsProcessingPayment(false);
+    },
+  });
+
+  const handleTopupSubmit = () => {
+    const amount = parseFloat(topupAmount);
+    
+    if (!amount || amount < 1000) {
+      toast({
+        title: "Invalid Amount",
+        description: "Minimum top-up amount is 1,000 XAF",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (amount > 10000000) {
+      toast({
+        title: "Invalid Amount",
+        description: "Maximum top-up amount is 10,000,000 XAF",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    initiateTopupMutation.mutate(amount);
+  };
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -443,21 +622,170 @@ export default function AdvertiserDashboard() {
 
           {/* Payments Tab */}
           <TabsContent value="payments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment History</CardTitle>
-                <CardDescription>View your advertising payment transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Wallet className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No payments yet</h3>
-                  <p className="text-muted-foreground">
-                    Your payment history will appear here once you start running campaigns
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {/* Wallet Balance Card */}
+              <Card data-testid="card-wallet-balance">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Wallet Balance</CardTitle>
+                      <CardDescription>
+                        Manage your advertising budget
+                      </CardDescription>
+                    </div>
+                    <Wallet className="h-8 w-8 text-primary" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-4xl font-bold" data-testid="text-wallet-balance">
+                        {advertiser?.walletBalance?.toLocaleString() || '0'} XAF
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Available for advertising campaigns
+                      </p>
+                    </div>
+
+                    <Dialog open={topupDialogOpen} onOpenChange={setTopupDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className="w-full" 
+                          disabled={isProcessingPayment}
+                          data-testid="button-topup-wallet"
+                        >
+                          {isProcessingPayment ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Processing Payment...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowUpCircle className="w-4 h-4 mr-2" />
+                              Top Up Wallet
+                            </>
+                          )}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Top Up Wallet</DialogTitle>
+                          <DialogDescription>
+                            Add funds to your advertising wallet using mobile money or card
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="topup-amount">Amount (XAF)</Label>
+                            <Input
+                              id="topup-amount"
+                              type="number"
+                              placeholder="Enter amount"
+                              value={topupAmount}
+                              onChange={(e) => setTopupAmount(e.target.value)}
+                              min="1000"
+                              max="10000000"
+                              data-testid="input-topup-amount"
+                            />
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Minimum: 1,000 XAF | Maximum: 10,000,000 XAF
+                            </p>
+                          </div>
+
+                          <Button 
+                            onClick={handleTopupSubmit}
+                            disabled={initiateTopupMutation.isPending || isProcessingPayment}
+                            className="w-full"
+                            data-testid="button-submit-topup"
+                          >
+                            {initiateTopupMutation.isPending || isProcessingPayment ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="w-4 h-4 mr-2" />
+                                Proceed to Payment
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Payment History Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment History</CardTitle>
+                  <CardDescription>View your wallet top-up transactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingPayments ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                    </div>
+                  ) : payments.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Wallet className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-semibold mb-2">No payments yet</h3>
+                      <p className="text-muted-foreground">
+                        Your payment history will appear here after you top up your wallet
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Reference</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {payments.map((payment: any) => (
+                            <TableRow key={payment.id}>
+                              <TableCell>
+                                {new Date(payment.createdAt).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {payment.paymentType === 'wallet_topup' ? 'Wallet Top-up' : payment.paymentType}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {payment.amount.toLocaleString()} XAF
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={
+                                    payment.status === 'successful' ? 'default' : 
+                                    payment.status === 'pending' ? 'secondary' : 
+                                    'destructive'
+                                  }
+                                  data-testid={`badge-status-${payment.id}`}
+                                >
+                                  {payment.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-sm text-muted-foreground">
+                                {payment.txRef}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Settings Tab */}

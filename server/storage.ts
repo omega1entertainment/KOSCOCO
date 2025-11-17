@@ -164,6 +164,7 @@ export interface IStorage {
   createAdPayment(payment: InsertAdPayment): Promise<AdPayment>;
   getAdPaymentByTxRef(txRef: string): Promise<AdPayment | undefined>;
   updateAdPayment(id: string, updates: Partial<AdPayment>): Promise<AdPayment | undefined>;
+  markAdPaymentSuccessful(id: string, flwRef: string, paymentData: any): Promise<boolean>;
   getAdvertiserPayments(advertiserId: string): Promise<AdPayment[]>;
   
   // Ad Tracking methods
@@ -1509,12 +1510,63 @@ export class DbStorage implements IStorage {
     return payment;
   }
 
+  async markAdPaymentSuccessful(id: string, flwRef: string, paymentData: any): Promise<boolean> {
+    // Atomic UPDATE WHERE status='pending' - only first concurrent request succeeds
+    const result = await db.update(schema.adPayments)
+      .set({
+        status: 'successful',
+        flwRef,
+        completedAt: new Date(),
+        paymentData: { data: paymentData },
+      })
+      .where(
+        and(
+          eq(schema.adPayments.id, id),
+          eq(schema.adPayments.status, 'pending')
+        )
+      )
+      .returning();
+    
+    // Returns true if update succeeded (payment was pending), false otherwise
+    return result.length > 0;
+  }
+
   async getAdvertiserPayments(advertiserId: string): Promise<AdPayment[]> {
     const payments = await db.select()
       .from(schema.adPayments)
       .where(eq(schema.adPayments.advertiserId, advertiserId))
       .orderBy(desc(schema.adPayments.createdAt));
     return payments;
+  }
+
+  async getAdPaymentByFlwRef(flwRef: string): Promise<AdPayment | undefined> {
+    const [payment] = await db.select().from(schema.adPayments).where(eq(schema.adPayments.flwRef, flwRef));
+    return payment;
+  }
+
+  async increaseAdvertiserBalance(advertiserId: string, amount: number): Promise<void> {
+    await db.update(schema.advertisers)
+      .set({
+        walletBalance: sql`${schema.advertisers.walletBalance} + ${amount}`,
+        totalSpent: sql`${schema.advertisers.totalSpent} + ${amount}`,
+      })
+      .where(eq(schema.advertisers.id, advertiserId));
+  }
+
+  async decreaseAdvertiserBalance(advertiserId: string, amount: number): Promise<boolean> {
+    const result = await db.update(schema.advertisers)
+      .set({
+        walletBalance: sql`${schema.advertisers.walletBalance} - ${amount}`,
+      })
+      .where(
+        and(
+          eq(schema.advertisers.id, advertiserId),
+          sql`${schema.advertisers.walletBalance} >= ${amount}`
+        )
+      )
+      .returning();
+    
+    return result.length > 0;
   }
 
   // Ad Tracking methods
@@ -1588,10 +1640,14 @@ export class DbStorage implements IStorage {
     // Get total spend from payments
     const payments = await db.select()
       .from(schema.adPayments)
-      .where(eq(schema.adPayments.advertiserId, advertiserId))
-      .where(eq(schema.adPayments.status, 'successful'));
+      .where(
+        and(
+          eq(schema.adPayments.advertiserId, advertiserId),
+          eq(schema.adPayments.status, 'successful')
+        )
+      );
 
-    const totalSpend = payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+    const totalSpend = payments.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
 
     return {
       totalImpressions,
