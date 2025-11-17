@@ -552,7 +552,7 @@ export async function setupAuth(app: Express) {
   app.get("/api/advertiser/me", isAdvertiser, async (req, res) => {
     const advertiser = req.user as any;
     const { password: _, ...advertiserWithoutPassword } = advertiser;
-    res.json({ advertiser: advertiserWithoutPassword });
+    res.json(advertiserWithoutPassword);
   });
 }
 
