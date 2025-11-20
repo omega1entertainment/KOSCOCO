@@ -991,6 +991,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Delete video
+  app.delete('/api/admin/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const video = await storage.getVideoById(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      await storage.deleteVideo(id);
+
+      res.json({ message: "Video deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      res.status(500).json({ message: "Failed to delete video" });
+    }
+  });
+
+  // Admin: Get approved videos
+  app.get('/api/admin/videos/approved', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const videos = await storage.getApprovedVideos();
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching approved videos:", error);
+      res.status(500).json({ message: "Failed to fetch approved videos" });
+    }
+  });
+
+  // Admin: Get rejected videos
+  app.get('/api/admin/videos/rejected', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const videos = await storage.getRejectedVideos();
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching rejected videos:", error);
+      res.status(500).json({ message: "Failed to fetch rejected videos" });
+    }
+  });
+
+  // Admin: Update video metadata
+  app.patch('/api/admin/videos/:id/metadata', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { title, description, subcategory } = req.body;
+
+      const video = await storage.updateVideoMetadata(id, { title, description, subcategory });
+      
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      res.json({ message: "Video metadata updated successfully", video });
+    } catch (error) {
+      console.error("Error updating video metadata:", error);
+      res.status(500).json({ message: "Failed to update video metadata" });
+    }
+  });
+
   // Generate thumbnails for all videos without thumbnails - admin only
   app.post('/api/admin/generate-thumbnails', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
@@ -1816,14 +1876,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for both authenticated and IP-based duplicates
       if (userId) {
-        const userLikes = await storage.getUserLikesForVideo(userId, videoId, null);
+        const userLikes = await storage.getUserLikesForVideo(userId, videoId, undefined);
         if (userLikes.length > 0) {
           return res.status(400).json({ message: "You have already liked this video" });
         }
       }
       
       if (ipAddress && !userId) {
-        const ipLikes = await storage.getUserLikesForVideo(null, videoId, ipAddress);
+        const ipLikes = await storage.getUserLikesForVideo(undefined, videoId, ipAddress);
         if (ipLikes.length > 0) {
           return res.status(400).json({ message: "You have already liked this video" });
         }
@@ -2478,6 +2538,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Admin: Update user role
+  app.patch('/api/admin/users/:id/role', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { isAdmin, isJudge } = req.body;
+
+      if (typeof isAdmin !== 'boolean' || typeof isJudge !== 'boolean') {
+        return res.status(400).json({ message: "isAdmin and isJudge must be boolean values" });
+      }
+
+      // Prevent self-demotion from admin
+      if (req.user.id === id && req.user.isAdmin && !isAdmin) {
+        return res.status(403).json({ message: "You cannot remove your own admin privileges" });
+      }
+
+      const user = await storage.updateUserRole(id, isAdmin, isJudge);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ 
+        message: "User role updated successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          isAdmin: user.isAdmin,
+          isJudge: user.isJudge,
+        }
+      });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // Admin: Toggle user email verification
+  app.patch('/api/admin/users/:id/verify-email', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { verified } = req.body;
+
+      if (typeof verified !== 'boolean') {
+        return res.status(400).json({ message: "verified must be a boolean value" });
+      }
+
+      const user = await storage.toggleUserEmailVerification(id, verified);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ 
+        message: `User email ${verified ? 'verified' : 'unverified'} successfully`,
+        user: {
+          id: user.id,
+          email: user.email,
+          emailVerified: user.emailVerified,
+        }
+      });
+    } catch (error) {
+      console.error("Error toggling email verification:", error);
+      res.status(500).json({ message: "Failed to toggle email verification" });
+    }
+  });
+
+  // Admin: Suspend user
+  app.post('/api/admin/users/:id/suspend', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user as SelectUser;
+
+      // Prevent self-suspension
+      if (currentUser.id === id) {
+        return res.status(403).json({ message: "You cannot suspend your own account" });
+      }
+
+      const user = await storage.suspendUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ 
+        message: "User suspended successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          suspended: user.suspended,
+        }
+      });
+    } catch (error) {
+      console.error("Error suspending user:", error);
+      res.status(500).json({ message: "Failed to suspend user" });
+    }
+  });
+
+  // Admin: Activate user
+  app.post('/api/admin/users/:id/activate', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const user = await storage.activateUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ 
+        message: "User activated successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          suspended: user.suspended,
+        }
+      });
+    } catch (error) {
+      console.error("Error activating user:", error);
+      res.status(500).json({ message: "Failed to activate user" });
+    }
+  });
+
+  // Admin: Delete user
+  app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user as SelectUser;
+
+      // Prevent self-deletion
+      if (currentUser.id === id) {
+        return res.status(403).json({ message: "You cannot delete your own account" });
+      }
+
+      await storage.deleteUser(id);
+
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 
@@ -3479,6 +3681,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error serving skippable in-stream ad:", error);
       res.status(500).json({ message: "Failed to serve skippable in-stream ad" });
+    }
+  });
+
+  // Admin: Get dashboard statistics
+  app.get('/api/admin/stats/dashboard', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard statistics" });
+    }
+  });
+
+  // Admin: Get video statistics
+  app.get('/api/admin/stats/video/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const stats = await storage.getVideoStats(id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching video stats:", error);
+      res.status(500).json({ message: "Failed to fetch video statistics" });
+    }
+  });
+
+  // Admin: Get revenue statistics
+  app.get('/api/admin/stats/revenue', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const stats = await storage.getRevenueStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching revenue stats:", error);
+      res.status(500).json({ message: "Failed to fetch revenue statistics" });
     }
   });
 

@@ -47,6 +47,10 @@ export interface IStorage {
   verifyUserEmail(id: string): Promise<void>;
   updateUserVerificationToken(id: string, token: string, expiry: Date): Promise<void>;
   getAllUsers(): Promise<User[]>;
+  updateUserRole(id: string, isAdmin: boolean, isJudge: boolean): Promise<User | undefined>;
+  toggleUserEmailVerification(id: string, verified: boolean): Promise<User | undefined>;
+  suspendUser(id: string): Promise<User | undefined>;
+  activateUser(id: string): Promise<User | undefined>;
   
   getAllCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
@@ -75,6 +79,10 @@ export interface IStorage {
   updateVideoStatus(id: string, status: string): Promise<Video | undefined>;
   updateVideoThumbnail(id: string, thumbnailUrl: string): Promise<Video | undefined>;
   incrementVideoViews(id: string): Promise<void>;
+  deleteVideo(id: string): Promise<void>;
+  getApprovedVideos(): Promise<VideoWithStats[]>;
+  getRejectedVideos(): Promise<Video[]>;
+  updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined>;
   
   createVote(vote: InsertVote): Promise<Vote>;
   getVideoVoteCount(videoId: string): Promise<number>;
@@ -179,6 +187,31 @@ export interface IStorage {
     ctr: string;
     totalSpend: number;
   }>;
+
+  // Analytics methods
+  getDashboardStats(): Promise<{
+    totalUsers: number;
+    totalVideos: number;
+    pendingVideos: number;
+    approvedVideos: number;
+    totalVotes: number;
+    totalRevenue: number;
+    pendingPayouts: number;
+    activeAdvertisers: number;
+  }>;
+  getVideoStats(videoId: string): Promise<{
+    views: number;
+    voteCount: number;
+    likeCount: number;
+    judgeScores: number[];
+    avgJudgeScore: number;
+  }>;
+  getRevenueStats(): Promise<{
+    totalRegistrationRevenue: number;
+    totalVotingRevenue: number;
+    totalAdRevenue: number;
+    totalRevenue: number;
+  }>;
 }
 
 export class DbStorage implements IStorage {
@@ -277,6 +310,39 @@ export class DbStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(schema.users).orderBy(sql`${schema.users.createdAt} DESC`);
+  }
+
+  async updateUserRole(id: string, isAdmin: boolean, isJudge: boolean): Promise<User | undefined> {
+    const [user] = await db.update(schema.users).set({
+      isAdmin,
+      isJudge,
+      updatedAt: new Date()
+    }).where(eq(schema.users.id, id)).returning();
+    return user;
+  }
+
+  async toggleUserEmailVerification(id: string, verified: boolean): Promise<User | undefined> {
+    const [user] = await db.update(schema.users).set({
+      emailVerified: verified,
+      updatedAt: new Date()
+    }).where(eq(schema.users.id, id)).returning();
+    return user;
+  }
+
+  async suspendUser(id: string): Promise<User | undefined> {
+    const [user] = await db.update(schema.users).set({
+      suspended: true,
+      updatedAt: new Date()
+    }).where(eq(schema.users.id, id)).returning();
+    return user;
+  }
+
+  async activateUser(id: string): Promise<User | undefined> {
+    const [user] = await db.update(schema.users).set({
+      suspended: false,
+      updatedAt: new Date()
+    }).where(eq(schema.users.id, id)).returning();
+    return user;
   }
 
   async getAllCategories(): Promise<Category[]> {
@@ -492,6 +558,57 @@ export class DbStorage implements IStorage {
     await db.update(schema.videos)
       .set({ views: sql`${schema.videos.views} + 1` })
       .where(eq(schema.videos.id, id));
+  }
+
+  async deleteVideo(id: string): Promise<void> {
+    await db.delete(schema.videos).where(eq(schema.videos.id, id));
+  }
+
+  async getApprovedVideos(): Promise<VideoWithStats[]> {
+    const videosWithVotes = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        moderationStatus: schema.videos.moderationStatus,
+        moderationCategories: schema.videos.moderationCategories,
+        moderationReason: schema.videos.moderationReason,
+        moderatedAt: schema.videos.moderatedAt,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        voteCount: sql<number>`COALESCE(COUNT(DISTINCT ${schema.votes.id}), 0)`,
+      })
+      .from(schema.videos)
+      .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
+      .where(eq(schema.videos.status, 'approved'))
+      .groupBy(schema.videos.id)
+      .orderBy(desc(schema.videos.createdAt));
+
+    return videosWithVotes;
+  }
+
+  async getRejectedVideos(): Promise<Video[]> {
+    return await db.select().from(schema.videos)
+      .where(eq(schema.videos.status, 'rejected'))
+      .orderBy(desc(schema.videos.createdAt));
+  }
+
+  async updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined> {
+    const [video] = await db.update(schema.videos)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.videos.id, id))
+      .returning();
+    return video;
   }
 
   async createVote(insertVote: InsertVote): Promise<Vote> {
@@ -1774,6 +1891,116 @@ export class DbStorage implements IStorage {
       totalClicks,
       ctr,
       totalSpend,
+    };
+  }
+
+  async getDashboardStats(): Promise<{
+    totalUsers: number;
+    totalVideos: number;
+    pendingVideos: number;
+    approvedVideos: number;
+    totalVotes: number;
+    totalRevenue: number;
+    pendingPayouts: number;
+    activeAdvertisers: number;
+  }> {
+    const [users] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.users);
+    const [videos] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.videos);
+    const [pendingVids] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.videos).where(eq(schema.videos.status, 'pending'));
+    const [approvedVids] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.videos).where(eq(schema.videos.status, 'approved'));
+    const [votes] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.votes);
+    const [pendingPay] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.payoutRequests).where(eq(schema.payoutRequests.status, 'pending'));
+    const [activeAdv] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.advertisers).where(eq(schema.advertisers.status, 'active'));
+
+    // Calculate total revenue from registrations and paid votes
+    const [regRevenue] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${schema.registrations.amountPaid}), 0)` 
+    }).from(schema.registrations).where(eq(schema.registrations.paymentStatus, 'successful'));
+    
+    const [voteRevenue] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${schema.votePurchases.amount}), 0)` 
+    }).from(schema.votePurchases).where(eq(schema.votePurchases.status, 'successful'));
+
+    const totalRevenue = (regRevenue.total || 0) + (voteRevenue.total || 0);
+
+    return {
+      totalUsers: users.count,
+      totalVideos: videos.count,
+      pendingVideos: pendingVids.count,
+      approvedVideos: approvedVids.count,
+      totalVotes: votes.count,
+      totalRevenue,
+      pendingPayouts: pendingPay.count,
+      activeAdvertisers: activeAdv.count,
+    };
+  }
+
+  async getVideoStats(videoId: string): Promise<{
+    views: number;
+    voteCount: number;
+    likeCount: number;
+    judgeScores: number[];
+    avgJudgeScore: number;
+  }> {
+    const video = await this.getVideoById(videoId);
+    if (!video) {
+      throw new Error('Video not found');
+    }
+
+    const [voteCount] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.votes)
+      .where(eq(schema.votes.videoId, videoId));
+
+    const [likeCount] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.likes)
+      .where(eq(schema.likes.videoId, videoId));
+
+    const scores = await db.select()
+      .from(schema.judgeScores)
+      .where(eq(schema.judgeScores.videoId, videoId));
+
+    const judgeScores = scores.map(s => s.totalScore);
+    const avgJudgeScore = judgeScores.length > 0 
+      ? judgeScores.reduce((a, b) => a + b, 0) / judgeScores.length 
+      : 0;
+
+    return {
+      views: video.views,
+      voteCount: voteCount.count,
+      likeCount: likeCount.count,
+      judgeScores,
+      avgJudgeScore,
+    };
+  }
+
+  async getRevenueStats(): Promise<{
+    totalRegistrationRevenue: number;
+    totalVotingRevenue: number;
+    totalAdRevenue: number;
+    totalRevenue: number;
+  }> {
+    const [regRevenue] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${schema.registrations.amountPaid}), 0)` 
+    }).from(schema.registrations).where(eq(schema.registrations.paymentStatus, 'successful'));
+    
+    const [voteRevenue] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${schema.votePurchases.amount}), 0)` 
+    }).from(schema.votePurchases).where(eq(schema.votePurchases.status, 'successful'));
+
+    const [adRevenue] = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${schema.adPayments.amount}), 0)` 
+    }).from(schema.adPayments).where(eq(schema.adPayments.status, 'successful'));
+
+    const totalRegistrationRevenue = regRevenue.total || 0;
+    const totalVotingRevenue = voteRevenue.total || 0;
+    const totalAdRevenue = adRevenue.total || 0;
+    const totalRevenue = totalRegistrationRevenue + totalVotingRevenue + totalAdRevenue;
+
+    return {
+      totalRegistrationRevenue,
+      totalVotingRevenue,
+      totalAdRevenue,
+      totalRevenue,
     };
   }
 }

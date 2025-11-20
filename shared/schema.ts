@@ -32,6 +32,7 @@ export const users = pgTable("users", {
   judgeBio: text("judge_bio"),
   judgePhotoUrl: text("judge_photo_url"),
   emailVerified: boolean("email_verified").default(false).notNull(),
+  suspended: boolean("suspended").default(false).notNull(),
   verificationToken: varchar("verification_token"),
   verificationTokenExpiry: timestamp("verification_token_expiry"),
   resetPasswordToken: varchar("reset_password_token"),
@@ -64,6 +65,7 @@ export const registrations = pgTable("registrations", {
   userId: varchar("user_id").notNull().references(() => users.id),
   categoryIds: text("category_ids").array().notNull(),
   totalFee: integer("total_fee").notNull(),
+  amountPaid: integer("amount_paid").default(0).notNull(),
   paymentStatus: text("payment_status").notNull().default('pending'),
   referralCode: text("referral_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -137,6 +139,7 @@ export const judgeScores = pgTable("judge_scores", {
   judgeId: varchar("judge_id").notNull().references(() => users.id),
   creativityScore: integer("creativity_score").notNull(),
   qualityScore: integer("quality_score").notNull(),
+  totalScore: integer("total_score").notNull(),
   comments: text("comments"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
@@ -329,6 +332,7 @@ export const adClicks = pgTable("ad_clicks", {
   impressionId: varchar("impression_id").references(() => adImpressions.id),
   userId: varchar("user_id").references(() => users.id),
   ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_clicks_ad").on(table.adId),
