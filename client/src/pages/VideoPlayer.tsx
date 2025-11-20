@@ -31,6 +31,9 @@ export default function VideoPlayer() {
   const [watchHistoryRecorded, setWatchHistoryRecorded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const autoPiPTriggered = useRef(false);
+  const manualPiPDisabled = useRef(false);
+  const autoExitInProgress = useRef(false);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
     queryKey: [`/api/videos/${videoId}`],
@@ -151,6 +154,9 @@ export default function VideoPlayer() {
     setPreRollAdCompleted(false);
     setShowOverlayAd(true);
     setWatchHistoryRecorded(false);
+    autoPiPTriggered.current = false;
+    manualPiPDisabled.current = false;
+    autoExitInProgress.current = false;
   }, [videoId]);
 
   useEffect(() => {
@@ -191,6 +197,31 @@ export default function VideoPlayer() {
     const videoElement = videoRef.current;
     const containerElement = videoContainerRef.current;
 
+    // Listen to PiP events to track if it was triggered manually or automatically
+    const handleEnterPiP = () => {
+      // If PiP was entered but we didn't trigger it automatically, it was manual
+      if (!autoPiPTriggered.current) {
+        // Manual PiP entered - re-enable auto-PiP and don't auto-exit
+        manualPiPDisabled.current = false;
+      }
+    };
+
+    const handleLeavePiP = () => {
+      // Check if this was an auto-exit (triggered by scrolling back into view)
+      if (autoExitInProgress.current) {
+        // Auto-exit - don't change manualPiPDisabled
+        autoExitInProgress.current = false;
+      } else {
+        // Manual exit (user closed PiP) - disable auto-entry
+        manualPiPDisabled.current = true;
+      }
+      // Reset auto-PiP flag when leaving PiP
+      autoPiPTriggered.current = false;
+    };
+
+    videoElement.addEventListener('enterpictureinpicture', handleEnterPiP);
+    videoElement.addEventListener('leavepictureinpicture', handleLeavePiP);
+
     const observer = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0];
@@ -199,16 +230,26 @@ export default function VideoPlayer() {
         if (videoElement.paused) return;
 
         try {
-          // Video scrolled out of view (less than 10% visible) - enter PiP
-          if (entry.intersectionRatio < 0.1 && !document.pictureInPictureElement) {
-            await videoElement.requestPictureInPicture();
+          // Video scrolled back into view (more than 50% visible)
+          if (entry.intersectionRatio > 0.5) {
+            // Re-enable auto-PiP when user scrolls video back into view
+            manualPiPDisabled.current = false;
+            
+            // Exit PiP if it was auto-triggered
+            if (document.pictureInPictureElement && autoPiPTriggered.current) {
+              autoExitInProgress.current = true;
+              await document.exitPictureInPicture();
+            }
           }
-          // Video scrolled back into view (more than 50% visible) - exit PiP
-          else if (entry.intersectionRatio > 0.5 && document.pictureInPictureElement) {
-            await document.exitPictureInPicture();
+          // Video scrolled out of view (less than 10% visible) - enter PiP
+          else if (entry.intersectionRatio < 0.1 && !document.pictureInPictureElement && !manualPiPDisabled.current) {
+            autoPiPTriggered.current = true;
+            await videoElement.requestPictureInPicture();
           }
         } catch (error) {
           // PiP might fail (e.g., browser blocked it), silently ignore
+          autoPiPTriggered.current = false;
+          autoExitInProgress.current = false;
           console.debug("Auto PiP action failed:", error);
         }
       },
@@ -221,6 +262,8 @@ export default function VideoPlayer() {
 
     return () => {
       observer.disconnect();
+      videoElement.removeEventListener('enterpictureinpicture', handleEnterPiP);
+      videoElement.removeEventListener('leavepictureinpicture', handleLeavePiP);
     };
   }, [isPiPSupported, preRollAdCompleted]);
 
@@ -302,6 +345,8 @@ export default function VideoPlayer() {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
       } else {
+        // Manual PiP button - re-enable auto-PiP
+        manualPiPDisabled.current = false;
         await videoRef.current.requestPictureInPicture();
       }
     } catch (error) {
