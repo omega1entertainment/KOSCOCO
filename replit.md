@@ -21,7 +21,8 @@ The platform is built with a modern web stack.
     - **Voting System**: Public voting with anti-spam measures, judge scoring components, and a paid voting system integrated with Flutterwave.
     - **Affiliate Program**: Opt-in system with unique referral links and 20% commission tracking. Supports both authenticated and non-authenticated users, creating accounts and affiliate records in one transaction. Includes a payout request and approval workflow.
     - **Competition Structure**: Organized into five distinct phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE), with admin controls to transition between phases, ensuring only one phase is active at a time.
-    - **User and Admin Dashboards**: Centralized views for user statistics and administrative tasks like video moderation, phase management, and advertiser account approval.
+    - **User and Admin Dashboards**: Centralized views for user statistics and administrative tasks like video moderation, phase management, advertiser account approval, and comprehensive user management.
+    - **Admin User Management**: Complete user oversight with searchable table showing all registered users, their roles (admin/judge/contestant), verification status, join dates, and location. Accessible via Users tab in admin dashboard.
     - **Email Verification**: Comprehensive system using Resend for user account verification.
     - **Advertising System**: MVP ad system with Skippable In-Stream Video and Overlay Banner ad types, including advertiser account approval, ad creation, serving, and impression/click tracking.
     - **Watch History**: Tracks user video watch history with duration, completion status, and provides a dashboard view.
