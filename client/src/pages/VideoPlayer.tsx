@@ -246,11 +246,11 @@ export default function VideoPlayer() {
             autoPiPTriggered.current = true;
             await videoElement.requestPictureInPicture();
           }
-        } catch (error) {
+        } catch (error: any) {
           // PiP might fail (e.g., browser blocked it), silently ignore
           autoPiPTriggered.current = false;
           autoExitInProgress.current = false;
-          console.debug("Auto PiP action failed:", error);
+          console.log("Auto PiP action failed:", error?.message || error);
         }
       },
       {
