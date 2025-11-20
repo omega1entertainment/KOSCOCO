@@ -90,6 +90,9 @@ function AdminDashboardContent() {
   // Judge delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [judgeToDelete, setJudgeToDelete] = useState<JudgeProfile | null>(null);
+  
+  // User filter state
+  const [userFilter, setUserFilter] = useState<'all' | 'verified' | 'admin' | 'judge' | 'contestant'>('all');
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -557,17 +560,45 @@ function AdminDashboardContent() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 mb-4">
-                    <Badge variant="outline" className="text-base" data-testid="badge-total-users">
+                    <Badge 
+                      variant={userFilter === 'all' ? 'default' : 'outline'} 
+                      className="text-base cursor-pointer hover-elevate active-elevate-2" 
+                      onClick={() => setUserFilter('all')}
+                      data-testid="badge-total-users"
+                    >
                       {users.length} {t('admin.users.totalUsers')}
                     </Badge>
-                    <Badge variant="outline" className="text-base" data-testid="badge-verified-users">
+                    <Badge 
+                      variant={userFilter === 'verified' ? 'default' : 'outline'} 
+                      className="text-base cursor-pointer hover-elevate active-elevate-2" 
+                      onClick={() => setUserFilter('verified')}
+                      data-testid="badge-verified-users"
+                    >
                       {users.filter(u => u.emailVerified).length} {t('admin.users.verified')}
                     </Badge>
-                    <Badge variant="outline" className="text-base" data-testid="badge-admin-users">
+                    <Badge 
+                      variant={userFilter === 'admin' ? 'default' : 'outline'} 
+                      className="text-base cursor-pointer hover-elevate active-elevate-2" 
+                      onClick={() => setUserFilter('admin')}
+                      data-testid="badge-admin-users"
+                    >
                       {users.filter(u => u.isAdmin).length} {t('admin.users.admins')}
                     </Badge>
-                    <Badge variant="outline" className="text-base" data-testid="badge-judge-users">
+                    <Badge 
+                      variant={userFilter === 'judge' ? 'default' : 'outline'} 
+                      className="text-base cursor-pointer hover-elevate active-elevate-2" 
+                      onClick={() => setUserFilter('judge')}
+                      data-testid="badge-judge-users"
+                    >
                       {users.filter(u => u.isJudge).length} {t('admin.users.judges')}
+                    </Badge>
+                    <Badge 
+                      variant={userFilter === 'contestant' ? 'default' : 'outline'} 
+                      className="text-base cursor-pointer hover-elevate active-elevate-2" 
+                      onClick={() => setUserFilter('contestant')}
+                      data-testid="badge-contestant-users"
+                    >
+                      {users.filter(u => !u.isAdmin && !u.isJudge).length} {t('admin.users.contestants')}
                     </Badge>
                   </div>
                   
@@ -585,7 +616,14 @@ function AdminDashboardContent() {
                         </tr>
                       </thead>
                       <tbody>
-                        {users.map(user => (
+                        {users.filter(user => {
+                          if (userFilter === 'all') return true;
+                          if (userFilter === 'verified') return user.emailVerified;
+                          if (userFilter === 'admin') return user.isAdmin;
+                          if (userFilter === 'judge') return user.isJudge;
+                          if (userFilter === 'contestant') return !user.isAdmin && !user.isJudge;
+                          return true;
+                        }).map(user => (
                           <tr key={user.id} className="border-b hover-elevate" data-testid={`row-user-${user.id}`}>
                             <td className="p-3" data-testid={`text-name-${user.id}`}>
                               {user.firstName} {user.lastName}

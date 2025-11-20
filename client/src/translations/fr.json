@@ -389,6 +389,7 @@
   "admin.users.verified": "Vérifiés",
   "admin.users.admins": "Admins",
   "admin.users.judges": "Jurés",
+  "admin.users.contestants": "Concurrents",
   "admin.users.name": "Nom",
   "admin.users.email": "Email",
   "admin.users.username": "Nom d'utilisateur",
