@@ -6,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -592,7 +598,295 @@ function AdminDashboardContent() {
         <p className="text-muted-foreground">{t("admin.dashboardSubtitle")}</p>
       </div>
 
-      <Tabs defaultValue="phases" className="w-full">
+      {/* Mobile Accordion Version */}
+      <Accordion type="single" collapsible className="w-full lg:hidden" data-testid="accordion-admin-mobile">
+        <AccordionItem value="phases" data-testid="accordion-item-phases">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-phases">
+            {t("admin.tabs.phases")}
+          </AccordionTrigger>
+          <AccordionContent>
+            <PhaseManagement />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="videos" data-testid="accordion-item-videos">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-videos">
+            <div className="flex items-center gap-2">
+              {t("admin.tabs.videos")}
+              {pendingVideos.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {pendingVideos.length}
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  For full video moderation features, please use a larger screen or rotate to landscape mode.
+                </p>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="users" data-testid="accordion-item-users">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-users">
+            {t("admin.tabs.users")}
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="w-5 h-5" />
+                  {t("admin.users.title")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="text-center py-12" data-testid="loading-users">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="mt-4 text-muted-foreground">{t("admin.common.loading")}</p>
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-12" data-testid="empty-users">
+                    <p className="text-muted-foreground">{t("admin.users.noUsers")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 mb-4 flex-wrap">
+                      <Badge
+                        variant={userFilter === "all" ? "default" : "outline"}
+                        className="text-base cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => setUserFilter("all")}
+                        data-testid="badge-total-users"
+                      >
+                        {users.length} {t("admin.users.totalUsers")}
+                      </Badge>
+                      <Badge
+                        variant={userFilter === "verified" ? "default" : "outline"}
+                        className="text-base cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => setUserFilter("verified")}
+                        data-testid="badge-verified-users"
+                      >
+                        {users.filter((u) => u.emailVerified).length} {t("admin.users.verified")}
+                      </Badge>
+                      <Badge
+                        variant={userFilter === "admin" ? "default" : "outline"}
+                        className="text-base cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => setUserFilter("admin")}
+                        data-testid="badge-admin-users"
+                      >
+                        {users.filter((u) => u.isAdmin).length} {t("admin.users.admins")}
+                      </Badge>
+                      <Badge
+                        variant={userFilter === "judge" ? "default" : "outline"}
+                        className="text-base cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => setUserFilter("judge")}
+                        data-testid="badge-judge-users"
+                      >
+                        {users.filter((u) => u.isJudge).length} {t("admin.users.judges")}
+                      </Badge>
+                      <Badge
+                        variant={userFilter === "contestant" ? "default" : "outline"}
+                        className="text-base cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => setUserFilter("contestant")}
+                        data-testid="badge-contestant-users"
+                      >
+                        {users.filter((u) => !u.isAdmin && !u.isJudge).length} {t("admin.users.contestants")}
+                      </Badge>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full" data-testid="table-users">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-3 font-semibold">{t("admin.users.name")}</th>
+                            <th className="text-left p-3 font-semibold">{t("admin.users.email")}</th>
+                            <th className="text-left p-3 font-semibold">{t("admin.users.username")}</th>
+                            <th className="text-left p-3 font-semibold">{t("admin.users.location")}</th>
+                            <th className="text-left p-3 font-semibold">{t("admin.users.roles")}</th>
+                            <th className="text-left p-3 font-semibold">{t("admin.users.status")}</th>
+                            <th className="text-left p-3 font-semibold">{t("admin.users.joined")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {users
+                            .filter((user) => {
+                              if (userFilter === "all") return true;
+                              if (userFilter === "verified") return user.emailVerified;
+                              if (userFilter === "admin") return user.isAdmin;
+                              if (userFilter === "judge") return user.isJudge;
+                              if (userFilter === "contestant") return !user.isAdmin && !user.isJudge;
+                              return true;
+                            })
+                            .map((user) => (
+                              <tr key={user.id} className="border-b hover-elevate" data-testid={`row-user-${user.id}`}>
+                                <td className="p-3" data-testid={`text-name-${user.id}`}>
+                                  {user.firstName} {user.lastName}
+                                </td>
+                                <td className="p-3" data-testid={`text-email-${user.id}`}>
+                                  {user.email}
+                                </td>
+                                <td className="p-3" data-testid={`text-username-${user.id}`}>
+                                  {user.username || "-"}
+                                </td>
+                                <td className="p-3" data-testid={`text-location-${user.id}`}>
+                                  {user.location || "-"}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex gap-1 flex-wrap">
+                                    {user.isAdmin && (
+                                      <Badge variant="destructive" data-testid={`badge-admin-${user.id}`}>
+                                        {t("admin.users.admin")}
+                                      </Badge>
+                                    )}
+                                    {user.isJudge && (
+                                      <Badge variant="secondary" data-testid={`badge-judge-${user.id}`}>
+                                        {t("admin.users.judge")}
+                                      </Badge>
+                                    )}
+                                    {!user.isAdmin && !user.isJudge && (
+                                      <Badge variant="outline" data-testid={`badge-user-${user.id}`}>
+                                        {t("admin.users.contestant")}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  {user.emailVerified ? (
+                                    <Badge variant="default" data-testid={`badge-verified-${user.id}`}>
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      {t("admin.users.verified")}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" data-testid={`badge-unverified-${user.id}`}>
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      {t("admin.users.unverified")}
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td className="p-3">
+                                  {new Date(user.createdAt).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="judges" data-testid="accordion-item-judges">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-judges">
+            {t("admin.tabs.judges")}
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  For full judge management features, please use a larger screen or rotate to landscape mode.
+                </p>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="advertisers" data-testid="accordion-item-advertisers">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-advertisers">
+            <div className="flex items-center gap-2">
+              Advertisers
+              {advertisers.filter((a: any) => a.status === "pending").length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {advertisers.filter((a: any) => a.status === "pending").length}
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  For full advertiser management features, please use a larger screen or rotate to landscape mode.
+                </p>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="ads" data-testid="accordion-item-ads">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-ads">
+            <div className="flex items-center gap-2">
+              Ads
+              {pendingAds.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {pendingAds.length}
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  For full ad management features, please use a larger screen or rotate to landscape mode.
+                </p>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="payouts" data-testid="accordion-item-payouts">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-payouts">
+            <div className="flex items-center gap-2">
+              {t("admin.tabs.payouts")}
+              {payoutRequests.filter((p) => p.status === "pending").length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {payoutRequests.filter((p) => p.status === "pending").length}
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  For full payout management features, please use a larger screen or rotate to landscape mode.
+                </p>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="reports" data-testid="accordion-item-reports">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-reports">
+            <div className="flex items-center gap-2">
+              {t("admin.tabs.reports")}
+              {reports.filter((r) => r.status === "pending").length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {reports.filter((r) => r.status === "pending").length}
+                </Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  For full report management features, please use a larger screen or rotate to landscape mode.
+                </p>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Desktop Tabs Version */}
+      <Tabs defaultValue="phases" className="w-full hidden lg:block">
         <div className="flex flex-col lg:flex-row gap-6">
           <TabsList className="flex flex-col h-fit w-full lg:w-48 gap-1">
             <TabsTrigger
