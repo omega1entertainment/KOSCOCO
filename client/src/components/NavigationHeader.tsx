@@ -176,6 +176,11 @@ export default function NavigationHeader({
                     <DropdownMenuItem onClick={() => onNavigate?.('/dashboard')} data-testid="menu-dashboard">
                       {t('nav.dashboard')}
                     </DropdownMenuItem>
+                    {user?.isAdmin && (
+                      <DropdownMenuItem onClick={() => onNavigate?.('/admin')} data-testid="menu-admin-dashboard">
+                        {t('nav.adminDashboard')}
+                      </DropdownMenuItem>
+                    )}
                     {user?.isJudge && (
                       <DropdownMenuItem onClick={() => onNavigate?.('/judge-dashboard')} data-testid="menu-judge-dashboard">
                         {t('nav.judgeDashboard')}

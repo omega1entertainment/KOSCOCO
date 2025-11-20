@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRef } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Video, Category, PayoutRequest, Report, JudgeProfile } from "@shared/schema";
+import type { Video, Category, PayoutRequest, Report, JudgeProfile, SelectUser } from "@shared/schema";
 
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
@@ -67,6 +67,10 @@ function AdminDashboardContent() {
 
   const { data: advertisers = [], isLoading: advertisersLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/advertisers"],
+  });
+
+  const { data: users = [], isLoading: usersLoading } = useQuery<SelectUser[]>({
+    queryKey: ["/api/admin/users"],
   });
 
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
@@ -476,7 +480,7 @@ function AdminDashboardContent() {
       </div>
 
       <Tabs defaultValue="phases" className="w-full">
-        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-7 gap-1">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-8 gap-1">
           <TabsTrigger value="phases" data-testid="tab-phases">
             {t('admin.tabs.phases')}
           </TabsTrigger>
@@ -487,6 +491,9 @@ function AdminDashboardContent() {
                 {pendingVideos.length}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="users" data-testid="tab-users">
+            {t('admin.tabs.users')}
           </TabsTrigger>
           <TabsTrigger value="judges" data-testid="tab-judges">
             {t('admin.tabs.judges')}
@@ -527,6 +534,109 @@ function AdminDashboardContent() {
 
         <TabsContent value="phases" className="mt-6">
           <PhaseManagement />
+        </TabsContent>
+
+        <TabsContent value="users" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCog className="w-5 h-5" />
+                {t('admin.users.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <div className="text-center py-12" data-testid="loading-users">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">{t('admin.common.loading')}</p>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-12" data-testid="empty-users">
+                  <p className="text-muted-foreground">{t('admin.users.noUsers')}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Badge variant="outline" className="text-base" data-testid="badge-total-users">
+                      {users.length} {t('admin.users.totalUsers')}
+                    </Badge>
+                    <Badge variant="outline" className="text-base" data-testid="badge-verified-users">
+                      {users.filter(u => u.emailVerified).length} {t('admin.users.verified')}
+                    </Badge>
+                    <Badge variant="outline" className="text-base" data-testid="badge-admin-users">
+                      {users.filter(u => u.isAdmin).length} {t('admin.users.admins')}
+                    </Badge>
+                    <Badge variant="outline" className="text-base" data-testid="badge-judge-users">
+                      {users.filter(u => u.isJudge).length} {t('admin.users.judges')}
+                    </Badge>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full" data-testid="table-users">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-3 font-semibold">{t('admin.users.name')}</th>
+                          <th className="text-left p-3 font-semibold">{t('admin.users.email')}</th>
+                          <th className="text-left p-3 font-semibold">{t('admin.users.username')}</th>
+                          <th className="text-left p-3 font-semibold">{t('admin.users.location')}</th>
+                          <th className="text-left p-3 font-semibold">{t('admin.users.roles')}</th>
+                          <th className="text-left p-3 font-semibold">{t('admin.users.status')}</th>
+                          <th className="text-left p-3 font-semibold">{t('admin.users.joined')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map(user => (
+                          <tr key={user.id} className="border-b hover-elevate" data-testid={`row-user-${user.id}`}>
+                            <td className="p-3" data-testid={`text-name-${user.id}`}>
+                              {user.firstName} {user.lastName}
+                            </td>
+                            <td className="p-3" data-testid={`text-email-${user.id}`}>{user.email}</td>
+                            <td className="p-3" data-testid={`text-username-${user.id}`}>{user.username || '-'}</td>
+                            <td className="p-3" data-testid={`text-location-${user.id}`}>{user.location || '-'}</td>
+                            <td className="p-3">
+                              <div className="flex gap-1 flex-wrap">
+                                {user.isAdmin && (
+                                  <Badge variant="destructive" data-testid={`badge-admin-${user.id}`}>
+                                    {t('admin.users.admin')}
+                                  </Badge>
+                                )}
+                                {user.isJudge && (
+                                  <Badge variant="secondary" data-testid={`badge-judge-${user.id}`}>
+                                    {t('admin.users.judge')}
+                                  </Badge>
+                                )}
+                                {!user.isAdmin && !user.isJudge && (
+                                  <Badge variant="outline" data-testid={`badge-user-${user.id}`}>
+                                    {t('admin.users.contestant')}
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              {user.emailVerified ? (
+                                <Badge variant="default" data-testid={`badge-verified-${user.id}`}>
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  {t('admin.users.verified')}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" data-testid={`badge-unverified-${user.id}`}>
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {t('admin.users.unverified')}
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {new Date(user.createdAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="judges" className="mt-6">

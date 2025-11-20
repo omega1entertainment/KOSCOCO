@@ -46,6 +46,7 @@ export interface IStorage {
   updatePassword(id: string, password: string): Promise<void>;
   verifyUserEmail(id: string): Promise<void>;
   updateUserVerificationToken(id: string, token: string, expiry: Date): Promise<void>;
+  getAllUsers(): Promise<User[]>;
   
   getAllCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
@@ -272,6 +273,10 @@ export class DbStorage implements IStorage {
       verificationTokenExpiry: expiry,
       updatedAt: new Date()
     }).where(eq(schema.users.id, id));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(schema.users).orderBy(sql`${schema.users.createdAt} DESC`);
   }
 
   async getAllCategories(): Promise<Category[]> {
