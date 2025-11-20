@@ -1001,5 +1001,64 @@
   
   "affiliateProgram.toast.enrolledTitle": "Inscription Réussie!",
   "affiliateProgram.toast.enrolledDescription": "Vous faites maintenant partie de notre programme d'affiliation. Redirection vers votre tableau de bord...",
-  "affiliateProgram.toast.enrollmentFailed": "Échec de l'Inscription"
+  "affiliateProgram.toast.enrollmentFailed": "Échec de l'Inscription",
+
+  "creator.title": "Tableau de Bord Créateur",
+  "creator.description": "Gérez vos vidéos, suivez les performances et engagez votre public",
+  "creator.tabs.overview": "Aperçu",
+  "creator.tabs.myVideos": "Mes Vidéos",
+  "creator.tabs.analytics": "Analytique",
+  "creator.tabs.audience": "Audience",
+  
+  "creator.stats.totalVideos": "Total de Vidéos",
+  "creator.stats.totalViews": "Vues Totales",
+  "creator.stats.totalVotes": "Votes Totaux",
+  "creator.stats.totalLikes": "J'aime Totaux",
+  "creator.stats.approved": "approuvées",
+  "creator.stats.pending": "en attente",
+  "creator.stats.allTimeViews": "Vues totales sur toutes les vidéos",
+  "creator.stats.ranking": "Classement",
+  "creator.stats.currentPosition": "Position actuelle au classement",
+  
+  "creator.quickActions.title": "Actions Rapides",
+  "creator.quickActions.description": "Tâches courantes pour les créateurs de contenu",
+  "creator.quickActions.uploadVideo": "Télécharger une Nouvelle Vidéo",
+  "creator.quickActions.manageVideos": "Gérer les Vidéos",
+  "creator.quickActions.viewLeaderboard": "Voir le Classement",
+  
+  "creator.myVideos.title": "Mes Vidéos",
+  "creator.myVideos.description": "Gérez et suivez toutes vos soumissions vidéo",
+  "creator.myVideos.noVideos": "Vous n'avez pas encore téléchargé de vidéos",
+  "creator.myVideos.uploadFirst": "Téléchargez Votre Première Vidéo",
+  "creator.myVideos.view": "Voir",
+  "creator.myVideos.edit": "Modifier",
+  "creator.myVideos.delete": "Supprimer",
+  
+  "creator.analytics.title": "Analytique Vidéo",
+  "creator.analytics.description": "Suivez les performances de vos vidéos au fil du temps",
+  "creator.analytics.comingSoon": "Analytique détaillée bientôt disponible!",
+  
+  "creator.audience.title": "Engagement de l'Audience",
+  "creator.audience.description": "Consultez les commentaires, les j'aime et les informations sur l'audience",
+  "creator.audience.comingSoon": "Informations sur l'audience bientôt disponibles!",
+  
+  "creator.editDialog.title": "Modifier la Vidéo",
+  "creator.editDialog.description": "Mettez à jour le titre et la description de votre vidéo",
+  "creator.editDialog.titleLabel": "Titre de la Vidéo",
+  "creator.editDialog.titlePlaceholder": "Entrez le titre de la vidéo",
+  "creator.editDialog.descriptionLabel": "Description",
+  "creator.editDialog.descriptionPlaceholder": "Entrez la description de la vidéo",
+  
+  "creator.deleteDialog.title": "Supprimer la Vidéo",
+  "creator.deleteDialog.description": "Êtes-vous sûr de vouloir supprimer cette vidéo? Cette action est irréversible.",
+  
+  "creator.toast.videoDeleted": "Vidéo Supprimée",
+  "creator.toast.videoDeletedDescription": "Votre vidéo a été supprimée avec succès",
+  "creator.toast.deleteFailed": "Échec de la Suppression",
+  "creator.toast.videoUpdated": "Vidéo Mise à Jour",
+  "creator.toast.videoUpdatedDescription": "Votre vidéo a été mise à jour avec succès",
+  "creator.toast.updateFailed": "Échec de la Mise à Jour",
+  
+  "common.saving": "Enregistrement...",
+  "common.deleting": "Suppression..."
 }

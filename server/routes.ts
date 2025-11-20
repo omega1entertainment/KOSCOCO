@@ -820,6 +820,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update video metadata (title, description)
+  app.patch('/api/videos/:id/metadata', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req.user as SelectUser).id;
+      const { title, description } = req.body;
+
+      // Verify video belongs to user
+      const video = await storage.getVideoById(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.userId !== userId) {
+        return res.status(403).json({ message: "You can only edit your own videos" });
+      }
+
+      const updatedVideo = await storage.updateVideoMetadata(id, { title, description });
+      res.json(updatedVideo);
+    } catch (error) {
+      console.error("Error updating video metadata:", error);
+      res.status(500).json({ message: "Failed to update video" });
+    }
+  });
+
+  // Delete video
+  app.delete('/api/videos/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req.user as SelectUser).id;
+
+      // Verify video belongs to user
+      const video = await storage.getVideoById(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.userId !== userId) {
+        return res.status(403).json({ message: "You can only delete your own videos" });
+      }
+
+      await storage.deleteVideo(id);
+      res.json({ message: "Video deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      res.status(500).json({ message: "Failed to delete video" });
+    }
+  });
+
   app.get('/api/videos/pending', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
@@ -1143,11 +1192,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create the judge score (database-level unique constraint will prevent race conditions)
+      const totalScore = creativityScore + qualityScore;
       const score = await storage.createJudgeScore({
         videoId: id,
         judgeId,
         creativityScore,
         qualityScore,
+        totalScore,
         comments: comments || null,
       });
 
@@ -1338,11 +1389,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create the judge score using validated data
+      const totalScore = creativityScore + qualityScore;
       const score = await storage.createJudgeScore({
         videoId,
         judgeId,
         creativityScore,
         qualityScore,
+        totalScore,
         comments: comments || null,
       });
 
@@ -1883,7 +1936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (ipAddress && !userId) {
-        const ipLikes = await storage.getUserLikesForVideo(undefined, videoId, ipAddress);
+        const ipLikes = await storage.getUserLikesForVideo(null, videoId, ipAddress);
         if (ipLikes.length > 0) {
           return res.status(400).json({ message: "You have already liked this video" });
         }
@@ -1992,6 +2045,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user stats:", error);
       res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
+  // Creator Dashboard endpoints
+  app.get('/api/creator/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      
+      // Get all creator's videos
+      const videos = await storage.getVideosByUser(userId);
+      
+      // Calculate stats
+      const totalVideos = videos.length;
+      const approvedVideos = videos.filter(v => v.status === 'approved').length;
+      const pendingVideos = videos.filter(v => v.status === 'pending').length;
+      const totalViews = videos.reduce((sum, v) => sum + (v.views || 0), 0);
+      
+      // Get vote counts
+      const totalVotes = await Promise.all(
+        videos.map(v => storage.getCombinedVoteCount(v.id))
+      ).then(counts => counts.reduce((sum, count) => sum + count, 0));
+      
+      // Get like counts
+      const totalLikes = await Promise.all(
+        videos.map(v => storage.getVideoLikeCount(v.id))
+      ).then(counts => counts.reduce((sum, count) => sum + count, 0));
+      
+      // Get user's ranking position (simplified - could be by category/phase)
+      const leaderboard = await storage.getLeaderboard(undefined, undefined, 100);
+      const rankingPosition = leaderboard.findIndex(entry => entry.userId === userId) + 1;
+      
+      res.json({
+        totalVideos,
+        totalViews,
+        totalVotes,
+        totalLikes,
+        approvedVideos,
+        pendingVideos,
+        rankingPosition: rankingPosition > 0 ? rankingPosition : null,
+      });
+    } catch (error) {
+      console.error("Error fetching creator stats:", error);
+      res.status(500).json({ message: "Failed to fetch creator stats" });
+    }
+  });
+
+  app.get('/api/creator/videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      
+      const videos = await storage.getVideosByUser(userId);
+      
+      // Enrich with vote and like counts
+      const enrichedVideos = await Promise.all(
+        videos.map(async (video) => {
+          const voteCount = await storage.getCombinedVoteCount(video.id);
+          const likeCount = await storage.getVideoLikeCount(video.id);
+          
+          return {
+            ...video,
+            voteCount,
+            likeCount,
+          };
+        })
+      );
+      
+      res.json(enrichedVideos);
+    } catch (error) {
+      console.error("Error fetching creator videos:", error);
+      res.status(500).json({ message: "Failed to fetch creator videos" });
     }
   });
 
@@ -3754,7 +3877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createAdImpression({
         adId,
-        userId: req.user?.id || null,
+        userId: (req.user as any)?.id || null,
         userAgent,
         ipAddress,
       });
@@ -3802,7 +3925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createAdClick({
         adId,
-        userId: req.user?.id || null,
+        userId: (req.user as any)?.id || null,
         userAgent,
         ipAddress,
       });

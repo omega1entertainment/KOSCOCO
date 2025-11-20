@@ -1001,5 +1001,64 @@
   
   "affiliateProgram.toast.enrolledTitle": "Enrolled Successfully!",
   "affiliateProgram.toast.enrolledDescription": "You're now part of our affiliate program. Redirecting to your dashboard...",
-  "affiliateProgram.toast.enrollmentFailed": "Enrollment Failed"
+  "affiliateProgram.toast.enrollmentFailed": "Enrollment Failed",
+
+  "creator.title": "Creator Dashboard",
+  "creator.description": "Manage your videos, track performance, and engage with your audience",
+  "creator.tabs.overview": "Overview",
+  "creator.tabs.myVideos": "My Videos",
+  "creator.tabs.analytics": "Analytics",
+  "creator.tabs.audience": "Audience",
+  
+  "creator.stats.totalVideos": "Total Videos",
+  "creator.stats.totalViews": "Total Views",
+  "creator.stats.totalVotes": "Total Votes",
+  "creator.stats.totalLikes": "Total Likes",
+  "creator.stats.approved": "approved",
+  "creator.stats.pending": "pending",
+  "creator.stats.allTimeViews": "All-time views across all videos",
+  "creator.stats.ranking": "Ranking",
+  "creator.stats.currentPosition": "Current leaderboard position",
+  
+  "creator.quickActions.title": "Quick Actions",
+  "creator.quickActions.description": "Common tasks for content creators",
+  "creator.quickActions.uploadVideo": "Upload New Video",
+  "creator.quickActions.manageVideos": "Manage Videos",
+  "creator.quickActions.viewLeaderboard": "View Leaderboard",
+  
+  "creator.myVideos.title": "My Videos",
+  "creator.myVideos.description": "Manage and track all your video submissions",
+  "creator.myVideos.noVideos": "You haven't uploaded any videos yet",
+  "creator.myVideos.uploadFirst": "Upload Your First Video",
+  "creator.myVideos.view": "View",
+  "creator.myVideos.edit": "Edit",
+  "creator.myVideos.delete": "Delete",
+  
+  "creator.analytics.title": "Video Analytics",
+  "creator.analytics.description": "Track your video performance over time",
+  "creator.analytics.comingSoon": "Detailed analytics coming soon!",
+  
+  "creator.audience.title": "Audience Engagement",
+  "creator.audience.description": "View comments, likes, and audience insights",
+  "creator.audience.comingSoon": "Audience insights coming soon!",
+  
+  "creator.editDialog.title": "Edit Video",
+  "creator.editDialog.description": "Update your video's title and description",
+  "creator.editDialog.titleLabel": "Video Title",
+  "creator.editDialog.titlePlaceholder": "Enter video title",
+  "creator.editDialog.descriptionLabel": "Description",
+  "creator.editDialog.descriptionPlaceholder": "Enter video description",
+  
+  "creator.deleteDialog.title": "Delete Video",
+  "creator.deleteDialog.description": "Are you sure you want to delete this video? This action cannot be undone.",
+  
+  "creator.toast.videoDeleted": "Video Deleted",
+  "creator.toast.videoDeletedDescription": "Your video has been deleted successfully",
+  "creator.toast.deleteFailed": "Delete Failed",
+  "creator.toast.videoUpdated": "Video Updated",
+  "creator.toast.videoUpdatedDescription": "Your video has been updated successfully",
+  "creator.toast.updateFailed": "Update Failed",
+  
+  "common.saving": "Saving...",
+  "common.deleting": "Deleting..."
 }
