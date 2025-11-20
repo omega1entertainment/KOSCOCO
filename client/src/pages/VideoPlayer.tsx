@@ -30,6 +30,7 @@ export default function VideoPlayer() {
   const [isPiPSupported, setIsPiPSupported] = useState(false);
   const [watchHistoryRecorded, setWatchHistoryRecorded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
     queryKey: [`/api/videos/${videoId}`],
@@ -180,6 +181,48 @@ export default function VideoPlayer() {
       );
     }
   }, [showPreRollAd, preRollAd, video, videoLoading]);
+
+  // Automatic Picture-in-Picture when scrolling
+  useEffect(() => {
+    if (!videoContainerRef.current || !videoRef.current || !isPiPSupported || !preRollAdCompleted) {
+      return;
+    }
+
+    const videoElement = videoRef.current;
+    const containerElement = videoContainerRef.current;
+
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        const entry = entries[0];
+        
+        // Only trigger auto-PiP if video is playing
+        if (videoElement.paused) return;
+
+        try {
+          // Video scrolled out of view (less than 10% visible) - enter PiP
+          if (entry.intersectionRatio < 0.1 && !document.pictureInPictureElement) {
+            await videoElement.requestPictureInPicture();
+          }
+          // Video scrolled back into view (more than 50% visible) - exit PiP
+          else if (entry.intersectionRatio > 0.5 && document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          }
+        } catch (error) {
+          // PiP might fail (e.g., browser blocked it), silently ignore
+          console.debug("Auto PiP action failed:", error);
+        }
+      },
+      {
+        threshold: [0, 0.1, 0.5, 1.0], // Trigger at multiple visibility points
+      }
+    );
+
+    observer.observe(containerElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isPiPSupported, preRollAdCompleted]);
 
   useEffect(() => {
     if (!videoRef.current || !user || !videoId || !video || !preRollAdCompleted) return;
@@ -383,7 +426,7 @@ export default function VideoPlayer() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Card className="overflow-hidden">
-                <div className="aspect-video bg-black relative">
+                <div ref={videoContainerRef} className="aspect-video bg-black relative">
                   {showPreRollAd && preRollAd ? (
                     <SkippableInStreamAd
                       ad={preRollAd}
