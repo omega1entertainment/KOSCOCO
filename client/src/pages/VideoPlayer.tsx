@@ -191,9 +191,16 @@ export default function VideoPlayer() {
   // Automatic Picture-in-Picture when scrolling
   useEffect(() => {
     if (!videoContainerRef.current || !videoRef.current || !isPiPSupported || !preRollAdCompleted) {
+      console.log("Auto PiP not ready:", {
+        hasContainer: !!videoContainerRef.current,
+        hasVideo: !!videoRef.current,
+        isPiPSupported,
+        preRollAdCompleted
+      });
       return;
     }
 
+    console.log("Auto PiP observer setup complete");
     const videoElement = videoRef.current;
     const containerElement = videoContainerRef.current;
 
@@ -226,8 +233,18 @@ export default function VideoPlayer() {
       async (entries) => {
         const entry = entries[0];
         
+        console.log("IntersectionObserver callback", {
+          intersectionRatio: entry.intersectionRatio,
+          isPlaying: !videoElement.paused,
+          isPiPActive: !!document.pictureInPictureElement,
+          manuallyDisabled: manualPiPDisabled.current
+        });
+        
         // Only trigger auto-PiP if video is playing
-        if (videoElement.paused) return;
+        if (videoElement.paused) {
+          console.log("Video is paused, skipping auto-PiP");
+          return;
+        }
 
         try {
           // Video scrolled back into view (more than 50% visible)
