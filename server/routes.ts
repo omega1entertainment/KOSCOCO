@@ -2841,24 +2841,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You cannot delete your own account" });
       }
 
-      // Delete all related records in cascade order
+      // Delete all related records in cascade order using raw SQL
       // Delete likes
-      await db.delete(schema.likes).where(eq(schema.likes.userId, id));
+      await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
       
       // Delete votes
-      await db.delete(schema.votes).where(eq(schema.votes.userId, id));
+      await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
       
       // Delete judge scores (if user is a judge)
-      await db.delete(schema.judgeScores).where(eq(schema.judgeScores.judgeId, id));
+      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
       
       // Delete watch history
-      await db.delete(schema.watchHistory).where(eq(schema.watchHistory.userId, id));
+      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
       
       // Delete videos
-      await db.delete(schema.videos).where(eq(schema.videos.creatorId, id));
+      await db.execute(sql`DELETE FROM videos WHERE creator_id = ${id}`);
       
       // Delete affiliate records
-      await db.delete(schema.affiliates).where(eq(schema.affiliates.userId, id));
+      await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
       
       // Delete the user
       await storage.deleteUser(id);
