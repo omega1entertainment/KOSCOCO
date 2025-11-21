@@ -3997,7 +3997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cms", requireAdmin, async (req, res) => {
+  app.post("/api/cms", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { section, key, label, value, type } = req.body;
       if (!section || !key || !label) {
@@ -4018,7 +4018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cms/:section/:key", requireAdmin, async (req, res) => {
+  app.delete("/api/cms/:section/:key", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { section, key } = req.params;
       await storage.deleteCmsContent(section, key);
