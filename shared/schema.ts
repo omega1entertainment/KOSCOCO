@@ -78,7 +78,7 @@ export const videos = pgTable("videos", {
   phaseId: varchar("phase_id").references(() => phases.id),
   subcategory: text("subcategory").notNull(),
   title: text("title").notNull(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").unique(),
   description: text("description"),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
