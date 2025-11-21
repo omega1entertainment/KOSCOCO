@@ -325,6 +325,10 @@ function AdminDashboardContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [judgeToDelete, setJudgeToDelete] = useState<JudgeProfile | null>(null);
 
+  // User delete dialog state
+  const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<SelectUser | null>(null);
+
   // User filter state
   const [userFilter, setUserFilter] = useState<
     "all" | "verified" | "admin" | "judge" | "contestant"
@@ -710,6 +714,39 @@ function AdminDashboardContent() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
       setDeleteDialogOpen(false);
       setJudgeToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("admin.toast.deletionFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete user");
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Deleted",
+        description: "User account has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setDeleteUserDialogOpen(false);
+      setUserToDelete(null);
     },
     onError: (error: Error) => {
       toast({
