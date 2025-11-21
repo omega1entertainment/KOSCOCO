@@ -21,7 +21,7 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
       
       <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-        <h1 className="font-display text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl text-white mb-6 tracking-wide uppercase">
+        <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl text-white mb-6 tracking-wide uppercase">
           {t('hero.title')}
         </h1>
         
