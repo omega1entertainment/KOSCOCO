@@ -54,6 +54,48 @@ function isJudge(req: any, res: any, next: any) {
   next();
 }
 
+// Moderator middleware
+function isModerator(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = req.user as SelectUser;
+  if (!user.isModerator) {
+    return res.status(403).json({ message: "Forbidden: Moderator access required" });
+  }
+  
+  next();
+}
+
+// Content Manager middleware
+function isContentManager(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = req.user as SelectUser;
+  if (!user.isContentManager) {
+    return res.status(403).json({ message: "Forbidden: Content Manager access required" });
+  }
+  
+  next();
+}
+
+// Affiliate Manager middleware
+function isAffiliateManager(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = req.user as SelectUser;
+  if (!user.isAffiliateManager) {
+    return res.status(403).json({ message: "Forbidden: Affiliate Manager access required" });
+  }
+  
+  next();
+}
+
 // Email verified middleware
 function isEmailVerified(req: any, res: any, next: any) {
   if (!req.user) {
