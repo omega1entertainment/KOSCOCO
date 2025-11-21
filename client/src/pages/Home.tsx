@@ -32,6 +32,11 @@ export default function Home() {
     queryKey: ['/api/categories'],
   });
 
+  // Fetch video counts for each category
+  const { data: videoCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ['/api/categories/video-counts'],
+  });
+
   const handleVoteClick = (videoId: string, videoTitle: string) => {
     setSelectedVideo({ id: videoId, title: videoTitle });
     setVoteModalOpen(true);
@@ -50,31 +55,31 @@ export default function Home() {
       title: t('home.categoryMusicDance'),
       image: musicImage,
       subcategories: [t('home.subcategorySinging'), t('home.subcategoryDancing')],
-      entryCount: 234,
+      entryCount: videoCounts['Music & Dance'] || 0,
     },
     {
       title: t('home.categoryComedyArts'),
       image: comedyImage,
       subcategories: [t('home.subcategorySkits'), t('home.subcategoryStandup'), t('home.subcategoryMonologue'), t('home.subcategoryActing'), t('home.subcategoryMovieContent')],
-      entryCount: 187,
+      entryCount: videoCounts['Comedy & Performing Arts'] || 0,
     },
     {
       title: t('home.categoryFashionLifestyle'),
       image: fashionImage,
       subcategories: [t('home.subcategoryCooking'), t('home.subcategoryEvents'), t('home.subcategoryDecor'), t('home.subcategorySports'), t('home.subcategoryTravel'), t('home.subcategoryVlogging'), t('home.subcategoryFashion'), t('home.subcategoryHair'), t('home.subcategoryMakeup'), t('home.subcategoryBeauty'), t('home.subcategoryReviews')],
-      entryCount: 312,
+      entryCount: videoCounts['Fashion & Lifestyle'] || 0,
     },
     {
       title: t('home.categoryEducationLearning'),
       image: educationImage,
       subcategories: [t('home.subcategoryDIY'), t('home.subcategoryTutorials'), t('home.subcategoryDocumentary'), t('home.subcategoryBusinessFinance'), t('home.subcategoryNews'), t('home.subcategoryMotivational')],
-      entryCount: 156,
+      entryCount: videoCounts['Education & Learning'] || 0,
     },
     {
       title: t('home.categoryGospelChoirs'),
       image: gospelImage,
       subcategories: [t('home.subcategoryAcapella'), t('home.subcategoryChoirMusic')],
-      entryCount: 89,
+      entryCount: videoCounts['Gospel Choirs'] || 0,
     },
   ];
 
