@@ -49,6 +49,7 @@ import {
   Upload,
   Trash2,
 } from "lucide-react";
+import { createPermalink } from "@/lib/slugUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -2261,9 +2262,7 @@ function AdminDashboardContent() {
                             <div className="flex items-center gap-2 pt-2">
                               <Button
                                 variant="outline"
-                                onClick={() =>
-                                  setLocation(`/video/${report.videoId}`)
-                                }
+                                onClick={() => setLocation(`/video/${report.videoId}`)}
                                 className="gap-2"
                                 data-testid={`button-view-video-${report.id}`}
                               >

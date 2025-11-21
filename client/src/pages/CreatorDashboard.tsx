@@ -22,6 +22,7 @@ import {
   Trophy,
   Calendar
 } from "lucide-react";
+import { createPermalink } from "@/lib/slugUtils";
 import {
   Dialog,
   DialogContent,
@@ -352,7 +353,7 @@ export default function CreatorDashboard() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setLocation(`/video/${video.id}`)}
+                            onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                             data-testid={`button-view-${video.id}`}
                           >
                             {t('creator.myVideos.view')}
