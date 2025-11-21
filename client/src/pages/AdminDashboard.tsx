@@ -927,6 +927,7 @@ function AdminDashboardContent() {
                             <th className="text-left p-3 font-semibold">{t("admin.users.roles")}</th>
                             <th className="text-left p-3 font-semibold">{t("admin.users.status")}</th>
                             <th className="text-left p-3 font-semibold">{t("admin.users.joined")}</th>
+                            <th className="text-left p-3 font-semibold">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -987,6 +988,20 @@ function AdminDashboardContent() {
                                 </td>
                                 <td className="p-3">
                                   {new Date(user.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="p-3">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setUserToDelete(user);
+                                      setDeleteUserDialogOpen(true);
+                                    }}
+                                    data-testid={`button-delete-user-${user.id}`}
+                                    title="Delete user account"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
                                 </td>
                               </tr>
                             ))}
@@ -1318,6 +1333,9 @@ function AdminDashboardContent() {
                               <th className="text-left p-3 font-semibold">
                                 {t("admin.users.joined")}
                               </th>
+                              <th className="text-left p-3 font-semibold">
+                                Actions
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1413,6 +1431,20 @@ function AdminDashboardContent() {
                                     {new Date(
                                       user.createdAt,
                                     ).toLocaleDateString()}
+                                  </td>
+                                  <td className="p-3">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setUserToDelete(user);
+                                        setDeleteUserDialogOpen(true);
+                                      }}
+                                      data-testid={`button-delete-user-${user.id}`}
+                                      title="Delete user account"
+                                    >
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
                                   </td>
                                 </tr>
                               ))}
@@ -2956,6 +2988,39 @@ function AdminDashboardContent() {
               {deleteJudgeMutation.isPending
                 ? t("admin.judges.deleting")
                 : t("admin.judges.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={deleteUserDialogOpen} onOpenChange={setDeleteUserDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-user">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete the account for{" "}
+              <strong>
+                {userToDelete?.firstName} {userToDelete?.lastName}
+              </strong>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-user">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (userToDelete) {
+                  deleteUserMutation.mutate(userToDelete.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteUserMutation.isPending}
+              data-testid="button-confirm-delete-user"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
