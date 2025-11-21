@@ -340,6 +340,19 @@ export const adClicks = pgTable("ad_clicks", {
   index("idx_clicks_created").on(table.createdAt),
 ]);
 
+export const cmsContent = pgTable("cms_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  section: text("section").notNull(),
+  key: text("key").notNull(),
+  label: text("label").notNull(),
+  value: jsonb("value"),
+  type: text("type").notNull().default('text'),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  unique("unique_cms_section_key").on(table.section, table.key),
+]);
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -484,6 +497,16 @@ export const insertAdClickSchema = createInsertSchema(adClicks).omit({
   id: true,
   createdAt: true,
 });
+
+export const insertCmsContentSchema = createInsertSchema(cmsContent).omit({
+  id: true,
+  updatedAt: true,
+}).extend({
+  value: z.any().optional(),
+});
+
+export type InsertCmsContent = z.infer<typeof insertCmsContentSchema>;
+export type CmsContent = typeof cmsContent.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
