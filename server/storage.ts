@@ -23,7 +23,8 @@ import type {
   Ad, InsertAd, AdWithStats,
   AdPayment, InsertAdPayment,
   AdImpression, InsertAdImpression,
-  AdClick, InsertAdClick
+  AdClick, InsertAdClick,
+  CmsContent, InsertCmsContent
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -212,6 +213,12 @@ export interface IStorage {
     totalAdRevenue: number;
     totalRevenue: number;
   }>;
+  
+  // CMS methods
+  getCmsContent(section: string): Promise<CmsContent[]>;
+  getCmsContentByKey(section: string, key: string): Promise<CmsContent | undefined>;
+  upsertCmsContent(content: InsertCmsContent & { updatedBy: string }): Promise<CmsContent>;
+  deleteCmsContent(section: string, key: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -2002,6 +2009,36 @@ export class DbStorage implements IStorage {
       totalAdRevenue,
       totalRevenue,
     };
+  }
+
+  async getCmsContent(section: string): Promise<CmsContent[]> {
+    return db.select().from(schema.cmsContent).where(eq(schema.cmsContent.section, section));
+  }
+
+  async getCmsContentByKey(section: string, key: string): Promise<CmsContent | undefined> {
+    const [content] = await db.select().from(schema.cmsContent).where(
+      and(eq(schema.cmsContent.section, section), eq(schema.cmsContent.key, key))
+    );
+    return content;
+  }
+
+  async upsertCmsContent(content: InsertCmsContent & { updatedBy: string }): Promise<CmsContent> {
+    const existing = await this.getCmsContentByKey(content.section, content.key);
+    if (existing) {
+      const [updated] = await db.update(schema.cmsContent).set({
+        ...content,
+        updatedAt: new Date(),
+      }).where(and(eq(schema.cmsContent.section, content.section), eq(schema.cmsContent.key, content.key))).returning();
+      return updated;
+    }
+    const [created] = await db.insert(schema.cmsContent).values(content).returning();
+    return created;
+  }
+
+  async deleteCmsContent(section: string, key: string): Promise<void> {
+    await db.delete(schema.cmsContent).where(
+      and(eq(schema.cmsContent.section, section), eq(schema.cmsContent.key, key))
+    );
   }
 }
 

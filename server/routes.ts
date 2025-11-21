@@ -3971,6 +3971,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CMS endpoints
+  app.get("/api/cms/:section", async (req, res) => {
+    try {
+      const { section } = req.params;
+      const content = await storage.getCmsContent(section);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching CMS content:", error);
+      res.status(500).json({ message: "Failed to fetch CMS content" });
+    }
+  });
+
+  app.get("/api/cms/:section/:key", async (req, res) => {
+    try {
+      const { section, key } = req.params;
+      const content = await storage.getCmsContentByKey(section, key);
+      if (!content) {
+        return res.status(404).json({ message: "CMS content not found" });
+      }
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching CMS content:", error);
+      res.status(500).json({ message: "Failed to fetch CMS content" });
+    }
+  });
+
+  app.post("/api/cms", requireAdmin, async (req, res) => {
+    try {
+      const { section, key, label, value, type } = req.body;
+      if (!section || !key || !label) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      const content = await storage.upsertCmsContent({
+        section,
+        key,
+        label,
+        value,
+        type: type || 'text',
+        updatedBy: (req.user as any).id,
+      });
+      res.json(content);
+    } catch (error) {
+      console.error("Error upserting CMS content:", error);
+      res.status(500).json({ message: "Failed to save CMS content" });
+    }
+  });
+
+  app.delete("/api/cms/:section/:key", requireAdmin, async (req, res) => {
+    try {
+      const { section, key } = req.params;
+      await storage.deleteCmsContent(section, key);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting CMS content:", error);
+      res.status(500).json({ message: "Failed to delete CMS content" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
