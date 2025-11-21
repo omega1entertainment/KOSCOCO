@@ -127,10 +127,10 @@ export default function Home() {
   ];
 
   const stats = [
-    { icon: Users, label: t('home.statTotalParticipants'), value: '1,247', trend: { value: '12%', positive: true } },
-    { icon: Video, label: t('home.statVideosSubmitted'), value: '978', trend: { value: '8%', positive: true } },
-    { icon: Trophy, label: t('home.statCategories'), value: '5', trend: undefined },
-    { icon: TrendingUp, label: t('home.statTotalVotes'), value: '45.2K', trend: { value: '24%', positive: true } },
+    { icon: Users, label: t('home.statTotalParticipants'), value: '0', trend: undefined },
+    { icon: Video, label: t('home.statVideosSubmitted'), value: '0', trend: undefined },
+    { icon: Trophy, label: t('home.statCategories'), value: '0', trend: undefined },
+    { icon: TrendingUp, label: t('home.statTotalVotes'), value: '0', trend: undefined },
   ];
 
   return (
