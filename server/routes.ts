@@ -17,6 +17,7 @@ import formidable from "formidable";
 import { promises as fs, createReadStream } from "fs";
 import { generateThumbnail } from "./thumbnailGenerator";
 import { moderateVideo } from "./moderation";
+import { generateSlug } from "../client/src/lib/slugUtils";
 import path from "path";
 
 // Initialize Flutterwave
@@ -790,6 +791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         categoryId,
         subcategory,
         title,
+        slug: generateSlug(title),
         description: description || null,
         videoUrl: videoPath,
         thumbnailUrl: thumbnailPath,
