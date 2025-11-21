@@ -60,7 +60,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type {
   Video,
@@ -69,7 +69,188 @@ import type {
   Report,
   JudgeProfile,
   SelectUser,
+  CmsContent,
 } from "@shared/schema";
+import { Plus, Settings } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+function CMSManagementTab() {
+  const { toast } = useToast();
+  const [selectedSection, setSelectedSection] = useState<string>("hero");
+  const [cmsContent, setCmsContent] = useState<CmsContent[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      section: z.string(),
+      key: z.string().min(1),
+      label: z.string().min(1),
+      value: z.any().optional(),
+      type: z.string(),
+    })),
+    defaultValues: { section: "hero", key: "", label: "", value: "", type: "text" },
+  });
+
+  const loadCmsContent = async (section: string) => {
+    setIsLoading(true);
+    try {
+      const data = await apiRequest(`/api/cms/${section}`);
+      setCmsContent(Array.isArray(data) ? data : []);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load CMS content", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveCmsMutation = useMutation({
+    mutationFn: async (data: any) => await apiRequest("/api/cms", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      toast({ title: "Success", description: "CMS content saved successfully" });
+      loadCmsContent(selectedSection);
+      form.reset({ section: selectedSection, key: "", label: "", value: "", type: "text" });
+      setEditingId(null);
+    },
+    onError: () => toast({ title: "Error", description: "Failed to save CMS content", variant: "destructive" }),
+  });
+
+  const deleteCmsMutation = useMutation({
+    mutationFn: async (section: string, key: string) => await apiRequest(`/api/cms/${section}/${key}`, { method: "DELETE" }),
+    onSuccess: () => {
+      toast({ title: "Success", description: "CMS content deleted" });
+      loadCmsContent(selectedSection);
+    },
+    onError: () => toast({ title: "Error", description: "Failed to delete CMS content", variant: "destructive" }),
+  });
+
+  const sections = useMemo(() => ["hero", "homepage", "footer", "navigation", "about", "contact"], []);
+
+  const onSubmit = (data: any) => {
+    saveCmsMutation.mutate({ ...data, section: selectedSection });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Content Management System
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="section-select">Select Section</Label>
+            <Select value={selectedSection} onValueChange={(val) => { setSelectedSection(val); loadCmsContent(val); }}>
+              <SelectTrigger id="section-select" data-testid="select-cms-section">
+                <SelectValue placeholder="Select a section" />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField control={form.control} name="key" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Key</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., title, description, buttonText" {...field} data-testid="input-cms-key" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="label" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Label</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Display label for admins" {...field} data-testid="input-cms-label" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger data-testid="select-cms-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="textarea">Textarea</SelectItem>
+                      <SelectItem value="html">HTML</SelectItem>
+                      <SelectItem value="image">Image URL</SelectItem>
+                      <SelectItem value="url">URL</SelectItem>
+                      <SelectItem value="json">JSON</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="value" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Value</FormLabel>
+                  <FormControl>
+                    {form.getValues("type") === "textarea" || form.getValues("type") === "html" ? (
+                      <Textarea placeholder="Enter content value" {...field} data-testid="textarea-cms-value" />
+                    ) : (
+                      <Input placeholder="Enter content value" {...field} data-testid="input-cms-value" />
+                    )}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <Button type="submit" disabled={saveCmsMutation.isPending} className="w-full" data-testid="button-save-cms">
+                <Plus className="w-4 h-4 mr-2" />
+                {saveCmsMutation.isPending ? "Saving..." : editingId ? "Update" : "Add"} Content
+              </Button>
+            </form>
+          </Form>
+        </div>
+
+        <div className="border-t pt-6">
+          <h3 className="font-semibold mb-4">Existing Content in {selectedSection}</h3>
+          {isLoading ? (
+            <p className="text-muted-foreground">Loading...</p>
+          ) : cmsContent.length === 0 ? (
+            <p className="text-muted-foreground">No content yet. Create one above.</p>
+          ) : (
+            <div className="space-y-3">
+              {cmsContent.map(item => (
+                <Card key={item.id} className="p-4" data-testid={`cms-item-${item.key}`}>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">Key: {item.key}</p>
+                      <p className="text-sm mt-2 truncate">{String(item.value)}</p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button size="sm" variant="outline" onClick={() => { setEditingId(item.id); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteCmsMutation.mutate(selectedSection, item.key)} disabled={deleteCmsMutation.isPending} data-testid={`button-delete-cms-${item.id}`}>
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
@@ -975,6 +1156,13 @@ function AdminDashboardContent() {
                   {reports.filter((r) => r.status === "pending").length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="cms"
+              className="w-full justify-start"
+              data-testid="tab-cms"
+            >
+              CMS
             </TabsTrigger>
           </TabsList>
 
@@ -2692,6 +2880,10 @@ function AdminDashboardContent() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            </TabsContent>
+
+            <TabsContent value="cms" className="mt-0">
+              <CMSManagementTab />
             </TabsContent>
           </div>
         </div>
