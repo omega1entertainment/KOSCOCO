@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
 import PhaseTimeline from "@/components/PhaseTimeline";
@@ -10,6 +11,7 @@ import VotePaymentModal from "@/components/VotePaymentModal";
 import VideoOfTheDay from "@/components/home/VideoOfTheDay";
 import { Users, Video, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { Category } from "@shared/schema";
 
 import musicImage from "@assets/generated_images/Music_and_Dance_category_e223aa7f.png";
 import comedyImage from "@assets/generated_images/Comedy_and_Performing_Arts_ede3bf3d.png";
@@ -25,9 +27,22 @@ export default function Home() {
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
 
+  // Fetch real categories from API
+  const { data: apiCategories = [] } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+  });
+
   const handleVoteClick = (videoId: string, videoTitle: string) => {
     setSelectedVideo({ id: videoId, title: videoTitle });
     setVoteModalOpen(true);
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    // Find the category by name to get its ID
+    const category = apiCategories.find(cat => cat.name === categoryName);
+    if (category) {
+      setLocation(`/category/${category.id}`);
+    }
   };
 
   const categories = [
@@ -168,7 +183,8 @@ export default function Home() {
               <CategoryCard
                 key={idx}
                 {...category}
-                onClick={() => console.log(`View ${category.title}`)}
+                onClick={() => handleCategoryClick(category.title)}
+                data-testid={`card-category-${idx}`}
               />
             ))}
           </div>
