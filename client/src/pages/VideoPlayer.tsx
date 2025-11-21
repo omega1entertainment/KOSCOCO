@@ -14,11 +14,13 @@ import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalL
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { extractIdFromPermalink } from "@/lib/slugUtils";
 
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
-  const [, params] = useRoute("/video/:id");
-  const videoId = params?.id;
+  const [, params] = useRoute("/video/:permalink");
+  const permalink = params?.permalink || "";
+  const videoId = extractIdFromPermalink(permalink);
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -717,7 +719,10 @@ export default function VideoPlayer() {
                         <Card 
                           key={relatedVideo.id}
                           className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer"
-                          onClick={() => setLocation(`/video/${relatedVideo.id}`)}
+                          onClick={() => {
+                            const { createPermalink } = require("@/lib/slugUtils");
+                            setLocation(`/video/${createPermalink(relatedVideo.id, relatedVideo.title)}`);
+                          }}
                           data-testid={`related-video-${relatedVideo.id}`}
                         >
                           <div className="flex gap-3 p-3">

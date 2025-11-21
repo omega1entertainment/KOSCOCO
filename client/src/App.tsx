@@ -85,7 +85,7 @@ function Router() {
           <Route path="/affiliate/dashboard" component={AffiliateDashboard} />
           <Route path="/categories" component={Categories} />
           <Route path="/category/:id" component={CategoryVideos} />
-          <Route path="/video/:id" component={VideoPlayer} />
+          <Route path="/video/:permalink" component={VideoPlayer} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/prizes" component={Prizes} />
           <Route path="/how-it-works" component={HowItWorks} />
