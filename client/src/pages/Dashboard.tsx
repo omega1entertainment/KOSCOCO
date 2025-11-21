@@ -19,6 +19,8 @@ import {
   History
 } from "lucide-react";
 import type { Registration, Video, Vote, Category, WatchHistory } from "@shared/schema";
+import { createPermalink } from "@/lib/slugUtils";
+import { createPermalink } from "@/lib/slugUtils";
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -243,7 +245,7 @@ export default function Dashboard() {
                       <div
                         key={video.id}
                         className="border rounded-lg p-4 hover-elevate cursor-pointer"
-                        onClick={() => setLocation(`/video/${video.id}`)}
+                        onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                         data-testid={`video-card-${video.id}`}
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -296,7 +298,12 @@ export default function Dashboard() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setLocation(`/video/${vote.videoId}`)}
+                          onClick={() => {
+                            const voteVideo = votes.find(v => v.id === vote.id);
+                            if (voteVideo?.video) {
+                              setLocation(`/video/${createPermalink(voteVideo.videoId, voteVideo.video.title)}`);
+                            }
+                          }}
                           data-testid={`button-view-video-${vote.id}`}
                         >
                           {t('dashboard.votes.viewVideo')}

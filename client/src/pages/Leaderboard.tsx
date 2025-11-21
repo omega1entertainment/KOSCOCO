@@ -14,6 +14,7 @@ import { Trophy, Check, Eye, Play, Star, Award, Heart } from "lucide-react";
 import { useState } from "react";
 import type { LeaderboardEntry, Category, Phase } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { createPermalink } from "@/lib/slugUtils";
 
 export default function Leaderboard() {
   const { t } = useLanguage();
@@ -134,7 +135,7 @@ export default function Leaderboard() {
                   <Card 
                     key={video.id} 
                     className={`overflow-hidden hover-elevate cursor-pointer ${rank <= 3 ? 'border-primary/50' : ''}`}
-                    onClick={() => setLocation(`/video/${video.id}`)}
+                    onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                     data-testid={`card-video-${rank}`}
                   >
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4">

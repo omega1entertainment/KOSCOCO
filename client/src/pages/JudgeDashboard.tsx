@@ -18,6 +18,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Play, Clock, CheckCircle, AlertCircle, Upload, User as UserIcon } from "lucide-react";
 import type { VideoForJudging, JudgeScoreWithVideo, User } from "@shared/schema";
 import { useEffect } from "react";
+import { createPermalink } from "@/lib/slugUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 //Profile form schema - will be created with translations inside component
@@ -363,7 +364,7 @@ export default function JudgeDashboard() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-16 w-16 rounded-full bg-white/90 hover:bg-white"
-                                    onClick={() => setLocation(`/video/${video.id}`)}
+                                    onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                                     data-testid={`button-play-${video.id}`}
                                   >
                                     <Play className="w-8 h-8 text-primary fill-current ml-1" />
@@ -386,7 +387,7 @@ export default function JudgeDashboard() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setLocation(`/video/${video.id}`)}
+                              onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                               data-testid={`button-view-full-${video.id}`}
                             >
                               {t('judge.viewFull')}
@@ -541,7 +542,7 @@ export default function JudgeDashboard() {
                         <div className="md:col-span-1">
                           <div 
                             className="aspect-video bg-muted rounded-md overflow-hidden cursor-pointer hover-elevate"
-                            onClick={() => setLocation(`/video/${video.id}`)}
+                            onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                           >
                             {video.thumbnailUrl ? (
                               <img

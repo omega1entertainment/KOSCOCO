@@ -10,6 +10,7 @@ import type { Category, VideoWithStats } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { createPermalink } from "@/lib/slugUtils";
 
 export default function CategoryVideos() {
   const { t } = useLanguage();
@@ -124,7 +125,7 @@ export default function CategoryVideos() {
                   <Card 
                     key={video.id} 
                     className="group overflow-hidden hover-elevate active-elevate-2 cursor-pointer transition-all"
-                    onClick={() => setLocation(`/video/${video.id}`)}
+                    onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                     data-testid={`card-video-${video.id}`}
                   >
                     <div className="aspect-video relative overflow-hidden bg-muted">
