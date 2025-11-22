@@ -65,7 +65,7 @@ export default function Login() {
         password: signupPassword,
         firstName: signupFirstName,
         lastName: signupLastName,
-        username: signupUsername || null,
+        username: signupUsername,
         age: signupAge ? parseInt(signupAge) : null,
         parentalConsent: signupParentalConsent,
       });
@@ -106,7 +106,7 @@ export default function Login() {
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signupEmail || !signupPassword || !signupFirstName || !signupLastName) {
+    if (!signupEmail || !signupPassword || !signupFirstName || !signupLastName || !signupUsername) {
       toast({
         title: t("auth.missingInfo"),
         description: t("auth.fillRequiredFields"),
@@ -115,7 +115,7 @@ export default function Login() {
       return;
     }
 
-    if (signupUsername && (signupUsername.length < 3 || signupUsername.length > 20)) {
+    if (signupUsername.length < 3 || signupUsername.length > 20) {
       toast({
         title: t("auth.invalidUsername"),
         description: "Username must be between 3 and 20 characters",
@@ -292,7 +292,7 @@ export default function Login() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-username">Username <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                      <Label htmlFor="signup-username">Username</Label>
                       <Input
                         id="signup-username"
                         type="text"
