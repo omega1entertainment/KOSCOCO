@@ -33,6 +33,9 @@ export default function Login() {
   const [signupParentalConsent, setSignupParentalConsent] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
 
+  // Signup form error state
+  const [signupErrors, setSignupErrors] = useState<string[]>([]);
+
   const loginMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("/api/login", "POST", {
@@ -106,14 +109,25 @@ export default function Login() {
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signupEmail || !signupPassword || !signupFirstName || !signupLastName || !signupUsername) {
+    const errors: string[] = [];
+
+    if (!signupFirstName) errors.push("First Name");
+    if (!signupLastName) errors.push("Last Name");
+    if (!signupUsername) errors.push("Username");
+    if (!signupEmail) errors.push("Email");
+    if (!signupPassword) errors.push("Password");
+
+    if (errors.length > 0) {
+      setSignupErrors(errors);
       toast({
         title: t("auth.missingInfo"),
-        description: t("auth.fillRequiredFields"),
+        description: `Please fill in: ${errors.join(", ")}`,
         variant: "destructive",
       });
       return;
     }
+
+    setSignupErrors([]);
 
     if (signupUsername.length < 3 || signupUsername.length > 20) {
       toast({
@@ -275,6 +289,7 @@ export default function Login() {
                           value={signupFirstName}
                           onChange={(e) => setSignupFirstName(e.target.value)}
                           data-testid="input-signup-firstname"
+                          className={signupErrors.includes("First Name") ? "border-red-500" : ""}
                         />
                       </div>
 
@@ -287,6 +302,7 @@ export default function Login() {
                           value={signupLastName}
                           onChange={(e) => setSignupLastName(e.target.value)}
                           data-testid="input-signup-lastname"
+                          className={signupErrors.includes("Last Name") ? "border-red-500" : ""}
                         />
                       </div>
                     </div>
@@ -300,6 +316,7 @@ export default function Login() {
                         value={signupUsername}
                         onChange={(e) => setSignupUsername(e.target.value)}
                         data-testid="input-signup-username"
+                        className={signupErrors.includes("Username") ? "border-red-500" : ""}
                       />
                       <p className="text-xs text-muted-foreground">
                         3-20 characters, letters and numbers only
@@ -315,6 +332,7 @@ export default function Login() {
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
                         data-testid="input-signup-email"
+                        className={signupErrors.includes("Email") ? "border-red-500" : ""}
                       />
                     </div>
 
@@ -327,6 +345,7 @@ export default function Login() {
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
                         data-testid="input-signup-password"
+                        className={signupErrors.includes("Password") ? "border-red-500" : ""}
                       />
                       <p className="text-xs text-muted-foreground">
                         {t("auth.passwordHint")}
