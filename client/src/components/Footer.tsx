@@ -129,11 +129,13 @@ export default function Footer() {
                 return (
                   <li key={item.key}>
                     {route ? (
-                      <Link href={route} data-testid={`link-footer-${item.key}`}>
-                        <a className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                          {t(item.key)}
-                        </a>
-                      </Link>
+                      <a 
+                        href={route}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
+                        data-testid={`link-footer-${item.key}`}
+                      >
+                        {t(item.key)}
+                      </a>
                     ) : (
                       <button 
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors"

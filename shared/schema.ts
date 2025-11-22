@@ -391,8 +391,8 @@ export const emailCampaigns = pgTable("email_campaigns", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
-  index("idx_campaigns_status").on(table.status),
-  index("idx_campaigns_created_by").on(table.createdBy),
+  index("idx_email_campaigns_status").on(table.status),
+  index("idx_email_campaigns_created_by").on(table.createdBy),
 ]);
 
 export const insertUserSchema = createInsertSchema(users).omit({
