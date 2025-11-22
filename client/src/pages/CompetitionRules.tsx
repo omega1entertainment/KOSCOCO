@@ -92,27 +92,35 @@ export default function CompetitionRules() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                The competition will run for approximately 8-10 weeks and is divided into five phases:
+                The competition will run for approximately 8-10 weeks and is divided into seven phases:
               </p>
               <div className="space-y-3 text-sm">
                 <div className="pl-4 border-l-2 border-primary">
-                  <p className="font-semibold">Phase 1 (Top 100)</p>
-                  <p className="text-muted-foreground">Initial submissions, in search of the top 100 in each category advancing.</p>
+                  <p className="font-semibold">Phase 1 (Top 500)</p>
+                  <p className="text-muted-foreground">Initial submissions, in search of the top 500 in each category advancing based on likes.</p>
                 </div>
                 <div className="pl-4 border-l-2 border-primary">
-                  <p className="font-semibold">Phase 2 (Top 50)</p>
+                  <p className="font-semibold">Phase 2 (Top 100)</p>
+                  <p className="text-muted-foreground">In search of the top 100 in each category advancing.</p>
+                </div>
+                <div className="pl-4 border-l-2 border-primary">
+                  <p className="font-semibold">Phase 3 (Top 50)</p>
                   <p className="text-muted-foreground">In search of the top 50 in each category advancing.</p>
                 </div>
                 <div className="pl-4 border-l-2 border-primary">
-                  <p className="font-semibold">Phase 3 (Top 10)</p>
+                  <p className="font-semibold">Phase 4 (Top 25)</p>
+                  <p className="text-muted-foreground">In search of the top 25 in each category advancing.</p>
+                </div>
+                <div className="pl-4 border-l-2 border-primary">
+                  <p className="font-semibold">Phase 5 (Top 10)</p>
                   <p className="text-muted-foreground">In search of the top 10 in each category advancing.</p>
                 </div>
                 <div className="pl-4 border-l-2 border-primary">
-                  <p className="font-semibold">Phase 4 (Top 3)</p>
+                  <p className="font-semibold">Phase 6 (Top 3)</p>
                   <p className="text-muted-foreground">Where the top 3 participants in each category are crowned as winners. Cash prize amounts will be announced on the website.</p>
                 </div>
                 <div className="pl-4 border-l-2 border-primary">
-                  <p className="font-semibold">Phase 5 (GRAND FINALE)</p>
+                  <p className="font-semibold">GRAND FINALE</p>
                   <p className="text-muted-foreground">The top 3 winners from each of the 5 categories will compete for the "ULTIMATE PRIZE" and will be crowned Cameroon's Next Big Content Creator & Influencer.</p>
                 </div>
               </div>
@@ -213,6 +221,10 @@ export default function CompetitionRules() {
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 font-semibold text-foreground">•</span>
                   <span>All content submitted must be original and created solely by the participant. Plagiarism or copyright infringement will lead to immediate disqualification.</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 font-semibold text-foreground">•</span>
+                  <span>AI content is not accepted and will be disqualified immediately.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 font-semibold text-foreground">•</span>
