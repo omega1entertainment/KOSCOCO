@@ -60,7 +60,6 @@ export default function NavigationHeader({
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.judges'), path: '/judges' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
-    { label: 'Advertise', path: '/advertise' },
   ];
   
   const leaderboardMenuItems = [
@@ -145,6 +144,15 @@ export default function NavigationHeader({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              className="min-h-11"
+              onClick={() => onNavigate?.('/advertise')}
+              data-testid="link-advertise"
+            >
+              Advertise
+            </Button>
           </nav>
           
           <div className="hidden md:flex items-center gap-2">
@@ -286,6 +294,18 @@ export default function NavigationHeader({
                 </Button>
               ))}
             </div>
+
+            <Button
+              variant="ghost"
+              className="min-h-11 justify-start w-full"
+              onClick={() => {
+                onNavigate?.('/advertise');
+                setMobileMenuOpen(false);
+              }}
+              data-testid="mobile-link-advertise"
+            >
+              Advertise
+            </Button>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               <div className="flex items-center justify-between px-4 py-2">
