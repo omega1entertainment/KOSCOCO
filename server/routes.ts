@@ -8,7 +8,7 @@ import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseOb
 import { ObjectPermission } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
-import { insertJudgeScoreSchema } from "@shared/schema";
+import { insertJudgeScoreSchema, insertNewsletterSubscriberSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -4245,6 +4245,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public Newsletter Subscription endpoint
+  app.post("/api/newsletter/subscribe", async (req, res) => {
+    try {
+      const validationResult = insertNewsletterSubscriberSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: "Invalid subscriber data", errors: validationResult.error.errors });
+      }
+      const subscriber = await storage.createNewsletterSubscriber(validationResult.data);
+      res.json(subscriber);
+    } catch (error: any) {
+      console.error("Error subscribing to newsletter:", error);
+      if (error.message?.includes("unique constraint")) {
+        return res.status(409).json({ message: "This email is already subscribed" });
+      }
+      res.status(500).json({ message: "Failed to subscribe to newsletter" });
+    }
+  });
+
   // Newsletter Subscribers endpoints
   app.get("/api/admin/newsletter/subscribers", isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -4258,11 +4276,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/newsletter/subscribers", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { email, name, status } = req.body;
-      if (!email) {
-        return res.status(400).json({ message: "Email is required" });
+      const validationResult = insertNewsletterSubscriberSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: "Invalid subscriber data", errors: validationResult.error.errors });
       }
-      const subscriber = await storage.createNewsletterSubscriber({ email, name, status });
+      const subscriber = await storage.createNewsletterSubscriber(validationResult.data);
       res.json(subscriber);
     } catch (error) {
       console.error("Error creating subscriber:", error);

@@ -359,7 +359,12 @@ export const cmsContent = pgTable("cms_content", {
 export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique().notNull(),
-  name: text("name"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  location: text("location"),
+  country: text("country"),
+  interests: text("interests").array(),
   status: text("status").notNull().default('subscribed'),
   subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
   unsubscribedAt: timestamp("unsubscribed_at"),
@@ -546,6 +551,14 @@ export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSub
   id: true,
   subscribedAt: true,
   createdAt: true,
+}).extend({
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
+  location: z.string().optional(),
+  country: z.string().optional(),
+  interests: z.array(z.string()).optional(),
 });
 
 export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns).omit({

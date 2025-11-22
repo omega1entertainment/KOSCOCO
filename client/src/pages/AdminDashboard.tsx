@@ -377,7 +377,7 @@ function AdminDashboardContent() {
 
   const [newsletterDialogOpen, setNewsletterDialogOpen] = useState(false);
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
-  const [subscriberForm, setSubscriberForm] = useState({ email: "", name: "" });
+  const [subscriberForm, setSubscriberForm] = useState({ email: "", firstName: "", lastName: "", phone: "", location: "", country: "", interests: [] });
   const [campaignForm, setCampaignForm] = useState({ title: "", subject: "", content: "", htmlContent: "" });
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
 
@@ -389,7 +389,7 @@ function AdminDashboardContent() {
     onSuccess: () => {
       toast({ title: "Success", description: "Subscriber added successfully" });
       setNewsletterDialogOpen(false);
-      setSubscriberForm({ email: "", name: "" });
+      setSubscriberForm({ email: "", firstName: "", lastName: "", phone: "", location: "", country: "", interests: [] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/subscribers"] });
     },
     onError: (error: Error) => {
@@ -470,7 +470,16 @@ function AdminDashboardContent() {
   // Newsletter handlers
   const handleAddSubscriber = () => {
     if (subscriberForm.email) {
-      addSubscriberMutation.mutate({ email: subscriberForm.email, name: subscriberForm.name || null, status: "subscribed" });
+      addSubscriberMutation.mutate({
+        ...subscriberForm,
+        status: "subscribed",
+        firstName: subscriberForm.firstName || null,
+        lastName: subscriberForm.lastName || null,
+        phone: subscriberForm.phone || null,
+        location: subscriberForm.location || null,
+        country: subscriberForm.country || null,
+        interests: subscriberForm.interests || [],
+      });
     }
   };
 
@@ -3763,23 +3772,35 @@ function AdminDashboardContent() {
                           <p>No subscribers yet</p>
                         </div>
                       ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto border rounded-md">
                           <table className="w-full text-sm">
-                            <thead>
+                            <thead className="bg-muted/50 sticky top-0">
                               <tr className="border-b">
-                                <th className="text-left py-2 px-2">Email</th>
-                                <th className="text-left py-2 px-2">Name</th>
-                                <th className="text-left py-2 px-2">Status</th>
-                                <th className="text-left py-2 px-2">Subscribed</th>
-                                <th className="text-left py-2 px-2">Actions</th>
+                                <th className="text-left py-3 px-3 font-semibold">Email</th>
+                                <th className="text-left py-3 px-3 font-semibold">First Name</th>
+                                <th className="text-left py-3 px-3 font-semibold">Last Name</th>
+                                <th className="text-left py-3 px-3 font-semibold">Phone</th>
+                                <th className="text-left py-3 px-3 font-semibold">Location</th>
+                                <th className="text-left py-3 px-3 font-semibold">Country</th>
+                                <th className="text-left py-3 px-3 font-semibold">Interests</th>
+                                <th className="text-left py-3 px-3 font-semibold">Status</th>
+                                <th className="text-left py-3 px-3 font-semibold">Subscribed</th>
+                                <th className="text-left py-3 px-3 font-semibold">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {newsletterSubscribers.map((subscriber) => (
+                              {newsletterSubscribers.map((subscriber: any) => (
                                 <tr key={subscriber.id} className="border-b hover:bg-muted/50">
-                                  <td className="py-2 px-2">{subscriber.email}</td>
-                                  <td className="py-2 px-2">{subscriber.name || "-"}</td>
-                                  <td className="py-2 px-2">
+                                  <td className="py-3 px-3">{subscriber.email}</td>
+                                  <td className="py-3 px-3">{subscriber.firstName || "-"}</td>
+                                  <td className="py-3 px-3">{subscriber.lastName || "-"}</td>
+                                  <td className="py-3 px-3 text-xs">{subscriber.phone || "-"}</td>
+                                  <td className="py-3 px-3 text-xs">{subscriber.location || "-"}</td>
+                                  <td className="py-3 px-3 text-xs">{subscriber.country || "-"}</td>
+                                  <td className="py-3 px-3 text-xs">
+                                    {subscriber.interests && subscriber.interests.length > 0 ? subscriber.interests.join(", ") : "-"}
+                                  </td>
+                                  <td className="py-3 px-3">
                                     <Badge
                                       variant={subscriber.status === "subscribed" ? "default" : "secondary"}
                                       data-testid={`badge-subscriber-status-${subscriber.id}`}
@@ -3787,10 +3808,10 @@ function AdminDashboardContent() {
                                       {subscriber.status}
                                     </Badge>
                                   </td>
-                                  <td className="py-2 px-2 text-xs">
+                                  <td className="py-3 px-3 text-xs">
                                     {new Date(subscriber.subscribedAt).toLocaleDateString()}
                                   </td>
-                                  <td className="py-2 px-2 flex gap-2">
+                                  <td className="py-3 px-3 flex gap-2">
                                     <Button
                                       size="sm"
                                       variant="ghost"
@@ -3905,31 +3926,83 @@ function AdminDashboardContent() {
 
               {/* Add Subscriber Dialog */}
               <Dialog open={newsletterDialogOpen} onOpenChange={setNewsletterDialogOpen}>
-                <DialogContent data-testid="dialog-add-subscriber">
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-add-subscriber">
                   <DialogHeader>
                     <DialogTitle>Add Subscriber</DialogTitle>
-                    <DialogDescription>Add a new email subscriber to your newsletter</DialogDescription>
+                    <DialogDescription>Add a new email subscriber with all their information</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="subscriber-email">Email</Label>
-                      <Input
-                        id="subscriber-email"
-                        type="email"
-                        placeholder="subscriber@example.com"
-                        value={subscriberForm.email}
-                        onChange={(e) => setSubscriberForm({ ...subscriberForm, email: e.target.value })}
-                        data-testid="input-subscriber-email"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="subscriber-email">Email *</Label>
+                        <Input
+                          id="subscriber-email"
+                          type="email"
+                          placeholder="subscriber@example.com"
+                          value={subscriberForm.email}
+                          onChange={(e) => setSubscriberForm({ ...subscriberForm, email: e.target.value })}
+                          data-testid="input-subscriber-email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subscriber-firstName">First Name</Label>
+                        <Input
+                          id="subscriber-firstName"
+                          placeholder="John"
+                          value={(subscriberForm as any).firstName || ""}
+                          onChange={(e) => setSubscriberForm({ ...subscriberForm, ...(subscriberForm as any), firstName: e.target.value })}
+                          data-testid="input-subscriber-firstName"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subscriber-lastName">Last Name</Label>
+                        <Input
+                          id="subscriber-lastName"
+                          placeholder="Doe"
+                          value={(subscriberForm as any).lastName || ""}
+                          onChange={(e) => setSubscriberForm({ ...subscriberForm, ...(subscriberForm as any), lastName: e.target.value })}
+                          data-testid="input-subscriber-lastName"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subscriber-phone">Phone</Label>
+                        <Input
+                          id="subscriber-phone"
+                          placeholder="+237 6XX XXX XXX"
+                          value={(subscriberForm as any).phone || ""}
+                          onChange={(e) => setSubscriberForm({ ...subscriberForm, ...(subscriberForm as any), phone: e.target.value })}
+                          data-testid="input-subscriber-phone"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subscriber-location">Location</Label>
+                        <Input
+                          id="subscriber-location"
+                          placeholder="City, Region"
+                          value={(subscriberForm as any).location || ""}
+                          onChange={(e) => setSubscriberForm({ ...subscriberForm, ...(subscriberForm as any), location: e.target.value })}
+                          data-testid="input-subscriber-location"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subscriber-country">Country</Label>
+                        <Input
+                          id="subscriber-country"
+                          placeholder="Cameroon"
+                          value={(subscriberForm as any).country || ""}
+                          onChange={(e) => setSubscriberForm({ ...subscriberForm, ...(subscriberForm as any), country: e.target.value })}
+                          data-testid="input-subscriber-country"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <Label htmlFor="subscriber-name">Name (Optional)</Label>
+                      <Label htmlFor="subscriber-interests">Interests (comma separated)</Label>
                       <Input
-                        id="subscriber-name"
-                        placeholder="John Doe"
-                        value={subscriberForm.name}
-                        onChange={(e) => setSubscriberForm({ ...subscriberForm, name: e.target.value })}
-                        data-testid="input-subscriber-name"
+                        id="subscriber-interests"
+                        placeholder="Comedy, Music, Fashion"
+                        value={(subscriberForm as any).interests?.join(", ") || ""}
+                        onChange={(e) => setSubscriberForm({ ...subscriberForm, ...(subscriberForm as any), interests: e.target.value ? e.target.value.split(",").map(i => i.trim()) : [] })}
+                        data-testid="input-subscriber-interests"
                       />
                     </div>
                   </div>
