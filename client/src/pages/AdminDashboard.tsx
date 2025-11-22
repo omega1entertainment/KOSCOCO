@@ -83,6 +83,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 function CMSManagementTab() {
   const { toast } = useToast();
@@ -376,7 +378,7 @@ function AdminDashboardContent() {
   const [newsletterDialogOpen, setNewsletterDialogOpen] = useState(false);
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
   const [subscriberForm, setSubscriberForm] = useState({ email: "", name: "" });
-  const [campaignForm, setCampaignForm] = useState({ title: "", subject: "", content: "" });
+  const [campaignForm, setCampaignForm] = useState({ title: "", subject: "", content: "", htmlContent: "" });
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
 
   // Newsletter mutations
@@ -415,7 +417,7 @@ function AdminDashboardContent() {
     onSuccess: () => {
       toast({ title: "Success", description: "Campaign created successfully" });
       setCampaignDialogOpen(false);
-      setCampaignForm({ title: "", subject: "", content: "" });
+      setCampaignForm({ title: "", subject: "", content: "", htmlContent: "" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/campaigns"] });
     },
     onError: (error: Error) => {
@@ -430,7 +432,7 @@ function AdminDashboardContent() {
     onSuccess: () => {
       toast({ title: "Success", description: "Campaign updated successfully" });
       setCampaignDialogOpen(false);
-      setCampaignForm({ title: "", subject: "", content: "" });
+      setCampaignForm({ title: "", subject: "", content: "", htmlContent: "" });
       setEditingCampaign(null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/campaigns"] });
     },
@@ -480,17 +482,28 @@ function AdminDashboardContent() {
 
   const handleCreateCampaign = () => {
     if (campaignForm.title && campaignForm.subject && campaignForm.content) {
+      const dataToSend = {
+        title: campaignForm.title,
+        subject: campaignForm.subject,
+        content: campaignForm.content,
+        htmlContent: campaignForm.htmlContent || campaignForm.content,
+      };
       if (editingCampaign) {
-        updateCampaignMutation.mutate({ id: editingCampaign.id, data: campaignForm });
+        updateCampaignMutation.mutate({ id: editingCampaign.id, data: dataToSend });
       } else {
-        createCampaignMutation.mutate(campaignForm);
+        createCampaignMutation.mutate(dataToSend);
       }
     }
   };
 
   const handleEditCampaign = (campaign: any) => {
     setEditingCampaign(campaign);
-    setCampaignForm({ title: campaign.title, subject: campaign.subject, content: campaign.content });
+    setCampaignForm({
+      title: campaign.title,
+      subject: campaign.subject,
+      content: campaign.content,
+      htmlContent: campaign.htmlContent || campaign.content,
+    });
     setCampaignDialogOpen(true);
   };
 
@@ -3967,14 +3980,26 @@ function AdminDashboardContent() {
                     </div>
                     <div>
                       <Label htmlFor="campaign-content">Content</Label>
-                      <Textarea
-                        id="campaign-content"
-                        placeholder="Email content"
-                        rows={6}
-                        value={campaignForm.content}
-                        onChange={(e) => setCampaignForm({ ...campaignForm, content: e.target.value })}
-                        data-testid="textarea-campaign-content"
-                      />
+                      <div className="bg-background border rounded-md overflow-hidden" style={{ height: "300px" }}>
+                        <ReactQuill
+                          value={campaignForm.htmlContent}
+                          onChange={(html) => setCampaignForm({ ...campaignForm, htmlContent: html, content: html.replace(/<[^>]*>/g, "") })}
+                          theme="snow"
+                          placeholder="Write your email content here..."
+                          modules={{
+                            toolbar: [
+                              [{ header: [1, 2, 3, false] }],
+                              ["bold", "italic", "underline", "strike"],
+                              ["blockquote", "code-block"],
+                              [{ list: "ordered" }, { list: "bullet" }],
+                              [{ align: [] }],
+                              ["link", "image"],
+                              ["clean"],
+                            ],
+                          }}
+                          data-testid="editor-campaign-content"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
