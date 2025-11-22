@@ -80,7 +80,7 @@ export default function Login() {
         description: t("auth.signupSuccess"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      setLocation("/");
+      setLocation("/thank-you");
     },
     onError: (error: Error) => {
       toast({

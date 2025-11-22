@@ -41,6 +41,7 @@ import CreateCampaign from "@/pages/CreateCampaign";
 import EditCampaign from "@/pages/EditCampaign";
 import CreateAd from "@/pages/CreateAd";
 import CreatorDashboard from "@/pages/CreatorDashboard";
+import ThankYou from "@/pages/ThankYou";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -75,6 +76,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/login" component={Login} />
+          <Route path="/thank-you" component={ThankYou} />
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
