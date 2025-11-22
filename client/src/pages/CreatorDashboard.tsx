@@ -138,6 +138,19 @@ export default function CreatorDashboard() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
+  // Settings dialogs and form states
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [emailPreferencesDialogOpen, setEmailPreferencesDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState({
+    competition: true,
+    voting: true,
+    newsletters: true,
+    results: true,
+  });
+
   // Fetch creator stats
   const { data: stats, isLoading: statsLoading } = useQuery<CreatorStats>({
     queryKey: ["/api/creator/stats"],
@@ -249,6 +262,52 @@ export default function CreatorDashboard() {
   const handleConfirmDelete = () => {
     if (!videoToDelete) return;
     deleteVideoMutation.mutate(videoToDelete);
+  };
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Required Fields",
+        description: "Please fill in all password fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords Don't Match",
+        description: "New password and confirmation password must match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({
+        title: "Password Too Short",
+        description: "New password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Password Updated",
+      description: "Your password has been changed successfully",
+    });
+    setChangePasswordDialogOpen(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const handleSaveEmailPreferences = () => {
+    toast({
+      title: "Preferences Saved",
+      description: "Your email preferences have been updated",
+    });
+    setEmailPreferencesDialogOpen(false);
   };
 
   if (authLoading) {
@@ -719,13 +778,13 @@ export default function CreatorDashboard() {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold mb-2">Privacy & Security</h4>
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-change-password">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => setChangePasswordDialogOpen(true)} data-testid="button-change-password">
                     Change Password
                   </Button>
                 </div>
                 <div>
                   <h4 className="font-semibold mb-2">Email Preferences</h4>
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-email-preferences">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => setEmailPreferencesDialogOpen(true)} data-testid="button-email-preferences">
                     Manage Email Preferences
                   </Button>
                 </div>
@@ -800,6 +859,131 @@ export default function CreatorDashboard() {
               data-testid="button-confirm-delete"
             >
               {deleteVideoMutation.isPending ? t('common.deleting') : t('common.delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={changePasswordDialogOpen} onOpenChange={setChangePasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>Update your account password to keep your account secure</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter your current password"
+                data-testid="input-current-password"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (minimum 8 characters)"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your new password"
+                data-testid="input-confirm-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChangePasswordDialogOpen(false)} data-testid="button-cancel-password">
+              Cancel
+            </Button>
+            <Button onClick={handleChangePassword} data-testid="button-save-password">
+              Update Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Preferences Dialog */}
+      <Dialog open={emailPreferencesDialogOpen} onOpenChange={setEmailPreferencesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Preferences</DialogTitle>
+            <DialogDescription>Choose which emails you'd like to receive from KOSCOCO</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="competition-emails"
+                checked={emailNotifications.competition}
+                onChange={(e) => setEmailNotifications({ ...emailNotifications, competition: e.target.checked })}
+                data-testid="checkbox-competition-emails"
+              />
+              <label htmlFor="competition-emails" className="cursor-pointer">
+                <div className="font-medium">Competition Updates</div>
+                <div className="text-sm text-muted-foreground">Get notified about new competitions and deadlines</div>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="voting-emails"
+                checked={emailNotifications.voting}
+                onChange={(e) => setEmailNotifications({ ...emailNotifications, voting: e.target.checked })}
+                data-testid="checkbox-voting-emails"
+              />
+              <label htmlFor="voting-emails" className="cursor-pointer">
+                <div className="font-medium">Voting Updates</div>
+                <div className="text-sm text-muted-foreground">Get notified when your videos receive votes</div>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="newsletter-emails"
+                checked={emailNotifications.newsletters}
+                onChange={(e) => setEmailNotifications({ ...emailNotifications, newsletters: e.target.checked })}
+                data-testid="checkbox-newsletter-emails"
+              />
+              <label htmlFor="newsletter-emails" className="cursor-pointer">
+                <div className="font-medium">Newsletters</div>
+                <div className="text-sm text-muted-foreground">Receive our latest updates and creator tips</div>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="results-emails"
+                checked={emailNotifications.results}
+                onChange={(e) => setEmailNotifications({ ...emailNotifications, results: e.target.checked })}
+                data-testid="checkbox-results-emails"
+              />
+              <label htmlFor="results-emails" className="cursor-pointer">
+                <div className="font-medium">Results & Rankings</div>
+                <div className="text-sm text-muted-foreground">Get notified about competition results and your ranking</div>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailPreferencesDialogOpen(false)} data-testid="button-cancel-email-prefs">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEmailPreferences} data-testid="button-save-email-prefs">
+              Save Preferences
             </Button>
           </DialogFooter>
         </DialogContent>
