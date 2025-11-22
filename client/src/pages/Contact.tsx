@@ -98,19 +98,20 @@ export default function Contact() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-foreground mb-2 font-semibold">Strictly Chat on WhatsApp</p>
-                <a
-                  href="https://wa.me/237676951397"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline font-mono"
-                  data-testid="link-whatsapp-contact"
+                <p className="text-foreground mb-4 font-semibold">Strictly Chat on WhatsApp</p>
+                <Button
+                  asChild
+                  className="w-full"
+                  data-testid="button-whatsapp-contact"
                 >
-                  +237 676 951 397
-                </a>
-                <p className="text-sm text-muted-foreground mt-3">
-                  Click to open WhatsApp chat with us
-                </p>
+                  <a
+                    href="https://wa.me/237676951397"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    CHAT ON WHATSAPP
+                  </a>
+                </Button>
               </CardContent>
             </Card>
 
