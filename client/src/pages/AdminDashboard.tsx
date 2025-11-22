@@ -1042,18 +1042,29 @@ function AdminDashboardContent() {
                                   {new Date(user.createdAt).toLocaleDateString()}
                                 </td>
                                 <td className="p-3">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setUserToDelete(user);
-                                      setDeleteUserDialogOpen(true);
-                                    }}
-                                    data-testid={`button-delete-user-${user.id}`}
-                                    title="Delete user account"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                  </Button>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => handleOpenEditRoles(user)}
+                                      data-testid={`button-edit-roles-${user.id}`}
+                                      title="Edit user roles and permissions"
+                                    >
+                                      <Edit className="w-4 h-4 text-primary" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setUserToDelete(user);
+                                        setDeleteUserDialogOpen(true);
+                                      }}
+                                      data-testid={`button-delete-user-${user.id}`}
+                                      title="Delete user account"
+                                    >
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -1485,18 +1496,29 @@ function AdminDashboardContent() {
                                     ).toLocaleDateString()}
                                   </td>
                                   <td className="p-3">
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setUserToDelete(user);
-                                        setDeleteUserDialogOpen(true);
-                                      }}
-                                      data-testid={`button-delete-user-${user.id}`}
-                                      title="Delete user account"
-                                    >
-                                      <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => handleOpenEditRoles(user)}
+                                        data-testid={`button-edit-roles-${user.id}`}
+                                        title="Edit user roles and permissions"
+                                      >
+                                        <Edit className="w-4 h-4 text-primary" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          setUserToDelete(user);
+                                          setDeleteUserDialogOpen(true);
+                                        }}
+                                        data-testid={`button-delete-user-${user.id}`}
+                                        title="Delete user account"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                      </Button>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
@@ -1507,6 +1529,115 @@ function AdminDashboardContent() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Role Management Dialog */}
+              <Dialog open={editRoleDialogOpen} onOpenChange={setEditRoleDialogOpen}>
+                <DialogContent className="max-w-md" data-testid="dialog-edit-roles">
+                  <DialogHeader>
+                    <DialogTitle>Edit User Roles & Permissions</DialogTitle>
+                    <DialogDescription>
+                      {userToEditRoles && `${userToEditRoles.firstName} ${userToEditRoles.lastName}`}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="role-admin"
+                          checked={editingRoles.isAdmin}
+                          onCheckedChange={(checked) =>
+                            setEditingRoles({ ...editingRoles, isAdmin: checked === true })
+                          }
+                          data-testid="checkbox-role-admin"
+                        />
+                        <Label htmlFor="role-admin" className="cursor-pointer flex-1">
+                          <div className="font-medium">Administrator</div>
+                          <div className="text-sm text-muted-foreground">Full platform access</div>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="role-judge"
+                          checked={editingRoles.isJudge}
+                          onCheckedChange={(checked) =>
+                            setEditingRoles({ ...editingRoles, isJudge: checked === true })
+                          }
+                          data-testid="checkbox-role-judge"
+                        />
+                        <Label htmlFor="role-judge" className="cursor-pointer flex-1">
+                          <div className="font-medium">Judge</div>
+                          <div className="text-sm text-muted-foreground">Score videos in competitions</div>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="role-moderator"
+                          checked={editingRoles.isModerator}
+                          onCheckedChange={(checked) =>
+                            setEditingRoles({ ...editingRoles, isModerator: checked === true })
+                          }
+                          data-testid="checkbox-role-moderator"
+                        />
+                        <Label htmlFor="role-moderator" className="cursor-pointer flex-1">
+                          <div className="font-medium">Moderator</div>
+                          <div className="text-sm text-muted-foreground">Moderate content and reports</div>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="role-content-manager"
+                          checked={editingRoles.isContentManager}
+                          onCheckedChange={(checked) =>
+                            setEditingRoles({ ...editingRoles, isContentManager: checked === true })
+                          }
+                          data-testid="checkbox-role-content-manager"
+                        />
+                        <Label htmlFor="role-content-manager" className="cursor-pointer flex-1">
+                          <div className="font-medium">Content Manager</div>
+                          <div className="text-sm text-muted-foreground">Manage platform content</div>
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="role-affiliate-manager"
+                          checked={editingRoles.isAffiliateManager}
+                          onCheckedChange={(checked) =>
+                            setEditingRoles({ ...editingRoles, isAffiliateManager: checked === true })
+                          }
+                          data-testid="checkbox-role-affiliate-manager"
+                        />
+                        <Label htmlFor="role-affiliate-manager" className="cursor-pointer flex-1">
+                          <div className="font-medium">Affiliate Manager</div>
+                          <div className="text-sm text-muted-foreground">Manage affiliate programs</div>
+                        </Label>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditRoleDialogOpen(false)}
+                        className="flex-1"
+                        data-testid="button-cancel-roles"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => updateUserRolesMutation.mutate()}
+                        disabled={updateUserRolesMutation.isPending}
+                        className="flex-1"
+                        data-testid="button-save-roles"
+                      >
+                        {updateUserRolesMutation.isPending ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             <TabsContent value="judges" className="mt-0">
