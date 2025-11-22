@@ -4245,6 +4245,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Newsletter Subscribers endpoints
+  app.get("/api/admin/newsletter/subscribers", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const subscribers = await storage.getAllNewsletterSubscribers();
+      res.json(subscribers);
+    } catch (error) {
+      console.error("Error fetching subscribers:", error);
+      res.status(500).json({ message: "Failed to fetch subscribers" });
+    }
+  });
+
+  app.post("/api/admin/newsletter/subscribers", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, name, status } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      const subscriber = await storage.createNewsletterSubscriber({ email, name, status });
+      res.json(subscriber);
+    } catch (error) {
+      console.error("Error creating subscriber:", error);
+      res.status(500).json({ message: "Failed to create subscriber" });
+    }
+  });
+
+  app.patch("/api/admin/newsletter/subscribers/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const subscriber = await storage.updateNewsletterSubscriber(id, updates);
+      res.json(subscriber);
+    } catch (error) {
+      console.error("Error updating subscriber:", error);
+      res.status(500).json({ message: "Failed to update subscriber" });
+    }
+  });
+
+  app.delete("/api/admin/newsletter/subscribers/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteNewsletterSubscriber(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting subscriber:", error);
+      res.status(500).json({ message: "Failed to delete subscriber" });
+    }
+  });
+
+  // Email Campaigns endpoints
+  app.get("/api/admin/newsletter/campaigns", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const campaigns = await storage.getAllEmailCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post("/api/admin/newsletter/campaigns", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { title, subject, content, htmlContent, status, scheduledFor } = req.body;
+      if (!title || !subject || !content) {
+        return res.status(400).json({ message: "Title, subject, and content are required" });
+      }
+      const campaign = await storage.createEmailCampaign({
+        title,
+        subject,
+        content,
+        htmlContent,
+        status: status || 'draft',
+        createdBy: (req.user as SelectUser).id,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+      });
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  app.patch("/api/admin/newsletter/campaigns/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const campaign = await storage.updateEmailCampaign(id, updates);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error updating campaign:", error);
+      res.status(500).json({ message: "Failed to update campaign" });
+    }
+  });
+
+  app.post("/api/admin/newsletter/campaigns/:id/send", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const campaign = await storage.sendEmailCampaign(id);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error sending campaign:", error);
+      res.status(500).json({ message: "Failed to send campaign" });
+    }
+  });
+
+  app.delete("/api/admin/newsletter/campaigns/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteEmailCampaign(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      res.status(500).json({ message: "Failed to delete campaign" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

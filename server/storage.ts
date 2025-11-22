@@ -219,6 +219,22 @@ export interface IStorage {
   getCmsContentByKey(section: string, key: string): Promise<CmsContent | undefined>;
   upsertCmsContent(content: InsertCmsContent & { updatedBy: string }): Promise<CmsContent>;
   deleteCmsContent(section: string, key: string): Promise<void>;
+
+  // Newsletter methods
+  getAllNewsletterSubscribers(): Promise<schema.NewsletterSubscriber[]>;
+  getActiveNewsletterSubscribers(): Promise<schema.NewsletterSubscriber[]>;
+  createNewsletterSubscriber(subscriber: schema.InsertNewsletterSubscriber): Promise<schema.NewsletterSubscriber>;
+  updateNewsletterSubscriber(id: string, updates: Partial<schema.InsertNewsletterSubscriber>): Promise<schema.NewsletterSubscriber | undefined>;
+  deleteNewsletterSubscriber(id: string): Promise<void>;
+  unsubscribeNewsletterSubscriber(email: string): Promise<schema.NewsletterSubscriber | undefined>;
+  
+  // Email Campaign methods
+  getAllEmailCampaigns(): Promise<schema.EmailCampaign[]>;
+  getEmailCampaignById(id: string): Promise<schema.EmailCampaign | undefined>;
+  createEmailCampaign(campaign: schema.InsertEmailCampaign): Promise<schema.EmailCampaign>;
+  updateEmailCampaign(id: string, updates: Partial<schema.InsertEmailCampaign>): Promise<schema.EmailCampaign | undefined>;
+  deleteEmailCampaign(id: string): Promise<void>;
+  sendEmailCampaign(id: string): Promise<schema.EmailCampaign | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -2039,6 +2055,72 @@ export class DbStorage implements IStorage {
     await db.delete(schema.cmsContent).where(
       and(eq(schema.cmsContent.section, section), eq(schema.cmsContent.key, key))
     );
+  }
+
+  // Newsletter methods
+  async getAllNewsletterSubscribers(): Promise<schema.NewsletterSubscriber[]> {
+    return db.select().from(schema.newsletterSubscribers).orderBy(desc(schema.newsletterSubscribers.createdAt));
+  }
+
+  async getActiveNewsletterSubscribers(): Promise<schema.NewsletterSubscriber[]> {
+    return db.select().from(schema.newsletterSubscribers)
+      .where(eq(schema.newsletterSubscribers.status, 'subscribed'))
+      .orderBy(desc(schema.newsletterSubscribers.createdAt));
+  }
+
+  async createNewsletterSubscriber(subscriber: schema.InsertNewsletterSubscriber): Promise<schema.NewsletterSubscriber> {
+    const [created] = await db.insert(schema.newsletterSubscribers).values(subscriber).returning();
+    return created;
+  }
+
+  async updateNewsletterSubscriber(id: string, updates: Partial<schema.InsertNewsletterSubscriber>): Promise<schema.NewsletterSubscriber | undefined> {
+    const [updated] = await db.update(schema.newsletterSubscribers).set(updates)
+      .where(eq(schema.newsletterSubscribers.id, id)).returning();
+    return updated;
+  }
+
+  async deleteNewsletterSubscriber(id: string): Promise<void> {
+    await db.delete(schema.newsletterSubscribers).where(eq(schema.newsletterSubscribers.id, id));
+  }
+
+  async unsubscribeNewsletterSubscriber(email: string): Promise<schema.NewsletterSubscriber | undefined> {
+    const [updated] = await db.update(schema.newsletterSubscribers)
+      .set({ status: 'unsubscribed', unsubscribedAt: new Date() })
+      .where(eq(schema.newsletterSubscribers.email, email)).returning();
+    return updated;
+  }
+
+  // Email Campaign methods
+  async getAllEmailCampaigns(): Promise<schema.EmailCampaign[]> {
+    return db.select().from(schema.emailCampaigns).orderBy(desc(schema.emailCampaigns.createdAt));
+  }
+
+  async getEmailCampaignById(id: string): Promise<schema.EmailCampaign | undefined> {
+    const [campaign] = await db.select().from(schema.emailCampaigns)
+      .where(eq(schema.emailCampaigns.id, id));
+    return campaign;
+  }
+
+  async createEmailCampaign(campaign: schema.InsertEmailCampaign): Promise<schema.EmailCampaign> {
+    const [created] = await db.insert(schema.emailCampaigns).values(campaign).returning();
+    return created;
+  }
+
+  async updateEmailCampaign(id: string, updates: Partial<schema.InsertEmailCampaign>): Promise<schema.EmailCampaign | undefined> {
+    const [updated] = await db.update(schema.emailCampaigns).set({...updates, updatedAt: new Date()})
+      .where(eq(schema.emailCampaigns.id, id)).returning();
+    return updated;
+  }
+
+  async deleteEmailCampaign(id: string): Promise<void> {
+    await db.delete(schema.emailCampaigns).where(eq(schema.emailCampaigns.id, id));
+  }
+
+  async sendEmailCampaign(id: string): Promise<schema.EmailCampaign | undefined> {
+    const [campaign] = await db.update(schema.emailCampaigns)
+      .set({ status: 'sent', sentAt: new Date() })
+      .where(eq(schema.emailCampaigns.id, id)).returning();
+    return campaign;
   }
 }
 

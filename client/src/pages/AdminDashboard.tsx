@@ -50,6 +50,8 @@ import {
   Upload,
   Trash2,
   Edit,
+  Mail,
+  Send,
 } from "lucide-react";
 import { createPermalink } from "@/lib/slugUtils";
 import {
@@ -361,6 +363,148 @@ function AdminDashboardContent() {
   });
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [bulkRoleDialogOpen, setBulkRoleDialogOpen] = useState(false);
+
+  // Newsletter state
+  const { data: newsletterSubscribers = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/newsletter/subscribers"],
+  });
+
+  const { data: emailCampaigns = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/newsletter/campaigns"],
+  });
+
+  const [newsletterDialogOpen, setNewsletterDialogOpen] = useState(false);
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [subscriberForm, setSubscriberForm] = useState({ email: "", name: "" });
+  const [campaignForm, setCampaignForm] = useState({ title: "", subject: "", content: "" });
+  const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
+
+  // Newsletter mutations
+  const addSubscriberMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("/api/admin/newsletter/subscribers", "POST", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Subscriber added successfully" });
+      setNewsletterDialogOpen(false);
+      setSubscriberForm({ email: "", name: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/subscribers"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteSubscriberMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/admin/newsletter/subscribers/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Subscriber deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/subscribers"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createCampaignMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("/api/admin/newsletter/campaigns", "POST", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Campaign created successfully" });
+      setCampaignDialogOpen(false);
+      setCampaignForm({ title: "", subject: "", content: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/campaigns"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateCampaignMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return await apiRequest(`/api/admin/newsletter/campaigns/${id}`, "PATCH", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Campaign updated successfully" });
+      setCampaignDialogOpen(false);
+      setCampaignForm({ title: "", subject: "", content: "" });
+      setEditingCampaign(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/campaigns"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const sendCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/admin/newsletter/campaigns/${id}/send`, "POST");
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Campaign sent successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/campaigns"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/admin/newsletter/campaigns/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Campaign deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/newsletter/campaigns"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Newsletter handlers
+  const handleAddSubscriber = () => {
+    if (subscriberForm.email) {
+      addSubscriberMutation.mutate({ email: subscriberForm.email, name: subscriberForm.name || null, status: "subscribed" });
+    }
+  };
+
+  const handleDeleteSubscriber = (id: string) => {
+    if (confirm("Are you sure you want to delete this subscriber?")) {
+      deleteSubscriberMutation.mutate(id);
+    }
+  };
+
+  const handleCreateCampaign = () => {
+    if (campaignForm.title && campaignForm.subject && campaignForm.content) {
+      if (editingCampaign) {
+        updateCampaignMutation.mutate({ id: editingCampaign.id, data: campaignForm });
+      } else {
+        createCampaignMutation.mutate(campaignForm);
+      }
+    }
+  };
+
+  const handleEditCampaign = (campaign: any) => {
+    setEditingCampaign(campaign);
+    setCampaignForm({ title: campaign.title, subject: campaign.subject, content: campaign.content });
+    setCampaignDialogOpen(true);
+  };
+
+  const handleSendCampaign = (id: string) => {
+    if (confirm("Are you sure you want to send this campaign to all subscribers?")) {
+      sendCampaignMutation.mutate(id);
+    }
+  };
+
+  const handleDeleteCampaign = (id: string) => {
+    if (confirm("Are you sure you want to delete this campaign?")) {
+      deleteCampaignMutation.mutate(id);
+    }
+  };
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -1393,6 +1537,14 @@ function AdminDashboardContent() {
                   {reports.filter((r) => r.status === "pending").length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="newsletter"
+              className="w-full justify-start"
+              data-testid="tab-newsletter"
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Newsletter
             </TabsTrigger>
             <TabsTrigger
               value="cms"
@@ -3563,6 +3715,282 @@ function AdminDashboardContent() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            </TabsContent>
+
+            <TabsContent value="newsletter" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="w-5 h-5" />
+                    Newsletter Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="subscribers" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="subscribers" data-testid="tab-newsletter-subscribers">
+                        Subscribers
+                      </TabsTrigger>
+                      <TabsTrigger value="campaigns" data-testid="tab-newsletter-campaigns">
+                        Campaigns
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="subscribers" className="space-y-4 mt-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Email Subscribers</h3>
+                        <Button size="sm" onClick={() => setNewsletterDialogOpen(true)} data-testid="button-add-subscriber">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Subscriber
+                        </Button>
+                      </div>
+
+                      {newsletterSubscribers.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p>No subscribers yet</p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-2">Email</th>
+                                <th className="text-left py-2 px-2">Name</th>
+                                <th className="text-left py-2 px-2">Status</th>
+                                <th className="text-left py-2 px-2">Subscribed</th>
+                                <th className="text-left py-2 px-2">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {newsletterSubscribers.map((subscriber) => (
+                                <tr key={subscriber.id} className="border-b hover:bg-muted/50">
+                                  <td className="py-2 px-2">{subscriber.email}</td>
+                                  <td className="py-2 px-2">{subscriber.name || "-"}</td>
+                                  <td className="py-2 px-2">
+                                    <Badge
+                                      variant={subscriber.status === "subscribed" ? "default" : "secondary"}
+                                      data-testid={`badge-subscriber-status-${subscriber.id}`}
+                                    >
+                                      {subscriber.status}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-2 text-xs">
+                                    {new Date(subscriber.subscribedAt).toLocaleDateString()}
+                                  </td>
+                                  <td className="py-2 px-2 flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteSubscriber(subscriber.id)}
+                                      disabled={deleteSubscriberMutation.isPending}
+                                      data-testid={`button-delete-subscriber-${subscriber.id}`}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="campaigns" className="space-y-4 mt-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Email Campaigns</h3>
+                        <Button size="sm" onClick={() => setCampaignDialogOpen(true)} data-testid="button-create-campaign">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Campaign
+                        </Button>
+                      </div>
+
+                      {emailCampaigns.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p>No campaigns yet</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {emailCampaigns.map((campaign) => (
+                            <Card key={campaign.id}>
+                              <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start gap-2">
+                                  <div className="flex-1">
+                                    <CardTitle className="text-base">{campaign.title}</CardTitle>
+                                    <p className="text-sm text-muted-foreground mt-1">{campaign.subject}</p>
+                                  </div>
+                                  <Badge variant={campaign.status === "draft" ? "secondary" : campaign.status === "sent" ? "default" : "outline"} data-testid={`badge-campaign-status-${campaign.id}`}>
+                                    {campaign.status}
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="space-y-2">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">Recipients</p>
+                                    <p className="font-semibold">{campaign.totalRecipients}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Sent</p>
+                                    <p className="font-semibold">{campaign.totalSent}</p>
+                                  </div>
+                                  {campaign.status === "sent" && (
+                                    <>
+                                      <div>
+                                        <p className="text-muted-foreground">Opened</p>
+                                        <p className="font-semibold">{campaign.totalOpened} ({campaign.totalSent > 0 ? Math.round((campaign.totalOpened / campaign.totalSent) * 100) : 0}%)</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">Clicked</p>
+                                        <p className="font-semibold">{campaign.totalClicked} ({campaign.totalSent > 0 ? Math.round((campaign.totalClicked / campaign.totalSent) * 100) : 0}%)</p>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                  {campaign.status === "draft" && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleEditCampaign(campaign)}
+                                        data-testid={`button-edit-campaign-${campaign.id}`}
+                                      >
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Edit
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSendCampaign(campaign.id)}
+                                        disabled={sendCampaignMutation.isPending}
+                                        data-testid={`button-send-campaign-${campaign.id}`}
+                                      >
+                                        <Send className="w-4 h-4 mr-2" />
+                                        Send
+                                      </Button>
+                                    </>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteCampaign(campaign.id)}
+                                    disabled={deleteCampaignMutation.isPending}
+                                    data-testid={`button-delete-campaign-${campaign.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Add Subscriber Dialog */}
+              <Dialog open={newsletterDialogOpen} onOpenChange={setNewsletterDialogOpen}>
+                <DialogContent data-testid="dialog-add-subscriber">
+                  <DialogHeader>
+                    <DialogTitle>Add Subscriber</DialogTitle>
+                    <DialogDescription>Add a new email subscriber to your newsletter</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="subscriber-email">Email</Label>
+                      <Input
+                        id="subscriber-email"
+                        type="email"
+                        placeholder="subscriber@example.com"
+                        value={subscriberForm.email}
+                        onChange={(e) => setSubscriberForm({ ...subscriberForm, email: e.target.value })}
+                        data-testid="input-subscriber-email"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="subscriber-name">Name (Optional)</Label>
+                      <Input
+                        id="subscriber-name"
+                        placeholder="John Doe"
+                        value={subscriberForm.name}
+                        onChange={(e) => setSubscriberForm({ ...subscriberForm, name: e.target.value })}
+                        data-testid="input-subscriber-name"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setNewsletterDialogOpen(false)} data-testid="button-cancel-subscriber">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleAddSubscriber}
+                      disabled={!subscriberForm.email || addSubscriberMutation.isPending}
+                      data-testid="button-confirm-add-subscriber"
+                    >
+                      {addSubscriberMutation.isPending ? "Adding..." : "Add Subscriber"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Campaign Dialog */}
+              <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-campaign">
+                  <DialogHeader>
+                    <DialogTitle>{editingCampaign ? "Edit Campaign" : "Create Campaign"}</DialogTitle>
+                    <DialogDescription>
+                      {editingCampaign ? "Update your email campaign" : "Create a new email campaign"}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="campaign-title">Title</Label>
+                      <Input
+                        id="campaign-title"
+                        placeholder="Campaign title"
+                        value={campaignForm.title}
+                        onChange={(e) => setCampaignForm({ ...campaignForm, title: e.target.value })}
+                        data-testid="input-campaign-title"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="campaign-subject">Subject Line</Label>
+                      <Input
+                        id="campaign-subject"
+                        placeholder="Email subject"
+                        value={campaignForm.subject}
+                        onChange={(e) => setCampaignForm({ ...campaignForm, subject: e.target.value })}
+                        data-testid="input-campaign-subject"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="campaign-content">Content</Label>
+                      <Textarea
+                        id="campaign-content"
+                        placeholder="Email content"
+                        rows={6}
+                        value={campaignForm.content}
+                        onChange={(e) => setCampaignForm({ ...campaignForm, content: e.target.value })}
+                        data-testid="textarea-campaign-content"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setCampaignDialogOpen(false)} data-testid="button-cancel-campaign">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateCampaign}
+                      disabled={!campaignForm.title || !campaignForm.subject || !campaignForm.content || (editingCampaign ? updateCampaignMutation.isPending : createCampaignMutation.isPending)}
+                      data-testid="button-confirm-campaign"
+                    >
+                      {editingCampaign ? (updateCampaignMutation.isPending ? "Updating..." : "Update Campaign") : (createCampaignMutation.isPending ? "Creating..." : "Create Campaign")}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             <TabsContent value="cms" className="mt-0">

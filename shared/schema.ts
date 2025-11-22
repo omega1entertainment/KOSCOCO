@@ -356,6 +356,40 @@ export const cmsContent = pgTable("cms_content", {
   unique("unique_cms_section_key").on(table.section, table.key),
 ]);
 
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  name: text("name"),
+  status: text("status").notNull().default('subscribed'),
+  subscribedAt: timestamp("subscribed_at").defaultNow().notNull(),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_subscribers_status").on(table.status),
+  index("idx_subscribers_email").on(table.email),
+]);
+
+export const emailCampaigns = pgTable("email_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  htmlContent: text("html_content"),
+  status: text("status").notNull().default('draft'),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  sentAt: timestamp("sent_at"),
+  scheduledFor: timestamp("scheduled_for"),
+  totalRecipients: integer("total_recipients").default(0).notNull(),
+  totalSent: integer("total_sent").default(0).notNull(),
+  totalOpened: integer("total_opened").default(0).notNull(),
+  totalClicked: integer("total_clicked").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_campaigns_status").on(table.status),
+  index("idx_campaigns_created_by").on(table.createdBy),
+]);
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -508,8 +542,30 @@ export const insertCmsContentSchema = createInsertSchema(cmsContent).omit({
   value: z.any().optional(),
 });
 
+export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({
+  id: true,
+  subscribedAt: true,
+  createdAt: true,
+});
+
+export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  sentAt: true,
+  totalSent: true,
+  totalOpened: true,
+  totalClicked: true,
+});
+
 export type InsertCmsContent = z.infer<typeof insertCmsContentSchema>;
 export type CmsContent = typeof cmsContent.$inferSelect;
+
+export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+
+export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
