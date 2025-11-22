@@ -42,6 +42,7 @@ import EditCampaign from "@/pages/EditCampaign";
 import CreateAd from "@/pages/CreateAd";
 import CreatorDashboard from "@/pages/CreatorDashboard";
 import ThankYou from "@/pages/ThankYou";
+import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -95,6 +96,7 @@ function Router() {
           <Route path="/terms" component={Terms} />
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/affiliate-terms" component={AffiliateTerms} />
+          <Route path="/contact" component={Contact} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/judge-dashboard" component={JudgeDashboard} />
           <Route path="/judges" component={Judges} />

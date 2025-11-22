@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Facebook, Instagram } from "lucide-react";
 import { SiTiktok, SiX } from "react-icons/si";
 import { useState } from "react";
+import { Link } from "wouter";
 import logo from "@assets/kOSCOCO_1762050897989.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -78,16 +79,36 @@ export default function Footer() {
           <div>
             <h3 className="font-bold mb-4">{t('footer.supportHeading')}</h3>
             <ul className="space-y-2">
-              {support.map((item) => (
-                <li key={item.key}>
-                  <button 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => console.log(`Navigate to ${t(item.key)}`)}
-                  >
-                    {t(item.key)}
-                  </button>
-                </li>
-              ))}
+              {support.map((item) => {
+                // Map footer items to their routes
+                const routeMap: { [key: string]: string } = {
+                  'footer.contact': '/contact',
+                  'footer.faq': '/faq',
+                  'footer.rules': '/rules',
+                  'footer.termsOfService': '/terms-of-service',
+                  'footer.privacyPolicy': '/privacy-policy',
+                };
+                const route = routeMap[item.key];
+                
+                return (
+                  <li key={item.key}>
+                    {route ? (
+                      <Link href={route} data-testid={`link-footer-${item.key}`}>
+                        <a className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                          {t(item.key)}
+                        </a>
+                      </Link>
+                    ) : (
+                      <button 
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => console.log(`Navigate to ${t(item.key)}`)}
+                      >
+                        {t(item.key)}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
           
