@@ -12,10 +12,10 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
   const { language, setLanguage } = useLanguage();
   
   const socialLinks = [
-    { name: "Facebook", icon: SiFacebook, url: "https://facebook.com/koscoco", testId: "link-social-facebook" },
-    { name: "Instagram", icon: SiInstagram, url: "https://instagram.com/koscoco", testId: "link-social-instagram" },
-    { name: "TikTok", icon: SiTiktok, url: "https://tiktok.com/@koscoco", testId: "link-social-tiktok" },
-    { name: "X", icon: SiX, url: "https://x.com/koscoco", testId: "link-social-x" },
+    { name: "Facebook", icon: SiFacebook, url: "https://web.facebook.com/kozziientertainment", testId: "link-social-facebook" },
+    { name: "Instagram", icon: SiInstagram, url: "https://www.instagram.com/kozzii_237/", testId: "link-social-instagram" },
+    { name: "TikTok", icon: SiTiktok, url: "https://www.tiktok.com/@kozzii_entertainment", testId: "link-social-tiktok" },
+    { name: "X", icon: SiX, url: "https://x.com/KozziiEnte14391", testId: "link-social-x" },
   ];
 
   const toggleLanguage = () => {

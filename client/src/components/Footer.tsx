@@ -36,18 +36,26 @@ export default function Footer() {
               {t('footer.description')}
             </p>
             <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" data-testid="button-facebook">
-                <Facebook className="w-5 h-5" />
-              </Button>
-              <Button size="icon" variant="ghost" data-testid="button-instagram">
-                <Instagram className="w-5 h-5" />
-              </Button>
-              <Button size="icon" variant="ghost" data-testid="button-tiktok">
-                <SiTiktok className="w-5 h-5" />
-              </Button>
-              <Button size="icon" variant="ghost" data-testid="button-x">
-                <SiX className="w-5 h-5" />
-              </Button>
+              <a href="https://web.facebook.com/kozziientertainment" target="_blank" rel="noopener noreferrer" data-testid="link-social-facebook">
+                <Button size="icon" variant="ghost">
+                  <Facebook className="w-5 h-5" />
+                </Button>
+              </a>
+              <a href="https://www.instagram.com/kozzii_237/" target="_blank" rel="noopener noreferrer" data-testid="link-social-instagram">
+                <Button size="icon" variant="ghost">
+                  <Instagram className="w-5 h-5" />
+                </Button>
+              </a>
+              <a href="https://www.tiktok.com/@kozzii_entertainment" target="_blank" rel="noopener noreferrer" data-testid="link-social-tiktok">
+                <Button size="icon" variant="ghost">
+                  <SiTiktok className="w-5 h-5" />
+                </Button>
+              </a>
+              <a href="https://x.com/KozziiEnte14391" target="_blank" rel="noopener noreferrer" data-testid="link-social-x">
+                <Button size="icon" variant="ghost">
+                  <SiX className="w-5 h-5" />
+                </Button>
+              </a>
             </div>
           </div>
           
