@@ -353,4 +353,9 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* ReactQuill WYSIWYG Editor placeholder styling */
+  .ql-editor.ql-blank::before {
+    color: #a4b3b3;
+  }
 }
