@@ -102,7 +102,8 @@ function CMSManagementTab() {
   const loadCmsContent = async (section: string) => {
     setIsLoading(true);
     try {
-      const data = await apiRequest(`/api/cms/${section}`);
+      const res = await apiRequest(`/api/cms/${section}`, "GET");
+      const data = await res.json();
       setCmsContent(Array.isArray(data) ? data : []);
     } catch (error) {
       toast({ title: "Error", description: "Failed to load CMS content", variant: "destructive" });
@@ -112,7 +113,10 @@ function CMSManagementTab() {
   };
 
   const saveCmsMutation = useMutation({
-    mutationFn: async (data: any) => await apiRequest("/api/cms", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("/api/cms", "POST", data);
+      return await res.json();
+    },
     onSuccess: () => {
       toast({ title: "Success", description: "CMS content saved successfully" });
       loadCmsContent(selectedSection);
@@ -123,7 +127,10 @@ function CMSManagementTab() {
   });
 
   const deleteCmsMutation = useMutation({
-    mutationFn: async (section: string, key: string) => await apiRequest(`/api/cms/${section}/${key}`, { method: "DELETE" }),
+    mutationFn: async (params: { section: string; key: string }) => {
+      const res = await apiRequest(`/api/cms/${params.section}/${params.key}`, "DELETE");
+      return await res.json();
+    },
     onSuccess: () => {
       toast({ title: "Success", description: "CMS content deleted" });
       loadCmsContent(selectedSection);
@@ -239,7 +246,7 @@ function CMSManagementTab() {
                       <Button size="sm" variant="outline" onClick={() => { setEditingId(item.id); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
                         Edit
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => deleteCmsMutation.mutate(selectedSection, item.key)} disabled={deleteCmsMutation.isPending} data-testid={`button-delete-cms-${item.id}`}>
+                      <Button size="sm" variant="destructive" onClick={() => deleteCmsMutation.mutate({ section: selectedSection, key: item.key })} disabled={deleteCmsMutation.isPending} data-testid={`button-delete-cms-${item.id}`}>
                         Delete
                       </Button>
                     </div>
@@ -774,10 +781,8 @@ function AdminDashboardContent() {
   const updateUserRolesMutation = useMutation({
     mutationFn: async () => {
       if (!userToEditRoles) throw new Error("No user selected");
-      return await apiRequest(`/api/admin/users/${userToEditRoles.id}/role`, {
-        method: "PATCH",
-        body: JSON.stringify(editingRoles),
-      });
+      const res = await apiRequest(`/api/admin/users/${userToEditRoles.id}/role`, "PATCH", editingRoles);
+      return await res.json();
     },
     onSuccess: () => {
       toast({
