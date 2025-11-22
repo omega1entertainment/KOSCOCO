@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
+import { SiTiktok, SiX } from "react-icons/si";
 import { useState } from "react";
 import logo from "@assets/kOSCOCO_1762050897989.png";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -38,14 +39,14 @@ export default function Footer() {
               <Button size="icon" variant="ghost" data-testid="button-facebook">
                 <Facebook className="w-5 h-5" />
               </Button>
-              <Button size="icon" variant="ghost" data-testid="button-twitter">
-                <Twitter className="w-5 h-5" />
-              </Button>
               <Button size="icon" variant="ghost" data-testid="button-instagram">
                 <Instagram className="w-5 h-5" />
               </Button>
-              <Button size="icon" variant="ghost" data-testid="button-youtube">
-                <Youtube className="w-5 h-5" />
+              <Button size="icon" variant="ghost" data-testid="button-tiktok">
+                <SiTiktok className="w-5 h-5" />
+              </Button>
+              <Button size="icon" variant="ghost" data-testid="button-x">
+                <SiX className="w-5 h-5" />
               </Button>
             </div>
           </div>
