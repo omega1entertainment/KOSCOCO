@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -48,6 +49,7 @@ import {
   UserCog,
   Upload,
   Trash2,
+  Edit,
 } from "lucide-react";
 import { createPermalink } from "@/lib/slugUtils";
 import {
@@ -333,6 +335,17 @@ function AdminDashboardContent() {
   const [userFilter, setUserFilter] = useState<
     "all" | "verified" | "admin" | "judge" | "contestant"
   >("all");
+
+  // User role edit dialog state
+  const [editRoleDialogOpen, setEditRoleDialogOpen] = useState(false);
+  const [userToEditRoles, setUserToEditRoles] = useState<SelectUser | null>(null);
+  const [editingRoles, setEditingRoles] = useState({
+    isAdmin: false,
+    isJudge: false,
+    isModerator: false,
+    isContentManager: false,
+    isAffiliateManager: false,
+  });
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -756,6 +769,45 @@ function AdminDashboardContent() {
       });
     },
   });
+
+  // Update user roles mutation
+  const updateUserRolesMutation = useMutation({
+    mutationFn: async () => {
+      if (!userToEditRoles) throw new Error("No user selected");
+      return await apiRequest(`/api/admin/users/${userToEditRoles.id}/role`, {
+        method: "PATCH",
+        body: JSON.stringify(editingRoles),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Roles Updated",
+        description: "User roles and permissions have been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditRoleDialogOpen(false);
+      setUserToEditRoles(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleOpenEditRoles = (user: SelectUser) => {
+    setUserToEditRoles(user);
+    setEditingRoles({
+      isAdmin: user.isAdmin ?? false,
+      isJudge: user.isJudge ?? false,
+      isModerator: user.isModerator ?? false,
+      isContentManager: user.isContentManager ?? false,
+      isAffiliateManager: user.isAffiliateManager ?? false,
+    });
+    setEditRoleDialogOpen(true);
+  };
 
   const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
