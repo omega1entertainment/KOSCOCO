@@ -2163,6 +2163,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/creator/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        username: user.username,
+        profileImageUrl: user.profileImageUrl,
+        location: user.location,
+        age: user.age,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+      });
+    } catch (error) {
+      console.error("Error fetching creator profile:", error);
+      res.status(500).json({ message: "Failed to fetch creator profile" });
+    }
+  });
+
+  app.get('/api/creator/competitions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      
+      const registrations = await storage.getUserRegistrations(userId);
+      
+      // Enrich with category information
+      const enrichedRegistrations = await Promise.all(
+        registrations.map(async (reg) => {
+          const categoryIds = reg.categoryIds || [];
+          const categories = await Promise.all(
+            categoryIds.map(catId => storage.getCategoryById(catId))
+          );
+          
+          return {
+            ...reg,
+            categories: categories.filter(Boolean),
+          };
+        })
+      );
+      
+      res.json(enrichedRegistrations);
+    } catch (error) {
+      console.error("Error fetching creator competitions:", error);
+      res.status(500).json({ message: "Failed to fetch creator competitions" });
+    }
+  });
+
+  app.get('/api/creator/watch-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const history = await storage.getWatchHistory(userId);
+      
+      // Get video details for each watch history entry
+      const enrichedHistory = await Promise.all(
+        history.slice(0, 20).map(async (entry) => {
+          const video = await storage.getVideoById(entry.videoId);
+          return {
+            ...entry,
+            video: video ? {
+              id: video.id,
+              title: video.title,
+              thumbnailUrl: video.thumbnailUrl,
+              categoryId: video.categoryId,
+            } : null,
+          };
+        })
+      );
+      
+      res.json(enrichedHistory);
+    } catch (error) {
+      console.error("Error fetching watch history:", error);
+      res.status(500).json({ message: "Failed to fetch watch history" });
+    }
+  });
+
+  app.get('/api/creator/earnings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      
+      // Check if user is an affiliate
+      const affiliate = await storage.getAffiliateByUserId(userId);
+      
+      if (!affiliate) {
+        return res.json({
+          isAffiliate: false,
+          totalEarnings: 0,
+          totalReferrals: 0,
+          pendingPayouts: 0,
+          completedPayouts: 0,
+        });
+      }
+
+      // Get payout requests
+      const payoutRequests = await Promise.all([
+        storage.getAffiliatePayoutRequests(affiliate.id),
+      ]).then(([requests]) => requests || []);
+
+      const pendingPayouts = payoutRequests
+        .filter(r => r.status === 'pending')
+        .reduce((sum, r) => sum + r.amount, 0);
+
+      const completedPayouts = payoutRequests
+        .filter(r => r.status === 'approved')
+        .reduce((sum, r) => sum + r.amount, 0);
+
+      res.json({
+        isAffiliate: true,
+        referralCode: affiliate.referralCode,
+        totalEarnings: affiliate.totalEarnings,
+        totalReferrals: affiliate.totalReferrals,
+        pendingPayouts,
+        completedPayouts,
+        status: affiliate.status,
+      });
+    } catch (error) {
+      console.error("Error fetching creator earnings:", error);
+      res.status(500).json({ message: "Failed to fetch creator earnings" });
+    }
+  });
+
   app.get('/api/leaderboard', async (req, res) => {
     try {
       const { categoryId, phaseId, limit } = req.query;

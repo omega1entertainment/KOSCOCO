@@ -45,7 +45,7 @@ The platform is built with a modern web stack.
     - GET `/api/affiliate/payout/history` - View payout request history and available balance
     - POST `/api/affiliate/payout/request` - Submit new payout request (with minimum threshold validation)
 
-## Newsletter System (Latest Addition)
+## Newsletter System
 - **Frontend Admin Dashboard**: Newsletter management tab with subscriber list and email campaign builder using ReactQuill WYSIWYG editor
 - **Newsletter Welcome Email**: 
     - Automatically sent to new subscribers via Resend email service
@@ -55,6 +55,7 @@ The platform is built with a modern web stack.
     - Call-to-action button for platform exploration
     - Unsubscribe link and footer with contact information
     - Graceful error handling - newsletter signup succeeds even if email fails
+    - "Thank You For Subscribing!" success toast message with branding
 - **Public Subscription Endpoint**: POST `/api/newsletter/subscribe` - No authentication required, validates with Zod schema, prevents duplicate emails
 - **Admin Newsletter Endpoints**:
     - GET `/api/admin/newsletter/subscribers` - List all newsletter subscribers
@@ -66,6 +67,27 @@ The platform is built with a modern web stack.
     - PATCH `/api/admin/newsletter/campaigns/:id` - Update campaign draft
     - POST `/api/admin/newsletter/campaigns/:id/send` - Send campaign to subscribers
     - DELETE `/api/admin/newsletter/campaigns/:id` - Delete campaign
+
+## Creator Dashboard (Latest Addition)
+Comprehensive user account dashboard at `/creator` with 7 tabs:
+- **Overview Tab**: Quick stats (Total Videos, Views, Votes, Ranking) with quick action buttons
+- **My Videos Tab**: Manage all uploaded videos with edit, delete, and view options
+- **Profile Tab**: Display user information (name, email, username, location, age, member since, verification status)
+- **Competitions Tab**: View all competition registrations, categories entered, payment status, and amounts
+- **Watch History Tab**: Track recently watched videos with thumbnails, dates, and completion status (latest 20)
+- **Earnings Tab**: 
+    - View affiliate status and earnings summary
+    - Display referral code with one-click copy functionality
+    - Show total earnings, referrals, and pending/completed payouts
+    - Quick link to full affiliate dashboard
+    - CTA to join affiliate program if not already member
+- **Settings Tab**: Placeholders for account preferences (change password, email preferences, delete account)
+- **Backend Endpoints**:
+    - GET `/api/creator/profile` - Fetch authenticated user's profile information
+    - GET `/api/creator/competitions` - Fetch user's competition registrations with category details
+    - GET `/api/creator/watch-history` - Fetch user's watch history (latest 20) with video details
+    - GET `/api/creator/earnings` - Fetch user's affiliate earnings and payout information
+- **Features**: Profile avatars with fallbacks, empty states with CTAs, loading spinners, responsive design for mobile/desktop
 
 ## External Dependencies
 - **Database**: PostgreSQL (managed by Neon) with Drizzle ORM
