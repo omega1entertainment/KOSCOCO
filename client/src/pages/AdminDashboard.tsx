@@ -314,6 +314,12 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/users"],
   });
 
+  const { data: paymentsData = { payments: [], summary: {} }, isLoading: paymentsLoading } = useQuery<any>({
+    queryKey: ["/api/admin/payments"],
+  });
+
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -1360,6 +1366,19 @@ function AdminDashboardContent() {
                 0 && (
                 <Badge variant="destructive" className="ml-2">
                   {payoutRequests.filter((p) => p.status === "pending").length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="payments"
+              className="w-full justify-start"
+              data-testid="tab-payments"
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              Payments
+              {paymentsData.summary?.byStatus?.pending > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {paymentsData.summary.byStatus.pending}
                 </Badge>
               )}
             </TabsTrigger>
@@ -2873,6 +2892,146 @@ function AdminDashboardContent() {
                   </Dialog>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="payments" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Payment Tracking
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {paymentsLoading ? (
+                    <div className="text-center py-12">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                      <p className="mt-4 text-muted-foreground">Loading payments...</p>
+                    </div>
+                  ) : paymentsData.payments.length === 0 ? (
+                    <div className="text-center py-12">
+                      <DollarSign className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-xl font-semibold mb-2">No Payments Yet</h3>
+                      <p className="text-muted-foreground">No payment transactions found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card className="bg-muted/50">
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Total Amount</p>
+                            <p className="text-2xl font-bold">{(paymentsData.summary.totalAmount || 0).toLocaleString()} FCFA</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-green-50/50 dark:bg-green-950/20">
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Completed</p>
+                            <p className="text-2xl font-bold text-green-600">{(paymentsData.summary.completedAmount || 0).toLocaleString()} FCFA</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-yellow-50/50 dark:bg-yellow-950/20">
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Pending</p>
+                            <p className="text-2xl font-bold text-yellow-600">{(paymentsData.summary.pendingAmount || 0).toLocaleString()} FCFA</p>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-blue-50/50 dark:bg-blue-950/20">
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Total Transactions</p>
+                            <p className="text-2xl font-bold text-blue-600">{paymentsData.summary.totalPayments || 0}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Filter Badges */}
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant={paymentFilter === "all" ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => setPaymentFilter("all")}
+                          data-testid="badge-all-payments"
+                        >
+                          All ({paymentsData.summary.totalPayments || 0})
+                        </Badge>
+                        <Badge
+                          variant={paymentFilter === "votes" ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => setPaymentFilter("votes")}
+                          data-testid="badge-vote-payments"
+                        >
+                          Vote Purchases ({paymentsData.summary.byType?.votes || 0})
+                        </Badge>
+                        <Badge
+                          variant={paymentFilter === "registrations" ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => setPaymentFilter("registrations")}
+                          data-testid="badge-registration-payments"
+                        >
+                          Registrations ({paymentsData.summary.byType?.registrations || 0})
+                        </Badge>
+                        <Badge
+                          variant={paymentFilter === "ads" ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => setPaymentFilter("ads")}
+                          data-testid="badge-ad-payments"
+                        >
+                          Ad Payments ({paymentsData.summary.byType?.ads || 0})
+                        </Badge>
+                        <Badge
+                          variant={paymentFilter === "affiliates" ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => setPaymentFilter("affiliates")}
+                          data-testid="badge-affiliate-payments"
+                        >
+                          Affiliate Payouts ({paymentsData.summary.byType?.affiliates || 0})
+                        </Badge>
+                      </div>
+
+                      {/* Payments Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="border-b">
+                            <tr>
+                              <th className="text-left p-2 font-medium">Type</th>
+                              <th className="text-left p-2 font-medium">User/Company</th>
+                              <th className="text-right p-2 font-medium">Amount</th>
+                              <th className="text-left p-2 font-medium">Status</th>
+                              <th className="text-left p-2 font-medium">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(paymentFilter === "all" ? paymentsData.payments : paymentsData.payments.filter((p: any) => p.payment_type === `${paymentFilter === "votes" ? "vote_purchase" : paymentFilter === "ads" ? "ad_payment" : paymentFilter === "affiliates" ? "affiliate_payout" : "registration"}`)).map((payment: any) => (
+                              <tr key={payment.id} className="border-b hover:bg-muted/50 transition-colors">
+                                <td className="p-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {payment.payment_type === "vote_purchase" ? "Vote" : 
+                                     payment.payment_type === "registration" ? "Registration" :
+                                     payment.payment_type === "ad_payment" ? "Ad" : "Affiliate"}
+                                  </Badge>
+                                </td>
+                                <td className="p-2 font-medium text-foreground truncate" data-testid={`text-payment-user-${payment.id}`}>{payment.username}</td>
+                                <td className="p-2 text-right font-mono font-bold text-primary">{(payment.amount || 0).toLocaleString()} FCFA</td>
+                                <td className="p-2">
+                                  <Badge variant={
+                                    payment.status === "completed" || payment.status === "approved" ? "default" :
+                                    payment.status === "pending" ? "secondary" : "destructive"
+                                  } className="text-xs">
+                                    {payment.status === "completed" ? "Completed" :
+                                     payment.status === "approved" ? "Approved" :
+                                     payment.status === "pending" ? "Pending" : "Rejected"}
+                                  </Badge>
+                                </td>
+                                <td className="p-2 text-muted-foreground text-xs">{new Date(payment.created_at).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="reports" className="mt-0">

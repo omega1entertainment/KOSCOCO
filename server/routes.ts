@@ -2406,6 +2406,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get all payments (consolidated from vote purchases, registrations, ad payments, and payouts)
+  app.get('/api/admin/payments', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const paymentType = req.query.type; // Filter by type: 'votes', 'registrations', 'ads', 'affiliates'
+      const status = req.query.status; // Filter by status
+      
+      const payments: any[] = [];
+
+      // Vote purchases
+      if (!paymentType || paymentType === 'votes') {
+        const votePurchases = await db.execute(sql`
+          SELECT 
+            vp.id,
+            vp.user_id,
+            vp.video_id,
+            vp.amount,
+            vp.status,
+            vp.created_at,
+            u.username,
+            u.email,
+            v.title as video_title,
+            'vote_purchase' as payment_type
+          FROM vote_purchases vp
+          JOIN users u ON vp.user_id = u.id
+          LEFT JOIN videos v ON vp.video_id = v.id
+          ${status ? sql`WHERE vp.status = ${status}` : sql``}
+          ORDER BY vp.created_at DESC
+        `);
+        payments.push(...votePurchases.rows);
+      }
+
+      // Registration payments
+      if (!paymentType || paymentType === 'registrations') {
+        const registrations = await db.execute(sql`
+          SELECT 
+            r.id,
+            r.user_id,
+            r.amount_paid as amount,
+            r.payment_status as status,
+            r.created_at,
+            u.username,
+            u.email,
+            'registration' as payment_type
+          FROM registrations r
+          JOIN users u ON r.user_id = u.id
+          WHERE r.payment_status != 'pending'
+          ${status ? sql`AND r.payment_status = ${status}` : sql``}
+          ORDER BY r.created_at DESC
+        `);
+        payments.push(...registrations.rows);
+      }
+
+      // Ad payments
+      if (!paymentType || paymentType === 'ads') {
+        const adPayments = await db.execute(sql`
+          SELECT 
+            ap.id,
+            ap.advertiser_id as user_id,
+            ap.amount,
+            ap.status,
+            ap.created_at,
+            a.company_name as username,
+            a.email,
+            'ad_payment' as payment_type
+          FROM ad_payments ap
+          JOIN advertisers a ON ap.advertiser_id = a.id
+          ${status ? sql`WHERE ap.status = ${status}` : sql``}
+          ORDER BY ap.created_at DESC
+        `);
+        payments.push(...adPayments.rows);
+      }
+
+      // Affiliate payouts
+      if (!paymentType || paymentType === 'affiliates') {
+        const payouts = await db.execute(sql`
+          SELECT 
+            pr.id,
+            pr.processed_by as user_id,
+            pr.amount,
+            pr.status,
+            pr.requested_at as created_at,
+            u.username,
+            u.email,
+            'affiliate_payout' as payment_type
+          FROM payout_requests pr
+          JOIN affiliates af ON pr.affiliate_id = af.id
+          JOIN users u ON af.user_id = u.id
+          ${status ? sql`WHERE pr.status = ${status}` : sql``}
+          ORDER BY pr.requested_at DESC
+        `);
+        payments.push(...payouts.rows);
+      }
+
+      // Sort by date descending
+      payments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Calculate summary statistics
+      const totalAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const completedAmount = payments
+        .filter(p => p.status === 'completed' || p.status === 'approved')
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      const pendingAmount = payments
+        .filter(p => p.status === 'pending')
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      res.json({
+        payments,
+        summary: {
+          totalPayments: payments.length,
+          totalAmount,
+          completedAmount,
+          pendingAmount,
+          byType: {
+            votes: payments.filter(p => p.payment_type === 'vote_purchase').length,
+            registrations: payments.filter(p => p.payment_type === 'registration').length,
+            ads: payments.filter(p => p.payment_type === 'ad_payment').length,
+            affiliates: payments.filter(p => p.payment_type === 'affiliate_payout').length,
+          },
+          byStatus: {
+            pending: payments.filter(p => p.status === 'pending').length,
+            completed: payments.filter(p => p.status === 'completed').length,
+            approved: payments.filter(p => p.status === 'approved').length,
+            rejected: payments.filter(p => p.status === 'rejected').length,
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      res.status(500).json({ message: "Failed to fetch payments" });
+    }
+  });
+
   // Admin: Get pending ads for approval
   app.get('/api/admin/ads/pending', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
