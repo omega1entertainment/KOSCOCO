@@ -60,6 +60,7 @@ export default function NavigationHeader({
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.judges'), path: '/judges' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
+    { label: 'Advertise', path: '/advertise' },
   ];
   
   const leaderboardMenuItems = [
@@ -178,9 +179,6 @@ export default function NavigationHeader({
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onNavigate?.('/creator')} data-testid="menu-creator-dashboard">
                       Creator Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onNavigate?.('/advertiser/dashboard')} data-testid="menu-advertiser-dashboard">
-                      Advertiser Dashboard
                     </DropdownMenuItem>
                     {user?.isAdmin && (
                       <DropdownMenuItem onClick={() => onNavigate?.('/admin')} data-testid="menu-admin-dashboard">
@@ -340,18 +338,6 @@ export default function NavigationHeader({
                   >
                     <User className="w-4 h-4 mr-2" />
                     Creator Dashboard
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    className="min-h-11"
-                    onClick={() => {
-                      setLocation("/advertiser/dashboard");
-                      setMobileMenuOpen(false);
-                    }}
-                    data-testid="mobile-button-advertiser-dashboard"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Advertiser Dashboard
                   </Button>
                   <Button 
                     variant="ghost"

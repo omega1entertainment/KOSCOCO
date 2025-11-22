@@ -3790,6 +3790,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Advertiser Routes
+  app.get("/api/advertiser/current", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Check if user has an advertiser account (has companyName)
+      if (!user || !user.companyName) {
+        return res.json(null);
+      }
+
+      // Return advertiser account info
+      res.json({
+        id: user.id,
+        email: user.email,
+        companyName: user.companyName,
+        status: user.status,
+        walletBalance: user.walletBalance,
+        totalSpent: user.totalSpent,
+      });
+    } catch (error) {
+      console.error("Get current advertiser error:", error);
+      res.status(500).json({ message: "Failed to fetch advertiser account" });
+    }
+  });
+
   app.get("/api/advertiser/campaigns", isAdvertiser, async (req, res) => {
     try {
       const advertiser = req.user as any;

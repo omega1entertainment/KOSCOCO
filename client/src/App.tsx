@@ -45,6 +45,7 @@ import CreatorDashboard from "@/pages/CreatorDashboard";
 import ThankYou from "@/pages/ThankYou";
 import Contact from "@/pages/Contact";
 import CompetitionRules from "@/pages/CompetitionRules";
+import Advertise from "@/pages/Advertise";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -115,6 +116,7 @@ function Router() {
           <Route path="/judge-dashboard" component={JudgeDashboard} />
           <Route path="/judges" component={Judges} />
           <Route path="/judges/:id" component={JudgeProfile} />
+          <Route path="/advertise" component={Advertise} />
           <Route path="/advertiser/login" component={AdvertiserLogin} />
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
           <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />

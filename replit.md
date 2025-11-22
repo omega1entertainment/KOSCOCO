@@ -89,6 +89,23 @@ Comprehensive user account dashboard at `/creator` with 7 tabs:
     - GET `/api/creator/earnings` - Fetch user's affiliate earnings and payout information
 - **Features**: Profile avatars with fallbacks, empty states with CTAs, loading spinners, responsive design for mobile/desktop
 
+## Advertising System
+- **Advertise Page**: Centralized advertising hub at `/advertise` accessible from main navigation menu
+- **Independent Advertiser Accounts**: Completely separate from creator/user accounts
+- **Account Status Tracking**: Pending, approved, or suspended advertiser accounts
+- **Wallet-Based System**: Advertisers manage funds and campaign budgets through wallet
+- **Advertiser Account Features**:
+    - GET `/api/advertiser/current` - Get current advertiser account details (if exists)
+    - Multi-campaign management
+    - 5 different ad types supported
+    - Real-time analytics and performance tracking
+    - Category and demographic-based targeting
+- **Advertise Page Flows**:
+    - **Not Logged In**: Shows advertising benefits and encourages login/registration
+    - **Logged In, No Advertiser Account**: Displays onboarding with 4-step setup process and CTA to create advertiser account
+    - **Has Advertiser Account**: Shows account status, wallet balance, total spent, and quick access to dashboard and campaign creation
+- **Advertiser Account Requirements**: Company name, contact info, business type, country, and approval process
+
 ## External Dependencies
 - **Database**: PostgreSQL (managed by Neon) with Drizzle ORM
 - **Object Storage**: Replit Object Storage
