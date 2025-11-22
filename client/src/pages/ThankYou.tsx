@@ -1,21 +1,9 @@
-import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
 
 export default function ThankYou() {
   const [, setLocation] = useLocation();
-  const { data: user } = useQuery({
-    queryKey: ["/api/auth/user"],
-  });
-
-  // Redirect to home if not authenticated (shouldn't happen, but safety check)
-  useEffect(() => {
-    if (user === null) {
-      setLocation("/");
-    }
-  }, [user, setLocation]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center px-4 py-12">
