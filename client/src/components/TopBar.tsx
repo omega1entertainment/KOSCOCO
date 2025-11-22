@@ -68,8 +68,9 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
               onClick={toggleLanguage}
               className="h-7 px-2 text-xs font-semibold text-muted-foreground hover:text-primary"
               data-testid="button-language-toggle"
+              title={language === 'en' ? 'Switch to French' : 'Switch to English'}
             >
-              {language === 'en' ? 'EN' : 'FR'}
+              {language === 'en' ? '🇬🇧' : '🇫🇷'}
             </Button>
           </div>
         </div>
