@@ -126,7 +126,7 @@ export default function Contact() {
               <CardContent>
                 <p className="text-foreground">Cameroon</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Serving creators and entertainment enthusiasts across Cameroon and beyond.
+                  Bonjo Street, Limbe, South West Region, Cameroon
                 </p>
               </CardContent>
             </Card>
