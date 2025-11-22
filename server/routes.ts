@@ -2406,6 +2406,284 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ AFFILIATE MANAGEMENT ENDPOINTS ============
+
+  // Admin: Get all affiliates with summary stats
+  app.get('/api/admin/affiliates', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const affiliates = await db.execute(sql`
+        SELECT 
+          a.id,
+          a.user_id,
+          a.referral_code,
+          a.total_referrals,
+          a.total_earnings,
+          a.status,
+          a.created_at,
+          u.email,
+          u.username,
+          u.first_name,
+          u.last_name,
+          (SELECT COUNT(*) FROM payout_requests WHERE affiliate_id = a.id AND status = 'pending') as pending_payouts,
+          (SELECT COALESCE(SUM(amount), 0) FROM payout_requests WHERE affiliate_id = a.id AND status = 'approved') as total_paid_out
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        ORDER BY a.created_at DESC
+      `);
+      res.json(affiliates.rows);
+    } catch (error) {
+      console.error("Error fetching affiliates:", error);
+      res.status(500).json({ message: "Failed to fetch affiliates" });
+    }
+  });
+
+  // Admin: Get specific affiliate details with referrals and payouts
+  app.get('/api/admin/affiliates/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get affiliate details
+      const affiliateResult = await db.execute(sql`
+        SELECT 
+          a.id,
+          a.user_id,
+          a.referral_code,
+          a.total_referrals,
+          a.total_earnings,
+          a.status,
+          a.created_at,
+          u.email,
+          u.username,
+          u.first_name,
+          u.last_name,
+          u.location,
+          (SELECT COUNT(*) FROM payout_requests WHERE affiliate_id = a.id AND status = 'pending') as pending_payouts,
+          (SELECT COALESCE(SUM(amount), 0) FROM payout_requests WHERE affiliate_id = a.id AND status = 'approved') as total_paid_out
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        WHERE a.id = ${id}
+      `);
+
+      if (affiliateResult.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      const affiliateData = affiliateResult.rows[0];
+
+      // Get referrals
+      const referrals = await db.execute(sql`
+        SELECT 
+          r.id,
+          r.commission,
+          r.status,
+          r.created_at,
+          reg.user_id,
+          u.email,
+          u.username,
+          u.first_name,
+          u.last_name
+        FROM referrals r
+        JOIN registrations reg ON r.registration_id = reg.id
+        JOIN users u ON reg.user_id = u.id
+        WHERE r.affiliate_id = ${id}
+        ORDER BY r.created_at DESC
+      `);
+
+      // Get payout requests
+      const payoutRequests = await db.execute(sql`
+        SELECT 
+          id,
+          amount,
+          status,
+          payment_method,
+          requested_at,
+          processed_at,
+          processed_by,
+          rejection_reason
+        FROM payout_requests
+        WHERE affiliate_id = ${id}
+        ORDER BY requested_at DESC
+      `);
+
+      res.json({
+        ...affiliateData,
+        referrals: referrals.rows,
+        payoutRequests: payoutRequests.rows
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate details:", error);
+      res.status(500).json({ message: "Failed to fetch affiliate details" });
+    }
+  });
+
+  // Admin: Update affiliate status
+  app.patch('/api/admin/affiliates/:id/status', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status || !['active', 'suspended', 'inactive'].includes(status)) {
+        return res.status(400).json({ message: "Valid status required: active, suspended, or inactive" });
+      }
+
+      const updatedAffiliate = await storage.updateAffiliateStats(id, 0, 0);
+      
+      if (!updatedAffiliate) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      // Update status in database
+      const result = await db.execute(sql`
+        UPDATE affiliates 
+        SET status = ${status}
+        WHERE id = ${id}
+        RETURNING *
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error updating affiliate status:", error);
+      res.status(500).json({ message: "Failed to update affiliate status" });
+    }
+  });
+
+  // Admin: Get all payout requests with affiliate details
+  app.get('/api/admin/payout-requests', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.query;
+      
+      const payoutRequests = await db.execute(sql`
+        SELECT 
+          pr.id,
+          pr.amount,
+          pr.status,
+          pr.payment_method,
+          pr.account_details,
+          pr.requested_at,
+          pr.processed_at,
+          pr.processed_by,
+          pr.rejection_reason,
+          a.id as affiliate_id,
+          a.referral_code,
+          a.total_earnings,
+          u.email,
+          u.username,
+          u.first_name,
+          u.last_name,
+          admin.email as processed_by_email
+        FROM payout_requests pr
+        JOIN affiliates a ON pr.affiliate_id = a.id
+        JOIN users u ON a.user_id = u.id
+        LEFT JOIN users admin ON pr.processed_by = admin.id
+        ${status ? sql`WHERE pr.status = ${status}` : sql``}
+        ORDER BY pr.requested_at DESC
+      `);
+
+      res.json(payoutRequests.rows);
+    } catch (error) {
+      console.error("Error fetching payout requests:", error);
+      res.status(500).json({ message: "Failed to fetch payout requests" });
+    }
+  });
+
+  // Admin: Approve payout request with status update
+  app.patch('/api/admin/payout-requests/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = (req.user as SelectUser).id;
+
+      const updatedRequest = await storage.updatePayoutStatus(id, 'approved', adminId);
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ message: "Payout request not found" });
+      }
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error approving payout:", error);
+      res.status(500).json({ message: "Failed to approve payout" });
+    }
+  });
+
+  // Admin: Reject payout request with reason
+  app.patch('/api/admin/payout-requests/:id/reject', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = (req.user as SelectUser).id;
+      const { rejectionReason } = req.body;
+
+      if (!rejectionReason) {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+
+      const updatedRequest = await storage.updatePayoutStatus(id, 'rejected', adminId, rejectionReason);
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ message: "Payout request not found" });
+      }
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error rejecting payout:", error);
+      res.status(500).json({ message: "Failed to reject payout" });
+    }
+  });
+
+  // Affiliate: Get comprehensive dashboard stats
+  app.get('/api/affiliate/dashboard', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const affiliate = await storage.getAffiliateByUserId(userId);
+      
+      if (!affiliate) {
+        return res.status(404).json({ message: "Not enrolled as an affiliate" });
+      }
+
+      // Get referral statistics
+      const referrals = await storage.getAffiliateReferrals(affiliate.id);
+      const pendingReferrals = referrals.filter(r => r.status === 'pending').length;
+      const completedReferrals = referrals.filter(r => r.status === 'completed').length;
+      const totalCommission = referrals.reduce((sum, r) => sum + (r.commission || 0), 0);
+
+      // Get payout information
+      const payoutRequests = await storage.getPayoutRequestsByAffiliate(affiliate.id);
+      const pendingPayouts = payoutRequests.filter(p => p.status === 'pending');
+      const approvedPayouts = payoutRequests.filter(p => p.status === 'approved');
+      const rejectedPayouts = payoutRequests.filter(p => p.status === 'rejected');
+      const totalPaidOut = approvedPayouts.reduce((sum, p) => sum + p.amount, 0);
+
+      // Get available balance
+      const availableBalance = await storage.getAffiliateAvailableBalance(affiliate.id);
+
+      res.json({
+        affiliate,
+        stats: {
+          totalReferrals: affiliate.totalReferrals,
+          pendingReferrals,
+          completedReferrals,
+          totalEarnings: affiliate.totalEarnings,
+          totalCommission,
+          availableBalance,
+          totalPaidOut,
+          conversionRate: affiliate.totalReferrals > 0 ? ((completedReferrals / affiliate.totalReferrals) * 100).toFixed(2) : '0'
+        },
+        payouts: {
+          pending: pendingPayouts.length,
+          approved: approvedPayouts.length,
+          rejected: rejectedPayouts.length,
+          recentRequests: payoutRequests.slice(0, 5)
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate dashboard:", error);
+      res.status(500).json({ message: "Failed to fetch affiliate dashboard" });
+    }
+  });
+
   // Admin: Get all payments (consolidated from vote purchases, registrations, ad payments, and payouts)
   app.get('/api/admin/payments', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
