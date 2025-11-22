@@ -28,6 +28,7 @@ export default function Login() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupFirstName, setSignupFirstName] = useState("");
   const [signupLastName, setSignupLastName] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
   const [signupAge, setSignupAge] = useState("");
   const [signupParentalConsent, setSignupParentalConsent] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -64,6 +65,7 @@ export default function Login() {
         password: signupPassword,
         firstName: signupFirstName,
         lastName: signupLastName,
+        username: signupUsername || null,
         age: signupAge ? parseInt(signupAge) : null,
         parentalConsent: signupParentalConsent,
       });
@@ -108,6 +110,15 @@ export default function Login() {
       toast({
         title: t("auth.missingInfo"),
         description: t("auth.fillRequiredFields"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (signupUsername && (signupUsername.length < 3 || signupUsername.length > 20)) {
+      toast({
+        title: t("auth.invalidUsername"),
+        description: "Username must be between 3 and 20 characters",
         variant: "destructive",
       });
       return;
@@ -278,6 +289,21 @@ export default function Login() {
                           data-testid="input-signup-lastname"
                         />
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-username">Username <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                      <Input
+                        id="signup-username"
+                        type="text"
+                        placeholder="Choose a unique username"
+                        value={signupUsername}
+                        onChange={(e) => setSignupUsername(e.target.value)}
+                        data-testid="input-signup-username"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        3-20 characters, letters and numbers only
+                      </p>
                     </div>
 
                     <div className="space-y-2">
