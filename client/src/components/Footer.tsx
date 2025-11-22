@@ -6,10 +6,45 @@ import { useState } from "react";
 import { Link } from "wouter";
 import logo from "@assets/kOSCOCO_1762050897989.png";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Footer() {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
+  
+  const subscribeMutation = useMutation({
+    mutationFn: async (emailAddress: string) => {
+      return await apiRequest("/api/newsletter/subscribe", "POST", {
+        email: emailAddress,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Thank You For Subscribing!",
+        description: "Welcome to the KOSCOCO Newsletter. You'll receive exciting updates about competitions, creator tips, and exclusive opportunities.",
+        variant: "default",
+      });
+      setEmail('');
+    },
+    onError: (error: any) => {
+      if (error.message?.includes("already subscribed")) {
+        toast({
+          title: "Already Subscribed",
+          description: "This email is already subscribed to our newsletter.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Subscription Failed",
+          description: "Please try again later or contact support@kozzii.africa",
+          variant: "destructive",
+        });
+      }
+    },
+  });
   
   const categories = [
     { key: 'prizes.categories.musicDance' },
@@ -128,12 +163,20 @@ export default function Footer() {
               />
               <Button 
                 onClick={() => {
-                  console.log('Subscribe:', email);
-                  setEmail('');
+                  if (!email || !email.includes('@')) {
+                    toast({
+                      title: "Invalid Email",
+                      description: "Please enter a valid email address.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  subscribeMutation.mutate(email);
                 }}
+                disabled={subscribeMutation.isPending || !email}
                 data-testid="button-subscribe"
               >
-                {t('footer.subscribe')}
+                {subscribeMutation.isPending ? 'Subscribing...' : t('footer.subscribe')}
               </Button>
             </div>
           </div>
