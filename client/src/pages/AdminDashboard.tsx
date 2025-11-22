@@ -3980,7 +3980,7 @@ function AdminDashboardContent() {
                     </div>
                     <div>
                       <Label htmlFor="campaign-content">Content</Label>
-                      <div className="bg-background border rounded-md overflow-hidden" style={{ height: "300px" }}>
+                      <div className="bg-background border rounded-md overflow-hidden" style={{ height: "500px" }}>
                         <ReactQuill
                           value={campaignForm.htmlContent}
                           onChange={(html) => setCampaignForm({ ...campaignForm, htmlContent: html, content: html.replace(/<[^>]*>/g, "") })}
