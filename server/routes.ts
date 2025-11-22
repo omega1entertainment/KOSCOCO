@@ -2697,6 +2697,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailVerified: user.emailVerified,
         isAdmin: user.isAdmin,
         isJudge: user.isJudge,
+        isModerator: user.isModerator,
+        isContentManager: user.isContentManager,
+        isAffiliateManager: user.isAffiliateManager,
+        suspended: user.suspended,
         judgeName: user.judgeName,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -2708,34 +2712,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin: Update user role
+  // Admin: Update user role and permissions
   app.patch('/api/admin/users/:id/role', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { isAdmin, isJudge } = req.body;
+      const { isAdmin, isJudge, isModerator, isContentManager, isAffiliateManager } = req.body;
+      const currentUser = req.user as SelectUser;
 
-      if (typeof isAdmin !== 'boolean' || typeof isJudge !== 'boolean') {
-        return res.status(400).json({ message: "isAdmin and isJudge must be boolean values" });
+      // Validate all fields are boolean
+      const roles = { isAdmin, isJudge, isModerator, isContentManager, isAffiliateManager };
+      for (const [key, value] of Object.entries(roles)) {
+        if (typeof value !== 'boolean') {
+          return res.status(400).json({ message: `${key} must be a boolean value` });
+        }
       }
 
       // Prevent self-demotion from admin
-      if (req.user.id === id && req.user.isAdmin && !isAdmin) {
+      if (currentUser.id === id && currentUser.isAdmin && !isAdmin) {
         return res.status(403).json({ message: "You cannot remove your own admin privileges" });
       }
 
-      const user = await storage.updateUserRole(id, isAdmin, isJudge);
-      
+      // Update using raw SQL for atomicity
+      const [user] = await db.update(schema.users).set({
+        isAdmin,
+        isJudge,
+        isModerator,
+        isContentManager,
+        isAffiliateManager,
+        updatedAt: new Date()
+      }).where(eq(schema.users.id, id)).returning();
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
       res.json({ 
-        message: "User role updated successfully",
+        message: "User roles updated successfully",
         user: {
           id: user.id,
           email: user.email,
           isAdmin: user.isAdmin,
           isJudge: user.isJudge,
+          isModerator: user.isModerator,
+          isContentManager: user.isContentManager,
+          isAffiliateManager: user.isAffiliateManager,
         }
       });
     } catch (error) {
