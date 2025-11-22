@@ -243,7 +243,7 @@ function CMSManagementTab() {
                       <p className="text-sm mt-2 truncate">{String(item.value)}</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button size="sm" variant="outline" onClick={() => { setEditingId(String(item.id)); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
+                      <Button size="sm" variant="outline" onClick={() => { setEditingId(String(item.id)); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", String(item.value)); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
                         Edit
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => deleteCmsMutation.mutate({ section: selectedSection, key: item.key })} disabled={deleteCmsMutation.isPending} data-testid={`button-delete-cms-${item.id}`}>
