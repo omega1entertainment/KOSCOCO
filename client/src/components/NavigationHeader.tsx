@@ -176,6 +176,9 @@ export default function NavigationHeader({
                     <DropdownMenuItem onClick={() => onNavigate?.('/dashboard')} data-testid="menu-dashboard">
                       {t('nav.dashboard')}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate?.('/creator')} data-testid="menu-creator-dashboard">
+                      Creator Dashboard
+                    </DropdownMenuItem>
                     {user?.isAdmin && (
                       <DropdownMenuItem onClick={() => onNavigate?.('/admin')} data-testid="menu-admin-dashboard">
                         {t('nav.adminDashboard')}
@@ -322,6 +325,18 @@ export default function NavigationHeader({
                   >
                     <User className="w-4 h-4 mr-2" />
                     {t('nav.dashboard')}
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="min-h-11"
+                    onClick={() => {
+                      setLocation("/creator");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-creator-dashboard"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Creator Dashboard
                   </Button>
                   <Button 
                     variant="ghost"
