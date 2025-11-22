@@ -243,7 +243,7 @@ function CMSManagementTab() {
                       <p className="text-sm mt-2 truncate">{String(item.value)}</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button size="sm" variant="outline" onClick={() => { setEditingId(item.id as string); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
+                      <Button size="sm" variant="outline" onClick={() => { setEditingId(String(item.id)); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
                         Edit
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => deleteCmsMutation.mutate({ section: selectedSection, key: item.key })} disabled={deleteCmsMutation.isPending} data-testid={`button-delete-cms-${item.id}`}>
@@ -1032,6 +1032,34 @@ function AdminDashboardContent() {
                       <table className="w-full" data-testid="table-users">
                         <thead>
                           <tr className="border-b">
+                            <th className="text-left p-3 font-semibold w-10">
+                              <Checkbox
+                                checked={selectedUserIds.size > 0 && selectedUserIds.size === users.filter(u => {
+                                  if (userFilter === "all") return true;
+                                  if (userFilter === "verified") return u.emailVerified;
+                                  if (userFilter === "admin") return u.isAdmin;
+                                  if (userFilter === "judge") return u.isJudge;
+                                  if (userFilter === "contestant") return !u.isAdmin && !u.isJudge;
+                                  return true;
+                                }).length}
+                                onCheckedChange={(checked) => {
+                                  if (checked === true) {
+                                    const filtered = users.filter(u => {
+                                      if (userFilter === "all") return true;
+                                      if (userFilter === "verified") return u.emailVerified;
+                                      if (userFilter === "admin") return u.isAdmin;
+                                      if (userFilter === "judge") return u.isJudge;
+                                      if (userFilter === "contestant") return !u.isAdmin && !u.isJudge;
+                                      return true;
+                                    });
+                                    setSelectedUserIds(new Set(filtered.map(u => u.id)));
+                                  } else {
+                                    setSelectedUserIds(new Set());
+                                  }
+                                }}
+                                data-testid="checkbox-select-all-users"
+                              />
+                            </th>
                             <th className="text-left p-3 font-semibold">{t("admin.users.name")}</th>
                             <th className="text-left p-3 font-semibold">{t("admin.users.email")}</th>
                             <th className="text-left p-3 font-semibold">{t("admin.users.username")}</th>
@@ -1054,6 +1082,21 @@ function AdminDashboardContent() {
                             })
                             .map((user) => (
                               <tr key={user.id} className="border-b hover-elevate" data-testid={`row-user-${user.id}`}>
+                                <td className="p-3 w-10">
+                                  <Checkbox
+                                    checked={selectedUserIds.has(user.id)}
+                                    onCheckedChange={(checked) => {
+                                      const newSelected = new Set(selectedUserIds);
+                                      if (checked === true) {
+                                        newSelected.add(user.id);
+                                      } else {
+                                        newSelected.delete(user.id);
+                                      }
+                                      setSelectedUserIds(newSelected);
+                                    }}
+                                    data-testid={`checkbox-select-user-${user.id}`}
+                                  />
+                                </td>
                                 <td className="p-3" data-testid={`text-name-${user.id}`}>
                                   {user.firstName} {user.lastName}
                                 </td>
@@ -1376,6 +1419,19 @@ function AdminDashboardContent() {
                     </div>
                   ) : (
                     <div className="space-y-4">
+                      {selectedUserIds.size > 0 && (
+                        <div className="bg-muted p-4 rounded-lg mb-4 flex items-center justify-between gap-4">
+                          <div className="text-sm font-medium">{selectedUserIds.size} users selected</div>
+                          <Button
+                            size="sm"
+                            onClick={() => setBulkRoleDialogOpen(true)}
+                            data-testid="button-bulk-assign-roles"
+                          >
+                            Assign Roles
+                          </Button>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-4 mb-4">
                         <Badge
                           variant={userFilter === "all" ? "default" : "outline"}
@@ -1435,6 +1491,34 @@ function AdminDashboardContent() {
                         <table className="w-full" data-testid="table-users">
                           <thead>
                             <tr className="border-b">
+                              <th className="text-left p-3 font-semibold w-10">
+                                <Checkbox
+                                  checked={selectedUserIds.size > 0 && selectedUserIds.size === users.filter(u => {
+                                    if (userFilter === "all") return true;
+                                    if (userFilter === "verified") return u.emailVerified;
+                                    if (userFilter === "admin") return u.isAdmin;
+                                    if (userFilter === "judge") return u.isJudge;
+                                    if (userFilter === "contestant") return !u.isAdmin && !u.isJudge;
+                                    return true;
+                                  }).length}
+                                  onCheckedChange={(checked) => {
+                                    if (checked === true) {
+                                      const filtered = users.filter(u => {
+                                        if (userFilter === "all") return true;
+                                        if (userFilter === "verified") return u.emailVerified;
+                                        if (userFilter === "admin") return u.isAdmin;
+                                        if (userFilter === "judge") return u.isJudge;
+                                        if (userFilter === "contestant") return !u.isAdmin && !u.isJudge;
+                                        return true;
+                                      });
+                                      setSelectedUserIds(new Set(filtered.map(u => u.id)));
+                                    } else {
+                                      setSelectedUserIds(new Set());
+                                    }
+                                  }}
+                                  data-testid="checkbox-select-all-users-desktop"
+                                />
+                              </th>
                               <th className="text-left p-3 font-semibold">
                                 {t("admin.users.name")}
                               </th>
@@ -1479,6 +1563,21 @@ function AdminDashboardContent() {
                                   className="border-b hover-elevate"
                                   data-testid={`row-user-${user.id}`}
                                 >
+                                  <td className="p-3 w-10">
+                                    <Checkbox
+                                      checked={selectedUserIds.has(user.id)}
+                                      onCheckedChange={(checked) => {
+                                        const newSelected = new Set(selectedUserIds);
+                                        if (checked === true) {
+                                          newSelected.add(user.id);
+                                        } else {
+                                          newSelected.delete(user.id);
+                                        }
+                                        setSelectedUserIds(newSelected);
+                                      }}
+                                      data-testid={`checkbox-select-user-desktop-${user.id}`}
+                                    />
+                                  </td>
                                   <td
                                     className="p-3"
                                     data-testid={`text-name-${user.id}`}
