@@ -19,6 +19,7 @@ import { generateThumbnail } from "./thumbnailGenerator";
 import { moderateVideo } from "./moderation";
 import { generateSlug } from "../client/src/lib/slugUtils";
 import path from "path";
+import { sendNewsletterWelcomeEmail } from "./emailService";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -4531,6 +4532,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid subscriber data", errors: validationResult.error.errors });
       }
       const subscriber = await storage.createNewsletterSubscriber(validationResult.data);
+      
+      // Send welcome email asynchronously (don't block the response)
+      sendNewsletterWelcomeEmail({
+        email: subscriber.email,
+        firstName: subscriber.firstName || undefined,
+      }).catch(err => console.error("Failed to send welcome email:", err));
+      
       res.json(subscriber);
     } catch (error: any) {
       console.error("Error subscribing to newsletter:", error);

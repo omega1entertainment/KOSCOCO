@@ -28,8 +28,9 @@ The platform is built with a modern web stack.
     - **Watch History**: Tracks user video watch history with duration, completion status, and provides a dashboard view.
     - **Picture-in-Picture**: Video player supports PiP mode for enhanced multitasking.
     - **Video of the Day**: Daily rotating featured video on the homepage.
+    - **Newsletter System**: WYSIWYG email campaign creation with newsletter subscriber management. Automated welcome emails with branded imagery sent to new subscribers.
 
-## Backend Affiliate Management Features (Latest Addition)
+## Backend Affiliate Management Features
 - **Admin Affiliate Management**:
     - GET `/api/admin/affiliates` - List all affiliates with summary stats (pending payouts, total paid out)
     - GET `/api/admin/affiliates/:id` - Get affiliate details with complete referral history and payout requests
@@ -43,6 +44,28 @@ The platform is built with a modern web stack.
     - GET `/api/affiliate/referrals` - Get all referrals for authenticated affiliate
     - GET `/api/affiliate/payout/history` - View payout request history and available balance
     - POST `/api/affiliate/payout/request` - Submit new payout request (with minimum threshold validation)
+
+## Newsletter System (Latest Addition)
+- **Frontend Admin Dashboard**: Newsletter management tab with subscriber list and email campaign builder using ReactQuill WYSIWYG editor
+- **Newsletter Welcome Email**: 
+    - Automatically sent to new subscribers via Resend email service
+    - Professional HTML template with KOSCOCO branding (Primary Red #DC2626)
+    - Includes featured KOSCOCO imagery and gradient header
+    - Benefits section highlighting: Competition Updates, Creator Tips, Exclusive Opportunities, Community Highlights, Insider News
+    - Call-to-action button for platform exploration
+    - Unsubscribe link and footer with contact information
+    - Graceful error handling - newsletter signup succeeds even if email fails
+- **Public Subscription Endpoint**: POST `/api/newsletter/subscribe` - No authentication required, validates with Zod schema, prevents duplicate emails
+- **Admin Newsletter Endpoints**:
+    - GET `/api/admin/newsletter/subscribers` - List all newsletter subscribers
+    - POST `/api/admin/newsletter/subscribers` - Add new subscriber via admin
+    - PATCH `/api/admin/newsletter/subscribers/:id` - Update subscriber details
+    - DELETE `/api/admin/newsletter/subscribers/:id` - Remove subscriber
+    - GET `/api/admin/newsletter/campaigns` - List all email campaigns
+    - POST `/api/admin/newsletter/campaigns` - Create new campaign with WYSIWYG editor
+    - PATCH `/api/admin/newsletter/campaigns/:id` - Update campaign draft
+    - POST `/api/admin/newsletter/campaigns/:id/send` - Send campaign to subscribers
+    - DELETE `/api/admin/newsletter/campaigns/:id` - Delete campaign
 
 ## External Dependencies
 - **Database**: PostgreSQL (managed by Neon) with Drizzle ORM
