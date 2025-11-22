@@ -89,18 +89,27 @@ export default function Contact() {
               </CardContent>
             </Card>
 
-            {/* Phone */}
+            {/* WhatsApp */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Phone className="w-5 h-5 text-primary" />
-                  Phone
+                  WhatsApp
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-2">Coming soon</p>
-                <p className="text-sm text-muted-foreground">
-                  We're currently available via email. Check back soon for phone support!
+                <p className="text-foreground mb-2 font-semibold">Strictly Chat on WhatsApp</p>
+                <a
+                  href="https://wa.me/237676951397"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-mono"
+                  data-testid="link-whatsapp-contact"
+                >
+                  +237 676 951 397
+                </a>
+                <p className="text-sm text-muted-foreground mt-3">
+                  Click to open WhatsApp chat with us
                 </p>
               </CardContent>
             </Card>
