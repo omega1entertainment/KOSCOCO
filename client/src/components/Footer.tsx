@@ -87,6 +87,7 @@ export default function Footer() {
                   'footer.rules': '/rules',
                   'footer.termsOfService': '/terms-of-service',
                   'footer.privacyPolicy': '/privacy-policy',
+                  'footer.competitionRules': '/rules',
                 };
                 const route = routeMap[item.key];
                 
