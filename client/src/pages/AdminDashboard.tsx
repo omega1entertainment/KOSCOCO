@@ -314,6 +314,14 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/advertisers"],
   });
 
+  const { data: affiliates = [], isLoading: affiliatesLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/affiliates"],
+  });
+
+  const { data: payoutRequestsData = [], isLoading: payoutRequestsLoading } = useQuery<any[]>({
+    queryKey: ["/api/admin/payout-requests"],
+  });
+
   const { data: users = [], isLoading: usersLoading } = useQuery<SelectUser[]>({
     queryKey: ["/api/admin/users"],
   });
@@ -365,6 +373,15 @@ function AdminDashboardContent() {
   });
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [bulkRoleDialogOpen, setBulkRoleDialogOpen] = useState(false);
+
+  // Affiliate state
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState<string | null>(null);
+  const [affiliateStatusDialog, setAffiliateStatusDialog] = useState(false);
+  const [newAffiliateStatus, setNewAffiliateStatus] = useState("active");
+  const [affiliatePayoutActionDialog, setAffiliatePayoutActionDialog] = useState(false);
+  const [affiliatePayoutAction, setAffiliatePayoutAction] = useState<"approve" | "reject">("approve");
+  const [affiliateSelectedPayoutId, setAffiliateSelectedPayoutId] = useState<string | null>(null);
+  const [affiliatePayoutRejectionReason, setAffiliatePayoutRejectionReason] = useState("");
 
   // Newsletter state
   const { data: newsletterSubscribers = [] } = useQuery<any[]>({
@@ -527,6 +544,53 @@ function AdminDashboardContent() {
       deleteCampaignMutation.mutate(id);
     }
   };
+
+  // Affiliate mutations
+  const updateAffiliateStatusMutation = useMutation({
+    mutationFn: async ({ affiliateId, status }: { affiliateId: string; status: string }) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/status`, "PATCH", { status });
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Affiliate status updated" });
+      setAffiliateStatusDialog(false);
+      setSelectedAffiliateId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const approveAffiliatePayoutMutation = useMutation({
+    mutationFn: async (payoutId: string) => {
+      return await apiRequest(`/api/admin/payout-requests/${payoutId}/approve`, "PATCH", {});
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Payout approved" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payout-requests"] });
+      setAffiliatePayoutActionDialog(false);
+      setAffiliateSelectedPayoutId(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const rejectAffiliatePayoutMutation = useMutation({
+    mutationFn: async ({ payoutId, reason }: { payoutId: string; reason: string }) => {
+      return await apiRequest(`/api/admin/payout-requests/${payoutId}/reject`, "PATCH", { rejectionReason: reason });
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Payout rejected" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payout-requests"] });
+      setAffiliatePayoutActionDialog(false);
+      setAffiliateSelectedPayoutId(null);
+      setAffiliatePayoutRejectionReason("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -1574,6 +1638,18 @@ function AdminDashboardContent() {
               data-testid="tab-cms"
             >
               CMS
+            </TabsTrigger>
+            <TabsTrigger
+              value="affiliates"
+              className="w-full justify-start"
+              data-testid="tab-affiliates"
+            >
+              Affiliates
+              {affiliates.filter((a: any) => a.status === "pending").length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {affiliates.filter((a: any) => a.status === "pending").length}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -4085,6 +4161,239 @@ function AdminDashboardContent() {
                       data-testid="button-confirm-campaign"
                     >
                       {editingCampaign ? (updateCampaignMutation.isPending ? "Updating..." : "Update Campaign") : (createCampaignMutation.isPending ? "Creating..." : "Create Campaign")}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </TabsContent>
+
+            <TabsContent value="affiliates" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Affiliate Management</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {affiliatesLoading ? (
+                    <div className="text-center py-12">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                  ) : affiliates.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">No affiliates found</div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="overflow-x-auto border rounded-md">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="border-b">
+                              <th className="text-left p-3 font-semibold">User</th>
+                              <th className="text-left p-3 font-semibold">Referral Code</th>
+                              <th className="text-left p-3 font-semibold">Referrals</th>
+                              <th className="text-left p-3 font-semibold">Earnings</th>
+                              <th className="text-left p-3 font-semibold">Status</th>
+                              <th className="text-left p-3 font-semibold">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(affiliates as any[]).map((affiliate) => (
+                              <tr key={affiliate.id} className="border-b hover:bg-muted/50">
+                                <td className="p-3">
+                                  <div className="font-medium">{affiliate.username || affiliate.email}</div>
+                                  <div className="text-xs text-muted-foreground">{affiliate.email}</div>
+                                </td>
+                                <td className="p-3 font-mono text-sm">{affiliate.referral_code}</td>
+                                <td className="p-3">{affiliate.total_referrals}</td>
+                                <td className="p-3 font-semibold">{affiliate.total_earnings} FCFA</td>
+                                <td className="p-3">
+                                  <Badge variant={affiliate.status === "active" ? "default" : "secondary"}>
+                                    {affiliate.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedAffiliateId(affiliate.id);
+                                      setNewAffiliateStatus(affiliate.status);
+                                      setAffiliateStatusDialog(true);
+                                    }}
+                                    data-testid={`button-update-affiliate-status-${affiliate.id}`}
+                                  >
+                                    Edit Status
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Payout Requests Section */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Payout Requests</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {payoutRequestsLoading ? (
+                    <div className="text-center py-12">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                  ) : payoutRequestsData.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">No payout requests</div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="overflow-x-auto border rounded-md">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr className="border-b">
+                              <th className="text-left p-3 font-semibold">Affiliate</th>
+                              <th className="text-left p-3 font-semibold">Amount</th>
+                              <th className="text-left p-3 font-semibold">Status</th>
+                              <th className="text-left p-3 font-semibold">Method</th>
+                              <th className="text-left p-3 font-semibold">Requested</th>
+                              <th className="text-left p-3 font-semibold">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(payoutRequestsData as any[]).map((payout) => (
+                              <tr key={payout.id} className="border-b hover:bg-muted/50">
+                                <td className="p-3">
+                                  <div className="font-medium">{payout.username || payout.email}</div>
+                                  <div className="text-xs text-muted-foreground">{payout.referral_code}</div>
+                                </td>
+                                <td className="p-3 font-semibold">{payout.amount} FCFA</td>
+                                <td className="p-3">
+                                  <Badge variant={payout.status === "pending" ? "destructive" : payout.status === "approved" ? "default" : "secondary"}>
+                                    {payout.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-sm">{payout.payment_method}</td>
+                                <td className="p-3 text-xs">{new Date(payout.requested_at).toLocaleDateString()}</td>
+                                <td className="p-3">
+                                  {payout.status === "pending" && (
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setAffiliateSelectedPayoutId(payout.id);
+                                          setAffiliatePayoutAction("approve");
+                                          setAffiliatePayoutActionDialog(true);
+                                        }}
+                                        data-testid={`button-approve-payout-${payout.id}`}
+                                      >
+                                        Approve
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => {
+                                          setAffiliateSelectedPayoutId(payout.id);
+                                          setAffiliatePayoutAction("reject");
+                                          setAffiliatePayoutActionDialog(true);
+                                        }}
+                                        data-testid={`button-reject-payout-${payout.id}`}
+                                      >
+                                        Reject
+                                      </Button>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Update Affiliate Status Dialog */}
+              <Dialog open={affiliateStatusDialog} onOpenChange={setAffiliateStatusDialog}>
+                <DialogContent data-testid="dialog-update-affiliate-status">
+                  <DialogHeader>
+                    <DialogTitle>Update Affiliate Status</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="affiliate-status">Status</Label>
+                      <Select value={newAffiliateStatus} onValueChange={setNewAffiliateStatus}>
+                        <SelectTrigger id="affiliate-status" data-testid="select-affiliate-status">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setAffiliateStatusDialog(false)} data-testid="button-cancel-status">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (selectedAffiliateId) {
+                          updateAffiliateStatusMutation.mutate({ affiliateId: selectedAffiliateId, status: newAffiliateStatus });
+                        }
+                      }}
+                      disabled={updateAffiliateStatusMutation.isPending}
+                      data-testid="button-confirm-status"
+                    >
+                      {updateAffiliateStatusMutation.isPending ? "Updating..." : "Update Status"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Payout Action Dialog */}
+              <Dialog open={affiliatePayoutActionDialog} onOpenChange={setAffiliatePayoutActionDialog}>
+                <DialogContent data-testid="dialog-payout-action">
+                  <DialogHeader>
+                    <DialogTitle>{affiliatePayoutAction === "approve" ? "Approve Payout" : "Reject Payout"}</DialogTitle>
+                  </DialogHeader>
+                  {affiliatePayoutAction === "reject" && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="rejection-reason">Reason</Label>
+                        <Textarea
+                          id="rejection-reason"
+                          placeholder="Explain why this payout is being rejected..."
+                          value={affiliatePayoutRejectionReason}
+                          onChange={(e) => setAffiliatePayoutRejectionReason(e.target.value)}
+                          data-testid="textarea-rejection-reason"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setAffiliatePayoutActionDialog(false)} data-testid="button-cancel-payout-action">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (affiliateSelectedPayoutId) {
+                          if (affiliatePayoutAction === "approve") {
+                            approveAffiliatePayoutMutation.mutate(affiliateSelectedPayoutId);
+                          } else {
+                            rejectAffiliatePayoutMutation.mutate({ payoutId: affiliateSelectedPayoutId, reason: affiliatePayoutRejectionReason });
+                          }
+                        }
+                      }}
+                      disabled={affiliatePayoutAction === "reject" ? !affiliatePayoutRejectionReason || rejectAffiliatePayoutMutation.isPending : approveAffiliatePayoutMutation.isPending}
+                      variant={affiliatePayoutAction === "reject" ? "destructive" : "default"}
+                      data-testid={`button-confirm-payout-${affiliatePayoutAction}`}
+                    >
+                      {affiliatePayoutAction === "approve"
+                        ? approveAffiliatePayoutMutation.isPending ? "Approving..." : "Approve Payout"
+                        : rejectAffiliatePayoutMutation.isPending ? "Rejecting..." : "Reject Payout"}
                     </Button>
                   </div>
                 </DialogContent>
