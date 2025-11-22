@@ -1,13 +1,23 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import heroImage from "@assets/generated_images/african_creators_celebrating_talent_and_opportunity.png";
 
 export default function ThankYou() {
   const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-2xl shadow-lg">
+      <Card className="w-full max-w-2xl shadow-lg overflow-hidden">
+        {/* Hero Image */}
+        <div className="w-full h-48 sm:h-64 overflow-hidden">
+          <img
+            src={heroImage}
+            alt="KOSCOCO - African creators celebrating talent"
+            className="w-full h-full object-cover"
+            data-testid="img-thank-you-hero"
+          />
+        </div>
         <CardContent className="pt-12 pb-12 px-8 text-center space-y-8">
           {/* Welcome Message */}
           <div className="space-y-6">
