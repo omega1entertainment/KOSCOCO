@@ -243,7 +243,7 @@ function CMSManagementTab() {
                       <p className="text-sm mt-2 truncate">{String(item.value)}</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button size="sm" variant="outline" onClick={() => { setEditingId(item.id); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
+                      <Button size="sm" variant="outline" onClick={() => { setEditingId(item.id as string); form.setValue("key", item.key); form.setValue("label", item.label); form.setValue("value", item.value); form.setValue("type", item.type); }} data-testid={`button-edit-cms-${item.id}`}>
                         Edit
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => deleteCmsMutation.mutate({ section: selectedSection, key: item.key })} disabled={deleteCmsMutation.isPending} data-testid={`button-delete-cms-${item.id}`}>
@@ -353,6 +353,8 @@ function AdminDashboardContent() {
     isContentManager: false,
     isAffiliateManager: false,
   });
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [bulkRoleDialogOpen, setBulkRoleDialogOpen] = useState(false);
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -813,6 +815,59 @@ function AdminDashboardContent() {
     });
     setEditRoleDialogOpen(true);
   };
+
+  // Suspend/Activate user mutation
+  const toggleUserSuspensionMutation = useMutation({
+    mutationFn: async () => {
+      if (!userToEditRoles) throw new Error("No user selected");
+      const endpoint = userToEditRoles.suspended ? "activate" : "suspend";
+      const res = await apiRequest(`/api/admin/users/${userToEditRoles.id}/${endpoint}`, "POST");
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: userToEditRoles?.suspended ? "User Activated" : "User Suspended",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      if (userToEditRoles) {
+        setUserToEditRoles({ ...userToEditRoles, suspended: !userToEditRoles.suspended });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Action Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk role assignment mutation
+  const bulkUpdateRolesMutation = useMutation({
+    mutationFn: async (roles: any) => {
+      const promises = Array.from(selectedUserIds).map(userId =>
+        apiRequest(`/api/admin/users/${userId}/role`, "PATCH", roles)
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bulk Update Complete",
+        description: `Roles updated for ${selectedUserIds.size} users.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setSelectedUserIds(new Set());
+      setBulkRoleDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Bulk Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1622,6 +1677,59 @@ function AdminDashboardContent() {
                       </div>
                     </div>
 
+                    <div className="border-t pt-4 space-y-3">
+                      <div className="text-sm">
+                        <p className="font-medium mb-2">Quick Actions:</p>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingRoles({ isAdmin: true, isJudge: false, isModerator: false, isContentManager: false, isAffiliateManager: false });
+                            }}
+                            data-testid="button-make-admin"
+                          >
+                            Make Admin
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingRoles({ isAdmin: false, isJudge: true, isModerator: false, isContentManager: false, isAffiliateManager: false });
+                            }}
+                            data-testid="button-make-judge"
+                          >
+                            Make Judge
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingRoles({ isAdmin: false, isJudge: false, isModerator: false, isContentManager: false, isAffiliateManager: false });
+                            }}
+                            data-testid="button-make-contestant"
+                          >
+                            Make Contestant
+                          </Button>
+                        </div>
+                      </div>
+
+                      {userToEditRoles && (
+                        <div className="flex items-center gap-3 p-3 bg-muted rounded">
+                          <Checkbox
+                            id="suspend-user"
+                            checked={userToEditRoles.suspended ?? false}
+                            onCheckedChange={() => toggleUserSuspensionMutation.mutate()}
+                            data-testid="checkbox-suspend-user"
+                          />
+                          <Label htmlFor="suspend-user" className="cursor-pointer flex-1">
+                            <div className="font-medium">Suspend Account</div>
+                            <div className="text-xs text-muted-foreground">Prevent login and access</div>
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex gap-3 pt-4">
                       <Button
                         variant="outline"
@@ -1640,6 +1748,66 @@ function AdminDashboardContent() {
                         {updateUserRolesMutation.isPending ? "Saving..." : "Save Changes"}
                       </Button>
                     </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Bulk Role Assignment Dialog */}
+              <Dialog open={bulkRoleDialogOpen} onOpenChange={setBulkRoleDialogOpen}>
+                <DialogContent className="max-w-md" data-testid="dialog-bulk-roles">
+                  <DialogHeader>
+                    <DialogTitle>Bulk Assign Roles</DialogTitle>
+                    <DialogDescription>
+                      Assign roles to {selectedUserIds.size} selected users
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="bulk-admin"
+                          data-testid="checkbox-bulk-admin"
+                          onCheckedChange={(checked) => {
+                            bulkUpdateRolesMutation.mutate({
+                              isAdmin: checked === true,
+                              isJudge: false,
+                              isModerator: false,
+                              isContentManager: false,
+                              isAffiliateManager: false,
+                            });
+                          }}
+                        />
+                        <Label htmlFor="bulk-admin" className="cursor-pointer flex-1">
+                          <div className="font-medium">Administrator</div>
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id="bulk-judge"
+                          data-testid="checkbox-bulk-judge"
+                          onCheckedChange={(checked) => {
+                            bulkUpdateRolesMutation.mutate({
+                              isAdmin: false,
+                              isJudge: checked === true,
+                              isModerator: false,
+                              isContentManager: false,
+                              isAffiliateManager: false,
+                            });
+                          }}
+                        />
+                        <Label htmlFor="bulk-judge" className="cursor-pointer flex-1">
+                          <div className="font-medium">Judge</div>
+                        </Label>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setBulkRoleDialogOpen(false)}
+                      className="w-full"
+                      data-testid="button-close-bulk"
+                    >
+                      Close
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
