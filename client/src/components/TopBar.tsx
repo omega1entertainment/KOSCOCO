@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
-import { SiFacebook, SiInstagram, SiTiktok, SiX, SiYoutube, SiLinkedin } from "react-icons/si";
+import { SiFacebook, SiInstagram, SiTiktok, SiX } from "react-icons/si";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TopBarProps {
@@ -16,8 +16,6 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
     { name: "Instagram", icon: SiInstagram, url: "https://instagram.com/koscoco", testId: "link-social-instagram" },
     { name: "TikTok", icon: SiTiktok, url: "https://tiktok.com/@koscoco", testId: "link-social-tiktok" },
     { name: "X", icon: SiX, url: "https://x.com/koscoco", testId: "link-social-x" },
-    { name: "YouTube", icon: SiYoutube, url: "https://youtube.com/@koscoco", testId: "link-social-youtube" },
-    { name: "LinkedIn", icon: SiLinkedin, url: "https://linkedin.com/company/koscoco", testId: "link-social-linkedin" },
   ];
 
   const toggleLanguage = () => {
