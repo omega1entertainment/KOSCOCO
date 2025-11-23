@@ -37,6 +37,7 @@ import Judges from "@/pages/Judges";
 import JudgeProfile from "@/pages/JudgeProfile";
 import AdvertiserLogin from "@/pages/AdvertiserLogin";
 import AdvertiserSignup from "@/pages/AdvertiserSignup";
+import AdvertiserTerms from "@/pages/AdvertiserTerms";
 import AdvertiserDashboard from "@/pages/AdvertiserDashboard";
 import CreateCampaign from "@/pages/CreateCampaign";
 import EditCampaign from "@/pages/EditCampaign";
@@ -123,6 +124,7 @@ function Router() {
           <Route path="/advertise" component={Advertise} />
           <Route path="/advertiser/login" component={AdvertiserLogin} />
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
+          <Route path="/advertiser/terms" component={AdvertiserTerms} />
           <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
           <Route path="/advertiser/campaign/create" component={CreateCampaign} />
           <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />

@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -24,6 +25,9 @@ const signupSchema = z.object({
   contactPhone: z.string().optional(),
   businessType: z.string().min(1, "Business type is required"),
   country: z.string().min(1, "Country is required"),
+  agreedToTerms: z.boolean().refine((val) => val === true, {
+    message: "You must agree to the Advertising Terms & Conditions",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -48,6 +52,7 @@ export default function AdvertiserSignup() {
       contactPhone: "",
       businessType: "",
       country: "Cameroon",
+      agreedToTerms: false,
     },
   });
 
@@ -83,7 +88,8 @@ export default function AdvertiserSignup() {
   });
 
   const onSubmit = (data: SignupFormData) => {
-    signupMutation.mutate(data);
+    const { agreedToTerms, ...signupData } = data;
+    signupMutation.mutate({ ...signupData, agreedToTerms } as SignupFormData);
   };
 
   return (
@@ -309,6 +315,36 @@ export default function AdvertiserSignup() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="agreedToTerms"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-agree-terms"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="font-normal cursor-pointer">
+                        I agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={() => setLocation("/advertiser/terms")}
+                          className="text-primary hover:underline inline"
+                          data-testid="link-terms"
+                        >
+                          Advertising Terms & Conditions
+                        </button>
+                      </FormLabel>
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
 
               <Button
                 type="submit"
