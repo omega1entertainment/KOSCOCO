@@ -356,6 +356,10 @@ function AdminDashboardContent() {
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<SelectUser | null>(null);
 
+  // Advertiser delete dialog state
+  const [deleteAdvertiserDialogOpen, setDeleteAdvertiserDialogOpen] = useState(false);
+  const [advertiserToDelete, setAdvertiserToDelete] = useState<any | null>(null);
+
   // User filter state
   const [userFilter, setUserFilter] = useState<
     "all" | "verified" | "admin" | "judge" | "contestant"
@@ -775,6 +779,32 @@ function AdminDashboardContent() {
     onError: (error: Error) => {
       toast({
         title: "Suspension Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAdvertiserMutation = useMutation({
+    mutationFn: async (advertiserId: string) => {
+      return await apiRequest(
+        `/api/admin/advertisers/${advertiserId}`,
+        "DELETE",
+        {},
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: "Advertiser Deleted",
+        description: "The advertiser account has been permanently deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/advertisers"] });
+      setDeleteAdvertiserDialogOpen(false);
+      setAdvertiserToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Deletion Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -2606,7 +2636,7 @@ function AdminDashboardContent() {
                                   ` | Verified: ${new Date(advertiser.verifiedAt).toLocaleDateString()}`}
                               </p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                               {advertiser.status === "pending" && (
                                 <>
                                   <Button
@@ -2641,39 +2671,79 @@ function AdminDashboardContent() {
                                     <XCircle className="w-4 h-4 mr-2" />
                                     Suspend
                                   </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setAdvertiserToDelete(advertiser);
+                                      setDeleteAdvertiserDialogOpen(true);
+                                    }}
+                                    data-testid={`button-delete-advertiser-${advertiser.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </Button>
                                 </>
                               )}
                               {advertiser.status === "active" && (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() =>
-                                    suspendAdvertiserMutation.mutate(
-                                      advertiser.id,
-                                    )
-                                  }
-                                  disabled={suspendAdvertiserMutation.isPending}
-                                  data-testid={`button-suspend-advertiser-${advertiser.id}`}
-                                >
-                                  <XCircle className="w-4 h-4 mr-2" />
-                                  Suspend
-                                </Button>
+                                <>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() =>
+                                      suspendAdvertiserMutation.mutate(
+                                        advertiser.id,
+                                      )
+                                    }
+                                    disabled={suspendAdvertiserMutation.isPending}
+                                    data-testid={`button-suspend-advertiser-${advertiser.id}`}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Suspend
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setAdvertiserToDelete(advertiser);
+                                      setDeleteAdvertiserDialogOpen(true);
+                                    }}
+                                    data-testid={`button-delete-advertiser-${advertiser.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </>
                               )}
                               {advertiser.status === "suspended" && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() =>
-                                    approveAdvertiserMutation.mutate(
-                                      advertiser.id,
-                                    )
-                                  }
-                                  disabled={approveAdvertiserMutation.isPending}
-                                  data-testid={`button-reactivate-advertiser-${advertiser.id}`}
-                                >
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                  Reactivate
-                                </Button>
+                                <>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() =>
+                                      approveAdvertiserMutation.mutate(
+                                        advertiser.id,
+                                      )
+                                    }
+                                    disabled={approveAdvertiserMutation.isPending}
+                                    data-testid={`button-reactivate-advertiser-${advertiser.id}`}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Reactivate
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setAdvertiserToDelete(advertiser);
+                                      setDeleteAdvertiserDialogOpen(true);
+                                    }}
+                                    data-testid={`button-delete-advertiser-${advertiser.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </div>
@@ -4470,6 +4540,39 @@ function AdminDashboardContent() {
               data-testid="button-confirm-delete-user"
             >
               {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Advertiser Confirmation Dialog */}
+      <AlertDialog open={deleteAdvertiserDialogOpen} onOpenChange={setDeleteAdvertiserDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-advertiser">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Advertiser Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete the advertiser account for{" "}
+              <strong>
+                {advertiserToDelete?.companyName}
+              </strong>
+              ? This will also delete all associated campaigns, ads, and payments. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-advertiser">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (advertiserToDelete) {
+                  deleteAdvertiserMutation.mutate(advertiserToDelete.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteAdvertiserMutation.isPending}
+              data-testid="button-confirm-delete-advertiser"
+            >
+              {deleteAdvertiserMutation.isPending ? "Deleting..." : "Delete Advertiser"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

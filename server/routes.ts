@@ -3525,6 +3525,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Delete advertiser account
+  app.delete('/api/admin/advertisers/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const advertiser = await storage.getAdvertiser(id);
+      if (!advertiser) {
+        return res.status(404).json({ message: "Advertiser not found" });
+      }
+
+      // Delete associated campaigns and ads
+      const campaigns = await storage.getAdvertiserCampaigns(id);
+      for (const campaign of campaigns) {
+        const ads = await storage.getCampaignAds(campaign.id);
+        for (const ad of ads) {
+          await storage.deleteAd(ad.id);
+        }
+        await storage.deleteCampaign(campaign.id);
+      }
+
+      // Delete any other advertiser ads not in campaigns
+      const allAds = await storage.getAdvertiserAds(id);
+      for (const ad of allAds) {
+        await storage.deleteAd(ad.id);
+      }
+
+      // Delete advertiser payments
+      const payments = await storage.getAdvertiserPayments(id);
+      for (const payment of payments) {
+        await db.delete(schema.adPayments).where(eq(schema.adPayments.id, payment.id));
+      }
+
+      // Delete the advertiser account
+      await storage.deleteAdvertiser(id);
+
+      // Also delete the corresponding user account if it exists
+      const user = await storage.getUserByEmail(advertiser.email);
+      if (user) {
+        await storage.deleteUser(user.id);
+      }
+
+      res.json({ 
+        message: "Advertiser deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting advertiser:", error);
+      res.status(500).json({ message: "Failed to delete advertiser" });
+    }
+  });
+
   // Submit a report (authenticated or anonymous)
   app.post('/api/reports', async (req: any, res) => {
     try {
