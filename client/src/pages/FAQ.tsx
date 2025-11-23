@@ -12,7 +12,7 @@ export default function FAQ() {
         id: "general-1",
         category: "General Information",
         question: "What is KOSCOCO?",
-        answer: "KOSCOCO (KOZZII Short Content Competition) is a premier video competition platform designed for Cameroonian content creators. We host regular competitions across multiple categories with substantial cash prizes, aiming to discover and celebrate talent from Cameroon."
+        answer: "KOSCOCO (KOZZII Short Content Competition) is a premier video competition platform designed for Cameroonian content creators. Operated by KOZZII INC, a company based in Limbe, we host regular competitions across multiple categories with substantial cash prizes, aiming to discover and celebrate talent from Cameroon."
       },
       {
         id: "general-2",
@@ -308,7 +308,7 @@ export default function FAQ() {
         id: "general-1",
         category: "Informations Générales",
         question: "Qu'est-ce que KOSCOCO ?",
-        answer: "KOSCOCO (KOZZII Short Content Competition) est une plateforme de compétition vidéo de premier plan conçue pour les créateurs de contenu camerounais. Nous organisons des compétitions régulières dans plusieurs catégories avec des prix en espèces substantiels, dans le but de découvrir et de célébrer les talents du Cameroun."
+        answer: "KOSCOCO (KOZZII Short Content Competition) est une plateforme de compétition vidéo de premier plan conçue pour les créateurs de contenu camerounais. Exploitée par KOZZII INC, une entreprise basée à Limbé, nous organisons des compétitions régulières dans plusieurs catégories avec des prix en espèces substantiels, dans le but de découvrir et de célébrer les talents du Cameroun."
       },
       {
         id: "general-2",
