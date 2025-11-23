@@ -548,16 +548,17 @@ export class DbStorage implements IStorage {
   async getCategoryVideoCounts(): Promise<Record<string, number>> {
     const result = await db
       .select({
-        categoryId: schema.videos.categoryId,
+        categoryName: schema.categories.name,
         count: sql<number>`COUNT(*)`,
       })
       .from(schema.videos)
+      .innerJoin(schema.categories, eq(schema.videos.categoryId, schema.categories.id))
       .where(eq(schema.videos.status, 'approved'))
-      .groupBy(schema.videos.categoryId);
+      .groupBy(schema.categories.name);
     
     const counts: Record<string, number> = {};
     for (const row of result) {
-      counts[row.categoryId] = Number(row.count ?? 0);
+      counts[row.categoryName] = Number(row.count ?? 0);
     }
     return counts;
   }
