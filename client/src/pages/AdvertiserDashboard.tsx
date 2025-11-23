@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +75,19 @@ export default function AdvertiserDashboard() {
   const [topupDialogOpen, setTopupDialogOpen] = useState(false);
   const [topupAmount, setTopupAmount] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+
+  const accountSettingsSchema = z.object({
+    companyName: z.string().min(1, "Company name is required"),
+    contactName: z.string().min(1, "Contact name is required"),
+    businessType: z.string().min(1, "Business type is required"),
+    country: z.string().min(1, "Country is required"),
+    companyWebsite: z.string().optional(),
+    contactPhone: z.string().optional(),
+    companyDescription: z.string().optional(),
+  });
+
+  type AccountSettingsFormData = z.infer<typeof accountSettingsSchema>;
 
   const { data: advertiser, isLoading: isLoadingAdvertiser } = useQuery({
     queryKey: ["/api/advertiser/me"],
@@ -298,6 +315,27 @@ export default function AdvertiserDashboard() {
     },
   });
 
+  const updateAccountSettingsMutation = useMutation({
+    mutationFn: async (data: AccountSettingsFormData) => {
+      return await apiRequest("/api/advertiser/account", "PATCH", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Your account settings have been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/advertiser/me"] });
+      setIsEditingSettings(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDeleteClick = (campaignId: string) => {
     setCampaignToDelete(campaignId);
     setDeleteDialogOpen(true);
@@ -319,6 +357,37 @@ export default function AdvertiserDashboard() {
       newStatus = 'active';
     }
     toggleCampaignStatusMutation.mutate({ campaignId, newStatus });
+  };
+
+  const form = useForm<AccountSettingsFormData>({
+    resolver: zodResolver(accountSettingsSchema),
+    defaultValues: {
+      companyName: advertiser?.companyName || "",
+      contactName: advertiser?.contactName || "",
+      businessType: advertiser?.businessType || "",
+      country: advertiser?.country || "",
+      companyWebsite: advertiser?.companyWebsite || "",
+      contactPhone: advertiser?.contactPhone || "",
+      companyDescription: advertiser?.companyDescription || "",
+    },
+  });
+
+  const handleEditSettings = () => {
+    form.reset({
+      companyName: advertiser?.companyName || "",
+      contactName: advertiser?.contactName || "",
+      businessType: advertiser?.businessType || "",
+      country: advertiser?.country || "",
+      companyWebsite: advertiser?.companyWebsite || "",
+      contactPhone: advertiser?.contactPhone || "",
+      companyDescription: advertiser?.companyDescription || "",
+    });
+    setIsEditingSettings(true);
+  };
+
+  const handleCancelEdit = () => {
+    form.reset();
+    setIsEditingSettings(false);
   };
 
   if (isLoadingAdvertiser) {
@@ -792,32 +861,225 @@ export default function AdvertiserDashboard() {
           <TabsContent value="settings">
             <Card>
               <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>Manage your advertiser account information</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Account Settings</CardTitle>
+                    <CardDescription>Manage your advertiser account information</CardDescription>
+                  </div>
+                  {!isEditingSettings && (
+                    <Button
+                      variant="outline"
+                      onClick={handleEditSettings}
+                      data-testid="button-edit-settings"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Settings
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Company Name</label>
-                    <p className="text-muted-foreground">{advertiser.companyName}</p>
+                {!isEditingSettings ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Company Name</label>
+                      <p className="text-muted-foreground" data-testid="text-company-name-display">
+                        {advertiser.companyName}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Email</label>
+                      <p className="text-muted-foreground" data-testid="text-email-display">
+                        {advertiser.email}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Contact Name</label>
+                      <p className="text-muted-foreground" data-testid="text-contact-name-display">
+                        {advertiser.contactName}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Contact Phone</label>
+                      <p className="text-muted-foreground" data-testid="text-contact-phone-display">
+                        {advertiser.contactPhone || "Not provided"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Business Type</label>
+                      <p className="text-muted-foreground" data-testid="text-business-type-display">
+                        {advertiser.businessType}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Country</label>
+                      <p className="text-muted-foreground" data-testid="text-country-display">
+                        {advertiser.country}
+                      </p>
+                    </div>
+                    {advertiser.companyWebsite && (
+                      <div>
+                        <label className="text-sm font-medium">Company Website</label>
+                        <p className="text-muted-foreground" data-testid="text-website-display">
+                          <a
+                            href={advertiser.companyWebsite}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            {advertiser.companyWebsite}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    {advertiser.companyDescription && (
+                      <div>
+                        <label className="text-sm font-medium">Company Description</label>
+                        <p className="text-muted-foreground" data-testid="text-description-display">
+                          {advertiser.companyDescription}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Email</label>
-                    <p className="text-muted-foreground">{advertiser.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Contact Name</label>
-                    <p className="text-muted-foreground">{advertiser.contactName}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Business Type</label>
-                    <p className="text-muted-foreground">{advertiser.businessType}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Country</label>
-                    <p className="text-muted-foreground">{advertiser.country}</p>
-                  </div>
-                </div>
+                ) : (
+                  <Form {...form}>
+                    <form
+                      onSubmit={form.handleSubmit((data) =>
+                        updateAccountSettingsMutation.mutate(data)
+                      )}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="companyName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Your company name" data-testid="input-company-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="contactName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Your name" data-testid="input-contact-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="contactPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Phone</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Your phone number" data-testid="input-contact-phone" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="businessType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Business Type</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="e.g., Marketing, E-commerce" data-testid="input-business-type" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Country</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Your country" data-testid="input-country" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="companyWebsite"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company Website (Optional)</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="https://example.com" data-testid="input-website" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="companyDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company Description (Optional)</FormLabel>
+                            <FormControl>
+                              <textarea
+                                {...field}
+                                placeholder="Tell us about your company"
+                                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                data-testid="textarea-description"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          type="submit"
+                          disabled={updateAccountSettingsMutation.isPending}
+                          data-testid="button-save-settings"
+                        >
+                          {updateAccountSettingsMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save Changes"
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          disabled={updateAccountSettingsMutation.isPending}
+                          data-testid="button-cancel-settings"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

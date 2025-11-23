@@ -3886,6 +3886,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/advertiser/me", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const dbAdvertiser = await storage.getAdvertiser(advertiser.id);
+      
+      if (!dbAdvertiser) {
+        return res.status(404).json({ message: "Advertiser not found" });
+      }
+
+      res.json(dbAdvertiser);
+    } catch (error) {
+      console.error("Get advertiser me error:", error);
+      res.status(500).json({ message: "Failed to fetch advertiser account" });
+    }
+  });
+
+  app.patch("/api/advertiser/account", isAdvertiser, async (req, res) => {
+    try {
+      const advertiser = req.user as any;
+      const { companyName, contactName, businessType, country, companyWebsite, contactPhone, companyDescription } = req.body;
+
+      // Validate required fields
+      if (!companyName || !contactName || !businessType || !country) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Update advertiser account
+      const updated = await storage.updateAdvertiser(advertiser.id, {
+        companyName: companyName?.trim(),
+        contactName: contactName?.trim(),
+        businessType: businessType?.trim(),
+        country: country?.trim(),
+        companyWebsite: companyWebsite?.trim(),
+        contactPhone: contactPhone?.trim(),
+        companyDescription: companyDescription?.trim(),
+      });
+
+      if (!updated) {
+        return res.status(404).json({ message: "Advertiser not found" });
+      }
+
+      res.json({
+        message: "Account settings updated successfully",
+        advertiser: updated,
+      });
+    } catch (error) {
+      console.error("Update advertiser account error:", error);
+      res.status(500).json({ message: "Failed to update account settings" });
+    }
+  });
+
   app.get("/api/advertiser/campaigns", isAdvertiser, async (req, res) => {
     try {
       const advertiser = req.user as any;
