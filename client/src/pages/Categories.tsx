@@ -31,6 +31,8 @@ export default function Categories() {
 
   const { data: videoCounts } = useQuery<Record<string, number>>({
     queryKey: ["/api/categories/video-counts"],
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    staleTime: 2000, // Consider data stale after 2 seconds
   });
 
   if (isLoading) {

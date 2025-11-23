@@ -264,6 +264,8 @@ export default function Upload() {
         description: t('upload.success.videoSubmitted'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos/user"] });
+      // Invalidate category video counts to refresh in real-time
+      queryClient.invalidateQueries({ queryKey: ["/api/categories/video-counts"] });
       setUploadedVideo(videoData);
       setIsUploading(false);
       setUploadProgress(100);
