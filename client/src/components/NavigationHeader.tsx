@@ -188,6 +188,9 @@ export default function NavigationHeader({
                     <DropdownMenuItem onClick={() => onNavigate?.('/creator')} data-testid="menu-creator-dashboard">
                       Creator Dashboard
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate?.('/advertiser-dashboard')} data-testid="menu-advertiser-dashboard">
+                      Advertiser Dashboard
+                    </DropdownMenuItem>
                     {user?.isAdmin && (
                       <DropdownMenuItem onClick={() => onNavigate?.('/admin')} data-testid="menu-admin-dashboard">
                         {t('nav.adminDashboard')}

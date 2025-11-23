@@ -303,6 +303,22 @@ export async function setupAuth(app: Express) {
         emailVerified: true,
       });
 
+      // Automatically create an advertiser account for the user
+      try {
+        await storage.createAdvertiser({
+          email: normalizedEmail,
+          password: hashedPassword,
+          companyName: `${firstName} ${lastName}`,
+          contactName: `${firstName} ${lastName}`,
+          businessType: 'Individual',
+          country: 'Cameroon',
+          status: 'active', // Auto-approve for regular users
+        });
+      } catch (error) {
+        console.error("Warning: Failed to create advertiser account for new user:", error);
+        // Don't fail user signup if advertiser account creation fails
+      }
+
       // Log in the user automatically
       req.logIn(user, (err) => {
         if (err) {
