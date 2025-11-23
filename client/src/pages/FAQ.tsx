@@ -18,7 +18,7 @@ export default function FAQ() {
         id: "general-2",
         category: "General Information",
         question: "Where is KOSCOCO based?",
-        answer: "KOSCOCO is based in Cameroon, specifically in Limbe, South West Region (Bonjo Street). We serve creators across Cameroon and beyond."
+        answer: "KOSCOCO is run by KOZZII based in Cameroon, specifically in Limbe, South West Region (Bonjo Street). We serve creators across Cameroon and beyond."
       },
       {
         id: "general-3",
@@ -314,7 +314,7 @@ export default function FAQ() {
         id: "general-2",
         category: "Informations Générales",
         question: "Où se trouve KOSCOCO ?",
-        answer: "KOSCOCO est basée au Cameroun, spécifiquement à Limbé, Région du Sud-Ouest (Bonjo Street). Nous servons les créateurs du Cameroun et au-delà."
+        answer: "KOSCOCO est gérée par KOZZII basée au Cameroun, spécifiquement à Limbé, Région du Sud-Ouest (Bonjo Street). Nous servons les créateurs du Cameroun et au-delà."
       },
       {
         id: "general-3",
