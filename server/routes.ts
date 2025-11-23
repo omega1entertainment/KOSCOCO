@@ -3475,6 +3475,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Advertiser not found" });
       }
 
+      // Also update the user's status if they have a corresponding user account
+      const user = await storage.getUserByEmail(advertiser.email);
+      if (user) {
+        await storage.updateUser(user.id, { accountStatus: 'active' });
+      }
+
       res.json({ 
         message: "Advertiser approved successfully",
         advertiser: {
@@ -3497,6 +3503,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const advertiser = await storage.updateAdvertiserStatus(id, 'suspended');
       if (!advertiser) {
         return res.status(404).json({ message: "Advertiser not found" });
+      }
+
+      // Also update the user's status if they have a corresponding user account
+      const user = await storage.getUserByEmail(advertiser.email);
+      if (user) {
+        await storage.updateUser(user.id, { accountStatus: 'deactivated' });
       }
 
       res.json({ 
