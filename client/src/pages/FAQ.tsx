@@ -105,12 +105,6 @@ export default function FAQ() {
         answer: "No, you cannot vote for your own video. The system prevents self-voting to ensure fair competition."
       },
       {
-        id: "voting-4",
-        category: "Voting & Judging",
-        question: "Who are the judges?",
-        answer: "Judges are industry professionals, content creators, and experts in their respective categories. View our judges page to see the full list of judges."
-      },
-      {
         id: "voting-5",
         category: "Voting & Judging",
         question: "How are judge scores calculated?",
@@ -229,6 +223,12 @@ export default function FAQ() {
         category: "Becoming a Judge",
         question: "How can I become a judge?",
         answer: "If you're an industry expert or established content creator, reach out to us at support@kozzii.africa with your credentials and experience."
+      },
+      {
+        id: "voting-4",
+        category: "Voting & Judging",
+        question: "Who are the judges?",
+        answer: "Judges are industry professionals, content creators, and experts in their respective categories."
       },
       {
         id: "judge-2",
@@ -404,7 +404,7 @@ export default function FAQ() {
         id: "voting-4",
         category: "Votation et Jugement",
         question: "Qui sont les juges ?",
-        answer: "Les juges sont des professionnels de l'industrie, des créateurs de contenu et des experts dans leurs catégories respectives. Consultez notre page des juges pour voir la liste complète."
+        answer: "Les juges sont des professionnels de l'industrie, des créateurs de contenu et des experts dans leurs catégories respectives."
       },
       {
         id: "voting-5",
