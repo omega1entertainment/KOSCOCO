@@ -791,12 +791,54 @@ export const accountSettings = pgTable("account_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Interactive polls table
+export const polls = pgTable("polls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  question: text("question").notNull(),
+  type: text("type").notNull(), // 'poll', 'quiz'
+  timingSeconds: integer("timing_seconds").notNull(), // when to show the poll in video (seconds)
+  duration: integer("duration").notNull(), // how long poll is available (seconds)
+  isRequired: boolean("is_required").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Poll options/answers table
+export const pollOptions = pgTable("poll_options", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pollId: varchar("poll_id").notNull().references(() => polls.id),
+  text: text("text").notNull(),
+  isCorrect: boolean("is_correct").default(false).notNull(), // for quizzes
+  order: integer("order").notNull(), // display order
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Poll responses table
+export const pollResponses = pgTable("poll_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pollId: varchar("poll_id").notNull().references(() => polls.id),
+  optionId: varchar("option_id").notNull().references(() => pollOptions.id),
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: text("ip_address"),
+  respondedAt: timestamp("responded_at").defaultNow().notNull(),
+}, (table) => [
+  // Unique constraint: one response per authenticated user per poll
+  unique("unique_response_user").on(table.pollId, table.userId),
+  // Unique constraint: one response per IP address per poll (for anonymous)
+  unique("unique_response_ip").on(table.pollId, table.ipAddress),
+]);
+
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
 export const insertLoginSessionSchema = createInsertSchema(loginSessions).omit({ id: true, createdAt: true });
 export const insertEmailPreferencesSchema = createInsertSchema(emailPreferences).omit({ id: true, updatedAt: true });
 export const insertDashboardPreferencesSchema = createInsertSchema(dashboardPreferences).omit({ id: true, updatedAt: true });
 export const insertAccountSettingsSchema = createInsertSchema(accountSettings).omit({ id: true, updatedAt: true });
+
+export const insertPollSchema = createInsertSchema(polls).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPollOptionSchema = createInsertSchema(pollOptions).omit({ id: true, createdAt: true });
+export const insertPollResponseSchema = createInsertSchema(pollResponses).omit({ id: true, respondedAt: true });
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
@@ -815,3 +857,18 @@ export type DashboardPreferences = typeof dashboardPreferences.$inferSelect;
 
 export type InsertAccountSettings = z.infer<typeof insertAccountSettingsSchema>;
 export type AccountSettings = typeof accountSettings.$inferSelect;
+
+export type InsertPoll = z.infer<typeof insertPollSchema>;
+export type Poll = typeof polls.$inferSelect;
+
+export type InsertPollOption = z.infer<typeof insertPollOptionSchema>;
+export type PollOption = typeof pollOptions.$inferSelect;
+
+export type InsertPollResponse = z.infer<typeof insertPollResponseSchema>;
+export type PollResponse = typeof pollResponses.$inferSelect;
+
+export type PollWithOptions = Poll & { options: PollOption[] };
+export type PollWithStats = Poll & { 
+  options: (PollOption & { responseCount: number; percentage: number })[];
+  totalResponses: number;
+};

@@ -30,7 +30,11 @@ import type {
   LoginSession, InsertLoginSession,
   EmailPreferences, InsertEmailPreferences,
   DashboardPreferences, InsertDashboardPreferences,
-  AccountSettings, InsertAccountSettings
+  AccountSettings, InsertAccountSettings,
+  Poll, InsertPoll,
+  PollOption, InsertPollOption,
+  PollResponse, InsertPollResponse,
+  PollWithOptions, PollWithStats
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -274,6 +278,24 @@ export interface IStorage {
   updateAccountSettings(userId: string, settings: Partial<InsertAccountSettings>): Promise<AccountSettings | undefined>;
   deactivateAccount(userId: string): Promise<void>;
   scheduleAccountDeletion(userId: string): Promise<void>;
+
+  // Poll and quiz methods
+  createPoll(poll: InsertPoll & { options: InsertPollOption[] }): Promise<PollWithOptions>;
+  getPoll(id: string): Promise<PollWithOptions | undefined>;
+  getVideoPollsByTiming(videoId: string): Promise<PollWithOptions[]>;
+  getVideoPolls(videoId: string): Promise<PollWithOptions[]>;
+  updatePoll(id: string, updates: Partial<InsertPoll>): Promise<Poll | undefined>;
+  deletePoll(id: string): Promise<void>;
+
+  // Poll option methods
+  createPollOption(option: InsertPollOption): Promise<PollOption>;
+  updatePollOption(id: string, updates: Partial<InsertPollOption>): Promise<PollOption | undefined>;
+  deletePollOption(id: string): Promise<void>;
+
+  // Poll response methods
+  createPollResponse(response: InsertPollResponse): Promise<PollResponse>;
+  getPollStats(pollId: string): Promise<PollWithStats | undefined>;
+  getUserPollResponse(pollId: string, userId: string | null, ipAddress?: string): Promise<PollResponse | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -2301,6 +2323,114 @@ export class DbStorage implements IStorage {
     await db.update(schema.accountSettings)
       .set({ deleteScheduledAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) })
       .where(eq(schema.accountSettings.userId, userId));
+  }
+
+  // Poll and quiz methods
+  async createPoll(pollData: InsertPoll & { options: InsertPollOption[] }): Promise<PollWithOptions> {
+    const { options, ...pollInput } = pollData;
+    const [poll] = await db.insert(schema.polls).values(pollInput).returning();
+    const createdOptions = await Promise.all(
+      options.map(opt => db.insert(schema.pollOptions).values({ ...opt, pollId: poll.id }).returning().then(result => result[0]))
+    );
+    return { ...poll, options: createdOptions };
+  }
+
+  async getPoll(id: string): Promise<PollWithOptions | undefined> {
+    const [poll] = await db.select().from(schema.polls).where(eq(schema.polls.id, id));
+    if (!poll) return undefined;
+    const options = await db.select().from(schema.pollOptions).where(eq(schema.pollOptions.pollId, id));
+    return { ...poll, options };
+  }
+
+  async getVideoPollsByTiming(videoId: string): Promise<PollWithOptions[]> {
+    const polls = await db.select().from(schema.polls)
+      .where(eq(schema.polls.videoId, videoId))
+      .orderBy(schema.polls.timingSeconds);
+    
+    const pollsWithOptions = await Promise.all(
+      polls.map(async (poll) => {
+        const options = await db.select().from(schema.pollOptions)
+          .where(eq(schema.pollOptions.pollId, poll.id))
+          .orderBy(schema.pollOptions.order);
+        return { ...poll, options };
+      })
+    );
+    return pollsWithOptions;
+  }
+
+  async getVideoPolls(videoId: string): Promise<PollWithOptions[]> {
+    return this.getVideoPollsByTiming(videoId);
+  }
+
+  async updatePoll(id: string, updates: Partial<InsertPoll>): Promise<Poll | undefined> {
+    const [updated] = await db.update(schema.polls)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.polls.id, id)).returning();
+    return updated;
+  }
+
+  async deletePoll(id: string): Promise<void> {
+    await db.delete(schema.pollResponses).where(eq(schema.pollResponses.pollId, id));
+    await db.delete(schema.pollOptions).where(eq(schema.pollOptions.pollId, id));
+    await db.delete(schema.polls).where(eq(schema.polls.id, id));
+  }
+
+  async createPollOption(option: InsertPollOption): Promise<PollOption> {
+    const [created] = await db.insert(schema.pollOptions).values(option).returning();
+    return created;
+  }
+
+  async updatePollOption(id: string, updates: Partial<InsertPollOption>): Promise<PollOption | undefined> {
+    const [updated] = await db.update(schema.pollOptions)
+      .set(updates)
+      .where(eq(schema.pollOptions.id, id)).returning();
+    return updated;
+  }
+
+  async deletePollOption(id: string): Promise<void> {
+    await db.delete(schema.pollResponses).where(eq(schema.pollResponses.optionId, id));
+    await db.delete(schema.pollOptions).where(eq(schema.pollOptions.id, id));
+  }
+
+  async createPollResponse(response: InsertPollResponse): Promise<PollResponse> {
+    const [created] = await db.insert(schema.pollResponses).values(response).returning();
+    return created;
+  }
+
+  async getPollStats(pollId: string): Promise<PollWithStats | undefined> {
+    const [poll] = await db.select().from(schema.polls).where(eq(schema.polls.id, pollId));
+    if (!poll) return undefined;
+
+    const options = await db.select().from(schema.pollOptions)
+      .where(eq(schema.pollOptions.pollId, pollId))
+      .orderBy(schema.pollOptions.order);
+
+    const responses = await db.select().from(schema.pollResponses)
+      .where(eq(schema.pollResponses.pollId, pollId));
+
+    const totalResponses = responses.length;
+
+    const optionsWithStats = options.map(option => {
+      const responseCount = responses.filter(r => r.optionId === option.id).length;
+      const percentage = totalResponses > 0 ? (responseCount / totalResponses) * 100 : 0;
+      return { ...option, responseCount, percentage };
+    });
+
+    return { ...poll, options: optionsWithStats, totalResponses };
+  }
+
+  async getUserPollResponse(pollId: string, userId: string | null, ipAddress?: string): Promise<PollResponse | undefined> {
+    if (userId) {
+      const [response] = await db.select().from(schema.pollResponses)
+        .where(and(eq(schema.pollResponses.pollId, pollId), eq(schema.pollResponses.userId, userId)));
+      return response;
+    }
+    if (ipAddress) {
+      const [response] = await db.select().from(schema.pollResponses)
+        .where(and(eq(schema.pollResponses.pollId, pollId), eq(schema.pollResponses.ipAddress, ipAddress)));
+      return response;
+    }
+    return undefined;
   }
 }
 

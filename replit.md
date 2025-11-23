@@ -68,7 +68,41 @@ The platform is built with a modern web stack.
     - POST `/api/admin/newsletter/campaigns/:id/send` - Send campaign to subscribers
     - DELETE `/api/admin/newsletter/campaigns/:id` - Delete campaign
 
-## Creator Dashboard (Latest Addition)
+## Interactive Polls and Quizzes (Latest Addition)
+Interactive polls and quizzes embedded within videos to increase viewer engagement and gather feedback:
+- **Poll Types**: Supports both simple polls (for feedback/engagement) and quizzes (with correct answers for educational content)
+- **Timing Control**: Set exact seconds in video when poll should appear
+- **Duration**: Configure how long the poll stays visible for responses
+- **Requirements**: Option to make polls required before viewing completion
+- **Quiz Features**: Mark correct answers, display results with statistics
+- **Creator Tools**: 
+    - Poll Manager component in CreatorDashboard My Videos tab
+    - Create/edit/delete polls with intuitive interface
+    - Configure poll timing, duration, and questions with multiple choice options
+- **Viewer Experience**: 
+    - Non-intrusive poll popups during video playback
+    - Real-time response submission (authenticated or anonymous)
+    - Immediate feedback on quiz answers
+    - View aggregate poll statistics and results
+    - Anti-spam: One response per user per poll
+- **Database Schema**: 
+    - `polls` table: videoId, question, type (poll/quiz), timing, duration, isRequired
+    - `pollOptions` table: question options with correct answer marking for quizzes
+    - `pollResponses` table: track all responses with user/IP tracking
+- **API Endpoints**:
+    - POST `/api/videos/:videoId/polls` - Create new poll (authenticated creator only)
+    - GET `/api/videos/:videoId/polls` - Get all polls for a video
+    - GET `/api/polls/:pollId` - Get poll details with options
+    - GET `/api/polls/:pollId/stats` - Get aggregate response statistics
+    - PATCH `/api/polls/:pollId` - Update poll (authenticated creator only)
+    - DELETE `/api/polls/:pollId` - Delete poll (authenticated creator only)
+    - POST `/api/polls/:pollId/respond` - Submit response to poll (all users)
+- **Frontend Components**: 
+    - `PollManager.tsx` - Interface for creators to create/manage polls
+    - `PollViewer.tsx` - Component for viewers to respond to polls and see results
+    - `usePoll.ts` - Custom hooks for poll queries and mutations
+
+## Creator Dashboard
 Comprehensive user account dashboard at `/creator` with 7 tabs:
 - **Overview Tab**: Quick stats (Total Videos, Views, Votes, Ranking) with quick action buttons
 - **My Videos Tab**: Manage all uploaded videos with edit, delete, and view options

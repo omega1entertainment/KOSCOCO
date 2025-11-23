@@ -4984,6 +4984,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Poll and quiz endpoints
+  app.post("/api/videos/:videoId/polls", isAuthenticated, async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const userId = (req.user as SelectUser).id;
+      
+      // Verify user owns the video
+      const video = await storage.getVideoById(videoId);
+      if (!video || video.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { question, type, timingSeconds, duration, isRequired, options } = req.body;
+      if (!question || !type || timingSeconds === undefined || !duration || !options?.length) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const poll = await storage.createPoll({
+        videoId,
+        question,
+        type,
+        timingSeconds,
+        duration,
+        isRequired: isRequired || false,
+        options: options.map((opt: any, idx: number) => ({
+          text: opt.text,
+          isCorrect: opt.isCorrect || false,
+          order: idx,
+        })),
+      } as any);
+
+      res.status(201).json(poll);
+    } catch (error) {
+      console.error("Error creating poll:", error);
+      res.status(500).json({ message: "Failed to create poll" });
+    }
+  });
+
+  app.get("/api/videos/:videoId/polls", async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const polls = await storage.getVideoPolls(videoId);
+      res.json(polls);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch polls" });
+    }
+  });
+
+  app.get("/api/polls/:pollId", async (req, res) => {
+    try {
+      const { pollId } = req.params;
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+      res.json(poll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch poll" });
+    }
+  });
+
+  app.get("/api/polls/:pollId/stats", async (req, res) => {
+    try {
+      const { pollId } = req.params;
+      const stats = await storage.getPollStats(pollId);
+      if (!stats) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch poll stats" });
+    }
+  });
+
+  app.patch("/api/polls/:pollId", isAuthenticated, async (req, res) => {
+    try {
+      const { pollId } = req.params;
+      const userId = (req.user as SelectUser).id;
+      
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+
+      const video = await storage.getVideoById(poll.videoId);
+      if (!video || video.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updated = await storage.updatePoll(pollId, req.body);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update poll" });
+    }
+  });
+
+  app.delete("/api/polls/:pollId", isAuthenticated, async (req, res) => {
+    try {
+      const { pollId } = req.params;
+      const userId = (req.user as SelectUser).id;
+      
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+
+      const video = await storage.getVideoById(poll.videoId);
+      if (!video || video.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deletePoll(pollId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete poll" });
+    }
+  });
+
+  app.post("/api/polls/:pollId/respond", async (req, res) => {
+    try {
+      const { pollId } = req.params;
+      const { optionId } = req.body;
+      const userId = (req.user as SelectUser | undefined)?.id;
+      const ipAddress = req.ip;
+
+      if (!optionId) {
+        return res.status(400).json({ message: "optionId is required" });
+      }
+
+      // Check if user already responded
+      const existing = await storage.getUserPollResponse(pollId, userId || null, ipAddress);
+      if (existing) {
+        return res.status(400).json({ message: "You have already responded to this poll" });
+      }
+
+      const response = await storage.createPollResponse({
+        pollId,
+        optionId,
+        userId: userId || null,
+        ipAddress: ipAddress || '',
+      });
+
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("Error creating response:", error);
+      res.status(500).json({ message: "Failed to submit response" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

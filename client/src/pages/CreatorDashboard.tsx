@@ -27,8 +27,10 @@ import {
   History,
   Settings,
   Copy,
-  DollarSign
+  DollarSign,
+  MessageCircle
 } from "lucide-react";
+import { PollManager } from "@/components/PollManager";
 import { createPermalink } from "@/lib/slugUtils";
 import {
   Dialog,
@@ -508,6 +510,7 @@ export default function CreatorDashboard() {
                           >
                             {t('creator.myVideos.view')}
                           </Button>
+                          <PollManager videoId={video.id} />
                           <Button
                             size="sm"
                             variant="outline"
