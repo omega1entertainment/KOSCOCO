@@ -1,11 +1,7 @@
 import { useState } from "react";
-import { ChevronDown, HelpCircle, Play } from "lucide-react";
+import { ChevronDown, HelpCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card } from "@/components/ui/card";
-import registerVideo from "@assets/generated_videos/how_to_register_for_a_category.mp4";
-import uploadVideo from "@assets/generated_videos/how_to_upload_a_video.mp4";
-import requirementsVideo from "@assets/generated_videos/video_requirements_and_guidelines.mp4";
-import editDeleteVideo from "@assets/generated_videos/how_to_edit_or_delete_videos.mp4";
 
 export default function Help() {
   const { t, language } = useLanguage();
@@ -70,26 +66,22 @@ export default function Help() {
           {
             id: "register-category",
             heading: "How to Register for a Category",
-            content: "1. Go to Categories page. 2. Select your desired category. 3. Click 'Register'. 4. Complete payment if required using Flutterwave. 5. You'll receive confirmation and can start uploading videos. You can register for multiple categories.",
-            video: registerVideo
+            content: "1. Go to Categories page. 2. Select your desired category. 3. Click 'Register'. 4. Complete payment if required using Flutterwave. 5. You'll receive confirmation and can start uploading videos. You can register for multiple categories."
           },
           {
             id: "upload-video",
             heading: "How to Upload a Video",
-            content: "1. Click 'Upload' in the main navigation or from your dashboard. 2. Select a registered category. 3. Add video details (title, description). 4. Upload your video file (MP4, WebM, or MOV - max 500MB). 5. Create polls/quizzes if desired. 6. Submit for approval. Videos are reviewed within 24-48 hours.",
-            video: uploadVideo
+            content: "1. Click 'Upload' in the main navigation or from your dashboard. 2. Select a registered category. 3. Add video details (title, description). 4. Upload your video file (MP4, WebM, or MOV - max 500MB). 5. Create polls/quizzes if desired. 6. Submit for approval. Videos are reviewed within 24-48 hours."
           },
           {
             id: "video-requirements",
             heading: "Video Requirements & Guidelines",
-            content: "✓ Format: MP4, WebM, or MOV\n✓ Size: Maximum 500MB\n✓ Duration: Typically 15 seconds to 5 minutes (varies by category)\n✗ No AI-generated or deepfake content\n✗ No copyright-infringing music without permission\n✗ No violent, hateful, or explicit content\nAlways check your category's specific requirements.",
-            video: requirementsVideo
+            content: "✓ Format: MP4, WebM, or MOV\n✓ Size: Maximum 500MB\n✓ Duration: Typically 15 seconds to 5 minutes (varies by category)\n✗ No AI-generated or deepfake content\n✗ No copyright-infringing music without permission\n✗ No violent, hateful, or explicit content\nAlways check your category's specific requirements."
           },
           {
             id: "edit-delete",
             heading: "How to Edit or Delete Videos",
-            content: "Go to Creator Dashboard → My Videos tab. Find your video and click Edit to change title/description or Delete to remove it. You can edit/delete videos before they're voted on extensively.",
-            video: editDeleteVideo
+            content: "Go to Creator Dashboard → My Videos tab. Find your video and click Edit to change title/description or Delete to remove it. You can edit/delete videos before they're voted on extensively."
           }
         ]
       },
@@ -715,25 +707,15 @@ export default function Help() {
                 </div>
 
                 <div className="space-y-3">
-                  {section.subsections.map((subsection: any) => (
+                  {section.subsections.map((subsection) => (
                     <div
                       key={subsection.id}
-                      className="border rounded-lg overflow-hidden"
+                      className="border rounded-lg"
                       data-testid={`help-subsection-${subsection.id}`}
                     >
                       <div className="px-6 py-4 bg-card">
                         <h3 className="font-semibold text-base">{subsection.heading}</h3>
                       </div>
-                      {subsection.video && (
-                        <div className="bg-black/5 p-4">
-                          <video 
-                            src={subsection.video}
-                            controls
-                            className="w-full rounded-lg"
-                            data-testid={`video-${subsection.id}`}
-                          />
-                        </div>
-                      )}
                       <div className="px-6 py-4 text-muted-foreground whitespace-pre-wrap">
                         {subsection.content}
                       </div>
