@@ -29,6 +29,7 @@ The platform is built with a modern web stack.
     - **Picture-in-Picture**: Video player supports PiP mode for enhanced multitasking.
     - **Video of the Day**: Daily rotating featured video on the homepage.
     - **Newsletter System**: WYSIWYG email campaign creation with newsletter subscriber management. Automated welcome emails with branded imagery sent to new subscribers.
+    - **FAQ System**: Comprehensive, bilingual (English/French) FAQ page with 45+ questions organized by category (General, Registration, Video Submission, Voting, Phases, Prizes, Technical, Account, Affiliate, Judges, Payment, Content Guidelines, Newsletter, Other). Accessible from footer "FAQ" link at `/faq` with expandable Q&A sections and direct support contact option.
 
 ## Backend Affiliate Management Features
 - **Admin Affiliate Management**:
