@@ -32,9 +32,11 @@ export default function Home() {
     queryKey: ['/api/categories'],
   });
 
-  // Fetch video counts for each category
+  // Fetch video counts for each category - refetch every 5 seconds for real-time updates
   const { data: videoCounts = {} } = useQuery<Record<string, number>>({
     queryKey: ['/api/categories/video-counts'],
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 
   // Fetch home page stats
@@ -55,38 +57,21 @@ export default function Home() {
     }
   };
 
-  const categories = [
-    {
-      title: t('home.categoryMusicDance'),
-      image: musicImage,
-      subcategories: [t('home.subcategorySinging'), t('home.subcategoryDancing')],
-      entryCount: videoCounts['Music & Dance'] || 0,
-    },
-    {
-      title: t('home.categoryComedyArts'),
-      image: comedyImage,
-      subcategories: [t('home.subcategorySkits'), t('home.subcategoryStandup'), t('home.subcategoryMonologue'), t('home.subcategoryActing'), t('home.subcategoryMovieContent')],
-      entryCount: videoCounts['Comedy & Performing Arts'] || 0,
-    },
-    {
-      title: t('home.categoryFashionLifestyle'),
-      image: fashionImage,
-      subcategories: [t('home.subcategoryCooking'), t('home.subcategoryEvents'), t('home.subcategoryDecor'), t('home.subcategorySports'), t('home.subcategoryTravel'), t('home.subcategoryVlogging'), t('home.subcategoryFashion'), t('home.subcategoryHair'), t('home.subcategoryMakeup'), t('home.subcategoryBeauty'), t('home.subcategoryReviews')],
-      entryCount: videoCounts['Fashion & Lifestyle'] || 0,
-    },
-    {
-      title: t('home.categoryEducationLearning'),
-      image: educationImage,
-      subcategories: [t('home.subcategoryDIY'), t('home.subcategoryTutorials'), t('home.subcategoryDocumentary'), t('home.subcategoryBusinessFinance'), t('home.subcategoryNews'), t('home.subcategoryMotivational')],
-      entryCount: videoCounts['Education & Learning'] || 0,
-    },
-    {
-      title: t('home.categoryGospelChoirs'),
-      image: gospelImage,
-      subcategories: [t('home.subcategoryAcapella'), t('home.subcategoryChoirMusic')],
-      entryCount: videoCounts['Gospel Choirs'] || 0,
-    },
-  ];
+  // Build categories with real-time entry counts
+  const categoryImages: Record<string, string> = {
+    'Music & Dance': musicImage,
+    'Comedy & Performing Arts': comedyImage,
+    'Fashion & Lifestyle': fashionImage,
+    'Education & Learning': educationImage,
+    'Gospel Choirs': gospelImage,
+  };
+
+  const categories = apiCategories.map((category) => ({
+    title: category.name,
+    image: categoryImages[category.name] || musicImage,
+    subcategories: category.subcategories || [],
+    entryCount: videoCounts[category.name] || 0,
+  }));
 
   const featuredVideos = [
     {
