@@ -7,11 +7,11 @@ import { ArrowRight, Video } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-import musicImage from "@assets/generated_images/Music_and_Dance_category_e223aa7f.png";
-import comedyImage from "@assets/generated_images/Comedy_and_Performing_Arts_ede3bf3d.png";
-import fashionImage from "@assets/generated_images/Fashion_and_Lifestyle_category_d45cea92.png";
-import educationImage from "@assets/generated_images/Education_and_Learning_category_c4ef1c1d.png";
-import gospelImage from "@assets/generated_images/Gospel_Choirs_category_e7d0b06c.png";
+import musicImage from "@assets/generated_images/male_vocalist_performing_on_stage.png";
+import comedyImage from "@assets/generated_images/comedy_performer_on_stage.png";
+import fashionImage from "@assets/generated_images/fashion_and_beauty_content_creator.png";
+import educationImage from "@assets/generated_images/educational_tutorial_content_creator.png";
+import gospelImage from "@assets/generated_images/gospel_choir_performing_together.png";
 
 const categoryImages: Record<string, string> = {
   "Music & Dance": musicImage,
