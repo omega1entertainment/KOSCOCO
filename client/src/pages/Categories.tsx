@@ -9,8 +9,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 import musicImage from "@assets/generated_images/male_vocalist_performing_on_stage.png";
 import comedyImage from "@assets/generated_images/comedy_performer_on_stage.png";
-import fashionImage from "@assets/generated_images/fashion_and_beauty_content_creator.png";
-import educationImage from "@assets/generated_images/educational_tutorial_content_creator.png";
+import fashionImage from "@assets/generated_images/black_female_fashion_beauty_creator.png";
+import educationImage from "@assets/generated_images/black_male_educational_content_creator.png";
 import gospelImage from "@assets/generated_images/gospel_choir_performing_together.png";
 
 const categoryImages: Record<string, string> = {
