@@ -164,6 +164,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/stats/home', async (req, res) => {
+    try {
+      const stats = await storage.getHomePageStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching home page stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
   app.get('/api/phases', async (req, res) => {
     try {
       const phases = await storage.getAllPhases();

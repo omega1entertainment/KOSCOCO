@@ -37,6 +37,11 @@ export default function Home() {
     queryKey: ['/api/categories/video-counts'],
   });
 
+  // Fetch home page stats
+  const { data: homeStats } = useQuery<{ totalParticipants: number; videosSubmitted: number; categories: number; totalVotes: number }>({
+    queryKey: ['/api/stats/home'],
+  });
+
   const handleVoteClick = (videoId: string, videoTitle: string) => {
     setSelectedVideo({ id: videoId, title: videoTitle });
     setVoteModalOpen(true);
@@ -127,10 +132,10 @@ export default function Home() {
   ];
 
   const stats = [
-    { icon: Users, label: t('home.statTotalParticipants'), value: '0', trend: undefined },
-    { icon: Video, label: t('home.statVideosSubmitted'), value: '0', trend: undefined },
-    { icon: Trophy, label: t('home.statCategories'), value: '0', trend: undefined },
-    { icon: TrendingUp, label: t('home.statTotalVotes'), value: '0', trend: undefined },
+    { icon: Users, label: t('home.statTotalParticipants'), value: String(homeStats?.totalParticipants || 0), trend: undefined },
+    { icon: Video, label: t('home.statVideosSubmitted'), value: String(homeStats?.videosSubmitted || 0), trend: undefined },
+    { icon: Trophy, label: t('home.statCategories'), value: String(homeStats?.categories || 0), trend: undefined },
+    { icon: TrendingUp, label: t('home.statTotalVotes'), value: String(homeStats?.totalVotes || 0), trend: undefined },
   ];
 
   return (

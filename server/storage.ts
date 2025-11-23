@@ -235,6 +235,9 @@ export interface IStorage {
   updateEmailCampaign(id: string, updates: Partial<schema.InsertEmailCampaign>): Promise<schema.EmailCampaign | undefined>;
   deleteEmailCampaign(id: string): Promise<void>;
   sendEmailCampaign(id: string): Promise<schema.EmailCampaign | undefined>;
+  
+  // Home page stats
+  getHomePageStats(): Promise<{ totalParticipants: number; videosSubmitted: number; categories: number; totalVotes: number }>;
 }
 
 export class DbStorage implements IStorage {
@@ -2121,6 +2124,29 @@ export class DbStorage implements IStorage {
       .set({ status: 'sent', sentAt: new Date() })
       .where(eq(schema.emailCampaigns.id, id)).returning();
     return campaign;
+  }
+
+  async getHomePageStats(): Promise<{ totalParticipants: number; videosSubmitted: number; categories: number; totalVotes: number }> {
+    // Get total participants (unique users with registrations)
+    const participantsResult = await db.select({ count: sql<number>`count(distinct ${schema.registrations.userId})` }).from(schema.registrations);
+    const totalParticipants = participantsResult[0]?.count || 0;
+
+    // Get videos submitted (approved videos only)
+    const videosResult = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.videos)
+      .where(eq(schema.videos.status, 'approved'));
+    const videosSubmitted = videosResult[0]?.count || 0;
+
+    // Get categories count
+    const categoriesResult = await db.select({ count: sql<number>`count(*)` }).from(schema.categories);
+    const categories = categoriesResult[0]?.count || 0;
+
+    // Get total votes (sum of all votes and paid votes)
+    const votesResult = await db.select({ count: sql<number>`count(*)` }).from(schema.votes);
+    const paidVotesResult = await db.select({ count: sql<number>`count(*)` }).from(schema.paidVotes);
+    const totalVotes = (votesResult[0]?.count || 0) + (paidVotesResult[0]?.count || 0);
+
+    return { totalParticipants, videosSubmitted, categories, totalVotes };
   }
 }
 
