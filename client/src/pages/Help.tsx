@@ -640,6 +640,24 @@ export default function Help() {
     );
   };
 
+  const handleSectionClick = (id: string) => {
+    // Expand the section if not already expanded
+    setExpandedSections(prev => {
+      if (!prev.includes(id)) {
+        return [...prev, id];
+      }
+      return prev;
+    });
+    
+    // Scroll to the section after a brief delay to ensure it's expanded
+    setTimeout(() => {
+      const element = document.getElementById(`section-${id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 py-12">
@@ -662,7 +680,7 @@ export default function Help() {
             <Card
               key={section.id}
               className="cursor-pointer hover-elevate transition-all"
-              onClick={() => toggleSection(section.id)}
+              onClick={() => handleSectionClick(section.id)}
               data-testid={`help-card-${section.id}`}
             >
               <div className="p-6">
@@ -682,7 +700,7 @@ export default function Help() {
           {currentContent
             .filter(section => expandedSections.includes(section.id))
             .map((section) => (
-              <div key={section.id} className="space-y-4">
+              <div key={section.id} className="space-y-4" id={`section-${section.id}`}>
                 <div className="flex items-center gap-2 pb-4 border-b">
                   <span className="text-3xl">{section.icon}</span>
                   <h2 className="text-3xl font-bold">{section.title}</h2>
