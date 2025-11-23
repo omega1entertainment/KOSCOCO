@@ -17,8 +17,8 @@ export default function PhaseTimeline({ phases }: PhaseTimelineProps) {
   const { t } = useLanguage();
   
   const translatedPhases: Phase[] = [
-    { number: 1, name: t('phaseTimeline.phase1Name'), description: t('phaseTimeline.phase1Desc'), status: 'completed' },
-    { number: 2, name: t('phaseTimeline.phase2Name'), description: t('phaseTimeline.phase2Desc'), status: 'active' },
+    { number: 1, name: t('phaseTimeline.phase1Name'), description: t('phaseTimeline.phase1Desc'), status: 'active' },
+    { number: 2, name: t('phaseTimeline.phase2Name'), description: t('phaseTimeline.phase2Desc'), status: 'upcoming' },
     { number: 3, name: t('phaseTimeline.phase3Name'), description: t('phaseTimeline.phase3Desc'), status: 'upcoming' },
     { number: 4, name: t('phaseTimeline.phase4Name'), description: t('phaseTimeline.phase4Desc'), status: 'upcoming' },
     { number: 5, name: t('phaseTimeline.phase5Name'), description: t('phaseTimeline.phase5Desc'), status: 'upcoming' },
