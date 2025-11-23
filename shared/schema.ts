@@ -711,3 +711,107 @@ export type CampaignWithStats = AdCampaign & {
   totalViews: number;
   averageCtr: number;
 };
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // 'vote', 'upload', 'competition', 'system', 'message'
+  title: text("title").notNull(),
+  message: text("message"),
+  relatedId: varchar("related_id"), // video id, registration id, etc.
+  read: boolean("read").default(false).notNull(),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Activity log table
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(), // 'login', 'upload', 'vote', 'edit', etc.
+  description: text("description"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  metadata: jsonb("metadata"), // additional context
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Login sessions table (for session management)
+export const loginSessions = pgTable("login_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  deviceName: text("device_name"),
+  deviceType: text("device_type"), // 'mobile', 'tablet', 'desktop'
+  location: text("location"),
+  lastActiveAt: timestamp("last_active_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Email preferences table
+export const emailPreferences = pgTable("email_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  competitionUpdates: boolean("competition_updates").default(true).notNull(),
+  votingNotifications: boolean("voting_notifications").default(true).notNull(),
+  newsletters: boolean("newsletters").default(true).notNull(),
+  resultNotifications: boolean("result_notifications").default(true).notNull(),
+  newFeatures: boolean("new_features").default(true).notNull(),
+  adminMessages: boolean("admin_messages").default(true).notNull(),
+  marketingEmails: boolean("marketing_emails").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User dashboard preferences table
+export const dashboardPreferences = pgTable("dashboard_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  theme: text("theme").default('dark').notNull(), // 'light', 'dark'
+  language: text("language").default('en').notNull(),
+  favoriteWidgets: text("favorite_widgets").array(),
+  widgetOrder: jsonb("widget_order"), // order of widgets on dashboard
+  defaultTab: text("default_tab").default('overview').notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User account status/management table
+export const accountSettings = pgTable("account_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
+  twoFactorSecret: varchar("two_factor_secret"),
+  twoFactorBackupCodes: text("two_factor_backup_codes").array(),
+  accountStatus: text("account_status").default('active').notNull(), // 'active', 'deactivated', 'deleted'
+  deactivatedAt: timestamp("deactivated_at"),
+  deleteScheduledAt: timestamp("delete_scheduled_at"),
+  connectedGoogle: boolean("connected_google").default(false).notNull(),
+  connectedFacebook: boolean("connected_facebook").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
+export const insertLoginSessionSchema = createInsertSchema(loginSessions).omit({ id: true, createdAt: true });
+export const insertEmailPreferencesSchema = createInsertSchema(emailPreferences).omit({ id: true, updatedAt: true });
+export const insertDashboardPreferencesSchema = createInsertSchema(dashboardPreferences).omit({ id: true, updatedAt: true });
+export const insertAccountSettingsSchema = createInsertSchema(accountSettings).omit({ id: true, updatedAt: true });
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+
+export type InsertLoginSession = z.infer<typeof insertLoginSessionSchema>;
+export type LoginSession = typeof loginSessions.$inferSelect;
+
+export type InsertEmailPreferences = z.infer<typeof insertEmailPreferencesSchema>;
+export type EmailPreferences = typeof emailPreferences.$inferSelect;
+
+export type InsertDashboardPreferences = z.infer<typeof insertDashboardPreferencesSchema>;
+export type DashboardPreferences = typeof dashboardPreferences.$inferSelect;
+
+export type InsertAccountSettings = z.infer<typeof insertAccountSettingsSchema>;
+export type AccountSettings = typeof accountSettings.$inferSelect;

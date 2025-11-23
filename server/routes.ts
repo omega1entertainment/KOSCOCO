@@ -4826,6 +4826,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard notification endpoints
+  app.get("/api/creator/notifications", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const notifications = await storage.getUserNotifications(userId, 20);
+      const unreadCount = await storage.getUnreadNotificationCount(userId);
+      res.json({ notifications, unreadCount });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/creator/notifications/:id/read", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const notification = await storage.markNotificationAsRead(id);
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/creator/notifications/mark-all-read", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark notifications as read" });
+    }
+  });
+
+  app.delete("/api/creator/notifications/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteNotification(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  });
+
+  // Activity log endpoints
+  app.get("/api/creator/activity-log", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const logs = await storage.getUserActivityLogs(userId, 50);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch activity log" });
+    }
+  });
+
+  // Session management endpoints
+  app.get("/api/creator/sessions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const sessions = await storage.getUserLoginSessions(userId);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  app.delete("/api/creator/sessions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLoginSession(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
+  // Email preferences endpoints
+  app.get("/api/creator/email-preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const prefs = await storage.getEmailPreferences(userId);
+      res.json(prefs || {});
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch email preferences" });
+    }
+  });
+
+  app.patch("/api/creator/email-preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const prefs = await storage.updateEmailPreferences(userId, req.body);
+      res.json(prefs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update email preferences" });
+    }
+  });
+
+  // Dashboard preferences endpoints
+  app.get("/api/creator/dashboard-preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const prefs = await storage.getDashboardPreferences(userId);
+      res.json(prefs || {});
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch dashboard preferences" });
+    }
+  });
+
+  app.patch("/api/creator/dashboard-preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const prefs = await storage.updateDashboardPreferences(userId, req.body);
+      res.json(prefs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update dashboard preferences" });
+    }
+  });
+
+  // Account settings endpoints
+  app.get("/api/creator/account-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const settings = await storage.getAccountSettings(userId);
+      res.json(settings || {});
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch account settings" });
+    }
+  });
+
+  app.patch("/api/creator/account-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const settings = await storage.updateAccountSettings(userId, req.body);
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update account settings" });
+    }
+  });
+
+  app.post("/api/creator/deactivate-account", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      await storage.deactivateAccount(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to deactivate account" });
+    }
+  });
+
+  app.post("/api/creator/schedule-account-deletion", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      await storage.scheduleAccountDeletion(userId);
+      res.json({ success: true, message: "Account deletion scheduled for 30 days from now" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to schedule account deletion" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

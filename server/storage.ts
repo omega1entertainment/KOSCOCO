@@ -24,7 +24,13 @@ import type {
   AdPayment, InsertAdPayment,
   AdImpression, InsertAdImpression,
   AdClick, InsertAdClick,
-  CmsContent, InsertCmsContent
+  CmsContent, InsertCmsContent,
+  Notification, InsertNotification,
+  ActivityLog, InsertActivityLog,
+  LoginSession, InsertLoginSession,
+  EmailPreferences, InsertEmailPreferences,
+  DashboardPreferences, InsertDashboardPreferences,
+  AccountSettings, InsertAccountSettings
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -238,6 +244,36 @@ export interface IStorage {
   
   // Home page stats
   getHomePageStats(): Promise<{ totalParticipants: number; videosSubmitted: number; categories: number; totalVotes: number }>;
+
+  // Dashboard notification methods
+  getUserNotifications(userId: string, limit?: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
+  markNotificationAsRead(id: string): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
+  deleteNotification(id: string): Promise<void>;
+
+  // Activity log methods
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  getUserActivityLogs(userId: string, limit?: number): Promise<ActivityLog[]>;
+
+  // Session management methods
+  createLoginSession(session: InsertLoginSession): Promise<LoginSession>;
+  getUserLoginSessions(userId: string): Promise<LoginSession[]>;
+  deleteLoginSession(id: string): Promise<void>;
+
+  // Email preferences methods
+  getEmailPreferences(userId: string): Promise<EmailPreferences | undefined>;
+  updateEmailPreferences(userId: string, prefs: Partial<InsertEmailPreferences>): Promise<EmailPreferences | undefined>;
+
+  // Dashboard preferences methods
+  getDashboardPreferences(userId: string): Promise<DashboardPreferences | undefined>;
+  updateDashboardPreferences(userId: string, prefs: Partial<InsertDashboardPreferences>): Promise<DashboardPreferences | undefined>;
+
+  // Account settings methods
+  getAccountSettings(userId: string): Promise<AccountSettings | undefined>;
+  updateAccountSettings(userId: string, settings: Partial<InsertAccountSettings>): Promise<AccountSettings | undefined>;
+  deactivateAccount(userId: string): Promise<void>;
+  scheduleAccountDeletion(userId: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -2148,6 +2184,123 @@ export class DbStorage implements IStorage {
     const totalVotes = (votesResult[0]?.count || 0) + (paidVotesResult[0]?.count || 0);
 
     return { totalParticipants, videosSubmitted, categories, totalVotes };
+  }
+
+  // Notification methods
+  async getUserNotifications(userId: string, limit = 20): Promise<Notification[]> {
+    return db.select().from(schema.notifications)
+      .where(eq(schema.notifications.userId, userId))
+      .orderBy(desc(schema.notifications.createdAt))
+      .limit(limit);
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.notifications)
+      .where(and(eq(schema.notifications.userId, userId), eq(schema.notifications.read, false)));
+    return result[0]?.count || 0;
+  }
+
+  async markNotificationAsRead(id: string): Promise<Notification | undefined> {
+    const [updated] = await db.update(schema.notifications)
+      .set({ read: true, readAt: new Date() })
+      .where(eq(schema.notifications.id, id)).returning();
+    return updated;
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    await db.update(schema.notifications)
+      .set({ read: true, readAt: new Date() })
+      .where(and(eq(schema.notifications.userId, userId), eq(schema.notifications.read, false)));
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    await db.delete(schema.notifications).where(eq(schema.notifications.id, id));
+  }
+
+  // Activity log methods
+  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
+    const [created] = await db.insert(schema.activityLogs).values(log).returning();
+    return created;
+  }
+
+  async getUserActivityLogs(userId: string, limit = 50): Promise<ActivityLog[]> {
+    return db.select().from(schema.activityLogs)
+      .where(eq(schema.activityLogs.userId, userId))
+      .orderBy(desc(schema.activityLogs.createdAt))
+      .limit(limit);
+  }
+
+  // Session methods
+  async createLoginSession(session: InsertLoginSession): Promise<LoginSession> {
+    const [created] = await db.insert(schema.loginSessions).values(session).returning();
+    return created;
+  }
+
+  async getUserLoginSessions(userId: string): Promise<LoginSession[]> {
+    return db.select().from(schema.loginSessions)
+      .where(eq(schema.loginSessions.userId, userId))
+      .orderBy(desc(schema.loginSessions.lastActiveAt));
+  }
+
+  async deleteLoginSession(id: string): Promise<void> {
+    await db.delete(schema.loginSessions).where(eq(schema.loginSessions.id, id));
+  }
+
+  // Email preferences methods
+  async getEmailPreferences(userId: string): Promise<EmailPreferences | undefined> {
+    const [prefs] = await db.select().from(schema.emailPreferences)
+      .where(eq(schema.emailPreferences.userId, userId));
+    return prefs;
+  }
+
+  async updateEmailPreferences(userId: string, prefs: Partial<InsertEmailPreferences>): Promise<EmailPreferences | undefined> {
+    const [updated] = await db.update(schema.emailPreferences)
+      .set({ ...prefs, updatedAt: new Date() })
+      .where(eq(schema.emailPreferences.userId, userId)).returning();
+    return updated;
+  }
+
+  // Dashboard preferences methods
+  async getDashboardPreferences(userId: string): Promise<DashboardPreferences | undefined> {
+    const [prefs] = await db.select().from(schema.dashboardPreferences)
+      .where(eq(schema.dashboardPreferences.userId, userId));
+    return prefs;
+  }
+
+  async updateDashboardPreferences(userId: string, prefs: Partial<InsertDashboardPreferences>): Promise<DashboardPreferences | undefined> {
+    const [updated] = await db.update(schema.dashboardPreferences)
+      .set({ ...prefs, updatedAt: new Date() })
+      .where(eq(schema.dashboardPreferences.userId, userId)).returning();
+    return updated;
+  }
+
+  // Account settings methods
+  async getAccountSettings(userId: string): Promise<AccountSettings | undefined> {
+    const [settings] = await db.select().from(schema.accountSettings)
+      .where(eq(schema.accountSettings.userId, userId));
+    return settings;
+  }
+
+  async updateAccountSettings(userId: string, settings: Partial<InsertAccountSettings>): Promise<AccountSettings | undefined> {
+    const [updated] = await db.update(schema.accountSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(schema.accountSettings.userId, userId)).returning();
+    return updated;
+  }
+
+  async deactivateAccount(userId: string): Promise<void> {
+    await db.update(schema.accountSettings)
+      .set({ accountStatus: 'deactivated', deactivatedAt: new Date() })
+      .where(eq(schema.accountSettings.userId, userId));
+    await db.update(schema.users).set({ suspended: true })
+      .where(eq(schema.users.id, userId));
+  }
+
+  async scheduleAccountDeletion(userId: string): Promise<void> {
+    await db.update(schema.accountSettings)
+      .set({ deleteScheduledAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) })
+      .where(eq(schema.accountSettings.userId, userId));
   }
 }
 
