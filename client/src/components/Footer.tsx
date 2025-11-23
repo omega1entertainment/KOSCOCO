@@ -56,6 +56,7 @@ export default function Footer() {
   
   const support = [
     { key: 'footer.contact' },
+    { key: 'footer.help' },
     { key: 'footer.faq' },
     { key: 'footer.rules' },
     { key: 'footer.termsOfService' },
@@ -118,6 +119,7 @@ export default function Footer() {
                 // Map footer items to their routes
                 const routeMap: { [key: string]: string } = {
                   'footer.contact': '/contact',
+                  'footer.help': '/help',
                   'footer.faq': '/faq',
                   'footer.rules': '/rules',
                   'footer.termsOfService': '/terms-of-service',

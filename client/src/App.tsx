@@ -47,6 +47,7 @@ import Contact from "@/pages/Contact";
 import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
+import Help from "@/pages/Help";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -113,6 +114,7 @@ function Router() {
           <Route path="/affiliate-terms" component={AffiliateTerms} />
           <Route path="/contact" component={Contact} />
           <Route path="/faq" component={FAQ} />
+          <Route path="/help" component={Help} />
           <Route path="/rules" component={CompetitionRules} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/judge-dashboard" component={JudgeDashboard} />
