@@ -2217,6 +2217,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/creator/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const { firstName, lastName, username, location, age } = req.body;
+
+      const updates: any = {};
+      if (firstName !== undefined) updates.firstName = firstName;
+      if (lastName !== undefined) updates.lastName = lastName;
+      if (username !== undefined) updates.username = username;
+      if (location !== undefined) updates.location = location;
+      if (age !== undefined) updates.age = parseInt(age, 10) || null;
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No updates provided" });
+      }
+
+      const user = await storage.updateUser(userId, updates);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        username: user.username,
+        profileImageUrl: user.profileImageUrl,
+        location: user.location,
+        age: user.age,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+      });
+    } catch (error) {
+      console.error("Error updating creator profile:", error);
+      res.status(500).json({ message: "Failed to update creator profile" });
+    }
+  });
+
+  app.post('/api/creator/profile-photo', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const form = formidable({
+        maxFileSize: 5 * 1024 * 1024,
+        maxFieldsSize: 1024,
+        keepExtensions: true,
+        allowEmptyFiles: false,
+      });
+
+      form.parse(req, async (err: any, fields: any, files: any) => {
+        if (err) {
+          console.error("Error parsing photo upload:", err);
+          if (err.code === 'LIMIT_FILE_SIZE' || err.message?.includes('maxFileSize')) {
+            return res.status(413).json({ message: "Photo size exceeds 5MB limit" });
+          }
+          return res.status(400).json({ message: "Error parsing upload: " + err.message });
+        }
+
+        const photoFile = Array.isArray(files.profileImage) ? files.profileImage[0] : files.profileImage;
+
+        if (!photoFile) {
+          return res.status(400).json({ message: "No photo file provided" });
+        }
+
+        const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!ALLOWED_IMAGE_FORMATS.includes(photoFile.mimetype?.toLowerCase() || '')) {
+          return res.status(400).json({ message: "Invalid image format. Allowed: JPEG, PNG, WebP" });
+        }
+
+        try {
+          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+          if (!privateObjectDir) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          const extMap: { [key: string]: string } = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/webp': 'webp',
+          };
+          const ext = extMap[photoFile.mimetype?.toLowerCase() || ''] || 'jpg';
+
+          const photoId = randomUUID();
+          const photoPath = `${privateObjectDir}/profile-photos/${photoId}.${ext}`;
+          const { bucketName, objectName } = parseObjectPath(photoPath);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const photoFileObj = bucket.file(objectName);
+
+          await new Promise((resolve, reject) => {
+            const readStream = createReadStream(photoFile.filepath);
+            const writeStream = photoFileObj.createWriteStream({
+              metadata: {
+                contentType: photoFile.mimetype || 'image/jpeg',
+                cacheControl: 'private, max-age=3600',
+              },
+            });
+
+            readStream.on('error', (error: Error) => {
+              console.error("Error reading photo file:", error);
+              reject(new Error('Failed to read photo file'));
+            });
+
+            writeStream.on('error', (error: Error) => {
+              console.error("Error writing photo to storage:", error);
+              reject(new Error('Failed to upload photo to storage'));
+            });
+
+            writeStream.on('finish', () => {
+              resolve(undefined);
+            });
+
+            readStream.pipe(writeStream);
+          });
+
+          const user = await storage.updateUser(userId, { profileImageUrl: photoPath });
+
+          if (!user) {
+            return res.status(404).json({ message: "User not found" });
+          }
+
+          res.json({
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            username: user.username,
+            profileImageUrl: user.profileImageUrl,
+            location: user.location,
+            age: user.age,
+            emailVerified: user.emailVerified,
+            createdAt: user.createdAt,
+          });
+        } catch (error: any) {
+          console.error("Error uploading photo:", error);
+          res.status(500).json({ message: error.message || "Failed to upload photo" });
+        }
+      });
+    } catch (error) {
+      console.error("Error in profile photo endpoint:", error);
+      res.status(500).json({ message: "Failed to update profile photo" });
+    }
+  });
+
   app.get('/api/creator/competitions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;

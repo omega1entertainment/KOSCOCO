@@ -45,6 +45,7 @@ import CreateCampaign from "@/pages/CreateCampaign";
 import EditCampaign from "@/pages/EditCampaign";
 import CreateAd from "@/pages/CreateAd";
 import CreatorDashboard from "@/pages/CreatorDashboard";
+import EditProfile from "@/pages/EditProfile";
 import ThankYou from "@/pages/ThankYou";
 import Contact from "@/pages/Contact";
 import CompetitionRules from "@/pages/CompetitionRules";
@@ -134,6 +135,7 @@ function Router() {
           <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
+          <Route path="/edit-profile" component={EditProfile} />
           <Route component={NotFound} />
         </Switch>
       </main>
