@@ -1044,8 +1044,8 @@ function AdminDashboardContent() {
     },
     onSuccess: () => {
       toast({
-        title: t("admin.toast.judgeUpdated") || "Judge Updated",
-        description: t("admin.toast.judgeUpdatedDescription") || "Judge profile updated successfully",
+        title: "Judge Updated",
+        description: "Judge profile updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
       setEditJudgeDialogOpen(false);
@@ -1055,7 +1055,7 @@ function AdminDashboardContent() {
     },
     onError: (error: Error) => {
       toast({
-        title: t("admin.toast.updateFailed") || "Update Failed",
+        title: "Update Failed",
         description: error.message,
         variant: "destructive",
       });
