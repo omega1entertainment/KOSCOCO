@@ -691,6 +691,8 @@ export class DbStorage implements IStorage {
         fileSize: schema.videos.fileSize,
         status: schema.videos.status,
         views: schema.videos.views,
+        slug: schema.videos.slug,
+        isSelectedForTop500: schema.videos.isSelectedForTop500,
         moderationStatus: schema.videos.moderationStatus,
         moderationCategories: schema.videos.moderationCategories,
         moderationReason: schema.videos.moderationReason,

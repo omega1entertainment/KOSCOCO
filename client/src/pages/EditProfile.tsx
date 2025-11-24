@@ -42,17 +42,19 @@ export default function EditProfile() {
   const { data: profile, isLoading: profileLoading } = useQuery<CreatorProfile>({
     queryKey: ["/api/creator/profile"],
     enabled: !!user,
-    onSuccess: (data) => {
-      setFirstName(data.firstName || "");
-      setLastName(data.lastName || "");
-      setUsername(data.username || "");
-      setLocation_(data.location || "");
-      setAge(data.age ? data.age.toString() : "");
-      if (data.profileImageUrl) {
-        setProfileImagePreview(data.profileImageUrl);
-      }
-    },
   });
+
+  // Update form when profile data loads
+  if (profile && !firstName) {
+    setFirstName(profile.firstName || "");
+    setLastName(profile.lastName || "");
+    setUsername(profile.username || "");
+    setLocation_(profile.location || "");
+    setAge(profile.age ? profile.age.toString() : "");
+    if (profile.profileImageUrl) {
+      setProfileImagePreview(profile.profileImageUrl);
+    }
+  }
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

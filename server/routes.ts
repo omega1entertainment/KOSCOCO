@@ -2392,11 +2392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/creator/watch-history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
-      const history = await storage.getWatchHistory(userId);
+      const history = await storage.getUserWatchHistory(userId);
       
       // Get video details for each watch history entry
       const enrichedHistory = await Promise.all(
-        history.slice(0, 20).map(async (entry) => {
+        history.slice(0, 20).map(async (entry: any) => {
           const video = await storage.getVideoById(entry.videoId);
           return {
             ...entry,
@@ -2435,17 +2435,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get payout requests
-      const payoutRequests = await Promise.all([
-        storage.getAffiliatePayoutRequests(affiliate.id),
-      ]).then(([requests]) => requests || []);
+      const allPayoutRequests = await storage.getAllPayoutRequests();
+      const payoutRequests = allPayoutRequests.filter((req: any) => req.affiliateId === affiliate.id);
 
       const pendingPayouts = payoutRequests
-        .filter(r => r.status === 'pending')
-        .reduce((sum, r) => sum + r.amount, 0);
+        .filter((r: any) => r.status === 'pending')
+        .reduce((sum: number, r: any) => sum + r.amount, 0);
 
       const completedPayouts = payoutRequests
-        .filter(r => r.status === 'approved')
-        .reduce((sum, r) => sum + r.amount, 0);
+        .filter((r: any) => r.status === 'approved')
+        .reduce((sum: number, r: any) => sum + r.amount, 0);
 
       res.json({
         isAffiliate: true,
@@ -3423,8 +3422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const form = formidable({ multiples: false });
         const [fields, files] = await form.parse(req);
 
-        judgeName = Array.isArray(fields.judgeName) ? fields.judgeName[0] : fields.judgeName;
-        judgeBio = Array.isArray(fields.judgeBio) ? fields.judgeBio[0] : fields.judgeBio;
+        judgeName = (Array.isArray(fields.judgeName) ? fields.judgeName[0] : fields.judgeName) || "";
+        judgeBio = (Array.isArray(fields.judgeBio) ? fields.judgeBio[0] : fields.judgeBio) || "";
 
         if (files.photo) {
           const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
@@ -3758,7 +3757,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also update the user's status if they have a corresponding user account
       const user = await storage.getUserByEmail(advertiser.email);
       if (user) {
-        await storage.updateUser(user.id, { accountStatus: 'active' });
+        // User account is already created, advertiser is now active
+        // No additional user status update needed
       }
 
       res.json({ 
@@ -3788,7 +3788,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also update the user's status if they have a corresponding user account
       const user = await storage.getUserByEmail(advertiser.email);
       if (user) {
-        await storage.updateUser(user.id, { accountStatus: 'deactivated' });
+        // Advertiser is suspended, but user account remains for historical records
+        // No additional user update needed
       }
 
       res.json({ 
@@ -3820,7 +3821,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const campaign of campaigns) {
         const ads = await storage.getCampaignAds(campaign.id);
         for (const ad of ads) {
-          await storage.deleteAd(ad.id);
+          // Delete ad directly from database
+          await db.delete(schema.ads).where(eq(schema.ads.id, ad.id));
         }
         await storage.deleteCampaign(campaign.id);
       }
@@ -3828,7 +3830,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete any other advertiser ads not in campaigns
       const allAds = await storage.getAdvertiserAds(id);
       for (const ad of allAds) {
-        await storage.deleteAd(ad.id);
+        // Delete ad directly from database
+        await db.delete(schema.ads).where(eq(schema.ads.id, ad.id));
       }
 
       // Delete advertiser payments
