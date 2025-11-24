@@ -182,8 +182,8 @@ export default function Login() {
 
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" data-testid="tab-login" className="data-[state=active]:text-destructive">{t("auth.login")}</TabsTrigger>
-              <TabsTrigger value="signup" data-testid="tab-signup" className="data-[state=active]:text-destructive">{t("auth.signUp")}</TabsTrigger>
+              <TabsTrigger value="login" data-testid="tab-login" className="data-[state=active]:bg-destructive data-[state=active]:text-white">{t("auth.login")}</TabsTrigger>
+              <TabsTrigger value="signup" data-testid="tab-signup" className="data-[state=active]:bg-destructive data-[state=active]:text-white">{t("auth.signUp")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
