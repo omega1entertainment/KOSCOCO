@@ -62,7 +62,7 @@ export default function NavigationHeader({
   ];
 
   const judgeMenuItems = [
-    { label: t('nav.viewJudges'), path: '/judges' },
+    { label: 'View Judges', path: '/judges' },
     { label: 'Judge Login', path: '/judge/login' },
   ];
   
@@ -315,6 +315,26 @@ export default function NavigationHeader({
                 {item.label}
               </Button>
             ))}
+            
+            <div className="mt-2">
+              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
+                Judges
+              </div>
+              {judgeMenuItems.map((item) => (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  className="min-h-11 justify-start w-full"
+                  onClick={() => {
+                    onNavigate?.(item.path);
+                    setMobileMenuOpen(false);
+                  }}
+                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
             
             <div className="mt-2">
               <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
