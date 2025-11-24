@@ -70,7 +70,7 @@ export default function Home() {
     title: category.name,
     image: categoryImages[category.name] || musicImage,
     subcategories: category.subcategories || [],
-    entryCount: videoCounts[category.name] || 0,
+    entryCount: videoCounts[category.id] || 0,
   }));
 
   const featuredVideos = [
