@@ -76,10 +76,10 @@ export default function Advertise() {
                 separate from your creator account.
               </p>
               <div className="flex gap-4">
-                <Button onClick={() => setLocation("/login")} className="flex-1">
+                <Button onClick={() => setLocation("/advertiser/login")} className="flex-1">
                   Login
                 </Button>
-                <Button onClick={() => setLocation("/register")} variant="outline" className="flex-1">
+                <Button onClick={() => setLocation("/advertiser/signup")} variant="outline" className="flex-1">
                   Create Account
                 </Button>
               </div>
