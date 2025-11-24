@@ -2549,7 +2549,7 @@ function AdminDashboardContent() {
                             <div className="flex items-start gap-4">
                               {judge.judgePhotoUrl && (
                                 <img
-                                  src={judge.judgePhotoUrl.startsWith('/objects/') ? judge.judgePhotoUrl : `/objects/${judge.judgePhotoUrl.replace(/^\//, '')}`}
+                                  src={`/objects/${judge.judgePhotoUrl.replace(/^\/objects\/|^\.\//, '')}`}
                                   alt={judge.judgeName || judge.email}
                                   className="w-12 h-12 rounded-full object-cover"
                                 />
@@ -4560,7 +4560,7 @@ function AdminDashboardContent() {
               <div className="flex items-center gap-4">
                 {editJudgePhotoPreview || judgeToEdit?.judgePhotoUrl ? (
                   <img
-                    src={editJudgePhotoPreview || (judgeToEdit?.judgePhotoUrl?.startsWith('/objects/') ? judgeToEdit.judgePhotoUrl : `/objects/${judgeToEdit?.judgePhotoUrl?.replace(/^\//, '')}`)}
+                    src={editJudgePhotoPreview || `/objects/${judgeToEdit?.judgePhotoUrl?.replace(/^\/objects\/|^\.\//, '')}`}
                     alt="Judge preview"
                     className="w-16 h-16 rounded-full object-cover"
                   />
