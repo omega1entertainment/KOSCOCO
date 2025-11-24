@@ -3725,8 +3725,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = currentUser.id;
 
       // Delete all related records in cascade order
-      // Delete paid votes first
-      await db.execute(sql`DELETE FROM paid_votes WHERE user_id = ${userId}`);
+      // Delete paid votes (using subquery to join with vote_purchases)
+      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${userId})`);
       
       // Delete vote purchases
       await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
