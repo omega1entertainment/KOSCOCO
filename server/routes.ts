@@ -278,6 +278,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Select top 500 videos per category based on likes
+  app.post('/api/admin/select-top-500', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const results = await storage.selectTop500VideosPerCategory();
+      
+      res.json({
+        message: "Top 500 videos selected per category",
+        results,
+      });
+    } catch (error) {
+      console.error("Error selecting top 500 videos:", error);
+      res.status(500).json({ message: "Failed to select top 500 videos" });
+    }
+  });
+
   app.post('/api/registrations', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as SelectUser;

@@ -93,6 +93,7 @@ export const videos = pgTable("videos", {
   moderationCategories: text("moderation_categories").array(),
   moderationReason: text("moderation_reason"),
   moderatedAt: timestamp("moderated_at"),
+  isSelectedForTop500: boolean("is_selected_for_top_500").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

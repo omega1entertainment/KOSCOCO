@@ -20,7 +20,8 @@ The platform is built with a modern web stack.
     - **Video Management**: Supports specific file formats, size, and duration limits, with a moderation queue.
     - **Voting System**: Public voting with anti-spam measures, judge scoring components, and a paid voting system integrated with Flutterwave.
     - **Affiliate Program**: Opt-in system with unique referral links and 20% commission tracking. Supports both authenticated and non-authenticated users, creating accounts and affiliate records in one transaction. Includes comprehensive payout request and approval workflow with admin management endpoints.
-    - **Competition Structure**: Organized into five distinct phases (TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE), with admin controls to transition between phases, ensuring only one phase is active at a time.
+    - **Competition Structure**: Organized into seven distinct phases (TOP 500, TOP 100, TOP 50, TOP 10, TOP 3, GRAND FINALE, etc.), with admin controls to transition between phases, ensuring only one phase is active at a time.
+    - **Automatic Top 500 Selection**: Videos are automatically selected for top 500 of each category based on the highest number of likes. Admins can trigger this selection via the admin endpoint, which resets and recalculates the ranking for each category independently.
     - **User and Admin Dashboards**: Centralized views for user statistics and administrative tasks like video moderation, phase management, advertiser account approval, and comprehensive user management.
     - **Admin User Management**: Complete user oversight with searchable table showing all registered users, their roles (admin/judge/contestant), verification status, join dates, and location. Accessible via Users tab in admin dashboard.
     - **Email Verification**: Comprehensive system using Resend for user account verification.
@@ -30,6 +31,20 @@ The platform is built with a modern web stack.
     - **Video of the Day**: Daily rotating featured video on the homepage.
     - **Newsletter System**: WYSIWYG email campaign creation with newsletter subscriber management. Automated welcome emails with branded imagery sent to new subscribers.
     - **FAQ System**: Comprehensive, bilingual (English/French) FAQ page with 45+ questions organized by category (General, Registration, Video Submission, Voting, Phases, Prizes, Technical, Account, Affiliate, Judges, Payment, Content Guidelines, Newsletter, Other). Accessible from footer "FAQ" link at `/faq` with expandable Q&A sections and direct support contact option.
+
+## Automatic Top 500 Selection System
+- **Purpose**: Automatically selects the top 500 videos per category based on likes count for phase progression
+- **How It Works**: 
+    - Admin triggers selection via POST `/api/admin/select-top-500` endpoint (admin-only)
+    - System iterates through all categories
+    - For each category: resets all videos, then selects top 500 approved videos sorted by like count (highest first)
+    - Updates `isSelectedForTop500` boolean field on each video
+- **Database Schema**: Added `isSelectedForTop500` boolean field to videos table (default: false)
+- **Admin Endpoint**: 
+    - POST `/api/admin/select-top-500` - Triggers automatic selection of top 500 videos per category based on likes
+    - Returns: List of categories with selection count (e.g., `{ categoryId: "...", selectedCount: 450 }`)
+    - Authentication: Admin-only
+- **Benefits**: Eliminates manual selection process and ensures fair, consistent ranking based on community engagement (likes)
 
 ## Backend Affiliate Management Features
 - **Admin Affiliate Management**:

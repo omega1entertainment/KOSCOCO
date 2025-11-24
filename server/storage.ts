@@ -94,6 +94,7 @@ export interface IStorage {
   getApprovedVideos(): Promise<VideoWithStats[]>;
   getRejectedVideos(): Promise<Video[]>;
   updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined>;
+  selectTop500VideosPerCategory(): Promise<{ categoryId: string; selectedCount: number }[]>;
   
   createVote(vote: InsertVote): Promise<Vote>;
   getVideoVoteCount(videoId: string): Promise<number>;
@@ -703,6 +704,62 @@ export class DbStorage implements IStorage {
       .where(eq(schema.videos.id, id))
       .returning();
     return video;
+  }
+
+  async selectTop500VideosPerCategory(): Promise<{ categoryId: string; selectedCount: number }[]> {
+    try {
+      const allCategories = await db.select({ id: schema.categories.id }).from(schema.categories);
+      const results: { categoryId: string; selectedCount: number }[] = [];
+
+      for (const category of allCategories) {
+        // First, reset all videos in this category
+        await db.update(schema.videos)
+          .set({ isSelectedForTop500: false })
+          .where(eq(schema.videos.categoryId, category.id));
+
+        // Get top 500 videos by like count for this category
+        const top500 = await db
+          .select({
+            id: schema.videos.id,
+            likeCount: sql<string>`CAST((
+              SELECT COALESCE(COUNT(*), 0)
+              FROM likes
+              WHERE likes.video_id = videos.id
+            ) AS text)`,
+          })
+          .from(schema.videos)
+          .where(and(
+            eq(schema.videos.categoryId, category.id),
+            eq(schema.videos.status, 'approved')
+          ))
+          .orderBy(desc(sql<number>`
+            COALESCE((
+              SELECT COUNT(*)
+              FROM likes
+              WHERE likes.video_id = videos.id
+            ), 0)
+          `))
+          .limit(500);
+
+        // Update these videos to mark them as selected
+        if (top500.length > 0) {
+          const videoIds = top500.map(v => v.id);
+          await db.update(schema.videos)
+            .set({ isSelectedForTop500: true, updatedAt: new Date() })
+            .where(inArray(schema.videos.id, videoIds));
+        }
+
+        results.push({
+          categoryId: category.id,
+          selectedCount: top500.length,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      console.error('Error selecting top 500 videos:', error);
+      throw error;
+    }
   }
 
   async createVote(insertVote: InsertVote): Promise<Vote> {
