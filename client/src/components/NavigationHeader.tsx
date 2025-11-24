@@ -29,6 +29,10 @@ export default function NavigationHeader({
   onNavigate
 }: NavigationHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedJudges, setExpandedJudges] = useState(false);
+  const [expandedLeaderboard, setExpandedLeaderboard] = useState(false);
+  const [expandedAffiliate, setExpandedAffiliate] = useState(false);
+  const [expandedAdvertise, setExpandedAdvertise] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -310,14 +314,20 @@ export default function NavigationHeader({
             ))}
             
             <div className="mt-2">
-              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                Judges
-              </div>
-              {judgeMenuItems.map((item) => (
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedJudges(!expandedJudges)}
+                data-testid="button-judges-submenu"
+              >
+                <span className="text-sm font-semibold">Judges</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedJudges ? 'rotate-180' : ''}`} />
+              </Button>
+              {expandedJudges && judgeMenuItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
-                  className="min-h-11 justify-start w-full"
+                  className="min-h-11 justify-start w-full ml-4"
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
@@ -330,14 +340,20 @@ export default function NavigationHeader({
             </div>
             
             <div className="mt-2">
-              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                {t('nav.leaderboard')}
-              </div>
-              {leaderboardMenuItems.map((item) => (
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedLeaderboard(!expandedLeaderboard)}
+                data-testid="button-leaderboard-submenu"
+              >
+                <span className="text-sm font-semibold">{t('nav.leaderboard')}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedLeaderboard ? 'rotate-180' : ''}`} />
+              </Button>
+              {expandedLeaderboard && leaderboardMenuItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
-                  className="min-h-11 justify-start w-full"
+                  className="min-h-11 justify-start w-full ml-4"
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
@@ -350,14 +366,20 @@ export default function NavigationHeader({
             </div>
             
             <div className="mt-2">
-              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                {t('nav.affiliate')}
-              </div>
-              {affiliateMenuItems.map((item) => (
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedAffiliate(!expandedAffiliate)}
+                data-testid="button-affiliate-submenu"
+              >
+                <span className="text-sm font-semibold">{t('nav.affiliate')}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedAffiliate ? 'rotate-180' : ''}`} />
+              </Button>
+              {expandedAffiliate && affiliateMenuItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
-                  className="min-h-11 justify-start w-full"
+                  className="min-h-11 justify-start w-full ml-4"
                   onClick={() => {
                     if (item.path === '/affiliate/dashboard' && !isAuthenticated) {
                       setLocation('/affiliate/login');
@@ -374,34 +396,44 @@ export default function NavigationHeader({
             </div>
 
             <div className="mt-2">
-              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
-                Advertise
-              </div>
               <Button
                 variant="ghost"
-                className="min-h-11 justify-start w-full"
-                onClick={() => {
-                  onNavigate?.('/advertise');
-                  setMobileMenuOpen(false);
-                }}
-                data-testid="mobile-link-advertise"
+                className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedAdvertise(!expandedAdvertise)}
+                data-testid="button-advertise-submenu"
               >
-                Advertising Platform
+                <span className="text-sm font-semibold">Advertise</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedAdvertise ? 'rotate-180' : ''}`} />
               </Button>
-              {advertiserMenuItems.map((item) => (
-                <Button
-                  key={item.label}
-                  variant="ghost"
-                  className="min-h-11 justify-start w-full"
-                  onClick={() => {
-                    onNavigate?.(item.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  {item.label}
-                </Button>
-              ))}
+              {expandedAdvertise && (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 justify-start w-full ml-4"
+                    onClick={() => {
+                      onNavigate?.('/advertise');
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-link-advertise"
+                  >
+                    Advertising Platform
+                  </Button>
+                  {advertiserMenuItems.map((item) => (
+                    <Button
+                      key={item.label}
+                      variant="ghost"
+                      className="min-h-11 justify-start w-full ml-4"
+                      onClick={() => {
+                        onNavigate?.(item.path);
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </>
+              )}
             </div>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
@@ -409,11 +441,11 @@ export default function NavigationHeader({
                 <span className="text-sm font-semibold text-muted-foreground">{t('nav.theme')}</span>
                 <ThemeToggle />
               </div>
-              {!isAuthenticated ? (
+              {!isAuthenticated && (
                 <>
                   <Button 
                     variant="ghost"
-                    className="min-h-11"
+                    className="min-h-11 justify-start"
                     onClick={() => {
                       setLocation("/login");
                       setMobileMenuOpen(false);
@@ -433,7 +465,8 @@ export default function NavigationHeader({
                     {t('nav.register')}
                   </Button>
                 </>
-              ) : (
+              )}
+              {isAuthenticated && (
                 <>
                   <Button 
                     variant="outline"
