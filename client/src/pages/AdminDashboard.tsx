@@ -2563,7 +2563,7 @@ function AdminDashboardContent() {
                                   data-testid={`button-edit-judge-${judge.id}`}
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
-                                  {t("admin.judges.edit") || "Edit"}
+                                  Edit
                                 </Button>
                                 <Button
                                   variant="destructive"
