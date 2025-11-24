@@ -3718,6 +3718,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User: Delete own account
+  app.post('/api/account/delete', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUser = req.user as SelectUser;
+      const userId = currentUser.id;
+
+      // Delete all related records in cascade order
+      // Delete paid votes first
+      await db.execute(sql`DELETE FROM paid_votes WHERE user_id = ${userId}`);
+      
+      // Delete vote purchases
+      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
+      
+      // Delete watch history
+      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${userId}`);
+      
+      // Delete ad impressions
+      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${userId}`);
+      
+      // Delete ad clicks
+      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${userId}`);
+      
+      // Delete likes
+      await db.execute(sql`DELETE FROM likes WHERE user_id = ${userId}`);
+      
+      // Delete votes
+      await db.execute(sql`DELETE FROM votes WHERE user_id = ${userId}`);
+      
+      // Delete judge scores (if user is a judge)
+      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
+      
+      // Delete videos
+      await db.execute(sql`DELETE FROM videos WHERE creator_id = ${userId}`);
+      
+      // Delete registrations
+      await db.execute(sql`DELETE FROM registrations WHERE user_id = ${userId}`);
+      
+      // Delete affiliate records
+      await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${userId}`);
+      
+      // Delete the user
+      await storage.deleteUser(userId);
+
+      // Log out the user by clearing their session
+      req.logout((err: any) => {
+        if (err) {
+          console.error("Error during logout after account deletion:", err);
+        }
+        res.json({ message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   // Admin: Get all advertisers
   app.get('/api/admin/advertisers', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

@@ -143,6 +143,7 @@ export default function CreatorDashboard() {
   // Settings dialogs and form states
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [emailPreferencesDialogOpen, setEmailPreferencesDialogOpen] = useState(false);
+  const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -187,6 +188,32 @@ export default function CreatorDashboard() {
   const { data: earnings, isLoading: earningsLoading } = useQuery<CreatorEarnings>({
     queryKey: ["/api/creator/earnings"],
     enabled: !!user,
+  });
+
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/account/delete", "POST");
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setDeleteAccountDialogOpen(false);
+      setTimeout(() => {
+        setLocation("/");
+      }, 1500);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Deletion Failed",
+        description: error.message || "Failed to delete your account",
+        variant: "destructive",
+      });
+    },
   });
 
   // Delete video mutation
@@ -310,6 +337,14 @@ export default function CreatorDashboard() {
       description: "Your email preferences have been updated",
     });
     setEmailPreferencesDialogOpen(false);
+  };
+
+  const handleDeleteAccount = () => {
+    setDeleteAccountDialogOpen(true);
+  };
+
+  const handleConfirmDeleteAccount = () => {
+    deleteAccountMutation.mutate();
   };
 
   if (authLoading) {
@@ -793,7 +828,12 @@ export default function CreatorDashboard() {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-2">Account</h4>
-                  <Button variant="destructive" className="w-full justify-start" data-testid="button-delete-account">
+                  <Button 
+                    variant="destructive" 
+                    className="w-full justify-start" 
+                    onClick={handleDeleteAccount}
+                    data-testid="button-delete-account"
+                  >
                     Delete Account
                   </Button>
                 </div>
@@ -987,6 +1027,40 @@ export default function CreatorDashboard() {
             </Button>
             <Button onClick={handleSaveEmailPreferences} data-testid="button-save-email-prefs">
               Save Preferences
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={deleteAccountDialogOpen} onOpenChange={setDeleteAccountDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Account</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Your account and all associated data (videos, votes, messages, etc.) will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-destructive/10 p-4 rounded-md border border-destructive/20">
+            <p className="text-sm text-destructive font-medium">
+              Warning: Deleting your account is permanent. This will delete all your videos, registrations, votes, and other associated data.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteAccountDialogOpen(false)} 
+              data-testid="button-cancel-delete-account"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeleteAccount}
+              disabled={deleteAccountMutation.isPending}
+              data-testid="button-confirm-delete-account"
+            >
+              {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
             </Button>
           </DialogFooter>
         </DialogContent>
