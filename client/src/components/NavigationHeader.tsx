@@ -72,6 +72,11 @@ export default function NavigationHeader({
     { label: t('nav.affiliateDashboard'), path: '/affiliate/dashboard' },
   ];
   
+  const advertiserMenuItems = [
+    { label: 'Advertiser Login', path: '/advertiser/login' },
+    { label: 'Advertiser Sign Up', path: '/advertiser/signup' },
+  ];
+  
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b">
       <div className="max-w-7xl mx-auto px-4">
@@ -145,14 +150,35 @@ export default function NavigationHeader({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="ghost"
-              className="min-h-11"
-              onClick={() => onNavigate?.('/advertise')}
-              data-testid="link-advertise"
-            >
-              Advertise
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
+                  data-testid="link-advertise"
+                >
+                  Advertise
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => onNavigate?.('/advertise')}
+                  data-testid="menu-advertise-platform"
+                >
+                  Advertising Platform
+                </DropdownMenuItem>
+                {advertiserMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => onNavigate?.(item.path)}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
           
           <div className="hidden md:flex items-center gap-2">
@@ -295,17 +321,36 @@ export default function NavigationHeader({
               ))}
             </div>
 
-            <Button
-              variant="ghost"
-              className="min-h-11 justify-start w-full"
-              onClick={() => {
-                onNavigate?.('/advertise');
-                setMobileMenuOpen(false);
-              }}
-              data-testid="mobile-link-advertise"
-            >
-              Advertise
-            </Button>
+            <div className="mt-2">
+              <div className="px-4 py-2 text-sm font-semibold text-muted-foreground">
+                Advertise
+              </div>
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-start w-full"
+                onClick={() => {
+                  onNavigate?.('/advertise');
+                  setMobileMenuOpen(false);
+                }}
+                data-testid="mobile-link-advertise"
+              >
+                Advertising Platform
+              </Button>
+              {advertiserMenuItems.map((item) => (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  className="min-h-11 justify-start w-full"
+                  onClick={() => {
+                    onNavigate?.(item.path);
+                    setMobileMenuOpen(false);
+                  }}
+                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               <div className="flex items-center justify-between px-4 py-2">
