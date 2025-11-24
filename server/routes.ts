@@ -3246,6 +3246,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Update judge profile
+  app.patch('/api/admin/judges/:judgeId/profile', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { judgeId } = req.params;
+      const { judgeName, judgeBio } = req.body;
+
+      if (!judgeId) {
+        return res.status(400).json({ message: "Judge ID is required" });
+      }
+
+      // Verify the user exists and is a judge
+      const judge = await storage.getUser(judgeId);
+      if (!judge) {
+        return res.status(404).json({ message: "Judge not found" });
+      }
+
+      if (!judge.isJudge) {
+        return res.status(400).json({ message: "User is not a judge" });
+      }
+
+      // Update judge profile
+      await db.update(schema.users)
+        .set({
+          judgeName: judgeName || null,
+          judgeBio: judgeBio || null,
+        })
+        .where(eq(schema.users.id, judgeId));
+
+      res.json({ message: "Judge profile updated successfully" });
+    } catch (error) {
+      console.error("Error updating judge profile:", error);
+      res.status(500).json({ message: "Failed to update judge profile" });
+    }
+  });
+
   // Admin: Get all users
   app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

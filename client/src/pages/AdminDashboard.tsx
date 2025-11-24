@@ -352,6 +352,12 @@ function AdminDashboardContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [judgeToDelete, setJudgeToDelete] = useState<JudgeProfile | null>(null);
 
+  // Judge edit dialog state
+  const [editJudgeDialogOpen, setEditJudgeDialogOpen] = useState(false);
+  const [judgeToEdit, setJudgeToEdit] = useState<JudgeProfile | null>(null);
+  const [editJudgeName, setEditJudgeName] = useState("");
+  const [editJudgeBio, setEditJudgeBio] = useState("");
+
   // User delete dialog state
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<SelectUser | null>(null);
@@ -1002,6 +1008,33 @@ function AdminDashboardContent() {
     onError: (error: Error) => {
       toast({
         title: t("admin.toast.deletionFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update judge mutation
+  const updateJudgeMutation = useMutation({
+    mutationFn: async () => {
+      if (!judgeToEdit) throw new Error("No judge selected");
+      return await apiRequest(`/api/admin/judges/${judgeToEdit.id}/profile`, "PATCH", {
+        judgeName: editJudgeName,
+        judgeBio: editJudgeBio,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: t("admin.toast.judgeUpdated") || "Judge Updated",
+        description: t("admin.toast.judgeUpdatedDescription") || "Judge profile updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
+      setEditJudgeDialogOpen(false);
+      setJudgeToEdit(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("admin.toast.updateFailed") || "Update Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -2495,7 +2528,7 @@ function AdminDashboardContent() {
                             <div className="flex items-start gap-4">
                               {judge.judgePhotoUrl && (
                                 <img
-                                  src={judge.judgePhotoUrl}
+                                  src={judge.judgePhotoUrl.startsWith('/objects/') ? judge.judgePhotoUrl : `/objects/${judge.judgePhotoUrl}`}
                                   alt={judge.judgeName || judge.email}
                                   className="w-12 h-12 rounded-full object-cover"
                                 />
@@ -2517,6 +2550,20 @@ function AdminDashboardContent() {
                                   </p>
                                 )}
                               </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setJudgeToEdit(judge);
+                                  setEditJudgeName(judge.judgeName || "");
+                                  setEditJudgeBio(judge.judgeBio || "");
+                                  setEditJudgeDialogOpen(true);
+                                }}
+                                data-testid={`button-edit-judge-${judge.id}`}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                {t("admin.judges.edit") || "Edit"}
+                              </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
@@ -4474,6 +4521,57 @@ function AdminDashboardContent() {
           </div>
         </div>
       </Tabs>
+
+      {/* Edit Judge Dialog */}
+      <Dialog open={editJudgeDialogOpen} onOpenChange={setEditJudgeDialogOpen}>
+        <DialogContent data-testid="dialog-edit-judge">
+          <DialogHeader>
+            <DialogTitle>{t("admin.judges.editTitle") || "Edit Judge Profile"}</DialogTitle>
+            <DialogDescription>
+              {t("admin.judges.editDescription") || "Update the judge's name and biography"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-judge-name">Judge Name</Label>
+              <Input
+                id="edit-judge-name"
+                value={editJudgeName}
+                onChange={(e) => setEditJudgeName(e.target.value)}
+                placeholder="Judge display name"
+                data-testid="input-edit-judge-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-judge-bio">Biography</Label>
+              <Textarea
+                id="edit-judge-bio"
+                value={editJudgeBio}
+                onChange={(e) => setEditJudgeBio(e.target.value)}
+                placeholder="Judge biography"
+                rows={4}
+                data-testid="textarea-edit-judge-bio"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setEditJudgeDialogOpen(false)}
+              data-testid="button-cancel-edit"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => updateJudgeMutation.mutate()}
+              disabled={updateJudgeMutation.isPending}
+              data-testid="button-save-judge"
+            >
+              {updateJudgeMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Judge Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
