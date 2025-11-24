@@ -3046,7 +3046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: z.string().trim().min(3).max(50),
         judgeName: z.string().trim().min(1).max(100),
         judgeBio: z.string().trim().optional().or(z.literal("")),
-        judgePhotoUrl: z.string().trim().url().optional().or(z.literal("")),
+        judgePhotoUrl: z.string().trim().optional().or(z.literal("")),
       });
 
       const validationResult = createJudgeSchema.safeParse(req.body);
