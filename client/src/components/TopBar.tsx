@@ -3,13 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiX } from "react-icons/si";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
 
 interface TopBarProps {
   currentPhase?: string;
 }
 
-export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopBarProps) {
+export default function TopBar({ currentPhase: propPhase }: TopBarProps) {
   const { language, setLanguage } = useLanguage();
+  
+  const { data: activePhase } = useQuery({
+    queryKey: ['/api/phases/active'],
+  });
+  
+  const displayPhase = propPhase || (activePhase?.name ? `${activePhase.name} ACTIVE` : "COMPETITION ACTIVE");
   
   const socialLinks = [
     { name: "Facebook", icon: SiFacebook, url: "https://web.facebook.com/kozziientertainment", testId: "link-social-facebook" },
@@ -43,7 +50,7 @@ export default function TopBar({ currentPhase = "PHASE 2: TOP 50 ACTIVE" }: TopB
               className="font-bold text-xs tracking-wide"
               data-testid="badge-phase"
             >
-              {currentPhase}
+              {displayPhase}
             </Badge>
           </div>
           
