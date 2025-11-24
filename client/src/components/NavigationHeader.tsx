@@ -218,8 +218,16 @@ export default function NavigationHeader({
           
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
-            {isAuthenticated ? (
+            {!isAuthenticated ? (
               <>
+                <Button 
+                  variant="ghost"
+                  className="min-h-11"
+                  onClick={() => setLocation("/login")}
+                  data-testid="button-login"
+                >
+                  {t('nav.login')}
+                </Button>
                 <Button
                   className="min-h-11"
                   onClick={() => setLocation("/register")}
@@ -227,6 +235,9 @@ export default function NavigationHeader({
                 >
                   {t('nav.register')}
                 </Button>
+              </>
+            ) : (
+              <>
                 <Button 
                   variant="outline"
                   className="min-h-11"
@@ -265,24 +276,6 @@ export default function NavigationHeader({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </>
-            ) : (
-              <>
-                <Button 
-                  variant="ghost"
-                  className="min-h-11"
-                  onClick={() => setLocation("/login")}
-                  data-testid="button-login"
-                >
-                  {t('nav.login')}
-                </Button>
-                <Button
-                  className="min-h-11"
-                  onClick={() => setLocation("/register")}
-                  data-testid="button-register"
-                >
-                  {t('nav.register')}
-                </Button>
               </>
             )}
           </div>
@@ -416,8 +409,19 @@ export default function NavigationHeader({
                 <span className="text-sm font-semibold text-muted-foreground">{t('nav.theme')}</span>
                 <ThemeToggle />
               </div>
-              {isAuthenticated ? (
+              {!isAuthenticated ? (
                 <>
+                  <Button 
+                    variant="ghost"
+                    className="min-h-11"
+                    onClick={() => {
+                      setLocation("/login");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-login"
+                  >
+                    {t('nav.login')}
+                  </Button>
                   <Button
                     className="min-h-11"
                     onClick={() => {
@@ -428,6 +432,9 @@ export default function NavigationHeader({
                   >
                     {t('nav.register')}
                   </Button>
+                </>
+              ) : (
+                <>
                   <Button 
                     variant="outline"
                     className="min-h-11"
@@ -463,6 +470,34 @@ export default function NavigationHeader({
                     <User className="w-4 h-4 mr-2" />
                     Creator Dashboard
                   </Button>
+                  {user?.isAdmin && (
+                    <Button 
+                      variant="ghost"
+                      className="min-h-11"
+                      onClick={() => {
+                        setLocation("/admin");
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="mobile-button-admin-dashboard"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      {t('nav.adminDashboard')}
+                    </Button>
+                  )}
+                  {user?.isJudge && (
+                    <Button 
+                      variant="ghost"
+                      className="min-h-11"
+                      onClick={() => {
+                        setLocation("/judge-dashboard");
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="mobile-button-judge-dashboard"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      {t('nav.judgeDashboard')}
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost"
                     className="min-h-11"
@@ -474,30 +509,6 @@ export default function NavigationHeader({
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     {t('nav.logout')}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    variant="ghost"
-                    className="min-h-11"
-                    onClick={() => {
-                      setLocation("/login");
-                      setMobileMenuOpen(false);
-                    }}
-                    data-testid="mobile-button-login"
-                  >
-                    {t('nav.login')}
-                  </Button>
-                  <Button
-                    className="min-h-11"
-                    onClick={() => {
-                      setLocation("/register");
-                      setMobileMenuOpen(false);
-                    }}
-                    data-testid="mobile-button-register"
-                  >
-                    {t('nav.register')}
                   </Button>
                 </>
               )}
