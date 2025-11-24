@@ -3250,7 +3250,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/judges/:judgeId/profile', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { judgeId } = req.params;
-      const { judgeName, judgeBio } = req.body;
 
       if (!judgeId) {
         return res.status(400).json({ message: "Judge ID is required" });
@@ -3266,12 +3265,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User is not a judge" });
       }
 
+      // Parse form data if photo is included
+      let judgeName = "";
+      let judgeBio = "";
+      let judgePhotoUrl = null;
+
+      if (req.headers["content-type"]?.includes("application/x-www-form-urlencoded")) {
+        judgeName = req.body.judgeName || "";
+        judgeBio = req.body.judgeBio || "";
+      } else if (req.headers["content-type"]?.includes("multipart/form-data")) {
+        const form = formidable({ multiples: false });
+        const [fields, files] = await form.parse(req);
+
+        judgeName = Array.isArray(fields.judgeName) ? fields.judgeName[0] : fields.judgeName;
+        judgeBio = Array.isArray(fields.judgeBio) ? fields.judgeBio[0] : fields.judgeBio;
+
+        if (files.photo) {
+          const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
+
+          const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+          if (!ALLOWED_IMAGE_FORMATS.includes(photoFile.mimetype?.toLowerCase() || '')) {
+            return res.status(400).json({ message: "Invalid image format. Allowed: JPEG, PNG, WebP" });
+          }
+
+          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+          if (!privateObjectDir) {
+            return res.status(500).json({ message: "Object storage not configured" });
+          }
+
+          // Determine file extension
+          const extMap: { [key: string]: string } = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/webp': 'webp',
+          };
+          const ext = extMap[photoFile.mimetype?.toLowerCase() || ''] || 'jpg';
+
+          const photoId = randomUUID();
+          const photoPath = `${privateObjectDir}/judge-photos/${photoId}.${ext}`;
+          const { bucketName, objectName } = parseObjectPath(photoPath);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const photoFileObj = bucket.file(objectName);
+
+          await new Promise((resolve, reject) => {
+            const readStream = createReadStream(photoFile.filepath);
+            const writeStream = photoFileObj.createWriteStream({
+              metadata: {
+                contentType: photoFile.mimetype || 'image/jpeg',
+                cacheControl: 'private, max-age=3600',
+              },
+            });
+
+            readStream.on('error', (error: Error) => {
+              console.error("Error reading photo file:", error);
+              reject(new Error('Failed to read photo file'));
+            });
+
+            writeStream.on('error', (error: Error) => {
+              console.error("Error writing photo to storage:", error);
+              reject(new Error('Failed to upload photo to storage'));
+            });
+
+            writeStream.on('finish', () => {
+              resolve(undefined);
+            });
+
+            readStream.pipe(writeStream);
+          });
+
+          // Clean up temp file
+          try {
+            await fs.unlink(photoFile.filepath);
+          } catch (unlinkError) {
+            console.error("Error cleaning up temp file:", unlinkError);
+          }
+
+          judgePhotoUrl = photoPath;
+        }
+      }
+
       // Update judge profile
+      const updateData: any = {
+        judgeName: judgeName || null,
+        judgeBio: judgeBio || null,
+      };
+
+      if (judgePhotoUrl) {
+        updateData.judgePhotoUrl = judgePhotoUrl;
+      }
+
       await db.update(schema.users)
-        .set({
-          judgeName: judgeName || null,
-          judgeBio: judgeBio || null,
-        })
+        .set(updateData)
         .where(eq(schema.users.id, judgeId));
 
       res.json({ message: "Judge profile updated successfully" });

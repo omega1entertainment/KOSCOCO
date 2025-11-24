@@ -357,6 +357,9 @@ function AdminDashboardContent() {
   const [judgeToEdit, setJudgeToEdit] = useState<JudgeProfile | null>(null);
   const [editJudgeName, setEditJudgeName] = useState("");
   const [editJudgeBio, setEditJudgeBio] = useState("");
+  const [editJudgePhotoFile, setEditJudgePhotoFile] = useState<File | null>(null);
+  const [editJudgePhotoPreview, setEditJudgePhotoPreview] = useState<string | null>(null);
+  const editJudgePhotoInputRef = useRef<HTMLInputElement>(null);
 
   // User delete dialog state
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
@@ -1018,10 +1021,26 @@ function AdminDashboardContent() {
   const updateJudgeMutation = useMutation({
     mutationFn: async () => {
       if (!judgeToEdit) throw new Error("No judge selected");
-      return await apiRequest(`/api/admin/judges/${judgeToEdit.id}/profile`, "PATCH", {
-        judgeName: editJudgeName,
-        judgeBio: editJudgeBio,
+      
+      const formData = new FormData();
+      formData.append("judgeName", editJudgeName);
+      formData.append("judgeBio", editJudgeBio);
+      if (editJudgePhotoFile) {
+        formData.append("photo", editJudgePhotoFile);
+      }
+
+      const response = await fetch(`/api/admin/judges/${judgeToEdit.id}/profile`, {
+        method: "PATCH",
+        credentials: "include",
+        body: formData,
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update judge profile");
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -1031,6 +1050,8 @@ function AdminDashboardContent() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/judges"] });
       setEditJudgeDialogOpen(false);
       setJudgeToEdit(null);
+      setEditJudgePhotoFile(null);
+      setEditJudgePhotoPreview(null);
     },
     onError: (error: Error) => {
       toast({
@@ -4535,6 +4556,48 @@ function AdminDashboardContent() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Profile Photo</Label>
+              <div className="flex items-center gap-4">
+                {editJudgePhotoPreview || judgeToEdit?.judgePhotoUrl ? (
+                  <img
+                    src={editJudgePhotoPreview || (judgeToEdit?.judgePhotoUrl?.startsWith('/objects/') ? judgeToEdit.judgePhotoUrl : `/objects/${judgeToEdit?.judgePhotoUrl?.replace(/^\//, '')}`)}
+                    alt="Judge preview"
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editJudgePhotoInputRef.current?.click()}
+                  data-testid="button-upload-judge-photo"
+                >
+                  {editJudgePhotoFile ? "Change Photo" : "Upload Photo"}
+                </Button>
+              </div>
+              <input
+                ref={editJudgePhotoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setEditJudgePhotoFile(file);
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      setEditJudgePhotoPreview(event.target?.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                data-testid="input-edit-judge-photo"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-judge-name">Judge Name</Label>
               <Input
                 id="edit-judge-name"
@@ -4559,7 +4622,11 @@ function AdminDashboardContent() {
           <div className="flex gap-2 justify-end pt-4">
             <Button
               variant="outline"
-              onClick={() => setEditJudgeDialogOpen(false)}
+              onClick={() => {
+                setEditJudgeDialogOpen(false);
+                setEditJudgePhotoFile(null);
+                setEditJudgePhotoPreview(null);
+              }}
               data-testid="button-cancel-edit"
             >
               Cancel
