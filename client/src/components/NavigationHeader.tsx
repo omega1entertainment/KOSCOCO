@@ -69,6 +69,7 @@ export default function NavigationHeader({
   
   const affiliateMenuItems = [
     { label: t('nav.joinAffiliate'), path: '/affiliate' },
+    { label: 'Affiliate Login', path: '/affiliate/login' },
     { label: t('nav.affiliateDashboard'), path: '/affiliate/dashboard' },
   ];
   
