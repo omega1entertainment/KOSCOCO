@@ -194,17 +194,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin: Update phase (only allows updating description and name, not status)
+  // Admin: Update phase (only allows updating description, name, and dates, not status)
   app.put('/api/admin/phases/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, description } = req.body;
+      const { name, description, startDate, endDate } = req.body;
 
-      // Only allow updating name and description
+      // Only allow updating name, description, and dates
       // Status changes must go through activate/complete endpoints
       const updates: any = {};
       if (name !== undefined) updates.name = name;
       if (description !== undefined) updates.description = description;
+      if (startDate !== undefined) updates.startDate = new Date(startDate);
+      if (endDate !== undefined) updates.endDate = new Date(endDate);
 
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ message: "No valid fields to update" });
