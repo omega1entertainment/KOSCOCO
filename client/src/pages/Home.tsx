@@ -44,6 +44,31 @@ export default function Home() {
     queryKey: ['/api/stats/home'],
   });
 
+  // Fetch trending videos - refetch every 5 seconds for real-time updates
+  const { data: trendingVideosData = [] } = useQuery({
+    queryKey: ['trending-videos', apiCategories.map(c => c.id).join(',')],
+    queryFn: async () => {
+      if (apiCategories.length === 0) return [];
+      
+      const allVideos: any[] = [];
+      for (const category of apiCategories) {
+        try {
+          const response = await fetch(`/api/videos/category/${category.id}`);
+          if (response.ok) {
+            const videos = await response.json();
+            allVideos.push(...videos.map((v: any) => ({ ...v, categoryName: category.name })));
+          }
+        } catch (err) {
+          console.error(`Failed to fetch videos for category ${category.id}:`, err);
+        }
+      }
+      return allVideos;
+    },
+    refetchInterval: 5000,
+    staleTime: 0,
+    enabled: apiCategories.length > 0,
+  });
+
   const handleVoteClick = (videoId: string, videoTitle: string) => {
     setSelectedVideo({ id: videoId, title: videoTitle });
     setVoteModalOpen(true);
@@ -73,48 +98,28 @@ export default function Home() {
     entryCount: videoCounts[category.id] || 0,
   }));
 
-  const featuredVideos = [
-    {
-      id: '1',
-      title: t('home.sampleVideo1Title'),
-      thumbnail: musicImage,
-      creator: { name: t('home.sampleVideo1Creator') },
-      category: t('home.categoryMusicDance'),
-      votes: 0,
-      likes: 0,
-      views: 0,
-    },
-    {
-      id: '2',
-      title: t('home.sampleVideo2Title'),
-      thumbnail: comedyImage,
-      creator: { name: t('home.sampleVideo2Creator') },
-      category: t('home.sampleVideo2Category'),
-      votes: 0,
-      likes: 0,
-      views: 0,
-    },
-    {
-      id: '3',
-      title: t('home.sampleVideo3Title'),
-      thumbnail: fashionImage,
-      creator: { name: t('home.sampleVideo3Creator') },
-      category: t('home.categoryFashionLifestyle'),
-      votes: 0,
-      likes: 0,
-      views: 0,
-    },
-    {
-      id: '4',
-      title: t('home.sampleVideo4Title'),
-      thumbnail: educationImage,
-      creator: { name: t('home.sampleVideo4Creator') },
-      category: t('home.sampleVideo4Category'),
-      votes: 0,
-      likes: 0,
-      views: 0,
-    },
-  ];
+  // Build featured videos from real trending data
+  const featuredVideos = trendingVideosData
+    .sort((a, b) => {
+      // Sort by engagement (views + likes + votes)
+      const aScore = (a.views || 0) + (a.likeCount || 0) + (a.voteCount || 0);
+      const bScore = (b.views || 0) + (b.likeCount || 0) + (b.voteCount || 0);
+      return bScore - aScore;
+    })
+    .slice(0, 4)
+    .map((video) => {
+      const categoryName = video.categoryName || 'Music & Dance';
+      return {
+        id: video.id,
+        title: video.title,
+        thumbnail: video.thumbnailUrl || categoryImages[categoryName] || musicImage,
+        creator: { name: 'Creator' },
+        category: categoryName,
+        votes: video.voteCount || 0,
+        likes: video.likeCount || 0,
+        views: video.views || 0,
+      };
+    });
 
   const stats = [
     { icon: Users, label: t('home.statTotalParticipants'), value: String(homeStats?.totalParticipants || 0), trend: undefined },
