@@ -551,11 +551,16 @@ export class DbStorage implements IStorage {
   }
 
   async getVideoOfTheDay(): Promise<VideoWithStats | null> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const daysSinceEpoch = Math.floor(today.getTime() / (1000 * 60 * 60 * 24));
+    // Calculate yesterday's date range
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
     
-    const approvedVideos = await db
+    const endOfYesterday = new Date(yesterday);
+    endOfYesterday.setHours(23, 59, 59, 999);
+    
+    // Query videos with view counts from yesterday's watch history
+    const videosWithYesterdayViews = await db
       .select({
         id: schema.videos.id,
         userId: schema.videos.userId,
@@ -572,6 +577,7 @@ export class DbStorage implements IStorage {
         views: schema.videos.views,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
+        yesterdayViewCount: sql<string>`CAST(COALESCE(COUNT(watch_history.id), 0) AS text)`,
         likeCount: sql<string>`CAST((
           SELECT COALESCE(COUNT(*), 0)
           FROM likes
@@ -588,21 +594,31 @@ export class DbStorage implements IStorage {
         ) AS text)`,
       })
       .from(schema.videos)
+      .leftJoin(
+        schema.watchHistory,
+        and(
+          eq(schema.watchHistory.videoId, schema.videos.id),
+          sql`${schema.watchHistory.watchedAt} >= ${yesterday}`,
+          sql`${schema.watchHistory.watchedAt} <= ${endOfYesterday}`
+        )
+      )
       .where(eq(schema.videos.status, 'approved'))
-      .orderBy(desc(schema.videos.createdAt));
+      .groupBy(schema.videos.id)
+      .orderBy(desc(sql`COUNT(watch_history.id)`));
     
-    if (approvedVideos.length === 0) {
+    if (videosWithYesterdayViews.length === 0) {
       return null;
     }
     
-    const selectedIndex = daysSinceEpoch % approvedVideos.length;
-    const selectedVideo = approvedVideos[selectedIndex];
+    // Select the video with the most views from yesterday
+    const selectedVideo = videosWithYesterdayViews[0];
     
     return {
       ...selectedVideo,
+      yesterdayViewCount: parseInt(selectedVideo.yesterdayViewCount, 10),
       likeCount: parseInt(selectedVideo.likeCount, 10),
       voteCount: parseInt(selectedVideo.voteCount, 10),
-    } as VideoWithStats;
+    } as any as VideoWithStats;
   }
 
   async getCategoryVideoCounts(): Promise<Record<string, number>> {
