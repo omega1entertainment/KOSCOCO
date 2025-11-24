@@ -67,7 +67,7 @@ export default function Advertise() {
                 Login Required
               </CardTitle>
               <CardDescription>
-                You need to be logged in as an Advertiser to access advertising features. If you have an Advertiser account, click on the Login button. If you do not have an Advertiser account, click on the Create Account button.
+                You need to be logged in as an Advertiser to access advertising features
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
