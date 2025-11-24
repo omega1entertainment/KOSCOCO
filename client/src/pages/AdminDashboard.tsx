@@ -897,13 +897,7 @@ function AdminDashboardContent() {
     username: z.string().min(3, t("admin.validation.usernameMinLength")),
     judgeName: z.string().min(1, t("admin.validation.judgeNameRequired")),
     judgeBio: z.string().optional(),
-    judgePhotoUrl: z
-      .string()
-      .refine(
-        (val) => !val || z.string().url().safeParse(val).success,
-        t("admin.validation.validUrl")
-      )
-      .default(""),
+    judgePhotoUrl: z.string().optional().default(""),
   });
 
   const judgeForm = useForm<z.infer<typeof createJudgeSchema>>({
