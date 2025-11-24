@@ -4549,9 +4549,9 @@ function AdminDashboardContent() {
       <Dialog open={editJudgeDialogOpen} onOpenChange={setEditJudgeDialogOpen}>
         <DialogContent data-testid="dialog-edit-judge">
           <DialogHeader>
-            <DialogTitle>{t("admin.judges.editTitle") || "Edit Judge Profile"}</DialogTitle>
+            <DialogTitle>Edit Judge Profile</DialogTitle>
             <DialogDescription>
-              {t("admin.judges.editDescription") || "Update the judge's name and biography"}
+              Update the judge's name, biography, and profile photo
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
