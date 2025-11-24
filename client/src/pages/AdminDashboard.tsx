@@ -2528,7 +2528,7 @@ function AdminDashboardContent() {
                             <div className="flex items-start gap-4">
                               {judge.judgePhotoUrl && (
                                 <img
-                                  src={judge.judgePhotoUrl.startsWith('/objects/') ? judge.judgePhotoUrl : `/objects/${judge.judgePhotoUrl}`}
+                                  src={judge.judgePhotoUrl.startsWith('/objects/') ? judge.judgePhotoUrl : `/objects/${judge.judgePhotoUrl.replace(/^\//, '')}`}
                                   alt={judge.judgeName || judge.email}
                                   className="w-12 h-12 rounded-full object-cover"
                                 />
