@@ -2550,33 +2550,35 @@ function AdminDashboardContent() {
                                   </p>
                                 )}
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setJudgeToEdit(judge);
-                                  setEditJudgeName(judge.judgeName || "");
-                                  setEditJudgeBio(judge.judgeBio || "");
-                                  setEditJudgeDialogOpen(true);
-                                }}
-                                data-testid={`button-edit-judge-${judge.id}`}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                {t("admin.judges.edit") || "Edit"}
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  setJudgeToDelete(judge);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                disabled={deleteJudgeMutation.isPending}
-                                data-testid={`button-delete-judge-${judge.id}`}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                {t("admin.judges.delete")}
-                              </Button>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setJudgeToEdit(judge);
+                                    setEditJudgeName(judge.judgeName || "");
+                                    setEditJudgeBio(judge.judgeBio || "");
+                                    setEditJudgeDialogOpen(true);
+                                  }}
+                                  data-testid={`button-edit-judge-${judge.id}`}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  {t("admin.judges.edit") || "Edit"}
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    setJudgeToDelete(judge);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  disabled={deleteJudgeMutation.isPending}
+                                  data-testid={`button-delete-judge-${judge.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  {t("admin.judges.delete")}
+                                </Button>
+                              </div>
                             </div>
                           </Card>
                         ))}
