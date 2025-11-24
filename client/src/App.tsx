@@ -17,6 +17,7 @@ import Register from "@/pages/Register";
 import Upload from "@/pages/Upload";
 import Dashboard from "@/pages/Dashboard";
 import AffiliateProgram from "@/pages/AffiliateProgram";
+import AffiliateLogin from "@/pages/AffiliateLogin";
 import AffiliateDashboard from "@/pages/AffiliateDashboard";
 import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
@@ -102,6 +103,7 @@ function Router() {
           <Route path="/upload" component={Upload} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/affiliate" component={AffiliateProgram} />
+          <Route path="/affiliate/login" component={AffiliateLogin} />
           <Route path="/affiliate/dashboard" component={AffiliateDashboard} />
           <Route path="/categories" component={Categories} />
           <Route path="/category/:id" component={CategoryVideos} />

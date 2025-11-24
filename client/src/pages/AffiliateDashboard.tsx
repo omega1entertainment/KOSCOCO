@@ -138,7 +138,7 @@ export default function AffiliateDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Button onClick={() => setLocation("/login")} className="w-full" data-testid="button-login">
+            <Button onClick={() => setLocation("/affiliate/login")} className="w-full" data-testid="button-login">
               {t('affiliate.auth.loginButton')}
             </Button>
           </CardContent>

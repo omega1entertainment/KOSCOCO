@@ -143,7 +143,7 @@ export default function NavigationHeader({
                     key={item.label}
                     onClick={() => {
                       if (item.path === '/affiliate/dashboard' && !isAuthenticated) {
-                        setLocation('/login');
+                        setLocation('/affiliate/login');
                       } else {
                         onNavigate?.(item.path);
                       }
@@ -318,7 +318,7 @@ export default function NavigationHeader({
                   className="min-h-11 justify-start w-full"
                   onClick={() => {
                     if (item.path === '/affiliate/dashboard' && !isAuthenticated) {
-                      setLocation('/login');
+                      setLocation('/affiliate/login');
                     } else {
                       onNavigate?.(item.path);
                     }
