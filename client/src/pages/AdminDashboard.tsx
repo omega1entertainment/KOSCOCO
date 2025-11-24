@@ -899,9 +899,11 @@ function AdminDashboardContent() {
     judgeBio: z.string().optional(),
     judgePhotoUrl: z
       .string()
-      .url(t("admin.validation.validUrl"))
-      .optional()
-      .or(z.literal("")),
+      .refine(
+        (val) => !val || z.string().url().safeParse(val).success,
+        t("admin.validation.validUrl")
+      )
+      .default(""),
   });
 
   const judgeForm = useForm<z.infer<typeof createJudgeSchema>>({
@@ -2450,11 +2452,13 @@ function AdminDashboardContent() {
                         <Button
                           type="submit"
                           className="w-full"
-                          disabled={createJudgeMutation.isPending}
+                          disabled={createJudgeMutation.isPending || uploadJudgePhotoMutation.isPending}
                           data-testid="button-create-judge"
                         >
                           {createJudgeMutation.isPending
                             ? t("admin.judges.creating")
+                            : uploadJudgePhotoMutation.isPending
+                            ? t("admin.judges.uploading")
                             : t("admin.judges.createButton")}
                         </Button>
                       </form>
