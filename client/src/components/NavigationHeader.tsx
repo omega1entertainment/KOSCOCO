@@ -141,7 +141,13 @@ export default function NavigationHeader({
                 {affiliateMenuItems.map((item) => (
                   <DropdownMenuItem
                     key={item.label}
-                    onClick={() => onNavigate?.(item.path)}
+                    onClick={() => {
+                      if (item.path === '/affiliate/dashboard' && !isAuthenticated) {
+                        setLocation('/login');
+                      } else {
+                        onNavigate?.(item.path);
+                      }
+                    }}
                     data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     {item.label}
@@ -311,7 +317,11 @@ export default function NavigationHeader({
                   variant="ghost"
                   className="min-h-11 justify-start w-full"
                   onClick={() => {
-                    onNavigate?.(item.path);
+                    if (item.path === '/affiliate/dashboard' && !isAuthenticated) {
+                      setLocation('/login');
+                    } else {
+                      onNavigate?.(item.path);
+                    }
                     setMobileMenuOpen(false);
                   }}
                   data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
