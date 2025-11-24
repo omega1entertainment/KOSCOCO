@@ -58,8 +58,12 @@ export default function NavigationHeader({
   
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
-    { label: t('nav.judges'), path: '/judges' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
+  ];
+
+  const judgeMenuItems = [
+    { label: t('nav.viewJudges'), path: '/judges' },
+    { label: 'Judge Login', path: '/judge/login' },
   ];
   
   const leaderboardMenuItems = [
@@ -102,6 +106,30 @@ export default function NavigationHeader({
                 {item.label}
               </Button>
             ))}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
+                  data-testid="link-judges"
+                >
+                  {t('nav.judges')}
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {judgeMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => onNavigate?.(item.path)}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

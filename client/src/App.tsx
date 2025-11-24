@@ -36,6 +36,7 @@ import VerifyEmail from "@/pages/VerifyEmail";
 import JudgeDashboard from "@/pages/JudgeDashboard";
 import Judges from "@/pages/Judges";
 import JudgeProfile from "@/pages/JudgeProfile";
+import JudgeLogin from "@/pages/JudgeLogin";
 import AdvertiserLogin from "@/pages/AdvertiserLogin";
 import AdvertiserSignup from "@/pages/AdvertiserSignup";
 import AdvertiserTerms from "@/pages/AdvertiserTerms";
@@ -121,6 +122,7 @@ function Router() {
           <Route path="/rules" component={CompetitionRules} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/judge-dashboard" component={JudgeDashboard} />
+          <Route path="/judge/login" component={JudgeLogin} />
           <Route path="/judges" component={Judges} />
           <Route path="/judges/:id" component={JudgeProfile} />
           <Route path="/advertise" component={Advertise} />
