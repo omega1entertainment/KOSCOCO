@@ -23,18 +23,35 @@ import {
 } from "lucide-react";
 import type { Affiliate } from "@shared/schema";
 
-const createAffiliateFormSchema = (t: (key: string) => string) => z.object({
-  firstName: z.string().min(2, t('affiliateProgram.validation.firstNameMin')),
-  lastName: z.string().min(2, t('affiliateProgram.validation.lastNameMin')),
-  email: z.string().email(t('affiliateProgram.validation.invalidEmail')),
-  username: z.string().min(3, t('affiliateProgram.validation.usernameMin')),
-  password: z.string().min(6, t('affiliateProgram.validation.passwordMin')),
-  website: z.string().optional(),
-  promotionMethod: z.string().min(10, t('affiliateProgram.validation.promotionMethodMin')),
-  agreeToTerms: z.boolean().refine(val => val === true, {
-    message: t('affiliateProgram.validation.termsRequired')
-  })
-});
+const createAffiliateFormSchema = (t: (key: string) => string, isAuthenticated: boolean = false) => {
+  const baseSchema = {
+    website: z.string().optional(),
+    promotionMethod: z.string().min(10, t('affiliateProgram.validation.promotionMethodMin')),
+    agreeToTerms: z.boolean().refine(val => val === true, {
+      message: t('affiliateProgram.validation.termsRequired')
+    })
+  };
+
+  if (isAuthenticated) {
+    return z.object({
+      ...baseSchema,
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      email: z.string().optional(),
+      username: z.string().optional(),
+      password: z.string().optional(),
+    });
+  }
+
+  return z.object({
+    ...baseSchema,
+    firstName: z.string().min(2, t('affiliateProgram.validation.firstNameMin')),
+    lastName: z.string().min(2, t('affiliateProgram.validation.lastNameMin')),
+    email: z.string().email(t('affiliateProgram.validation.invalidEmail')),
+    username: z.string().min(3, t('affiliateProgram.validation.usernameMin')),
+    password: z.string().min(6, t('affiliateProgram.validation.passwordMin')),
+  });
+};
 
 type AffiliateFormData = z.infer<ReturnType<typeof createAffiliateFormSchema>>;
 
@@ -44,7 +61,7 @@ export default function AffiliateProgram() {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const affiliateFormSchema = createAffiliateFormSchema(t);
+  const affiliateFormSchema = createAffiliateFormSchema(t, !!user);
 
   const form = useForm<AffiliateFormData>({
     resolver: zodResolver(affiliateFormSchema),
@@ -70,7 +87,11 @@ export default function AffiliateProgram() {
 
   const optInMutation = useMutation({
     mutationFn: async (data: AffiliateFormData) => {
-      return await apiRequest("/api/affiliate/opt-in", "POST", data);
+      // For authenticated users, only send the fields that the backend expects
+      const payload = user 
+        ? { website: data.website, promotionMethod: data.promotionMethod }
+        : data;
+      return await apiRequest("/api/affiliate/opt-in", "POST", payload);
     },
     onSuccess: () => {
       toast({
