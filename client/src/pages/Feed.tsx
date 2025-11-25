@@ -328,8 +328,8 @@ export default function Feed() {
   return (
     <div className="h-screen w-full bg-black flex flex-col">
       {/* Top Navigation Tabs */}
-      <div className="absolute top-0 left-0 right-0 z-50 flex justify-center items-center py-4 px-4 bg-gradient-to-b from-black/80 to-transparent">
-        <div className="flex items-center gap-1 max-w-full overflow-x-auto scrollbar-hide justify-center">
+      <div className="absolute top-0 left-0 right-0 z-50 flex justify-center items-center py-4 px-2 md:px-4 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="flex items-center gap-0 md:gap-1 max-w-full overflow-x-auto scrollbar-hide justify-center">
           <Button
             variant={activeTab === "following" ? "default" : "ghost"}
             size="sm"

@@ -358,4 +358,13 @@
   .ql-editor.ql-blank::before {
     color: #a4b3b3;
   }
+
+  /* Hide scrollbar for all browsers */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 }
