@@ -67,9 +67,13 @@ function ScrollToTop() {
   return null;
 }
 
+const KOZZII_PAGES = ['/feed', '/gift', '/creator/wallet'];
+
 function Router() {
   const { isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  const isKozziiPage = KOZZII_PAGES.some(page => location.startsWith(page));
 
   if (isLoading) {
     return (
@@ -145,7 +149,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      <Footer />
+      {!isKozziiPage && <Footer />}
     </div>
   );
 }
