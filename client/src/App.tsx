@@ -98,8 +98,8 @@ function Router() {
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       <LanguageSelectionModal />
-      <TopBar />
-      <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
+      {!isKozziiPage && <TopBar />}
+      {!isKozziiPage && <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />}
       <main className="flex-1">
         <Switch>
           <Route path="/" component={Home} />
