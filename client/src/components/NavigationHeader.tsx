@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Zap } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation } from "@tanstack/react-query";
@@ -32,6 +32,7 @@ export default function NavigationHeader({
   const [expandedJudges, setExpandedJudges] = useState(false);
   const [expandedLeaderboard, setExpandedLeaderboard] = useState(false);
   const [expandedAffiliate, setExpandedAffiliate] = useState(false);
+  const [expandedKozzii, setExpandedKozzii] = useState(false);
   const [expandedAdvertise, setExpandedAdvertise] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
@@ -63,6 +64,11 @@ export default function NavigationHeader({
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
+  ];
+
+  const kozziiMenuItems = [
+    { label: 'KOZZII Feed', path: '/feed' },
+    { label: 'Creator Wallet', path: '/creator/wallet' },
   ];
 
   const judgeMenuItems = [
@@ -194,6 +200,37 @@ export default function NavigationHeader({
                 <Button
                   variant="ghost"
                   className="min-h-11"
+                  data-testid="link-kozzii"
+                >
+                  <Zap className="w-4 h-4 mr-1" />
+                  KOZZII
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {kozziiMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        setLocation('/login');
+                      } else {
+                        onNavigate?.(item.path);
+                      }
+                    }}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
                   data-testid="link-advertise"
                 >
                   Advertise
@@ -258,6 +295,12 @@ export default function NavigationHeader({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onNavigate?.('/feed')} data-testid="menu-kozzii-feed">
+                      KOZZII Feed
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onNavigate?.('/creator/wallet')} data-testid="menu-creator-wallet">
+                      Creator Wallet
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onNavigate?.('/dashboard')} data-testid="menu-dashboard">
                       {t('nav.dashboard')}
                     </DropdownMenuItem>
@@ -399,6 +442,55 @@ export default function NavigationHeader({
               <Button
                 variant="ghost"
                 className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedKozzii(!expandedKozzii)}
+                data-testid="button-kozzii-submenu"
+              >
+                <span className="text-sm font-semibold flex items-center">
+                  <Zap className="w-4 h-4 mr-2" />
+                  KOZZII
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedKozzii ? 'rotate-180' : ''}`} />
+              </Button>
+              {expandedKozzii && (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 justify-start w-full ml-4"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        setLocation('/login');
+                      } else {
+                        onNavigate?.('/feed');
+                      }
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-link-kozzii-feed"
+                  >
+                    KOZZII Feed
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 justify-start w-full ml-4"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        setLocation('/login');
+                      } else {
+                        onNavigate?.('/creator/wallet');
+                      }
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-link-creator-wallet"
+                  >
+                    Creator Wallet
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <div className="mt-2">
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-between w-full px-4"
                 onClick={() => setExpandedAdvertise(!expandedAdvertise)}
                 data-testid="button-advertise-submenu"
               >
@@ -478,6 +570,30 @@ export default function NavigationHeader({
                     data-testid="mobile-button-upload"
                   >
                     {t('nav.uploadVideo')}
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="min-h-11"
+                    onClick={() => {
+                      setLocation("/feed");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-kozzii-feed"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    KOZZII Feed
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="min-h-11"
+                    onClick={() => {
+                      setLocation("/creator/wallet");
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-button-creator-wallet"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Creator Wallet
                   </Button>
                   <Button 
                     variant="ghost"
