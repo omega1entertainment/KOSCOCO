@@ -334,6 +334,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Exclusive Content Routes
+  app.get('/api/exclusive/:videoId', async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const exclusive = await storage.getExclusiveContent(videoId);
+      if (!exclusive) {
+        return res.status(404).json({ message: "Exclusive content not found" });
+      }
+      res.json(exclusive);
+    } catch (error) {
+      console.error("Error fetching exclusive content:", error);
+      res.status(500).json({ message: "Failed to fetch exclusive content" });
+    }
+  });
+
+  app.get('/api/exclusive/:videoId/access', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const { videoId } = req.params;
+
+      const exclusive = await storage.getExclusiveContent(videoId);
+      if (!exclusive) {
+        return res.json({ hasAccess: true }); // Not exclusive, has access
+      }
+
+      // Check if user is the creator
+      if (exclusive.creatorId === user.id) {
+        return res.json({ hasAccess: true, isCreator: true });
+      }
+
+      // Check if user has purchased
+      const hasPurchased = await storage.hasUserPurchasedExclusive(user.id, exclusive.id);
+      res.json({ 
+        hasAccess: hasPurchased, 
+        price: exclusive.priceUsd,
+        previewDuration: exclusive.previewDuration
+      });
+    } catch (error) {
+      console.error("Error checking exclusive access:", error);
+      res.status(500).json({ message: "Failed to check access" });
+    }
+  });
+
+  app.post('/api/exclusive/:videoId/purchase', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const { videoId } = req.params;
+
+      const exclusive = await storage.getExclusiveContent(videoId);
+      if (!exclusive) {
+        return res.status(404).json({ message: "Exclusive content not found" });
+      }
+
+      // Check if already purchased
+      const hasPurchased = await storage.hasUserPurchasedExclusive(user.id, exclusive.id);
+      if (hasPurchased) {
+        return res.json({ message: "Already purchased", success: true });
+      }
+
+      // Check user wallet balance
+      const userWallet = await storage.getOrCreateUserWallet(user.id);
+      if (userWallet.balance < exclusive.priceUsd) {
+        return res.status(400).json({ 
+          message: "Insufficient balance",
+          required: exclusive.priceUsd,
+          available: userWallet.balance
+        });
+      }
+
+      // Calculate revenue split (65% creator, 35% platform)
+      const creatorShare = Math.round(exclusive.priceUsd * 0.65);
+      const platformShare = exclusive.priceUsd - creatorShare;
+
+      // Generate unique transaction reference
+      const txRef = `EXC-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // Create purchase record
+      const purchase = await storage.createExclusivePurchase({
+        exclusiveContentId: exclusive.id,
+        buyerId: user.id,
+        creatorId: exclusive.creatorId,
+        amountPaidUsd: exclusive.priceUsd,
+        amountPaidLocal: exclusive.priceUsd * 600, // Approximate XAF conversion
+        creatorShare,
+        platformShare,
+        currency: 'XAF',
+        txRef,
+        status: 'completed',
+      });
+
+      // Deduct from user wallet
+      await storage.updateUserWalletBalance(user.id, -exclusive.priceUsd, 'exclusive_purchase', `Purchased exclusive content`);
+
+      // Add to creator wallet
+      await storage.addToCreatorWallet(exclusive.creatorId, creatorShare, 'exclusive_sale', `Exclusive content purchased by @${user.username}`);
+
+      res.json({ 
+        message: "Purchase successful", 
+        success: true,
+        purchase
+      });
+    } catch (error) {
+      console.error("Error purchasing exclusive content:", error);
+      res.status(500).json({ message: "Failed to purchase content" });
+    }
+  });
+
+  // Create exclusive content (for creator)
+  app.post('/api/videos/:videoId/exclusive', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const { videoId } = req.params;
+      const { priceUsd, previewDuration = 5 } = req.body;
+
+      // Validate price range ($0.10 - $50.00)
+      if (priceUsd < 10 || priceUsd > 5000) {
+        return res.status(400).json({ message: "Price must be between $0.10 and $50.00" });
+      }
+
+      // Check if video belongs to user
+      const video = await storage.getVideoById(videoId);
+      if (!video || video.userId !== user.id) {
+        return res.status(403).json({ message: "You can only make your own videos exclusive" });
+      }
+
+      // Check if already exclusive
+      const existingExclusive = await storage.getExclusiveContent(videoId);
+      if (existingExclusive) {
+        return res.status(400).json({ message: "Video is already exclusive" });
+      }
+
+      // Check if creator can post exclusive content (5000+ followers or red star)
+      const verification = await storage.getOrCreateCreatorVerification(user.id);
+      if (!verification.canPostExclusive && !verification.redStar && verification.followerCount < 5000) {
+        return res.status(403).json({ 
+          message: "You need 5000+ followers or Red Star status to post exclusive content",
+          followerCount: verification.followerCount
+        });
+      }
+
+      const exclusive = await storage.createExclusiveContent({
+        videoId,
+        creatorId: user.id,
+        priceUsd,
+        previewDuration,
+      });
+
+      res.json(exclusive);
+    } catch (error) {
+      console.error("Error creating exclusive content:", error);
+      res.status(500).json({ message: "Failed to create exclusive content" });
+    }
+  });
+
   app.get('/api/feed/competition', async (req, res) => {
     try {
       const competitionSlug = req.query.competition as string || 'koscoco';
@@ -400,6 +554,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching gift catalog:", error);
       res.status(500).json({ message: "Failed to fetch gift catalog" });
+    }
+  });
+
+  // Send gift to video creator
+  app.post('/api/videos/:videoId/gift', isAuthenticated, async (req: any, res) => {
+    try {
+      const sender = req.user as SelectUser;
+      const { videoId } = req.params;
+      const { giftId, quantity = 1 } = req.body;
+
+      if (!giftId) {
+        return res.status(400).json({ message: "Gift ID is required" });
+      }
+
+      // Get the video to find the creator
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      // Get the gift details
+      const gift = await storage.getGiftById(giftId);
+      if (!gift) {
+        return res.status(404).json({ message: "Gift not found" });
+      }
+
+      // Check user wallet balance
+      const userWallet = await storage.getOrCreateUserWallet(sender.id);
+      const totalCost = gift.priceUsd * quantity;
+      
+      if (userWallet.balance < totalCost) {
+        return res.status(400).json({ 
+          message: "Insufficient balance",
+          required: totalCost,
+          available: userWallet.balance
+        });
+      }
+
+      // Calculate revenue split (65% creator, 35% platform)
+      const creatorShare = Math.round(totalCost * 0.65);
+      const platformShare = totalCost - creatorShare;
+
+      // Generate unique transaction reference
+      const txRef = `GIFT-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // Create gift transaction
+      const transaction = await storage.createGiftTransaction({
+        senderId: sender.id,
+        recipientId: video.userId,
+        videoId,
+        giftId,
+        quantity,
+        amountPaidUsd: totalCost,
+        amountPaidLocal: totalCost * 600, // Approximate XAF conversion
+        creatorShare,
+        platformShare,
+        currency: 'XAF',
+        txRef,
+        status: 'completed',
+      });
+
+      // Deduct from user wallet
+      await storage.updateUserWalletBalance(sender.id, -totalCost, 'gift_purchase', `Sent ${quantity}x ${gift.name}`);
+
+      // Add to creator wallet
+      await storage.addToCreatorWallet(video.userId, creatorShare, 'gift_received', `Received ${quantity}x ${gift.name} from @${sender.username}`);
+
+      res.json({
+        message: "Gift sent successfully",
+        transaction,
+        giftName: gift.name,
+        quantity,
+        totalCost,
+        creatorShare,
+      });
+    } catch (error) {
+      console.error("Error sending gift:", error);
+      res.status(500).json({ message: "Failed to send gift" });
     }
   });
 

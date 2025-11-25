@@ -53,6 +53,8 @@ import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
 import Feed from "@/pages/Feed";
+import GiftPage from "@/pages/GiftPage";
+import CreatorWallet from "@/pages/CreatorWallet";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -136,8 +138,10 @@ function Router() {
           <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
+          <Route path="/creator/wallet" component={CreatorWallet} />
           <Route path="/edit-profile" component={EditProfile} />
           <Route path="/feed" component={Feed} />
+          <Route path="/gift/:videoId" component={GiftPage} />
           <Route component={NotFound} />
         </Switch>
       </main>

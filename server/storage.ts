@@ -3005,6 +3005,58 @@ export class DbStorage implements IStorage {
       .returning();
     return updated;
   }
+
+  // Update user wallet balance and record transaction
+  async updateUserWalletBalance(
+    userId: string, 
+    amountChange: number, 
+    type: string, 
+    description: string
+  ): Promise<schema.UserWallet> {
+    const wallet = await this.getOrCreateUserWallet(userId);
+    const newBalance = wallet.balance + amountChange;
+    
+    const [updated] = await db.update(schema.userWallets)
+      .set({ 
+        balance: newBalance,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.userWallets.userId, userId))
+      .returning();
+    
+    return updated;
+  }
+
+  // Add earnings to creator wallet
+  async addToCreatorWallet(
+    userId: string, 
+    amount: number, 
+    type: 'gift_received' | 'exclusive_sale' | 'withdrawal' | 'adjustment',
+    description: string
+  ): Promise<schema.CreatorWallet> {
+    const wallet = await this.getOrCreateCreatorWallet(userId);
+    
+    // Update wallet balance
+    const [updated] = await db.update(schema.creatorWallets)
+      .set({
+        availableBalance: wallet.availableBalance + amount,
+        totalEarnings: wallet.totalEarnings + (amount > 0 ? amount : 0),
+        updatedAt: new Date()
+      })
+      .where(eq(schema.creatorWallets.userId, userId))
+      .returning();
+
+    // Record transaction
+    await db.insert(schema.walletTransactions).values({
+      walletId: wallet.id,
+      type,
+      amount,
+      description,
+      balanceAfter: updated.availableBalance,
+    });
+
+    return updated;
+  }
 }
 
 export const storage = new DbStorage();

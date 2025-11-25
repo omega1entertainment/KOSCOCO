@@ -25,6 +25,8 @@ import {
   Trophy,
   Star,
   BadgeCheck,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import type { VideoFeedItem, Competition, Category } from "@shared/schema";
 import {
@@ -52,6 +54,8 @@ export default function Feed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
+  const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(new Set());
+  const [previewEnded, setPreviewEnded] = useState<Set<string>>(new Set());
 
   // Fetch feed videos based on active tab
   const { data: videos = [], isLoading } = useQuery<VideoFeedItem[]>({
@@ -116,6 +120,53 @@ export default function Feed() {
       queryClient.invalidateQueries({ queryKey: queryKeys.feed.byTab(activeTab, selectedCompetition, selectedCategory) });
     },
   });
+
+  // Purchase exclusive content mutation
+  const purchaseMutation = useMutation({
+    mutationFn: async (videoId: string) => {
+      const response = await apiRequest(`/api/exclusive/${videoId}/purchase`, "POST");
+      return response.json();
+    },
+    onSuccess: (_, videoId) => {
+      setPurchasedVideos(prev => new Set([...prev, videoId]));
+      setPreviewEnded(prev => {
+        const next = new Set(prev);
+        next.delete(videoId);
+        return next;
+      });
+      toast({
+        title: "Purchase successful!",
+        description: "You now have full access to this exclusive content.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Purchase failed",
+        description: error.message || "Please try again or top up your wallet",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle exclusive content preview timer
+  const handleVideoTimeUpdate = useCallback((video: VideoFeedItem, currentTime: number) => {
+    if (video.isExclusive && !purchasedVideos.has(video.id) && currentTime >= 5) {
+      setPreviewEnded(prev => new Set([...prev, video.id]));
+      const videoEl = videoRefs.current.get(videos.findIndex(v => v.id === video.id));
+      if (videoEl) {
+        videoEl.pause();
+        videoEl.currentTime = 5;
+      }
+    }
+  }, [purchasedVideos, videos]);
+
+  const handlePurchase = (video: VideoFeedItem) => {
+    if (!user) {
+      login();
+      return;
+    }
+    purchaseMutation.mutate(video.id);
+  };
 
   // Handle vertical swipe navigation
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -417,15 +468,59 @@ export default function Feed() {
                 }}
                 src={getMediaUrl(video.videoUrl)}
                 className="h-full w-full object-contain"
-                loop
+                loop={!video.isExclusive || purchasedVideos.has(video.id)}
                 playsInline
                 muted={isMuted}
                 onClick={() => setIsPlaying(!isPlaying)}
+                onTimeUpdate={(e) => handleVideoTimeUpdate(video, e.currentTarget.currentTime)}
                 data-testid={`video-player-${video.id}`}
               />
 
+              {/* Exclusive Badge */}
+              {video.isExclusive && (
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-yellow-500/90 text-black font-semibold">
+                    {purchasedVideos.has(video.id) ? (
+                      <><Unlock className="w-3 h-3 mr-1" /> Unlocked</>
+                    ) : (
+                      <><Lock className="w-3 h-3 mr-1" /> Exclusive ${((video.exclusivePrice || 0) / 100).toFixed(2)}</>
+                    )}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Exclusive Content Paywall Overlay */}
+              {video.isExclusive && !purchasedVideos.has(video.id) && previewEnded.has(video.id) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-md" data-testid={`paywall-${video.id}`}>
+                  <div className="text-center px-6 max-w-sm">
+                    <div className="w-20 h-20 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-4">
+                      <Lock className="w-10 h-10 text-yellow-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Exclusive Content</h3>
+                    <p className="text-gray-300 mb-4">
+                      Your 5-second preview has ended. Unlock full access to this exclusive video.
+                    </p>
+                    <div className="text-3xl font-bold text-yellow-400 mb-4">
+                      ${((video.exclusivePrice || 0) / 100).toFixed(2)}
+                    </div>
+                    <Button
+                      size="lg"
+                      className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold w-full"
+                      onClick={() => handlePurchase(video)}
+                      disabled={purchaseMutation.isPending}
+                      data-testid={`button-purchase-${video.id}`}
+                    >
+                      {purchaseMutation.isPending ? "Processing..." : "Unlock Now"}
+                    </Button>
+                    <p className="text-xs text-gray-400 mt-3">
+                      65% goes directly to the creator
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Play/Pause Overlay */}
-              {!isPlaying && currentIndex === index && (
+              {!isPlaying && currentIndex === index && !previewEnded.has(video.id) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <div className="w-20 h-20 rounded-full bg-white/30 flex items-center justify-center">
                     <Play className="w-10 h-10 text-white ml-1" />
