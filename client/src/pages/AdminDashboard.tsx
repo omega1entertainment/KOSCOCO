@@ -76,6 +76,7 @@ import type {
   CmsContent,
 } from "@shared/schema";
 import { Plus, Settings } from "lucide-react";
+import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
 import {
   Select,
   SelectContent,
@@ -4677,38 +4678,20 @@ function AdminDashboardContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete User Confirmation Dialog */}
-      <AlertDialog open={deleteUserDialogOpen} onOpenChange={setDeleteUserDialogOpen}>
-        <AlertDialogContent data-testid="dialog-delete-user">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete the account for{" "}
-              <strong>
-                {userToDelete?.firstName} {userToDelete?.lastName}
-              </strong>
-              ? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete-user">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (userToDelete) {
-                  deleteUserMutation.mutate(userToDelete.id);
-                }
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteUserMutation.isPending}
-              data-testid="button-confirm-delete-user"
-            >
-              {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete User Dialog with Data Selection */}
+      {userToDelete && (
+        <DeleteAccountDialog
+          open={deleteUserDialogOpen}
+          onOpenChange={setDeleteUserDialogOpen}
+          userId={userToDelete.id}
+          userName={`${userToDelete.firstName} ${userToDelete.lastName}`}
+          isAdmin={true}
+          onSuccess={() => {
+            setUserToDelete(null);
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+          }}
+        />
+      )}
 
       {/* Delete Advertiser Confirmation Dialog */}
       <AlertDialog open={deleteAdvertiserDialogOpen} onOpenChange={setDeleteAdvertiserDialogOpen}>

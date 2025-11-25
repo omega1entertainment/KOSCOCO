@@ -3653,6 +3653,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user data counts for deletion dialog
+  app.get('/api/users/:id/data-counts', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user as SelectUser;
+
+      // Users can only get their own counts, admins can get anyone's
+      if (!currentUser.isAdmin && currentUser.id !== id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const counts = await Promise.all([
+        db.select({ count: sql`count(*)` }).from(schema.videos).where(eq(schema.videos.userId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.votes).where(eq(schema.votes.userId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.likes).where(eq(schema.likes.userId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.watchHistory).where(eq(schema.watchHistory.userId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.votePurchases).where(eq(schema.votePurchases.userId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.registrations).where(eq(schema.registrations.userId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.reports).where(sql`${schema.reports.reportedBy} = ${id} OR ${schema.reports.reviewedBy} = ${id}`),
+        db.select({ count: sql`count(*)` }).from(schema.judgeScores).where(eq(schema.judgeScores.judgeId, id)),
+        db.select({ count: sql`count(*)` }).from(schema.affiliates).where(eq(schema.affiliates.userId, id)),
+      ]);
+
+      res.json({
+        videos: Number(counts[0][0].count) || 0,
+        votes: Number(counts[1][0].count) || 0,
+        likes: Number(counts[2][0].count) || 0,
+        watchHistory: Number(counts[3][0].count) || 0,
+        votePurchases: Number(counts[4][0].count) || 0,
+        registrations: Number(counts[5][0].count) || 0,
+        reports: Number(counts[6][0].count) || 0,
+        judges: Number(counts[7][0].count) || 0,
+        affiliates: Number(counts[8][0].count) || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching user data counts:", error);
+      res.status(500).json({ message: "Failed to fetch data counts" });
+    }
+  });
+
   // Admin: Activate user
   app.post('/api/admin/users/:id/activate', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
@@ -3683,56 +3723,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const currentUser = req.user as SelectUser;
+      const { selectedItems = [] } = req.body || {};
 
       // Prevent self-deletion
       if (currentUser.id === id) {
         return res.status(403).json({ message: "You cannot delete your own account" });
       }
 
-      // Delete all related records in cascade order using raw SQL
-      // Delete paid votes (using subquery to join with vote_purchases)
-      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
-      
-      // Delete vote purchases
-      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
-      
-      // Delete watch history
-      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
-      
-      // Delete ad impressions
-      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
-      
-      // Delete ad clicks
-      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${id}`);
-      
-      // Delete likes
-      await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
-      
-      // Delete votes
-      await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
-      
-      // Delete judge scores (if user is a judge)
-      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
-      
-      // Delete reports where user created or reviewed them
-      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
-      
-      // Delete videos
-      await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
-      
-      // Delete registrations
-      await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
-      
-      // Delete payout requests (where affiliate belongs to user)
-      await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
-      
-      // Delete referrals (where affiliate belongs to user)
-      await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
-      
-      // Delete affiliate records
-      await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
-      
-      // Delete the user
+      // Always delete the user account itself
+      // Selectively delete data based on selectedItems
+
+      // Delete selected data in cascade order
+      if (selectedItems.includes('votePurchases')) {
+        await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
+        await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
+      }
+
+      if (selectedItems.includes('watchHistory')) {
+        await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
+      }
+
+      if (selectedItems.includes('likes')) {
+        await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
+      }
+
+      if (selectedItems.includes('votes')) {
+        await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
+      }
+
+      if (selectedItems.includes('judges')) {
+        await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
+      }
+
+      if (selectedItems.includes('reports')) {
+        await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
+      }
+
+      if (selectedItems.includes('videos')) {
+        await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
+      }
+
+      if (selectedItems.includes('registrations')) {
+        await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
+      }
+
+      if (selectedItems.includes('affiliates')) {
+        await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+        await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+        await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
+      }
+
+      // Always delete the user
       await storage.deleteUser(id);
 
       res.json({ message: "User deleted successfully" });
@@ -3747,51 +3788,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const currentUser = req.user as SelectUser;
       const userId = currentUser.id;
+      const { selectedItems = [] } = req.body || {};
 
-      // Delete all related records in cascade order
-      // Delete paid votes (using subquery to join with vote_purchases)
-      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${userId})`);
-      
-      // Delete vote purchases
-      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
-      
-      // Delete watch history
-      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${userId}`);
-      
-      // Delete ad impressions
-      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${userId}`);
-      
-      // Delete ad clicks
-      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${userId}`);
-      
-      // Delete likes
-      await db.execute(sql`DELETE FROM likes WHERE user_id = ${userId}`);
-      
-      // Delete votes
-      await db.execute(sql`DELETE FROM votes WHERE user_id = ${userId}`);
-      
-      // Delete judge scores (if user is a judge)
-      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
-      
-      // Delete reports where user created or reviewed them
-      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
-      
-      // Delete videos
-      await db.execute(sql`DELETE FROM videos WHERE user_id = ${userId}`);
-      
-      // Delete registrations
-      await db.execute(sql`DELETE FROM registrations WHERE user_id = ${userId}`);
-      
-      // Delete payout requests (where affiliate belongs to user)
-      await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
-      
-      // Delete referrals (where affiliate belongs to user)
-      await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
-      
-      // Delete affiliate records
-      await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${userId}`);
-      
-      // Delete the user
+      // Selectively delete data based on selectedItems
+      if (selectedItems.includes('votePurchases')) {
+        await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${userId})`);
+        await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('watchHistory')) {
+        await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('likes')) {
+        await db.execute(sql`DELETE FROM likes WHERE user_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('votes')) {
+        await db.execute(sql`DELETE FROM votes WHERE user_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('judges')) {
+        await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('reports')) {
+        await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
+      }
+
+      if (selectedItems.includes('videos')) {
+        await db.execute(sql`DELETE FROM videos WHERE user_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('registrations')) {
+        await db.execute(sql`DELETE FROM registrations WHERE user_id = ${userId}`);
+      }
+
+      if (selectedItems.includes('affiliates')) {
+        await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
+        await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
+        await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${userId}`);
+      }
+
+      // Always delete the user
       await storage.deleteUser(userId);
 
       // Log out the user by clearing their session
