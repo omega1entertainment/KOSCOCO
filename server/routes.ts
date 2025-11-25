@@ -3718,7 +3718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
       
       // Delete videos
-      await db.execute(sql`DELETE FROM videos WHERE creator_id = ${id}`);
+      await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
       
       // Delete registrations
       await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
@@ -3777,7 +3777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
       
       // Delete videos
-      await db.execute(sql`DELETE FROM videos WHERE creator_id = ${userId}`);
+      await db.execute(sql`DELETE FROM videos WHERE user_id = ${userId}`);
       
       // Delete registrations
       await db.execute(sql`DELETE FROM registrations WHERE user_id = ${userId}`);
