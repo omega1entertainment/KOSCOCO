@@ -3836,30 +3836,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = currentUser.id;
       const { selectedItems = [] } = req.body || {};
 
-      // Selectively delete data based on selectedItems
-      if (selectedItems.includes('votePurchases')) {
-        await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${userId})`);
-        await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
-      }
+      // ALWAYS delete data with foreign key constraints to users (regardless of selectedItems)
+      // This must happen before deleting the user
+      
+      // Delete ad impressions and clicks (depends on user)
+      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${userId}`);
+      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${userId}`);
+      
+      // Delete poll responses (depends on user)
+      await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${userId}`);
+      
+      // Delete likes (depends on user)
+      await db.execute(sql`DELETE FROM likes WHERE user_id = ${userId}`);
+      
+      // Delete votes (depends on user)
+      await db.execute(sql`DELETE FROM votes WHERE user_id = ${userId}`);
+      
+      // Delete watch history (depends on user)
+      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${userId}`);
+      
+      // Delete judge scores (depends on user as judge)
+      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
+      
+      // Delete reports (depends on user as reported_by or reviewed_by)
+      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
+      
+      // Delete paid votes and vote purchases (depends on user)
+      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${userId})`);
+      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
 
-      if (selectedItems.includes('watchHistory')) {
-        await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('likes')) {
-        await db.execute(sql`DELETE FROM likes WHERE user_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('votes')) {
-        await db.execute(sql`DELETE FROM votes WHERE user_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('judges')) {
-        await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('reports')) {
-        await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
+      // NOW handle optional selective deletions based on selectedItems
+      
+      // Delete polls created by user (depends on user as creator)
+      if (selectedItems.includes('videos')) {
+        await db.execute(sql`DELETE FROM polls WHERE creator_id = ${userId}`);
       }
 
       if (selectedItems.includes('videos')) {
