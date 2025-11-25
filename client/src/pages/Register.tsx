@@ -39,12 +39,21 @@ export default function Register() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
+    
     if (ref) {
       setReferralCode(ref);
+      // Store in sessionStorage to preserve across login redirects
+      sessionStorage.setItem('affiliateReferralCode', ref);
       toast({
         title: "Referral Code Applied",
         description: `You're registering with referral code: ${ref}`,
       });
+    } else {
+      // Check if referral code was stored from a previous login redirect
+      const storedRef = sessionStorage.getItem('affiliateReferralCode');
+      if (storedRef) {
+        setReferralCode(storedRef);
+      }
     }
   }, [toast]);
 
@@ -146,6 +155,9 @@ export default function Register() {
       const paymentAmount = data.totalAmount || data.totalFee || 0;
       const registration = data.registration;
       
+      // Clear stored referral code after successful registration
+      sessionStorage.removeItem('affiliateReferralCode');
+      
       setPaymentData({
         registrationId: registration.id,
         amount: paymentAmount,
@@ -196,6 +208,14 @@ export default function Register() {
   }
 
   if (!user) {
+    const handleLoginClick = () => {
+      // Preserve referral code before login redirect
+      if (referralCode) {
+        sessionStorage.setItem('affiliateReferralCode', referralCode);
+      }
+      login();
+    };
+
     return (
       <div className="flex items-center justify-center min-h-screen px-4">
         <Card className="max-w-md w-full">
@@ -206,7 +226,7 @@ export default function Register() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Button onClick={login} className="w-full" data-testid="button-login">
+            <Button onClick={handleLoginClick} className="w-full" data-testid="button-login">
               Log In to Continue
             </Button>
           </CardContent>
