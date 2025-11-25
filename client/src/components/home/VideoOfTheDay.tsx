@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Play, Star, ThumbsUp, Trophy } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { createPermalink } from "@/lib/slugUtils";
 import type { VideoWithStats, Category } from "@shared/schema";
 
 export default function VideoOfTheDay() {
@@ -67,7 +68,7 @@ export default function VideoOfTheDay() {
                     <Button
                       size="icon"
                       className="w-16 h-16 rounded-full"
-                      onClick={() => setLocation(`/videos/${video.id}`)}
+                      onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                       data-testid="button-play-video"
                     >
                       <Play className="w-8 h-8 fill-current" />
@@ -119,7 +120,7 @@ export default function VideoOfTheDay() {
 
               <Button
                 className="w-full"
-                onClick={() => setLocation(`/videos/${video.id}`)}
+                onClick={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                 data-testid="button-watch-now"
               >
                 <Play className="w-4 h-4 mr-2" />
