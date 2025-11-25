@@ -636,6 +636,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/videos/upload', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
+      // Increase timeout for file uploads (10 minutes)
+      res.setTimeout(600000);
+      req.setTimeout(600000);
+      
       const form = formidable({
         maxFileSize: 600 * 1024 * 1024, // 600MB (with overhead for 512MB limit)
         maxFieldsSize: 10 * 1024, // 10KB for fields
@@ -829,52 +833,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
-      const objectStorageTempDir = path.join(process.cwd(), '.tmp-object-storage');
-      await fs.mkdir(objectStorageTempDir, { recursive: true });
+      // Generate unique slug to avoid duplicate key errors
+      let slug = generateSlug(title);
+      let slugCounter = 1;
       
-      const tempVideoPath = path.join(objectStorageTempDir, `video-${randomUUID()}.mp4`);
-      
-      let moderationResult;
-      try {
-        const parsedPath = parseObjectPath(videoPath);
-        const [file] = await objectStorageClient
-          .bucket(parsedPath.bucketName)
-          .file(parsedPath.objectName)
-          .download();
+      // Check if slug already exists and make it unique
+      while (true) {
+        const existingWithSlug = await db
+          .select()
+          .from(schema.videos)
+          .where(eq(schema.videos.slug, slug))
+          .limit(1);
         
-        await fs.writeFile(tempVideoPath, file);
-
-        moderationResult = await moderateVideo(tempVideoPath, title, description);
-      } catch (moderationError) {
-        console.error('Moderation error:', moderationError);
-        moderationResult = { flagged: false, categories: [], reason: undefined };
-      } finally {
-        try {
-          await fs.unlink(tempVideoPath);
-        } catch (cleanupError) {
-          console.error('Error cleaning up temp video:', cleanupError);
+        if (existingWithSlug.length === 0) {
+          break; // Slug is unique
         }
+        
+        slug = generateSlug(title, slugCounter.toString());
+        slugCounter++;
       }
 
+      // Create video with pending moderation status
       const video = await storage.createVideo({
         userId,
         categoryId,
         subcategory,
         title,
-        slug: generateSlug(title),
+        slug,
         description: description || null,
         videoUrl: videoPath,
         thumbnailUrl: thumbnailPath,
         duration,
         fileSize,
         status: 'approved',
-        moderationStatus: 'approved',
-        moderationCategories: moderationResult.categories.length > 0 ? moderationResult.categories : null,
-        moderationReason: moderationResult.reason || null,
-        moderatedAt: new Date(),
+        moderationStatus: 'pending',
+        moderationCategories: null,
+        moderationReason: null,
+        moderatedAt: null,
       });
 
       res.json(video);
+      
+      // Run moderation in background (don't block response)
+      setImmediate(async () => {
+        try {
+          const objectStorageTempDir = path.join(process.cwd(), '.tmp-object-storage');
+          await fs.mkdir(objectStorageTempDir, { recursive: true });
+          
+          const tempVideoPath = path.join(objectStorageTempDir, `video-${randomUUID()}.mp4`);
+          
+          try {
+            const parsedPath = parseObjectPath(videoPath);
+            const [file] = await objectStorageClient
+              .bucket(parsedPath.bucketName)
+              .file(parsedPath.objectName)
+              .download();
+            
+            await fs.writeFile(tempVideoPath, file);
+            const moderationResult = await moderateVideo(tempVideoPath, title, description);
+            
+            // Update video with moderation results
+            await db.update(schema.videos)
+              .set({
+                moderationStatus: moderationResult.flagged ? 'flagged' : 'approved',
+                moderationCategories: moderationResult.categories.length > 0 ? moderationResult.categories : null,
+                moderationReason: moderationResult.reason || null,
+                moderatedAt: new Date(),
+              })
+              .where(eq(schema.videos.id, video.id));
+          } catch (moderationError) {
+            console.error('Background moderation error:', moderationError);
+            // Update to approved anyway after error
+            await db.update(schema.videos)
+              .set({
+                moderationStatus: 'approved',
+                moderatedAt: new Date(),
+              })
+              .where(eq(schema.videos.id, video.id));
+          } finally {
+            try {
+              await fs.unlink(tempVideoPath);
+            } catch (cleanupError) {
+              console.error('Error cleaning up temp video:', cleanupError);
+            }
+          }
+        } catch (bgError) {
+          console.error('Background moderation process error:', bgError);
+        }
+      });
     } catch (error) {
       console.error("Error creating video:", error);
       res.status(500).json({ message: "Failed to create video" });

@@ -1,11 +1,17 @@
-export function generateSlug(title: string): string {
-  return title
+export function generateSlug(title: string, uniqueSuffix?: string): string {
+  const baseSlug = title
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .slice(0, 50);
+    .slice(0, 45); // Reduced from 50 to make room for suffix
+  
+  if (uniqueSuffix) {
+    return `${baseSlug}-${uniqueSuffix}`;
+  }
+  
+  return baseSlug;
 }
 
 export function createPermalink(id: string, title: string): string {
