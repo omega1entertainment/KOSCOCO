@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { Registration, Video, Vote, Category, WatchHistory } from "@shared/schema";
 import { createPermalink } from "@/lib/slugUtils";
+import { queryKeys } from "@/lib/queryKeys";
 
 export default function Dashboard() {
   const { t } = useLanguage();
@@ -47,17 +48,17 @@ export default function Dashboard() {
   });
 
   const { data: votes = [], isLoading: votesLoading } = useQuery<Vote[]>({
-    queryKey: ["/api/votes/user"],
+    queryKey: queryKeys.votes.byUser,
     enabled: !!user,
   });
 
   const { data: watchHistory = [], isLoading: watchHistoryLoading } = useQuery<(WatchHistory & { video: Video })[]>({
-    queryKey: ["/api/watch-history/user"],
+    queryKey: queryKeys.watchHistory.creator,
     enabled: !!user,
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: queryKeys.categories.all,
   });
 
   if (authLoading) {

@@ -15,6 +15,7 @@ import { useState } from "react";
 import type { LeaderboardEntry, Category, Phase } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createPermalink } from "@/lib/slugUtils";
+import { queryKeys } from "@/lib/queryKeys";
 
 export default function Leaderboard() {
   const { t } = useLanguage();
@@ -23,11 +24,11 @@ export default function Leaderboard() {
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: queryKeys.categories.all,
   });
 
   const { data: phases = [] } = useQuery<Phase[]>({
-    queryKey: ["/api/phases"],
+    queryKey: queryKeys.phases.all,
   });
 
   const queryParams = new URLSearchParams();

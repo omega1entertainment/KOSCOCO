@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Star, ThumbsUp, Trophy } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createPermalink } from "@/lib/slugUtils";
+import { queryKeys } from "@/lib/queryKeys";
 import type { VideoWithStats, Category } from "@shared/schema";
 
 export default function VideoOfTheDay() {
@@ -13,11 +14,11 @@ export default function VideoOfTheDay() {
   const { t } = useLanguage();
 
   const { data: video, isLoading } = useQuery<VideoWithStats>({
-    queryKey: ["/api/videos/video-of-the-day"],
+    queryKey: queryKeys.videos.videoOfTheDay,
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: queryKeys.categories.all,
   });
 
   if (isLoading) {

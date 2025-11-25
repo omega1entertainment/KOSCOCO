@@ -11,6 +11,7 @@ import VotePaymentModal from "@/components/VotePaymentModal";
 import VideoOfTheDay from "@/components/home/VideoOfTheDay";
 import { Users, Video, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { queryKeys } from "@/lib/queryKeys";
 import type { Category } from "@shared/schema";
 
 import musicImage from "@assets/generated_images/male_vocalist_performing_on_stage.png";
@@ -29,19 +30,19 @@ export default function Home() {
 
   // Fetch real categories from API
   const { data: apiCategories = [] } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+    queryKey: queryKeys.categories.all,
   });
 
   // Fetch video counts for each category - refetch every 5 seconds for real-time updates
   const { data: videoCounts = {} } = useQuery<Record<string, number>>({
-    queryKey: ['/api/categories/video-counts'],
+    queryKey: queryKeys.categories.videoCounts,
     refetchInterval: 5000,
     staleTime: 0,
   });
 
   // Fetch home page stats
   const { data: homeStats } = useQuery<{ totalParticipants: number; videosSubmitted: number; categories: number; totalVotes: number }>({
-    queryKey: ['/api/stats/home'],
+    queryKey: queryKeys.stats.home,
   });
 
   // Fetch trending videos - refetch every 5 seconds for real-time updates
@@ -68,6 +69,9 @@ export default function Home() {
     staleTime: 0,
     enabled: apiCategories.length > 0,
   });
+
+  // When video stats change, invalidate trending videos to refresh
+  // This is handled by queryClient.invalidateQueries in mutations
 
   const handleVoteClick = (videoId: string, videoTitle: string) => {
     setSelectedVideo({ id: videoId, title: videoTitle });
