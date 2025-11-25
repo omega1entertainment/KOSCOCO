@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface VotePaymentModalProps {
   open: boolean;
@@ -123,10 +124,10 @@ export default function VotePaymentModal({
                 setVoteCount(1);
                 
                 // Invalidate all queries related to this video to refresh vote counts
-                queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
-                queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
-                queryClient.invalidateQueries({ queryKey: ["/api/videos/category"] });
-                queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
+                queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.votes.byVideo(videoId) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
+                queryClient.invalidateQueries({ queryKey: queryKeys.stats.home });
               } else {
                 toast({
                   title: "Verification Pending",

@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createPermalink } from "@/lib/slugUtils";
+import { queryKeys } from "@/lib/queryKeys";
 
 export default function CategoryVideos() {
   const { t } = useLanguage();
@@ -20,11 +21,11 @@ export default function CategoryVideos() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
 
   const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: queryKeys.categories.all,
   });
 
   const { data: videos, isLoading: videosLoading } = useQuery<VideoWithStats[]>({
-    queryKey: ["/api/videos/category", categoryId],
+    queryKey: queryKeys.videos.byCategory(categoryId || ""),
     enabled: !!categoryId,
   });
 
@@ -39,9 +40,9 @@ export default function CategoryVideos() {
         title: t("categoryVideos.likedTitle"),
         description: t("categoryVideos.likedDescription"),
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/likes/video", videoId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/videos/category", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/videos", videoId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.likes.byVideo(videoId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byCategory(categoryId || "") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
     },
     onError: (error: Error) => {
       toast({

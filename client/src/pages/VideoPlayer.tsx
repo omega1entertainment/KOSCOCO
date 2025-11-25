@@ -15,6 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { extractIdFromPermalink } from "@/lib/slugUtils";
+import { queryKeys } from "@/lib/queryKeys";
 
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
@@ -38,21 +39,21 @@ export default function VideoPlayer() {
   const autoExitInProgress = useRef(false);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
-    queryKey: [`/api/videos/${videoId}`],
+    queryKey: queryKeys.videos.byId(videoId),
     enabled: !!videoId,
   });
 
   const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+    queryKey: queryKeys.categories.all,
   });
 
   const { data: voteData } = useQuery<{ voteCount: number }>({
-    queryKey: [`/api/votes/video/${videoId}`],
+    queryKey: queryKeys.votes.byVideo(videoId),
     enabled: !!videoId,
   });
 
   const { data: likeData } = useQuery<{ likeCount: number }>({
-    queryKey: [`/api/likes/video/${videoId}`],
+    queryKey: queryKeys.likes.byVideo(videoId),
     enabled: !!videoId,
   });
 
@@ -74,21 +75,21 @@ export default function VideoPlayer() {
     total: number;
     average: number;
   }>({
-    queryKey: [`/api/videos/${videoId}/scores`],
+    queryKey: queryKeys.judgeScores.byVideo(videoId),
     enabled: !!videoId,
   });
 
   const { data: relatedVideos = [] } = useQuery<Video[]>({
-    queryKey: [`/api/videos/category/${video?.categoryId}`],
+    queryKey: queryKeys.videos.byCategory(video?.categoryId || ""),
     enabled: !!video?.categoryId,
   });
 
   const { data: overlayAd } = useQuery<any>({
-    queryKey: ["/api/ads/serve/overlay"],
+    queryKey: queryKeys.ads.overlayServe,
   });
 
   const { data: preRollAd, isLoading: isPreRollAdLoading } = useQuery<any>({
-    queryKey: ["/api/ads/serve/skippable_instream"],
+    queryKey: queryKeys.ads.skippableInStreamServe,
   });
 
   const voteMutation = useMutation({
@@ -102,8 +103,9 @@ export default function VideoPlayer() {
         title: t('videoPlayer.voteSubmitted'),
         description: t('videoPlayer.voteCountedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/votes/video/${videoId}`] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.votes.byVideo(videoId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byCategory(video?.categoryId || "") });
     },
     onError: (error: Error) => {
       toast({
@@ -125,8 +127,9 @@ export default function VideoPlayer() {
         title: t('videoPlayer.liked'),
         description: t('videoPlayer.likedVideoDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/likes/video/${videoId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/videos/${videoId}`] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.likes.byVideo(videoId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byCategory(video?.categoryId || "") });
     },
     onError: (error: Error) => {
       toast({
@@ -144,6 +147,12 @@ export default function VideoPlayer() {
         watchDuration,
         completed,
       });
+    },
+    onSuccess: () => {
+      // Invalidate video data to refresh view counts
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byCategory(video?.categoryId || "") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stats.home });
     },
     onError: (error: Error) => {
       console.error("Failed to record watch history:", error);
