@@ -295,6 +295,324 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // KOZZII PLATFORM ROUTES
+  // ============================================
+
+  // Feed Routes
+  app.get('/api/feed/trending', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const videos = await storage.getTrendingVideos(limit);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching trending videos:", error);
+      res.status(500).json({ message: "Failed to fetch trending videos" });
+    }
+  });
+
+  app.get('/api/feed/following', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const videos = await storage.getFollowingFeedVideos(user.id, limit);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching following feed:", error);
+      res.status(500).json({ message: "Failed to fetch following feed" });
+    }
+  });
+
+  app.get('/api/feed/exclusive', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const videos = await storage.getExclusiveVideos(limit);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching exclusive videos:", error);
+      res.status(500).json({ message: "Failed to fetch exclusive videos" });
+    }
+  });
+
+  app.get('/api/feed/competition', async (req, res) => {
+    try {
+      const competitionSlug = req.query.competition as string || 'koscoco';
+      const categoryId = req.query.category as string | undefined;
+      const phaseId = req.query.phase as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const videos = await storage.getCompetitionVideos(competitionSlug, categoryId, phaseId, limit);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching competition videos:", error);
+      res.status(500).json({ message: "Failed to fetch competition videos" });
+    }
+  });
+
+  // Competition Routes
+  app.get('/api/competitions', async (req, res) => {
+    try {
+      const competitions = await storage.getAllCompetitions();
+      res.json(competitions);
+    } catch (error) {
+      console.error("Error fetching competitions:", error);
+      res.status(500).json({ message: "Failed to fetch competitions" });
+    }
+  });
+
+  app.get('/api/competitions/active', async (req, res) => {
+    try {
+      const competitions = await storage.getActiveCompetitions();
+      res.json(competitions);
+    } catch (error) {
+      console.error("Error fetching active competitions:", error);
+      res.status(500).json({ message: "Failed to fetch active competitions" });
+    }
+  });
+
+  app.get('/api/competitions/:slug', async (req, res) => {
+    try {
+      const competition = await storage.getCompetitionBySlug(req.params.slug);
+      if (!competition) {
+        return res.status(404).json({ message: "Competition not found" });
+      }
+      res.json(competition);
+    } catch (error) {
+      console.error("Error fetching competition:", error);
+      res.status(500).json({ message: "Failed to fetch competition" });
+    }
+  });
+
+  // Gift Routes
+  app.get('/api/gifts', async (req, res) => {
+    try {
+      const gifts = await storage.getAllGifts();
+      res.json(gifts);
+    } catch (error) {
+      console.error("Error fetching gifts:", error);
+      res.status(500).json({ message: "Failed to fetch gifts" });
+    }
+  });
+
+  app.get('/api/gifts/catalog', async (req, res) => {
+    try {
+      const gifts = await storage.getAllGifts();
+      res.json(gifts);
+    } catch (error) {
+      console.error("Error fetching gift catalog:", error);
+      res.status(500).json({ message: "Failed to fetch gift catalog" });
+    }
+  });
+
+  // Follow/Unfollow Routes
+  app.post('/api/users/:userId/follow', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUser = req.user as SelectUser;
+      const targetUserId = req.params.userId;
+
+      if (currentUser.id === targetUserId) {
+        return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+
+      const isAlreadyFollowing = await storage.isFollowing(currentUser.id, targetUserId);
+      if (isAlreadyFollowing) {
+        return res.status(400).json({ message: "Already following this user" });
+      }
+
+      await storage.followUser(currentUser.id, targetUserId);
+      res.json({ message: "Successfully followed user" });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Failed to follow user" });
+    }
+  });
+
+  app.post('/api/users/:userId/unfollow', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUser = req.user as SelectUser;
+      const targetUserId = req.params.userId;
+
+      await storage.unfollowUser(currentUser.id, targetUserId);
+      res.json({ message: "Successfully unfollowed user" });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Failed to unfollow user" });
+    }
+  });
+
+  app.get('/api/users/:userId/followers', async (req, res) => {
+    try {
+      const followers = await storage.getFollowers(req.params.userId);
+      res.json(followers);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      res.status(500).json({ message: "Failed to fetch followers" });
+    }
+  });
+
+  app.get('/api/users/:userId/following', async (req, res) => {
+    try {
+      const following = await storage.getFollowing(req.params.userId);
+      res.json(following);
+    } catch (error) {
+      console.error("Error fetching following:", error);
+      res.status(500).json({ message: "Failed to fetch following" });
+    }
+  });
+
+  // Creator Wallet Routes
+  app.get('/api/creator/wallet', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const wallet = await storage.getOrCreateCreatorWallet(user.id);
+      res.json(wallet);
+    } catch (error) {
+      console.error("Error fetching creator wallet:", error);
+      res.status(500).json({ message: "Failed to fetch wallet" });
+    }
+  });
+
+  app.get('/api/creator/wallet/transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const wallet = await storage.getCreatorWallet(user.id);
+      if (!wallet) {
+        return res.json([]);
+      }
+      const transactions = await storage.getWalletTransactions(wallet.id);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching wallet transactions:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post('/api/creator/wallet/withdraw', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const { amount, paymentMethod, accountDetails } = req.body;
+
+      const wallet = await storage.getCreatorWallet(user.id);
+      if (!wallet) {
+        return res.status(404).json({ message: "Wallet not found" });
+      }
+
+      const availableBalance = wallet.availableBalance;
+      const requestedAmount = parseInt(amount);
+      if (requestedAmount > availableBalance) {
+        return res.status(400).json({ message: "Insufficient balance" });
+      }
+
+      // Minimum withdrawal is 15000 XAF (approximately $25 USD)
+      const MIN_WITHDRAWAL = 15000;
+      if (requestedAmount < MIN_WITHDRAWAL) {
+        return res.status(400).json({ message: `Minimum withdrawal is ${MIN_WITHDRAWAL} XAF (approximately $25)` });
+      }
+
+      const withdrawal = await storage.createCreatorWithdrawal({
+        userId: user.id,
+        walletId: wallet.id,
+        amount: requestedAmount,
+        paymentMethod,
+        accountDetails,
+        status: 'pending',
+      });
+
+      res.json(withdrawal);
+    } catch (error) {
+      console.error("Error creating withdrawal:", error);
+      res.status(500).json({ message: "Failed to create withdrawal" });
+    }
+  });
+
+  app.get('/api/creator/wallet/withdrawals', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const withdrawals = await storage.getCreatorWithdrawals(user.id);
+      res.json(withdrawals);
+    } catch (error) {
+      console.error("Error fetching withdrawals:", error);
+      res.status(500).json({ message: "Failed to fetch withdrawals" });
+    }
+  });
+
+  // Admin: Manage creator withdrawals
+  app.get('/api/admin/withdrawals', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const withdrawals = await storage.getAllCreatorWithdrawals();
+      res.json(withdrawals);
+    } catch (error) {
+      console.error("Error fetching all withdrawals:", error);
+      res.status(500).json({ message: "Failed to fetch withdrawals" });
+    }
+  });
+
+  app.patch('/api/admin/withdrawals/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { status, rejectionReason, transactionRef } = req.body;
+      const admin = req.user as SelectUser;
+
+      const updates: any = { status };
+      if (rejectionReason) updates.rejectionReason = rejectionReason;
+      if (transactionRef) updates.transactionRef = transactionRef;
+      
+      if (status === 'approved' || status === 'rejected') {
+        updates.reviewedAt = new Date();
+        updates.reviewedBy = admin.id;
+      }
+      if (status === 'completed') {
+        updates.processedAt = new Date();
+      }
+
+      const withdrawal = await storage.updateCreatorWithdrawal(req.params.id, updates);
+      if (!withdrawal) {
+        return res.status(404).json({ message: "Withdrawal not found" });
+      }
+
+      // If completed, update the wallet's totalWithdrawn
+      if (status === 'completed') {
+        const wallet = await storage.getCreatorWallet(withdrawal.userId);
+        if (wallet) {
+          const newTotalWithdrawn = wallet.totalWithdrawn + withdrawal.amount;
+          await storage.updateCreatorWallet(withdrawal.userId, {
+            totalWithdrawn: newTotalWithdrawn,
+          });
+        }
+      }
+
+      res.json(withdrawal);
+    } catch (error) {
+      console.error("Error updating withdrawal:", error);
+      res.status(500).json({ message: "Failed to update withdrawal" });
+    }
+  });
+
+  // User Wallet Routes (for buying gifts/exclusive content)
+  app.get('/api/wallet', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const wallet = await storage.getOrCreateUserWallet(user.id);
+      res.json(wallet);
+    } catch (error) {
+      console.error("Error fetching user wallet:", error);
+      res.status(500).json({ message: "Failed to fetch wallet" });
+    }
+  });
+
+  // Creator Verification Routes
+  app.get('/api/creator/verification', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const verification = await storage.getOrCreateCreatorVerification(user.id);
+      res.json(verification);
+    } catch (error) {
+      console.error("Error fetching verification status:", error);
+      res.status(500).json({ message: "Failed to fetch verification status" });
+    }
+  });
+
+  // END KOZZII PLATFORM ROUTES
+  // ============================================
+
   app.post('/api/registrations', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as SelectUser;

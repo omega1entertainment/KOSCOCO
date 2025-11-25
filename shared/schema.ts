@@ -873,3 +873,385 @@ export type PollWithStats = Poll & {
   options: (PollOption & { responseCount: number; percentage: number })[];
   totalResponses: number;
 };
+
+// ============================================
+// KOZZII PLATFORM EXTENSIONS
+// ============================================
+
+// Competitions framework (KOSCOCO becomes one of many competitions)
+export const competitions = pgTable("competitions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(), // KOSCOCO, MY MOM CAN DANCE, TRIBAL DANCE LEAGUE, etc.
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  bannerUrl: text("banner_url"),
+  logoUrl: text("logo_url"),
+  registrationFee: integer("registration_fee").default(0).notNull(), // in local currency
+  status: text("status").notNull().default('upcoming'), // upcoming, active, completed, archived
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  isDefault: boolean("is_default").default(false).notNull(), // for KOSCOCO
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Follows system for Following tab
+export const follows = pgTable("follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  followerId: varchar("follower_id").notNull().references(() => users.id),
+  followingId: varchar("following_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_follow").on(table.followerId, table.followingId),
+  index("idx_follows_follower").on(table.followerId),
+  index("idx_follows_following").on(table.followingId),
+]);
+
+// African-themed gift catalog
+export const gifts = pgTable("gifts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  iconUrl: text("icon_url").notNull(), // African-themed icon
+  priceUsd: integer("price_usd").notNull(), // price in cents (e.g., 100 = $1.00)
+  tier: text("tier").notNull().default('small'), // small, medium, large, luxury
+  animationUrl: text("animation_url"), // animation file URL
+  sortOrder: integer("sort_order").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Gift transactions
+export const giftTransactions = pgTable("gift_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  recipientId: varchar("recipient_id").notNull().references(() => users.id), // content creator
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  giftId: varchar("gift_id").notNull().references(() => gifts.id),
+  quantity: integer("quantity").default(1).notNull(),
+  amountPaidUsd: integer("amount_paid_usd").notNull(), // total amount paid in cents
+  amountPaidLocal: integer("amount_paid_local").notNull(), // amount in local currency
+  creatorShare: integer("creator_share").notNull(), // 65% to creator
+  platformShare: integer("platform_share").notNull(), // 35% to platform
+  currency: text("currency").notNull().default('XAF'),
+  txRef: text("tx_ref").notNull().unique(),
+  flwRef: text("flw_ref").unique(),
+  status: text("status").notNull().default('pending'), // pending, completed, failed, refunded
+  paymentData: jsonb("payment_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_gift_sender").on(table.senderId),
+  index("idx_gift_recipient").on(table.recipientId),
+  index("idx_gift_video").on(table.videoId),
+  index("idx_gift_status").on(table.status),
+]);
+
+// Creator wallets
+export const creatorWallets = pgTable("creator_wallets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  totalEarnings: integer("total_earnings").default(0).notNull(), // lifetime earnings in local currency
+  availableBalance: integer("available_balance").default(0).notNull(), // available for withdrawal
+  pendingBalance: integer("pending_balance").default(0).notNull(), // pending verification
+  totalWithdrawn: integer("total_withdrawn").default(0).notNull(),
+  currency: text("currency").notNull().default('XAF'),
+  lastWithdrawalAt: timestamp("last_withdrawal_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Creator wallet transactions (detailed ledger)
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  walletId: varchar("wallet_id").notNull().references(() => creatorWallets.id),
+  type: text("type").notNull(), // gift_received, withdrawal, bonus, adjustment
+  amount: integer("amount").notNull(), // positive for credit, negative for debit
+  balanceAfter: integer("balance_after").notNull(),
+  description: text("description"),
+  referenceId: varchar("reference_id"), // gift transaction id, withdrawal id, etc.
+  referenceType: text("reference_type"), // gift_transaction, withdrawal_request
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_wallet_transactions_wallet").on(table.walletId),
+  index("idx_wallet_transactions_type").on(table.type),
+]);
+
+// Creator withdrawal requests
+export const creatorWithdrawals = pgTable("creator_withdrawals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  walletId: varchar("wallet_id").notNull().references(() => creatorWallets.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull().default('XAF'),
+  paymentMethod: text("payment_method").notNull(), // bank_transfer, mobile_money, etc.
+  accountDetails: jsonb("account_details").notNull(), // bank account or mobile money details
+  status: text("status").notNull().default('pending'), // pending, approved, processing, completed, rejected
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  processedAt: timestamp("processed_at"),
+  rejectionReason: text("rejection_reason"),
+  transactionRef: text("transaction_ref"), // external payment reference
+}, (table) => [
+  index("idx_creator_withdrawals_wallet").on(table.walletId),
+  index("idx_creator_withdrawals_status").on(table.status),
+]);
+
+// Creator verification badges
+export const creatorVerification = pgTable("creator_verification", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  blueTick: boolean("blue_tick").default(false).notNull(), // identity verification
+  redStar: boolean("red_star").default(false).notNull(), // celebrity/milestone status
+  blueTickVerifiedAt: timestamp("blue_tick_verified_at"),
+  redStarGrantedAt: timestamp("red_star_granted_at"),
+  followerCount: integer("follower_count").default(0).notNull(),
+  canPostExclusive: boolean("can_post_exclusive").default(false).notNull(), // requires 5000+ followers or red star
+  canGoLivePaid: boolean("can_go_live_paid").default(false).notNull(), // requires 500+ followers and blue tick
+  verificationDocuments: jsonb("verification_documents"), // uploaded ID documents
+  verificationStatus: text("verification_status").default('none'), // none, pending, verified, rejected
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Exclusive/Paid content
+export const exclusiveContent = pgTable("exclusive_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().unique().references(() => videos.id),
+  creatorId: varchar("creator_id").notNull().references(() => users.id),
+  priceUsd: integer("price_usd").notNull(), // price in cents (10-5000 cents = $0.10-$50.00)
+  previewDuration: integer("preview_duration").default(5).notNull(), // seconds of free preview
+  totalPurchases: integer("total_purchases").default(0).notNull(),
+  totalRevenue: integer("total_revenue").default(0).notNull(), // in local currency
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_exclusive_creator").on(table.creatorId),
+]);
+
+// Exclusive content purchases
+export const exclusivePurchases = pgTable("exclusive_purchases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  exclusiveContentId: varchar("exclusive_content_id").notNull().references(() => exclusiveContent.id),
+  buyerId: varchar("buyer_id").notNull().references(() => users.id),
+  creatorId: varchar("creator_id").notNull().references(() => users.id),
+  amountPaidUsd: integer("amount_paid_usd").notNull(),
+  amountPaidLocal: integer("amount_paid_local").notNull(),
+  creatorShare: integer("creator_share").notNull(), // 65%
+  platformShare: integer("platform_share").notNull(), // 35%
+  currency: text("currency").notNull().default('XAF'),
+  txRef: text("tx_ref").notNull().unique(),
+  flwRef: text("flw_ref").unique(),
+  status: text("status").notNull().default('pending'),
+  paymentData: jsonb("payment_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_exclusive_purchase").on(table.exclusiveContentId, table.buyerId),
+  index("idx_exclusive_purchases_buyer").on(table.buyerId),
+]);
+
+// User wallet for purchasing gifts/exclusive content
+export const userWallets = pgTable("user_wallets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id),
+  balance: integer("balance").default(0).notNull(), // in local currency
+  totalDeposited: integer("total_deposited").default(0).notNull(),
+  totalSpent: integer("total_spent").default(0).notNull(),
+  currency: text("currency").notNull().default('XAF'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User wallet deposits
+export const walletDeposits = pgTable("wallet_deposits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  walletId: varchar("wallet_id").notNull().references(() => userWallets.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  amountUsd: integer("amount_usd").notNull(), // in cents
+  amountLocal: integer("amount_local").notNull(),
+  currency: text("currency").notNull().default('XAF'),
+  txRef: text("tx_ref").notNull().unique(),
+  flwRef: text("flw_ref").unique(),
+  status: text("status").notNull().default('pending'),
+  paymentData: jsonb("payment_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_wallet_deposits_wallet").on(table.walletId),
+  index("idx_wallet_deposits_status").on(table.status),
+]);
+
+// Platform revenue share configuration (adjustable from backend)
+export const platformConfig = pgTable("platform_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: jsonb("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+});
+
+// Insert schemas for KOZZII tables
+export const insertCompetitionSchema = createInsertSchema(competitions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFollowSchema = createInsertSchema(follows).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGiftSchema = createInsertSchema(gifts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGiftTransactionSchema = createInsertSchema(giftTransactions).omit({
+  id: true,
+  createdAt: true,
+  flwRef: true,
+  paymentData: true,
+});
+
+export const insertCreatorWalletSchema = createInsertSchema(creatorWallets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWalletTransactionSchema = createInsertSchema(walletTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCreatorWithdrawalSchema = createInsertSchema(creatorWithdrawals).omit({
+  id: true,
+  requestedAt: true,
+  reviewedAt: true,
+  reviewedBy: true,
+  processedAt: true,
+});
+
+export const insertCreatorVerificationSchema = createInsertSchema(creatorVerification).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExclusiveContentSchema = createInsertSchema(exclusiveContent).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  totalPurchases: true,
+  totalRevenue: true,
+});
+
+export const insertExclusivePurchaseSchema = createInsertSchema(exclusivePurchases).omit({
+  id: true,
+  createdAt: true,
+  flwRef: true,
+  paymentData: true,
+});
+
+export const insertUserWalletSchema = createInsertSchema(userWallets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWalletDepositSchema = createInsertSchema(walletDeposits).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+  flwRef: true,
+  paymentData: true,
+});
+
+export const insertPlatformConfigSchema = createInsertSchema(platformConfig).omit({
+  id: true,
+  updatedAt: true,
+});
+
+// KOZZII Types
+export type InsertCompetition = z.infer<typeof insertCompetitionSchema>;
+export type Competition = typeof competitions.$inferSelect;
+
+export type InsertFollow = z.infer<typeof insertFollowSchema>;
+export type Follow = typeof follows.$inferSelect;
+
+export type InsertGift = z.infer<typeof insertGiftSchema>;
+export type Gift = typeof gifts.$inferSelect;
+
+export type InsertGiftTransaction = z.infer<typeof insertGiftTransactionSchema>;
+export type GiftTransaction = typeof giftTransactions.$inferSelect;
+
+export type InsertCreatorWallet = z.infer<typeof insertCreatorWalletSchema>;
+export type CreatorWallet = typeof creatorWallets.$inferSelect;
+
+export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
+
+export type InsertCreatorWithdrawal = z.infer<typeof insertCreatorWithdrawalSchema>;
+export type CreatorWithdrawal = typeof creatorWithdrawals.$inferSelect;
+
+export type InsertCreatorVerification = z.infer<typeof insertCreatorVerificationSchema>;
+export type CreatorVerification = typeof creatorVerification.$inferSelect;
+
+export type InsertExclusiveContent = z.infer<typeof insertExclusiveContentSchema>;
+export type ExclusiveContent = typeof exclusiveContent.$inferSelect;
+
+export type InsertExclusivePurchase = z.infer<typeof insertExclusivePurchaseSchema>;
+export type ExclusivePurchase = typeof exclusivePurchases.$inferSelect;
+
+export type InsertUserWallet = z.infer<typeof insertUserWalletSchema>;
+export type UserWallet = typeof userWallets.$inferSelect;
+
+export type InsertWalletDeposit = z.infer<typeof insertWalletDepositSchema>;
+export type WalletDeposit = typeof walletDeposits.$inferSelect;
+
+export type InsertPlatformConfig = z.infer<typeof insertPlatformConfigSchema>;
+export type PlatformConfig = typeof platformConfig.$inferSelect;
+
+// Extended types for KOZZII
+export type GiftWithDetails = Gift & {
+  totalSent: number;
+};
+
+export type CreatorWalletWithStats = CreatorWallet & {
+  pendingWithdrawals: number;
+  recentTransactions: WalletTransaction[];
+};
+
+export type VideoFeedItem = Video & {
+  likeCount: number;
+  voteCount: number;
+  giftCount: number;
+  creator: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username: string | null;
+    profileImageUrl: string | null;
+    blueTick: boolean;
+    redStar: boolean;
+    followerCount: number;
+  };
+  isFollowing: boolean;
+  isLiked: boolean;
+  isExclusive: boolean;
+  exclusivePrice?: number;
+  competitionName?: string;
+};
+
+export type CreatorProfile = User & {
+  followerCount: number;
+  followingCount: number;
+  totalVideos: number;
+  totalLikes: number;
+  blueTick: boolean;
+  redStar: boolean;
+  isFollowing: boolean;
+};

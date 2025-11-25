@@ -82,4 +82,47 @@ export const queryKeys = {
     all: ["/api/phases"] as const,
     active: ["/api/phases/active"] as const,
   },
+
+  // KOZZII Feed
+  feed: {
+    byTab: (tab: string, competition?: string, category?: string | null) => 
+      ["/api/feed", tab, competition || "all", category || "all"] as const,
+    trending: ["/api/feed/trending"] as const,
+    following: ["/api/feed/following"] as const,
+    exclusive: ["/api/feed/exclusive"] as const,
+    competition: (slug: string, category?: string) => 
+      ["/api/feed/competition", slug, category || "all"] as const,
+  },
+
+  // KOZZII Competitions
+  competitions: {
+    all: ["/api/competitions"] as const,
+    active: ["/api/competitions/active"] as const,
+    bySlug: (slug: string) => ["/api/competitions", slug] as const,
+  },
+
+  // KOZZII Gifts
+  gifts: {
+    all: ["/api/gifts"] as const,
+    catalog: ["/api/gifts/catalog"] as const,
+  },
+
+  // KOZZII Creator Wallet
+  creatorWallet: {
+    balance: ["/api/creator/wallet"] as const,
+    transactions: ["/api/creator/wallet/transactions"] as const,
+    withdrawals: ["/api/creator/wallet/withdrawals"] as const,
+  },
+
+  // KOZZII User Wallet
+  userWallet: {
+    balance: ["/api/wallet"] as const,
+    deposits: ["/api/wallet/deposits"] as const,
+  },
+
+  // KOZZII Follows
+  follows: {
+    followers: (userId: string) => ["/api/users", userId, "followers"] as const,
+    following: (userId: string) => ["/api/users", userId, "following"] as const,
+  },
 };

@@ -298,6 +298,68 @@ export interface IStorage {
   createPollResponse(response: InsertPollResponse): Promise<PollResponse>;
   getPollStats(pollId: string): Promise<PollWithStats | undefined>;
   getUserPollResponse(pollId: string, userId: string | null, ipAddress?: string): Promise<PollResponse | undefined>;
+
+  // KOZZII Platform Methods
+  
+  // Competition methods
+  getAllCompetitions(): Promise<schema.Competition[]>;
+  getActiveCompetitions(): Promise<schema.Competition[]>;
+  getCompetitionBySlug(slug: string): Promise<schema.Competition | undefined>;
+  getCompetitionById(id: string): Promise<schema.Competition | undefined>;
+  
+  // Follow methods
+  followUser(followerId: string, followingId: string): Promise<schema.Follow>;
+  unfollowUser(followerId: string, followingId: string): Promise<void>;
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  getFollowers(userId: string): Promise<User[]>;
+  getFollowing(userId: string): Promise<User[]>;
+  getFollowerCount(userId: string): Promise<number>;
+  getFollowingCount(userId: string): Promise<number>;
+  
+  // Gift methods
+  getAllGifts(): Promise<schema.Gift[]>;
+  getGiftById(id: string): Promise<schema.Gift | undefined>;
+  createGiftTransaction(transaction: schema.InsertGiftTransaction): Promise<schema.GiftTransaction>;
+  getGiftTransactionByTxRef(txRef: string): Promise<schema.GiftTransaction | undefined>;
+  updateGiftTransaction(id: string, updates: Partial<schema.GiftTransaction>): Promise<schema.GiftTransaction | undefined>;
+  getVideoGiftCount(videoId: string): Promise<number>;
+  
+  // Creator Wallet methods
+  getOrCreateCreatorWallet(userId: string): Promise<schema.CreatorWallet>;
+  getCreatorWallet(userId: string): Promise<schema.CreatorWallet | undefined>;
+  updateCreatorWallet(userId: string, updates: Partial<schema.InsertCreatorWallet>): Promise<schema.CreatorWallet | undefined>;
+  addWalletTransaction(transaction: schema.InsertWalletTransaction): Promise<schema.WalletTransaction>;
+  getWalletTransactions(walletId: string, limit?: number): Promise<schema.WalletTransaction[]>;
+  
+  // Creator Withdrawal methods
+  createCreatorWithdrawal(withdrawal: schema.InsertCreatorWithdrawal): Promise<schema.CreatorWithdrawal>;
+  getCreatorWithdrawals(userId: string): Promise<schema.CreatorWithdrawal[]>;
+  getAllCreatorWithdrawals(): Promise<schema.CreatorWithdrawal[]>;
+  updateCreatorWithdrawal(id: string, updates: Partial<schema.CreatorWithdrawal>): Promise<schema.CreatorWithdrawal | undefined>;
+  
+  // Creator Verification methods
+  getOrCreateCreatorVerification(userId: string): Promise<schema.CreatorVerification>;
+  updateCreatorVerification(userId: string, updates: Partial<schema.InsertCreatorVerification>): Promise<schema.CreatorVerification | undefined>;
+  
+  // Video Feed methods (KOZZII-style)
+  getTrendingVideos(limit?: number): Promise<schema.VideoFeedItem[]>;
+  getFollowingFeedVideos(userId: string, limit?: number): Promise<schema.VideoFeedItem[]>;
+  getExclusiveVideos(limit?: number): Promise<schema.VideoFeedItem[]>;
+  getCompetitionVideos(competitionSlug: string, categoryId?: string, phaseId?: string, limit?: number): Promise<schema.VideoFeedItem[]>;
+  
+  // Exclusive Content methods
+  createExclusiveContent(content: schema.InsertExclusiveContent): Promise<schema.ExclusiveContent>;
+  getExclusiveContent(videoId: string): Promise<schema.ExclusiveContent | undefined>;
+  hasUserPurchasedExclusive(userId: string, exclusiveContentId: string): Promise<boolean>;
+  createExclusivePurchase(purchase: schema.InsertExclusivePurchase): Promise<schema.ExclusivePurchase>;
+  
+  // User Wallet methods (for purchasing)
+  getOrCreateUserWallet(userId: string): Promise<schema.UserWallet>;
+  getUserWallet(userId: string): Promise<schema.UserWallet | undefined>;
+  updateUserWallet(userId: string, updates: Partial<schema.InsertUserWallet>): Promise<schema.UserWallet | undefined>;
+  createWalletDeposit(deposit: schema.InsertWalletDeposit): Promise<schema.WalletDeposit>;
+  getWalletDepositByTxRef(txRef: string): Promise<schema.WalletDeposit | undefined>;
+  updateWalletDeposit(id: string, updates: Partial<schema.WalletDeposit>): Promise<schema.WalletDeposit | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -700,6 +762,7 @@ export class DbStorage implements IStorage {
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
         voteCount: sql<number>`COALESCE(COUNT(DISTINCT ${schema.votes.id}), 0)`,
+        likeCount: sql<number>`COALESCE((SELECT COUNT(*) FROM likes WHERE likes.video_id = videos.id), 0)`,
       })
       .from(schema.videos)
       .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
@@ -2519,6 +2582,428 @@ export class DbStorage implements IStorage {
       return response;
     }
     return undefined;
+  }
+
+  // ============================================
+  // KOZZII PLATFORM IMPLEMENTATIONS
+  // ============================================
+
+  // Competition methods
+  async getAllCompetitions(): Promise<schema.Competition[]> {
+    return db.select().from(schema.competitions).orderBy(schema.competitions.name);
+  }
+
+  async getActiveCompetitions(): Promise<schema.Competition[]> {
+    return db.select().from(schema.competitions)
+      .where(eq(schema.competitions.status, 'active'))
+      .orderBy(schema.competitions.name);
+  }
+
+  async getCompetitionBySlug(slug: string): Promise<schema.Competition | undefined> {
+    const [competition] = await db.select().from(schema.competitions)
+      .where(eq(schema.competitions.slug, slug));
+    return competition;
+  }
+
+  async getCompetitionById(id: string): Promise<schema.Competition | undefined> {
+    const [competition] = await db.select().from(schema.competitions)
+      .where(eq(schema.competitions.id, id));
+    return competition;
+  }
+
+  // Follow methods
+  async followUser(followerId: string, followingId: string): Promise<schema.Follow> {
+    const [follow] = await db.insert(schema.follows)
+      .values({ followerId, followingId })
+      .returning();
+    
+    // Update follower count in verification table
+    await db.update(schema.creatorVerification)
+      .set({ 
+        followerCount: sql`follower_count + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.creatorVerification.userId, followingId));
+    
+    return follow;
+  }
+
+  async unfollowUser(followerId: string, followingId: string): Promise<void> {
+    await db.delete(schema.follows)
+      .where(and(
+        eq(schema.follows.followerId, followerId),
+        eq(schema.follows.followingId, followingId)
+      ));
+    
+    // Update follower count in verification table
+    await db.update(schema.creatorVerification)
+      .set({ 
+        followerCount: sql`GREATEST(follower_count - 1, 0)`,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.creatorVerification.userId, followingId));
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const [follow] = await db.select().from(schema.follows)
+      .where(and(
+        eq(schema.follows.followerId, followerId),
+        eq(schema.follows.followingId, followingId)
+      ));
+    return !!follow;
+  }
+
+  async getFollowers(userId: string): Promise<User[]> {
+    const follows = await db.select({ user: schema.users })
+      .from(schema.follows)
+      .innerJoin(schema.users, eq(schema.follows.followerId, schema.users.id))
+      .where(eq(schema.follows.followingId, userId));
+    return follows.map(f => f.user);
+  }
+
+  async getFollowing(userId: string): Promise<User[]> {
+    const follows = await db.select({ user: schema.users })
+      .from(schema.follows)
+      .innerJoin(schema.users, eq(schema.follows.followingId, schema.users.id))
+      .where(eq(schema.follows.followerId, userId));
+    return follows.map(f => f.user);
+  }
+
+  async getFollowerCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.follows)
+      .where(eq(schema.follows.followingId, userId));
+    return Number(result[0]?.count || 0);
+  }
+
+  async getFollowingCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(schema.follows)
+      .where(eq(schema.follows.followerId, userId));
+    return Number(result[0]?.count || 0);
+  }
+
+  // Gift methods
+  async getAllGifts(): Promise<schema.Gift[]> {
+    return db.select().from(schema.gifts)
+      .where(eq(schema.gifts.isActive, true))
+      .orderBy(schema.gifts.sortOrder);
+  }
+
+  async getGiftById(id: string): Promise<schema.Gift | undefined> {
+    const [gift] = await db.select().from(schema.gifts)
+      .where(eq(schema.gifts.id, id));
+    return gift;
+  }
+
+  async createGiftTransaction(transaction: schema.InsertGiftTransaction): Promise<schema.GiftTransaction> {
+    const [created] = await db.insert(schema.giftTransactions)
+      .values(transaction)
+      .returning();
+    return created;
+  }
+
+  async getGiftTransactionByTxRef(txRef: string): Promise<schema.GiftTransaction | undefined> {
+    const [transaction] = await db.select().from(schema.giftTransactions)
+      .where(eq(schema.giftTransactions.txRef, txRef));
+    return transaction;
+  }
+
+  async updateGiftTransaction(id: string, updates: Partial<schema.GiftTransaction>): Promise<schema.GiftTransaction | undefined> {
+    const [updated] = await db.update(schema.giftTransactions)
+      .set(updates)
+      .where(eq(schema.giftTransactions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getVideoGiftCount(videoId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`COALESCE(SUM(quantity), 0)` })
+      .from(schema.giftTransactions)
+      .where(and(
+        eq(schema.giftTransactions.videoId, videoId),
+        eq(schema.giftTransactions.status, 'completed')
+      ));
+    return Number(result[0]?.count || 0);
+  }
+
+  // Creator Wallet methods
+  async getOrCreateCreatorWallet(userId: string): Promise<schema.CreatorWallet> {
+    const existing = await this.getCreatorWallet(userId);
+    if (existing) return existing;
+    
+    const [wallet] = await db.insert(schema.creatorWallets)
+      .values({ userId })
+      .returning();
+    return wallet;
+  }
+
+  async getCreatorWallet(userId: string): Promise<schema.CreatorWallet | undefined> {
+    const [wallet] = await db.select().from(schema.creatorWallets)
+      .where(eq(schema.creatorWallets.userId, userId));
+    return wallet;
+  }
+
+  async updateCreatorWallet(userId: string, updates: Partial<schema.InsertCreatorWallet>): Promise<schema.CreatorWallet | undefined> {
+    const [updated] = await db.update(schema.creatorWallets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.creatorWallets.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  async addWalletTransaction(transaction: schema.InsertWalletTransaction): Promise<schema.WalletTransaction> {
+    const [created] = await db.insert(schema.walletTransactions)
+      .values(transaction)
+      .returning();
+    return created;
+  }
+
+  async getWalletTransactions(walletId: string, limit: number = 50): Promise<schema.WalletTransaction[]> {
+    return db.select().from(schema.walletTransactions)
+      .where(eq(schema.walletTransactions.walletId, walletId))
+      .orderBy(desc(schema.walletTransactions.createdAt))
+      .limit(limit);
+  }
+
+  // Creator Withdrawal methods
+  async createCreatorWithdrawal(withdrawal: schema.InsertCreatorWithdrawal): Promise<schema.CreatorWithdrawal> {
+    const [created] = await db.insert(schema.creatorWithdrawals)
+      .values(withdrawal)
+      .returning();
+    return created;
+  }
+
+  async getCreatorWithdrawals(userId: string): Promise<schema.CreatorWithdrawal[]> {
+    return db.select().from(schema.creatorWithdrawals)
+      .where(eq(schema.creatorWithdrawals.userId, userId))
+      .orderBy(desc(schema.creatorWithdrawals.requestedAt));
+  }
+
+  async getAllCreatorWithdrawals(): Promise<schema.CreatorWithdrawal[]> {
+    return db.select().from(schema.creatorWithdrawals)
+      .orderBy(desc(schema.creatorWithdrawals.requestedAt));
+  }
+
+  async updateCreatorWithdrawal(id: string, updates: Partial<schema.CreatorWithdrawal>): Promise<schema.CreatorWithdrawal | undefined> {
+    const [updated] = await db.update(schema.creatorWithdrawals)
+      .set(updates)
+      .where(eq(schema.creatorWithdrawals.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Creator Verification methods
+  async getOrCreateCreatorVerification(userId: string): Promise<schema.CreatorVerification> {
+    const [existing] = await db.select().from(schema.creatorVerification)
+      .where(eq(schema.creatorVerification.userId, userId));
+    if (existing) return existing;
+    
+    const [verification] = await db.insert(schema.creatorVerification)
+      .values({ userId })
+      .returning();
+    return verification;
+  }
+
+  async updateCreatorVerification(userId: string, updates: Partial<schema.InsertCreatorVerification>): Promise<schema.CreatorVerification | undefined> {
+    const [updated] = await db.update(schema.creatorVerification)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.creatorVerification.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  // Video Feed methods (KOZZII-style)
+  async getTrendingVideos(limit: number = 50): Promise<schema.VideoFeedItem[]> {
+    // Get trending videos based on views, likes, and engagement in recent period
+    const videos = await db.select()
+      .from(schema.videos)
+      .where(eq(schema.videos.status, 'approved'))
+      .orderBy(desc(schema.videos.views), desc(schema.videos.createdAt))
+      .limit(limit);
+
+    return this.enrichVideosForFeed(videos, null);
+  }
+
+  async getFollowingFeedVideos(userId: string, limit: number = 50): Promise<schema.VideoFeedItem[]> {
+    // Get videos from creators the user follows
+    const followedUserIds = await db.select({ id: schema.follows.followingId })
+      .from(schema.follows)
+      .where(eq(schema.follows.followerId, userId));
+    
+    const followedIds = followedUserIds.map(f => f.id);
+    if (followedIds.length === 0) return [];
+
+    const videos = await db.select()
+      .from(schema.videos)
+      .where(and(
+        eq(schema.videos.status, 'approved'),
+        inArray(schema.videos.userId, followedIds)
+      ))
+      .orderBy(desc(schema.videos.createdAt))
+      .limit(limit);
+
+    return this.enrichVideosForFeed(videos, userId);
+  }
+
+  async getExclusiveVideos(limit: number = 50): Promise<schema.VideoFeedItem[]> {
+    // Get videos that have exclusive content
+    const exclusiveVideoIds = await db.select({ videoId: schema.exclusiveContent.videoId })
+      .from(schema.exclusiveContent)
+      .where(eq(schema.exclusiveContent.isActive, true));
+    
+    const videoIds = exclusiveVideoIds.map(e => e.videoId);
+    if (videoIds.length === 0) return [];
+
+    const videos = await db.select()
+      .from(schema.videos)
+      .where(and(
+        eq(schema.videos.status, 'approved'),
+        inArray(schema.videos.id, videoIds)
+      ))
+      .orderBy(desc(schema.videos.createdAt))
+      .limit(limit);
+
+    return this.enrichVideosForFeed(videos, null);
+  }
+
+  async getCompetitionVideos(competitionSlug: string, categoryId?: string, phaseId?: string, limit: number = 50): Promise<schema.VideoFeedItem[]> {
+    // For now, KOSCOCO is the default competition - get all approved videos
+    let query = db.select()
+      .from(schema.videos)
+      .where(eq(schema.videos.status, 'approved'));
+
+    const videos = await query
+      .orderBy(desc(schema.videos.createdAt))
+      .limit(limit);
+
+    // Filter by category and phase if provided
+    let filteredVideos = videos;
+    if (categoryId) {
+      filteredVideos = filteredVideos.filter(v => v.categoryId === categoryId);
+    }
+    if (phaseId) {
+      filteredVideos = filteredVideos.filter(v => v.phaseId === phaseId);
+    }
+
+    return this.enrichVideosForFeed(filteredVideos, null);
+  }
+
+  private async enrichVideosForFeed(videos: schema.Video[], currentUserId: string | null): Promise<schema.VideoFeedItem[]> {
+    return Promise.all(videos.map(async (video) => {
+      const [likeCount, voteCount, giftCount, creator, verification] = await Promise.all([
+        this.getVideoLikeCount(video.id),
+        this.getCombinedVoteCount(video.id),
+        this.getVideoGiftCount(video.id),
+        this.getUser(video.userId),
+        db.select().from(schema.creatorVerification).where(eq(schema.creatorVerification.userId, video.userId)).then(r => r[0])
+      ]);
+
+      const isFollowing = currentUserId ? await this.isFollowing(currentUserId, video.userId) : false;
+      const isLiked = currentUserId ? (await this.getUserLikesForVideo(currentUserId, video.id)).length > 0 : false;
+
+      // Check if exclusive
+      const [exclusive] = await db.select().from(schema.exclusiveContent)
+        .where(eq(schema.exclusiveContent.videoId, video.id));
+
+      return {
+        ...video,
+        likeCount,
+        voteCount,
+        giftCount,
+        creator: {
+          id: creator?.id || '',
+          firstName: creator?.firstName || '',
+          lastName: creator?.lastName || '',
+          username: creator?.username || null,
+          profileImageUrl: creator?.profileImageUrl || null,
+          blueTick: verification?.blueTick || false,
+          redStar: verification?.redStar || false,
+          followerCount: verification?.followerCount || 0,
+        },
+        isFollowing,
+        isLiked,
+        isExclusive: !!exclusive,
+        exclusivePrice: exclusive?.priceUsd,
+      };
+    }));
+  }
+
+  // Exclusive Content methods
+  async createExclusiveContent(content: schema.InsertExclusiveContent): Promise<schema.ExclusiveContent> {
+    const [created] = await db.insert(schema.exclusiveContent)
+      .values(content)
+      .returning();
+    return created;
+  }
+
+  async getExclusiveContent(videoId: string): Promise<schema.ExclusiveContent | undefined> {
+    const [content] = await db.select().from(schema.exclusiveContent)
+      .where(eq(schema.exclusiveContent.videoId, videoId));
+    return content;
+  }
+
+  async hasUserPurchasedExclusive(userId: string, exclusiveContentId: string): Promise<boolean> {
+    const [purchase] = await db.select().from(schema.exclusivePurchases)
+      .where(and(
+        eq(schema.exclusivePurchases.exclusiveContentId, exclusiveContentId),
+        eq(schema.exclusivePurchases.buyerId, userId),
+        eq(schema.exclusivePurchases.status, 'completed')
+      ));
+    return !!purchase;
+  }
+
+  async createExclusivePurchase(purchase: schema.InsertExclusivePurchase): Promise<schema.ExclusivePurchase> {
+    const [created] = await db.insert(schema.exclusivePurchases)
+      .values(purchase)
+      .returning();
+    return created;
+  }
+
+  // User Wallet methods (for purchasing)
+  async getOrCreateUserWallet(userId: string): Promise<schema.UserWallet> {
+    const existing = await this.getUserWallet(userId);
+    if (existing) return existing;
+    
+    const [wallet] = await db.insert(schema.userWallets)
+      .values({ userId })
+      .returning();
+    return wallet;
+  }
+
+  async getUserWallet(userId: string): Promise<schema.UserWallet | undefined> {
+    const [wallet] = await db.select().from(schema.userWallets)
+      .where(eq(schema.userWallets.userId, userId));
+    return wallet;
+  }
+
+  async updateUserWallet(userId: string, updates: Partial<schema.InsertUserWallet>): Promise<schema.UserWallet | undefined> {
+    const [updated] = await db.update(schema.userWallets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.userWallets.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  async createWalletDeposit(deposit: schema.InsertWalletDeposit): Promise<schema.WalletDeposit> {
+    const [created] = await db.insert(schema.walletDeposits)
+      .values(deposit)
+      .returning();
+    return created;
+  }
+
+  async getWalletDepositByTxRef(txRef: string): Promise<schema.WalletDeposit | undefined> {
+    const [deposit] = await db.select().from(schema.walletDeposits)
+      .where(eq(schema.walletDeposits.txRef, txRef));
+    return deposit;
+  }
+
+  async updateWalletDeposit(id: string, updates: Partial<schema.WalletDeposit>): Promise<schema.WalletDeposit | undefined> {
+    const [updated] = await db.update(schema.walletDeposits)
+      .set(updates)
+      .where(eq(schema.walletDeposits.id, id))
+      .returning();
+    return updated;
   }
 }
 
