@@ -3690,6 +3690,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Delete all related records in cascade order using raw SQL
+      // Delete paid votes (using subquery to join with vote_purchases)
+      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
+      
+      // Delete vote purchases
+      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
+      
+      // Delete watch history
+      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
+      
+      // Delete ad impressions
+      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
+      
+      // Delete ad clicks
+      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${id}`);
+      
       // Delete likes
       await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
       
@@ -3699,11 +3714,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete judge scores (if user is a judge)
       await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
       
-      // Delete watch history
-      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
+      // Delete reports where user created or reviewed them
+      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
       
       // Delete videos
       await db.execute(sql`DELETE FROM videos WHERE creator_id = ${id}`);
+      
+      // Delete registrations
+      await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
+      
+      // Delete payout requests (where affiliate belongs to user)
+      await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+      
+      // Delete referrals (where affiliate belongs to user)
+      await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
       
       // Delete affiliate records
       await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
@@ -3749,11 +3773,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete judge scores (if user is a judge)
       await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
       
+      // Delete reports where user created or reviewed them
+      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
+      
       // Delete videos
       await db.execute(sql`DELETE FROM videos WHERE creator_id = ${userId}`);
       
       // Delete registrations
       await db.execute(sql`DELETE FROM registrations WHERE user_id = ${userId}`);
+      
+      // Delete payout requests (where affiliate belongs to user)
+      await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
+      
+      // Delete referrals (where affiliate belongs to user)
+      await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
       
       // Delete affiliate records
       await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${userId}`);
