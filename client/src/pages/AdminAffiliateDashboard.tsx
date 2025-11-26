@@ -44,6 +44,10 @@ export default function AdminAffiliateDashboard() {
     queryKey: ["/api/admin/fraud-alerts"],
   });
 
+  const { data: campaigns = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/affiliate-campaigns"],
+  });
+
   const createCampaignMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("/api/admin/affiliate-campaigns", "POST", {
@@ -56,7 +60,7 @@ export default function AdminAffiliateDashboard() {
       toast({ title: "Campaign created successfully" });
       setCampaignName("");
       setCampaignDesc("");
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliate-campaigns"] });
     },
     onError: (error) => {
       toast({ title: "Failed to create campaign", variant: "destructive" });
@@ -65,11 +69,41 @@ export default function AdminAffiliateDashboard() {
 
   const approvePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
-      return await apiRequest(`/api/admin/payouts/${payoutId}/approve`, "POST", {});
+      return await apiRequest(`/api/admin/payout-requests/${payoutId}/approve`, "PATCH", {});
     },
     onSuccess: () => {
       toast({ title: "Payout approved" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/payouts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payout-requests"] });
+    },
+  });
+
+  const rejectPayoutMutation = useMutation({
+    mutationFn: async ({ payoutId, reason }: { payoutId: string; reason: string }) => {
+      return await apiRequest(`/api/admin/payout-requests/${payoutId}/reject`, "PATCH", { rejectionReason: reason });
+    },
+    onSuccess: () => {
+      toast({ title: "Payout rejected" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payout-requests"] });
+    },
+  });
+
+  const updateAffiliateStatusMutation = useMutation({
+    mutationFn: async ({ affiliateId, status }: { affiliateId: string; status: string }) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/status`, "PATCH", { status });
+    },
+    onSuccess: () => {
+      toast({ title: "Affiliate status updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+  });
+
+  const resolveFraudAlertMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      return await apiRequest(`/api/admin/fraud-alerts/${alertId}/resolve`, "PATCH", {});
+    },
+    onSuccess: () => {
+      toast({ title: "Fraud alert resolved" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/fraud-alerts"] });
     },
   });
 
@@ -194,18 +228,23 @@ export default function AdminAffiliateDashboard() {
                     <div key={aff.id} className="p-4 border rounded-lg">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h4 className="font-semibold">{aff.user?.firstName} {aff.user?.lastName}</h4>
-                          <p className="text-sm text-muted-foreground">{aff.user?.email}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Code: {aff.referralCode}</p>
+                          <h4 className="font-semibold">{aff.first_name} {aff.last_name}</h4>
+                          <p className="text-sm text-muted-foreground">{aff.email}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Code: {aff.referral_code}</p>
                         </div>
                         <Badge variant={aff.status === "active" ? "default" : "destructive"}>{aff.status}</Badge>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm mb-3">
-                        <div><span className="text-muted-foreground">Referrals:</span> {aff.totalReferrals}</div>
-                        <div><span className="text-muted-foreground">Earnings:</span> ${(aff.totalEarnings / 100).toFixed(2)}</div>
-                        <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.createdAt).toLocaleDateString()}</div>
+                        <div><span className="text-muted-foreground">Referrals:</span> {aff.total_referrals}</div>
+                        <div><span className="text-muted-foreground">Earnings:</span> ${(aff.total_earnings / 100).toFixed(2)}</div>
+                        <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.created_at).toLocaleDateString()}</div>
                       </div>
-                      <Button size="sm" variant="outline">View Details</Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">View Details</Button>
+                        <Button size="sm" variant="outline" onClick={() => updateAffiliateStatusMutation.mutate({ affiliateId: aff.id, status: aff.status === "active" ? "suspended" : "active" })}>
+                          {aff.status === "active" ? "Suspend" : "Activate"}
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -214,7 +253,7 @@ export default function AdminAffiliateDashboard() {
           </TabsContent>
 
           {/* CAMPAIGNS TAB */}
-          <TabsContent value="campaigns">
+          <TabsContent value="campaigns" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Create Campaign</CardTitle>
@@ -227,9 +266,35 @@ export default function AdminAffiliateDashboard() {
                     <label className="text-sm font-medium">Commission Rate (%)</label>
                     <Input type="number" min="0" max="100" value={commissionRate} onChange={(e) => setCommissionRate(e.target.value)} />
                   </div>
-                  <Button onClick={() => createCampaignMutation.mutate()} disabled={createCampaignMutation.isPending}>
-                    Create Campaign
+                  <Button onClick={() => createCampaignMutation.mutate()} disabled={createCampaignMutation.isPending || !campaignName || !commissionRate}>
+                    {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Campaigns</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {campaigns.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No campaigns created yet</p>
+                  ) : (
+                    campaigns.map((campaign: any) => (
+                      <div key={campaign.id} className="p-3 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">{campaign.name}</p>
+                            <p className="text-sm text-muted-foreground">{campaign.description}</p>
+                            <Badge variant="outline" className="mt-2">{campaign.commission_percentage}% commission</Badge>
+                          </div>
+                          <Badge variant={campaign.status === "active" ? "default" : "secondary"}>{campaign.status}</Badge>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -248,15 +313,21 @@ export default function AdminAffiliateDashboard() {
                   ) : (
                     fraudAlerts.map((alert: any) => (
                       <div key={alert.id} className="p-4 border rounded-lg border-destructive/50">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-1" />
-                          <div className="flex-1">
-                            <p className="font-medium">{alert.alertType}</p>
-                            <p className="text-sm text-muted-foreground">{alert.description}</p>
-                            <Badge className="mt-2" variant={alert.severity === "high" ? "destructive" : "secondary"}>
-                              {alert.severity}
-                            </Badge>
+                        <div className="flex items-start gap-3 justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-1" />
+                            <div>
+                              <p className="font-medium">{alert.alert_type}</p>
+                              <p className="text-sm text-muted-foreground">{alert.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{alert.first_name} {alert.last_name} ({alert.email})</p>
+                              <Badge className="mt-2" variant={alert.severity === "high" ? "destructive" : "secondary"}>
+                                {alert.severity}
+                              </Badge>
+                            </div>
                           </div>
+                          <Button size="sm" variant="outline" onClick={() => resolveFraudAlertMutation.mutate(alert.id)}>
+                            Resolve
+                          </Button>
                         </div>
                       </div>
                     ))
@@ -274,31 +345,36 @@ export default function AdminAffiliateDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {payoutRequests.map((request: any) => (
-                    <div key={request.id} className="p-4 border rounded-lg">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="font-medium">${(request.amount / 100).toFixed(2)}</p>
-                          <p className="text-sm text-muted-foreground">{request.paymentMethod} • {request.affiliate?.user?.firstName}</p>
+                  {payoutRequests.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No payout requests</p>
+                  ) : (
+                    payoutRequests.map((request: any) => (
+                      <div key={request.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="font-medium">${(request.amount / 100).toFixed(2)}</p>
+                            <p className="text-sm text-muted-foreground">{request.payment_method} • {request.first_name} {request.last_name}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{request.email}</p>
+                          </div>
+                          <Badge variant={request.status === "pending" ? "secondary" : request.status === "approved" ? "default" : "destructive"}>
+                            {request.status}
+                          </Badge>
                         </div>
-                        <Badge variant={request.status === "pending" ? "secondary" : request.status === "approved" ? "default" : "destructive"}>
-                          {request.status}
-                        </Badge>
+                        {request.status === "pending" && (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => approvePayoutMutation.mutate(request.id)} disabled={approvePayoutMutation.isPending}>
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => rejectPayoutMutation.mutate({ payoutId: request.id, reason: "Administrative decision" })} disabled={rejectPayoutMutation.isPending}>
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      {request.status === "pending" && (
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => approvePayoutMutation.mutate(request.id)}>
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="destructive">
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
