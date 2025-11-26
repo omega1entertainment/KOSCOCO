@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, db } from "./storage";
 import * as schema from "@shared/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { setupAuth, isAuthenticated, isAdvertiser } from "./auth";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
@@ -4574,7 +4574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Try to detect country from IP using a simple free service
       if (ip && ip !== '0.0.0.0' && ip !== '::1') {
         try {
-          const response = await fetch(`https://ipapi.co/${ip}/json/`, { timeout: 5000 });
+          const response = await fetch(`https://ipapi.co/${ip}/json/`);
           if (response.ok) {
             const data = await response.json();
             countryCode = data.country_code;
