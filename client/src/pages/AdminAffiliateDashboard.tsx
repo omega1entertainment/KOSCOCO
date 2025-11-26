@@ -32,15 +32,15 @@ export default function AdminAffiliateDashboard() {
     queryKey: ["/api/admin/affiliates/stats"],
   });
 
-  const { data: affiliates = [] } = useQuery({
+  const { data: affiliates = [] } = useQuery<any[]>({
     queryKey: ["/api/admin/affiliates"],
   });
 
-  const { data: payoutRequests = [] } = useQuery({
-    queryKey: ["/api/admin/payouts"],
+  const { data: payoutRequests = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/payout-requests"],
   });
 
-  const { data: fraudAlerts = [] } = useQuery({
+  const { data: fraudAlerts = [] } = useQuery<any[]>({
     queryKey: ["/api/admin/fraud-alerts"],
   });
 
