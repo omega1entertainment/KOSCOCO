@@ -174,7 +174,7 @@ export default function AdminAffiliateDashboard() {
                   <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${((stats?.totalRevenue || 0) / 100).toFixed(2)}</div>
+                  <div className="text-2xl font-bold">{(stats?.totalRevenue || 0).toLocaleString()} XAF</div>
                   <p className="text-xs text-muted-foreground mt-1">from referrals</p>
                 </CardContent>
               </Card>
@@ -216,7 +216,7 @@ export default function AdminAffiliateDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">${(affiliate.earnings / 100).toFixed(2)}</p>
+                        <p className="font-bold">{affiliate.earnings.toLocaleString()} XAF</p>
                       </div>
                     </div>
                   ))}
