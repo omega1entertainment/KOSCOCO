@@ -696,9 +696,26 @@ export default function Feed() {
         )}
       </div>
 
-      {/* Bottom Navigation hint */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs">
-        Swipe up for more
+      {/* Bottom Navigation Controls */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-6">
+        <Button
+          size="icon"
+          className="rounded-full w-12 h-12 bg-white/10 hover:bg-white/20 text-white"
+          onClick={() => setLocation("/koscoco")}
+          data-testid="button-koscoco-link"
+          title="Visit KOSCOCO"
+        >
+          <Trophy className="w-6 h-6" />
+        </Button>
+        <Button
+          size="icon"
+          className="rounded-full w-12 h-12 bg-primary hover:bg-primary/90 text-white"
+          onClick={() => setLocation("/upload")}
+          data-testid="button-upload"
+          title="Upload Video"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
       </div>
     </div>
   );

@@ -69,7 +69,7 @@ function ScrollToTop() {
   return null;
 }
 
-const KOZZII_PAGES = ['/feed', '/gift', '/creator/wallet'];
+const KOZZII_PAGES = ['/', '/gift', '/creator/wallet'];
 
 function Router() {
   const { isLoading } = useAuth();
