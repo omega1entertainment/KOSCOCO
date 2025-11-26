@@ -20,6 +20,10 @@ type AffiliateStats = {
   topAffiliates: Array<{ id: string; name: string; earnings: number; referrals: number }>;
   pendingPayouts: number;
   approvedPayouts: number;
+  pendingPayoutAmount: number;
+  approvedPayoutAmount: number;
+  paidPayoutAmount: number;
+  geoBreakdown: Array<{ location: string; registrations: number }>;
 };
 
 export default function AdminAffiliateDashboard() {

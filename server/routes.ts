@@ -3324,6 +3324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           a.referral_code,
           a.total_referrals,
           a.total_earnings,
+          a.commission_rate,
           a.status,
           a.created_at,
           u.email,
@@ -3340,6 +3341,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching affiliates:", error);
       res.status(500).json({ message: "Failed to fetch affiliates" });
+    }
+  });
+
+  // Admin: Get affiliate analytics and statistics (MUST come before :id route)
+  app.get('/api/admin/affiliates/stats', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const stats = await db.execute(sql`
+        SELECT 
+          COUNT(DISTINCT a.id) as total_affiliates,
+          COUNT(DISTINCT CASE WHEN a.status = 'active' THEN a.id END) as active_affiliates,
+          COALESCE(SUM(CASE WHEN am.clicks IS NOT NULL THEN am.clicks ELSE 0 END), 0) as total_clicks,
+          COALESCE(SUM(CASE WHEN am.conversions IS NOT NULL THEN am.conversions ELSE 0 END), 0) as total_conversions,
+          COALESCE(SUM(a.total_earnings), 0) as total_revenue,
+          COUNT(DISTINCT CASE WHEN pr.status = 'pending' THEN pr.id END) as pending_payouts,
+          COUNT(DISTINCT CASE WHEN pr.status = 'approved' THEN pr.id END) as approved_payouts,
+          COALESCE(SUM(CASE WHEN pr.status = 'approved' THEN pr.amount ELSE 0 END), 0) as approved_payout_amount,
+          COALESCE(SUM(CASE WHEN pr.status = 'pending' THEN pr.amount ELSE 0 END), 0) as pending_payout_amount
+        FROM affiliates a
+        LEFT JOIN affiliate_metrics am ON a.id = am.affiliate_id
+        LEFT JOIN payout_requests pr ON a.id = pr.affiliate_id
+      `);
+      
+      const topAffiliates = await db.execute(sql`
+        SELECT 
+          a.id,
+          CONCAT(u.first_name, ' ', u.last_name) as name,
+          a.total_earnings as earnings,
+          a.total_referrals as referrals
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        ORDER BY a.total_earnings DESC
+        LIMIT 5
+      `);
+
+      const geoBreakdown = await db.execute(sql`
+        SELECT 
+          COALESCE(u.location, 'Unknown') as location,
+          COUNT(DISTINCT r.id) as registrations
+        FROM registrations r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.referral_code IS NOT NULL
+        GROUP BY u.location
+        ORDER BY registrations DESC
+        LIMIT 5
+      `);
+
+      const paidPayouts = await db.execute(sql`
+        SELECT 
+          COALESCE(SUM(CASE WHEN pr.processed_at IS NOT NULL AND pr.status != 'rejected' THEN pr.amount ELSE 0 END), 0) as paid_amount
+        FROM payout_requests pr
+      `);
+
+      const result = stats.rows[0];
+      const paidResult = paidPayouts.rows[0];
+      res.json({
+        totalAffiliates: Number(result.total_affiliates),
+        activeAffiliates: Number(result.active_affiliates),
+        totalClicks: Number(result.total_clicks),
+        totalConversions: Number(result.total_conversions),
+        totalRevenue: Number(result.total_revenue),
+        pendingPayouts: Number(result.pending_payouts),
+        approvedPayouts: Number(result.approved_payouts),
+        pendingPayoutAmount: Number(result.pending_payout_amount),
+        approvedPayoutAmount: Number(result.approved_payout_amount),
+        paidPayoutAmount: Number(paidResult.paid_amount),
+        topAffiliates: topAffiliates.rows,
+        geoBreakdown: geoBreakdown.rows,
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate stats:", error);
+      res.status(500).json({ message: "Failed to fetch affiliate stats" });
     }
   });
 
@@ -6418,79 +6490,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating response:", error);
       res.status(500).json({ message: "Failed to submit response" });
-    }
-  });
-
-  // ============ ADMIN AFFILIATE ANALYTICS ROUTES ============
-
-  // Admin: Get affiliate analytics and statistics
-  app.get('/api/admin/affiliates/stats', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-      const stats = await db.execute(sql`
-        SELECT 
-          COUNT(DISTINCT a.id) as total_affiliates,
-          COUNT(DISTINCT CASE WHEN a.status = 'active' THEN a.id END) as active_affiliates,
-          COALESCE(SUM(CASE WHEN am.clicks IS NOT NULL THEN am.clicks ELSE 0 END), 0) as total_clicks,
-          COALESCE(SUM(CASE WHEN am.conversions IS NOT NULL THEN am.conversions ELSE 0 END), 0) as total_conversions,
-          COALESCE(SUM(a.total_earnings), 0) as total_revenue,
-          COUNT(DISTINCT CASE WHEN pr.status = 'pending' THEN pr.id END) as pending_payouts,
-          COUNT(DISTINCT CASE WHEN pr.status = 'approved' THEN pr.id END) as approved_payouts,
-          COALESCE(SUM(CASE WHEN pr.status = 'approved' THEN pr.amount ELSE 0 END), 0) as approved_payout_amount,
-          COALESCE(SUM(CASE WHEN pr.status = 'pending' THEN pr.amount ELSE 0 END), 0) as pending_payout_amount
-        FROM affiliates a
-        LEFT JOIN affiliate_metrics am ON a.id = am.affiliate_id
-        LEFT JOIN payout_requests pr ON a.id = pr.affiliate_id
-      `);
-      
-      const topAffiliates = await db.execute(sql`
-        SELECT 
-          a.id,
-          CONCAT(u.first_name, ' ', u.last_name) as name,
-          a.total_earnings as earnings,
-          a.total_referrals as referrals
-        FROM affiliates a
-        JOIN users u ON a.user_id = u.id
-        ORDER BY a.total_earnings DESC
-        LIMIT 5
-      `);
-
-      const geoBreakdown = await db.execute(sql`
-        SELECT 
-          COALESCE(u.location, 'Unknown') as location,
-          COUNT(DISTINCT r.id) as registrations
-        FROM registrations r
-        JOIN users u ON r.user_id = u.id
-        WHERE r.referral_code IS NOT NULL
-        GROUP BY u.location
-        ORDER BY registrations DESC
-        LIMIT 5
-      `);
-
-      const paidPayouts = await db.execute(sql`
-        SELECT 
-          COALESCE(SUM(CASE WHEN pr.processed_at IS NOT NULL AND pr.status != 'rejected' THEN pr.amount ELSE 0 END), 0) as paid_amount
-        FROM payout_requests pr
-      `);
-
-      const result = stats.rows[0];
-      const paidResult = paidPayouts.rows[0];
-      res.json({
-        totalAffiliates: Number(result.total_affiliates),
-        activeAffiliates: Number(result.active_affiliates),
-        totalClicks: Number(result.total_clicks),
-        totalConversions: Number(result.total_conversions),
-        totalRevenue: Number(result.total_revenue),
-        pendingPayouts: Number(result.pending_payouts),
-        approvedPayouts: Number(result.approved_payouts),
-        pendingPayoutAmount: Number(result.pending_payout_amount),
-        approvedPayoutAmount: Number(result.approved_payout_amount),
-        paidPayoutAmount: Number(paidResult.paid_amount),
-        topAffiliates: topAffiliates.rows,
-        geoBreakdown: geoBreakdown.rows,
-      });
-    } catch (error) {
-      console.error("Error fetching affiliate stats:", error);
-      res.status(500).json({ message: "Failed to fetch affiliate stats" });
     }
   });
 
