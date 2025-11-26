@@ -52,8 +52,8 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
       onOpenChange(false);
       setAmount("");
 
-      // Open Flutterwave checkout in redirect mode
-      const handler = window.FlutterwaveCheckout({
+      // Open Flutterwave checkout
+      window.FlutterwaveCheckout({
         public_key: import.meta.env.VITE_FLW_PUBLIC_KEY,
         tx_ref: paymentData.txRef,
         amount: paymentData.amount,
@@ -79,8 +79,6 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
           console.log("Payment modal closed");
         },
       });
-
-      handler.openIframe();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
