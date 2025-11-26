@@ -69,12 +69,13 @@ function ScrollToTop() {
   return null;
 }
 
+const KOZZII_PAGES = ['/feed', '/gift', '/creator/wallet'];
+
 function Router() {
   const { isLoading } = useAuth();
   const [location, setLocation] = useLocation();
 
-  // Check if current page is a KOZZII page (feed, gift, or creator wallet)
-  const isKozziiPage = location === '/' || location.startsWith('/gift/') || location.startsWith('/creator/wallet');
+  const isKozziiPage = KOZZII_PAGES.some(page => location.startsWith(page));
 
   if (isLoading) {
     return (
@@ -103,8 +104,7 @@ function Router() {
       {!isKozziiPage && <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />}
       <main className="flex-1">
         <Switch>
-          <Route path="/" component={Feed} />
-          <Route path="/koscoco" component={Home} />
+          <Route path="/" component={Home} />
           <Route path="/login" component={Login} />
           <Route path="/thank-you" component={ThankYou} />
           <Route path="/register" component={Register} />

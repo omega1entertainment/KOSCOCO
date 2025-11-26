@@ -12,7 +12,7 @@ interface TopBarProps {
 export default function TopBar({ currentPhase: propPhase }: TopBarProps) {
   const { language, setLanguage } = useLanguage();
   
-  const { data: activePhase } = useQuery<{ name?: string }>({
+  const { data: activePhase } = useQuery({
     queryKey: ['/api/phases/active'],
   });
   
