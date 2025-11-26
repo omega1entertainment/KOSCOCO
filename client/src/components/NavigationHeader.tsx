@@ -114,17 +114,22 @@ export default function NavigationHeader({
           </button>
           
           <nav className="hidden md:flex items-center gap-0 flex-1 justify-center">
-            {navItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="ghost"
-                className="min-h-11"
-                onClick={() => onNavigate?.(item.path)}
-                data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {item.label}
-              </Button>
-            ))}
+            {navItems.map((item) => {
+              if (item.label === t('nav.howItWorks') && isAuthenticated) {
+                return null;
+              }
+              return (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  className="min-h-11"
+                  onClick={() => onNavigate?.(item.path)}
+                  data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
 
             {isAuthenticated && user?.isAdmin && (
               <DropdownMenu>
@@ -362,19 +367,24 @@ export default function NavigationHeader({
       {mobileMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
-            {navItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="ghost"
-                className="min-h-11 justify-start"
-                onClick={() => {
-                  onNavigate?.(item.path);
-                  setMobileMenuOpen(false);
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
+            {navItems.map((item) => {
+              if (item.label === t('nav.howItWorks') && isAuthenticated) {
+                return null;
+              }
+              return (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  className="min-h-11 justify-start"
+                  onClick={() => {
+                    onNavigate?.(item.path);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
             
             {isAuthenticated && user?.isAdmin && (
               <div className="mt-2">
