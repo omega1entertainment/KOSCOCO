@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle } from "lucide-react";
 
@@ -27,6 +28,8 @@ export default function AdminAffiliateDashboard() {
   const [commissionRate, setCommissionRate] = useState("20");
   const [campaignName, setCampaignName] = useState("");
   const [campaignDesc, setCampaignDesc] = useState("");
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState<string | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   const { data: stats } = useQuery<AffiliateStats>({
     queryKey: ["/api/admin/affiliates/stats"],
@@ -46,6 +49,11 @@ export default function AdminAffiliateDashboard() {
 
   const { data: campaigns = [] } = useQuery<any[]>({
     queryKey: ["/api/admin/affiliate-campaigns"],
+  });
+
+  const { data: selectedAffiliateDetails } = useQuery({
+    queryKey: ["/api/admin/affiliates", selectedAffiliateId],
+    enabled: !!selectedAffiliateId,
   });
 
   const createCampaignMutation = useMutation({
@@ -240,7 +248,7 @@ export default function AdminAffiliateDashboard() {
                         <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.created_at).toLocaleDateString()}</div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">View Details</Button>
+                        <Button size="sm" variant="outline" onClick={() => { setSelectedAffiliateId(aff.id); setDetailsDialogOpen(true); }} data-testid={`button-view-details-${aff.id}`}>View Details</Button>
                         <Button size="sm" variant="outline" onClick={() => updateAffiliateStatusMutation.mutate({ affiliateId: aff.id, status: aff.status === "active" ? "suspended" : "active" })}>
                           {aff.status === "active" ? "Suspend" : "Activate"}
                         </Button>
@@ -429,6 +437,133 @@ export default function AdminAffiliateDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Affiliate Details Dialog */}
+        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+          <DialogContent className="max-w-2xl" data-testid="dialog-affiliate-details">
+            <DialogHeader>
+              <DialogTitle>Affiliate Details</DialogTitle>
+              <DialogDescription>
+                Complete information for the selected affiliate
+              </DialogDescription>
+            </DialogHeader>
+            {selectedAffiliateDetails ? (
+              <div className="space-y-6">
+                {/* Personal Information */}
+                <div>
+                  <h3 className="font-semibold mb-3">Personal Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-medium">{selectedAffiliateDetails.first_name} {selectedAffiliateDetails.last_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{selectedAffiliateDetails.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Location</p>
+                      <p className="font-medium">{selectedAffiliateDetails.location || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Referral Code</p>
+                      <p className="font-medium font-mono">{selectedAffiliateDetails.referral_code}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Metrics */}
+                <div>
+                  <h3 className="font-semibold mb-3">Performance Metrics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-muted rounded">
+                      <p className="text-sm text-muted-foreground">Total Referrals</p>
+                      <p className="text-2xl font-bold">{selectedAffiliateDetails.total_referrals}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded">
+                      <p className="text-sm text-muted-foreground">Total Earnings</p>
+                      <p className="text-2xl font-bold">${(selectedAffiliateDetails.total_earnings / 100).toFixed(2)}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded">
+                      <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                      <p className="text-2xl font-bold">{selectedAffiliateDetails.pending_payouts}</p>
+                    </div>
+                    <div className="p-3 bg-muted rounded">
+                      <p className="text-sm text-muted-foreground">Total Paid Out</p>
+                      <p className="text-2xl font-bold">${(selectedAffiliateDetails.total_paid_out / 100).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Information */}
+                <div>
+                  <h3 className="font-semibold mb-3">Account Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <Badge className="mt-1" variant={selectedAffiliateDetails.status === "active" ? "default" : "destructive"}>
+                        {selectedAffiliateDetails.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Joined Date</p>
+                      <p className="font-medium">{new Date(selectedAffiliateDetails.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Referrals List */}
+                {selectedAffiliateDetails.referrals && selectedAffiliateDetails.referrals.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-3">Recent Referrals</h3>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {selectedAffiliateDetails.referrals.map((referral: any) => (
+                        <div key={referral.id} className="p-2 border rounded text-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{referral.first_name} {referral.last_name}</p>
+                              <p className="text-xs text-muted-foreground">{referral.email}</p>
+                            </div>
+                            <Badge variant="outline">${(referral.commission / 100).toFixed(2)}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">{new Date(referral.created_at).toLocaleDateString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Payout Requests */}
+                {selectedAffiliateDetails.payoutRequests && selectedAffiliateDetails.payoutRequests.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-3">Payout Requests</h3>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {selectedAffiliateDetails.payoutRequests.map((payout: any) => (
+                        <div key={payout.id} className="p-2 border rounded text-sm">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">${(payout.amount / 100).toFixed(2)}</p>
+                              <p className="text-xs text-muted-foreground">{payout.payment_method}</p>
+                            </div>
+                            <Badge variant={payout.status === "pending" ? "secondary" : payout.status === "approved" ? "default" : "destructive"}>
+                              {payout.status}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">{new Date(payout.requested_at).toLocaleDateString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="mt-4 text-muted-foreground">Loading details...</p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
