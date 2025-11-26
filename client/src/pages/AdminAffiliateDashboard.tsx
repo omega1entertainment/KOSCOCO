@@ -184,6 +184,19 @@ export default function AdminAffiliateDashboard() {
     },
   });
 
+  const updateCommissionMutation = useMutation({
+    mutationFn: async ({ affiliateId, rate }: { affiliateId: string; rate: number }) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/commission`, "PATCH", { commissionRate: rate });
+    },
+    onSuccess: () => {
+      toast({ title: "Commission rate updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+    onError: (error: any) => {
+      toast({ title: error.message || "Failed to update commission", variant: "destructive" });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
@@ -313,14 +326,19 @@ export default function AdminAffiliateDashboard() {
                           </div>
                           <Badge variant={aff.status === "active" ? "default" : "destructive"}>{aff.status}</Badge>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 text-sm mb-3">
+                        <div className="grid grid-cols-4 gap-2 text-sm mb-3">
                           <div><span className="text-muted-foreground">Referrals:</span> {aff.total_referrals}</div>
                           <div><span className="text-muted-foreground">Earnings:</span> {aff.total_earnings.toLocaleString()} XAF</div>
+                          <div><span className="text-muted-foreground">Commission:</span> {aff.commission_rate || 20}%</div>
                           <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.created_at).toLocaleDateString()}</div>
                         </div>
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap items-center">
                           <Button size="sm" variant="outline" onClick={() => { setSelectedAffiliateId(aff.id); setDetailsDialogOpen(true); }} data-testid={`button-view-details-${aff.id}`}>View Details</Button>
                           <Button size="sm" variant="outline" onClick={() => { setEditingAffiliateId(aff.id); setFormEmail(aff.email); setFormFirstName(aff.first_name); setFormLastName(aff.last_name); setEditDialogOpen(true); }} data-testid={`button-edit-${aff.id}`}><Edit2 className="w-4 h-4 mr-1" />Edit</Button>
+                          <div className="flex items-center gap-1">
+                            <Input type="number" min="0" max="100" defaultValue={aff.commission_rate || 20} className="w-16 h-8" id={`rate-${aff.id}`} data-testid={`input-commission-${aff.id}`} />
+                            <Button size="sm" variant="outline" onClick={() => { const val = (document.getElementById(`rate-${aff.id}`) as HTMLInputElement).value; updateCommissionMutation.mutate({ affiliateId: aff.id, rate: parseInt(val) }); }} data-testid={`button-set-commission-${aff.id}`}>Set</Button>
+                          </div>
                           {aff.status !== "approved" && <Button size="sm" variant="outline" onClick={() => approveAffiliateMutation.mutate(aff.id)} data-testid={`button-approve-${aff.id}`}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>}
                           {aff.status !== "blocked" && <Button size="sm" variant="destructive" onClick={() => blockAffiliateMutation.mutate(aff.id)} data-testid={`button-block-${aff.id}`}><Lock className="w-4 h-4 mr-1" />Block</Button>}
                         </div>

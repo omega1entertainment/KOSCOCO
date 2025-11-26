@@ -3576,6 +3576,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Update affiliate commission rate
+  app.patch('/api/admin/affiliates/:id/commission', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { commissionRate } = req.body;
+
+      if (typeof commissionRate !== 'number' || commissionRate < 0 || commissionRate > 100) {
+        return res.status(400).json({ message: "Commission rate must be between 0 and 100" });
+      }
+
+      const result = await db.execute(sql`
+        UPDATE affiliates 
+        SET commission_rate = ${commissionRate}
+        WHERE id = ${id}
+        RETURNING *
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error updating affiliate commission:", error);
+      res.status(500).json({ message: "Failed to update commission rate" });
+    }
+  });
+
   // Admin: Get all payout requests with affiliate details
   app.get('/api/admin/payout-requests', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

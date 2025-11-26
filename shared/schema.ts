@@ -158,6 +158,7 @@ export const affiliates = pgTable("affiliates", {
   referralCode: text("referral_code").notNull().unique(),
   totalReferrals: integer("total_referrals").default(0).notNull(),
   totalEarnings: integer("total_earnings").default(0).notNull(),
+  commissionRate: integer("commission_rate").default(20).notNull(),
   status: text("status").notNull().default('active'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
