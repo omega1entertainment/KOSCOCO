@@ -4536,6 +4536,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Currency conversion rates (USD to local currency)
+  const currencyRates: Record<string, { rate: number; symbol: string; name: string }> = {
+    'GB': { rate: 0.79, symbol: '£', name: 'GBP' },
+    'EU': { rate: 0.92, symbol: '€', name: 'EUR' },
+    'JP': { rate: 149.50, symbol: '¥', name: 'JPY' },
+    'IN': { rate: 83.12, symbol: '₹', name: 'INR' },
+    'NG': { rate: 1557.50, symbol: '₦', name: 'NGN' },
+    'KE': { rate: 129.50, symbol: 'KSh', name: 'KES' },
+    'GH': { rate: 15.50, symbol: 'GH₵', name: 'GHS' },
+    'TZ': { rate: 2580.00, symbol: 'TSh', name: 'TZS' },
+    'UG': { rate: 3950.00, symbol: 'USh', name: 'UGX' },
+    'ZA': { rate: 18.50, symbol: 'R', name: 'ZAR' },
+    'EG': { rate: 49.30, symbol: '£', name: 'EGP' },
+    'CM': { rate: 656.00, symbol: 'FCFA', name: 'XAF' },
+    'SN': { rate: 656.00, symbol: 'CFA', name: 'XOF' },
+    'CI': { rate: 656.00, symbol: 'CFA', name: 'XOF' },
+    'BR': { rate: 4.97, symbol: 'R$', name: 'BRL' },
+    'MX': { rate: 17.05, symbol: '$', name: 'MXN' },
+    'CA': { rate: 1.36, symbol: 'C$', name: 'CAD' },
+    'AU': { rate: 1.55, symbol: 'A$', name: 'AUD' },
+    'SG': { rate: 1.35, symbol: 'S$', name: 'SGD' },
+    'HK': { rate: 7.81, symbol: 'HK$', name: 'HKD' },
+    'PH': { rate: 56.00, symbol: '₱', name: 'PHP' },
+    'TH': { rate: 35.50, symbol: '฿', name: 'THB' },
+  };
+
+  // Currency detection endpoint
+  app.get('/api/currency', async (req: any, res) => {
+    try {
+      const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || '0.0.0.0';
+      
+      // Default to USD
+      let countryCode = 'US';
+      let currencyInfo = { rate: 1, symbol: '$', name: 'USD', code: 'USD' };
+      
+      // Try to detect country from IP using a simple free service
+      if (ip && ip !== '0.0.0.0' && ip !== '::1') {
+        try {
+          const response = await fetch(`https://ipapi.co/${ip}/json/`, { timeout: 5000 });
+          if (response.ok) {
+            const data = await response.json();
+            countryCode = data.country_code;
+            
+            // Map country code to currency
+            const currencyKey = countryCode;
+            if (currencyRates[currencyKey]) {
+              currencyInfo = { ...currencyRates[currencyKey], code: currencyKey };
+            }
+          }
+        } catch (error) {
+          console.log('IP geolocation failed, using default USD');
+        }
+      }
+      
+      res.json({ countryCode, ...currencyInfo });
+    } catch (error) {
+      console.error('Currency detection error:', error);
+      res.json({ rate: 1, symbol: '$', name: 'USD', code: 'USD', countryCode: 'US' });
+    }
+  });
+
   // Admin: Get all users
   // Admin dashboard stats endpoint
   app.get('/api/admin/stats', isAuthenticated, isAdmin, async (req: any, res) => {

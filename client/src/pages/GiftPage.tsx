@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +61,8 @@ export default function GiftPage() {
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [currency, setCurrency] = useState<{ rate: number; symbol: string; name: string; code: string }>({ rate: 1, symbol: '$', name: 'USD', code: 'USD' });
+  const [exchangeRate, setExchangeRate] = useState(1);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video & { user: User }>({
     queryKey: ["/api/videos", videoId],
@@ -75,6 +77,22 @@ export default function GiftPage() {
     queryKey: ["/api/wallet"],
     enabled: !!user,
   });
+
+  // Detect user currency based on IP
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      try {
+        const response = await fetch('/api/currency');
+        const data = await response.json();
+        setCurrency({ rate: data.rate, symbol: data.symbol, name: data.name, code: data.code });
+        setExchangeRate(data.rate);
+      } catch (error) {
+        console.error('Failed to fetch currency:', error);
+      }
+    };
+    
+    fetchCurrency();
+  }, []);
 
   const sendGiftMutation = useMutation({
     mutationFn: async ({ giftId, quantity }: { giftId: string; quantity: number }) => {
@@ -127,7 +145,10 @@ export default function GiftPage() {
   };
 
   const formatCurrency = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
+    const usdAmount = cents / 100;
+    const convertedAmount = usdAmount * exchangeRate;
+    const decimals = currency.code === 'JPY' ? 0 : 2;
+    return `${currency.symbol}${convertedAmount.toFixed(decimals)}`;
   };
 
   if (videoLoading || giftsLoading) {
