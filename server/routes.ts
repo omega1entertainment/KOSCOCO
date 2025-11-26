@@ -691,6 +691,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notifications endpoints
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const notifications = await storage.getUserNotifications(userId, limit);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get('/api/notifications/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const unreadCount = await storage.getUnreadNotificationCount(userId);
+      res.json({ unreadCount });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  app.post('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const notification = await storage.markNotificationAsRead(req.params.id);
+      res.json(notification);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post('/api/notifications/read-all', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all as read" });
+    }
+  });
+
+  app.delete('/api/notifications/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteNotification(req.params.id);
+      res.json({ message: "Notification deleted" });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  });
+
   // Creator Wallet Routes
   app.get('/api/creator/wallet', isAuthenticated, async (req: any, res) => {
     try {
@@ -1434,6 +1489,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(video);
+      
+      // Send notifications to all followers (in background, don't block response)
+      setImmediate(async () => {
+        try {
+          const followers = await storage.getFollowers(userId);
+          const creator = await storage.getUser(userId);
+          if (followers.length > 0 && creator) {
+            const creatorName = creator.username || `${creator.firstName} ${creator.lastName}`;
+            for (const follower of followers) {
+              await storage.createNotification({
+                userId: follower.id,
+                type: 'upload',
+                title: `New video from ${creatorName}`,
+                message: `"${title}" uploaded a new video`,
+                relatedId: video.id,
+                read: false,
+              });
+            }
+          }
+        } catch (notifError) {
+          console.error('Error sending notifications:', notifError);
+        }
+      });
       
       // Run moderation in background (don't block response)
       setImmediate(async () => {

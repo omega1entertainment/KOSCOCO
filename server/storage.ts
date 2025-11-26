@@ -252,6 +252,7 @@ export interface IStorage {
   getHomePageStats(): Promise<{ totalParticipants: number; videosSubmitted: number; categories: number; totalVotes: number }>;
 
   // Dashboard notification methods
+  createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string, limit?: number): Promise<Notification[]>;
   getUnreadNotificationCount(userId: string): Promise<number>;
   markNotificationAsRead(id: string): Promise<Notification | undefined>;
@@ -2360,6 +2361,11 @@ export class DbStorage implements IStorage {
   }
 
   // Notification methods
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [created] = await db.insert(schema.notifications).values(notification).returning();
+    return created;
+  }
+
   async getUserNotifications(userId: string, limit = 20): Promise<Notification[]> {
     return db.select().from(schema.notifications)
       .where(eq(schema.notifications.userId, userId))
