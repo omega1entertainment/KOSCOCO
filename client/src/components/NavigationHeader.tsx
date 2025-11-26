@@ -63,11 +63,24 @@ export default function NavigationHeader({
 
   const { data: registrationData } = useQuery({
     queryKey: ["/api/registrations/count"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/registrations/count", {
+          credentials: "include",
+        });
+        if (res.status === 401) {
+          return null;
+        }
+        if (!res.ok) throw new Error("Failed to fetch registration count");
+        return await res.json();
+      } catch (error) {
+        return null;
+      }
+    },
     enabled: isAuthenticated,
   });
 
-  const registrationCount = registrationData?.registrationCount || 0;
+  const registrationCount = (registrationData as any)?.registrationCount || 0;
   const needsRegistration = registrationCount < 5;
   
   const navItems = [
