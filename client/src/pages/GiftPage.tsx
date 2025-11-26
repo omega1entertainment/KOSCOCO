@@ -29,7 +29,7 @@ import type { Gift, Video, User, UserWallet } from "@shared/schema";
 import drumImageUrl from "@assets/Standard African drum_1764140229973.png";
 import cowrieImageUrl from "@assets/Cowries_1764140169949.png";
 import toguhImageUrl from "@assets/North west toguh_1764140310074.png";
-import maasaiBeadsImageUrl from "@assets/african beads,_1764140789854.png";
+import maasaiBeadsImageUrl from "@assets/zulu-necklace-removebg-preview_1764140940640.png";
 
 const giftIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "African Drum": Drum,
