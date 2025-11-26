@@ -276,7 +276,67 @@ export default function AdminAffiliateDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.pendingPayouts || 0}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stats?.approvedPayouts || 0} approved</p>
+                  <p className="text-xs text-muted-foreground mt-1">{(stats?.pendingPayoutAmount || 0).toLocaleString()} XAF</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Payout Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pending:</span>
+                    <span className="font-medium">{stats?.pendingPayouts || 0} ({(stats?.pendingPayoutAmount || 0).toLocaleString()} XAF)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Approved:</span>
+                    <span className="font-medium">{stats?.approvedPayouts || 0} ({(stats?.approvedPayoutAmount || 0).toLocaleString()} XAF)</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-muted-foreground">Paid:</span>
+                    <span className="font-bold text-green-600">{(stats?.paidPayoutAmount || 0).toLocaleString()} XAF</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Top Locations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {stats?.geoBreakdown?.map((location: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center text-sm">
+                        <span>{location.location}</span>
+                        <Badge variant="outline">{location.registrations} reg.</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Traffic Sources</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Total Clicks</span>
+                      <span className="font-medium">{stats?.totalClicks || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Conversions</span>
+                      <span className="font-medium">{stats?.totalConversions || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm border-t pt-2">
+                      <span>Conversion Rate</span>
+                      <span className="font-bold">{stats?.totalClicks ? ((stats.totalConversions / stats.totalClicks) * 100).toFixed(1) : 0}%</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

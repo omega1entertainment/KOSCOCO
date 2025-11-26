@@ -6434,7 +6434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COALESCE(SUM(CASE WHEN am.conversions IS NOT NULL THEN am.conversions ELSE 0 END), 0) as total_conversions,
           COALESCE(SUM(a.total_earnings), 0) as total_revenue,
           COUNT(DISTINCT CASE WHEN pr.status = 'pending' THEN pr.id END) as pending_payouts,
-          COUNT(DISTINCT CASE WHEN pr.status = 'approved' THEN pr.id END) as approved_payouts
+          COUNT(DISTINCT CASE WHEN pr.status = 'approved' THEN pr.id END) as approved_payouts,
+          COALESCE(SUM(CASE WHEN pr.status = 'approved' THEN pr.amount ELSE 0 END), 0) as approved_payout_amount,
+          COALESCE(SUM(CASE WHEN pr.status = 'pending' THEN pr.amount ELSE 0 END), 0) as pending_payout_amount
         FROM affiliates a
         LEFT JOIN affiliate_metrics am ON a.id = am.affiliate_id
         LEFT JOIN payout_requests pr ON a.id = pr.affiliate_id
@@ -6452,7 +6454,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LIMIT 5
       `);
 
+      const geoBreakdown = await db.execute(sql`
+        SELECT 
+          COALESCE(u.location, 'Unknown') as location,
+          COUNT(DISTINCT r.id) as registrations
+        FROM registrations r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.referral_code IS NOT NULL
+        GROUP BY u.location
+        ORDER BY registrations DESC
+        LIMIT 5
+      `);
+
+      const paidPayouts = await db.execute(sql`
+        SELECT 
+          COALESCE(SUM(CASE WHEN pr.processed_at IS NOT NULL AND pr.status != 'rejected' THEN pr.amount ELSE 0 END), 0) as paid_amount
+        FROM payout_requests pr
+      `);
+
       const result = stats.rows[0];
+      const paidResult = paidPayouts.rows[0];
       res.json({
         totalAffiliates: Number(result.total_affiliates),
         activeAffiliates: Number(result.active_affiliates),
@@ -6461,7 +6482,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalRevenue: Number(result.total_revenue),
         pendingPayouts: Number(result.pending_payouts),
         approvedPayouts: Number(result.approved_payouts),
+        pendingPayoutAmount: Number(result.pending_payout_amount),
+        approvedPayoutAmount: Number(result.approved_payout_amount),
+        paidPayoutAmount: Number(paidResult.paid_amount),
         topAffiliates: topAffiliates.rows,
+        geoBreakdown: geoBreakdown.rows,
       });
     } catch (error) {
       console.error("Error fetching affiliate stats:", error);
