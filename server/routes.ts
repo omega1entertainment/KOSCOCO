@@ -6274,6 +6274,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ ADMIN AFFILIATE ANALYTICS ROUTES ============
+
+  // Admin: Get affiliate analytics and statistics
+  app.get('/api/admin/affiliates/stats', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const stats = await db.execute(sql`
+        SELECT 
+          COUNT(DISTINCT a.id) as total_affiliates,
+          COUNT(DISTINCT CASE WHEN a.status = 'active' THEN a.id END) as active_affiliates,
+          COALESCE(SUM(CASE WHEN am.clicks IS NOT NULL THEN am.clicks ELSE 0 END), 0) as total_clicks,
+          COALESCE(SUM(CASE WHEN am.conversions IS NOT NULL THEN am.conversions ELSE 0 END), 0) as total_conversions,
+          COALESCE(SUM(a.total_earnings), 0) as total_revenue,
+          COUNT(DISTINCT CASE WHEN pr.status = 'pending' THEN pr.id END) as pending_payouts,
+          COUNT(DISTINCT CASE WHEN pr.status = 'approved' THEN pr.id END) as approved_payouts
+        FROM affiliates a
+        LEFT JOIN affiliate_metrics am ON a.id = am.affiliate_id
+        LEFT JOIN payout_requests pr ON a.id = pr.affiliate_id
+      `);
+      
+      const topAffiliates = await db.execute(sql`
+        SELECT 
+          a.id,
+          CONCAT(u.first_name, ' ', u.last_name) as name,
+          a.total_earnings as earnings,
+          a.total_referrals as referrals
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        ORDER BY a.total_earnings DESC
+        LIMIT 5
+      `);
+
+      const result = stats.rows[0];
+      res.json({
+        totalAffiliates: Number(result.total_affiliates),
+        activeAffiliates: Number(result.active_affiliates),
+        totalClicks: Number(result.total_clicks),
+        totalConversions: Number(result.total_conversions),
+        totalRevenue: Number(result.total_revenue),
+        pendingPayouts: Number(result.pending_payouts),
+        approvedPayouts: Number(result.approved_payouts),
+        topAffiliates: topAffiliates.rows,
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate stats:", error);
+      res.status(500).json({ message: "Failed to fetch affiliate stats" });
+    }
+  });
+
+  // Admin: Get fraud alerts
+  app.get('/api/admin/fraud-alerts', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const alerts = await db.execute(sql`
+        SELECT 
+          fa.id,
+          fa.alert_type,
+          fa.description,
+          fa.severity,
+          fa.status,
+          fa.created_at,
+          a.id as affiliate_id,
+          u.email,
+          u.first_name,
+          u.last_name
+        FROM fraud_alerts fa
+        JOIN affiliates a ON fa.affiliate_id = a.id
+        JOIN users u ON a.user_id = u.id
+        WHERE fa.status = 'pending' OR fa.resolved_at IS NULL
+        ORDER BY fa.created_at DESC
+        LIMIT 50
+      `);
+      
+      res.json(alerts.rows);
+    } catch (error) {
+      console.error("Error fetching fraud alerts:", error);
+      res.status(500).json({ message: "Failed to fetch fraud alerts" });
+    }
+  });
+
+  // Admin: Create affiliate campaign
+  app.post('/api/admin/affiliate-campaigns', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { name, description, commissionPercentage } = req.body;
+      
+      if (!name || !commissionPercentage) {
+        return res.status(400).json({ message: "Name and commission percentage required" });
+      }
+
+      const result = await db.execute(sql`
+        INSERT INTO affiliate_campaigns (name, description, commission_percentage, status, created_at)
+        VALUES (${name}, ${description || null}, ${commissionPercentage}, 'active', NOW())
+        RETURNING *
+      `);
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  // Admin: Get affiliate campaigns
+  app.get('/api/admin/affiliate-campaigns', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const campaigns = await db.execute(sql`
+        SELECT 
+          id,
+          name,
+          description,
+          commission_percentage,
+          status,
+          start_date,
+          end_date,
+          created_at
+        FROM affiliate_campaigns
+        ORDER BY created_at DESC
+      `);
+      
+      res.json(campaigns.rows);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  // Admin: Resolve fraud alert
+  app.patch('/api/admin/fraud-alerts/:id/resolve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const result = await db.execute(sql`
+        UPDATE fraud_alerts 
+        SET status = 'resolved', resolved_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Fraud alert not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error resolving alert:", error);
+      res.status(500).json({ message: "Failed to resolve alert" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
