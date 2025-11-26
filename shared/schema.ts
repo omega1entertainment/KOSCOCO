@@ -1138,6 +1138,28 @@ export const affiliateMetrics = pgTable("affiliate_metrics", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Insert schemas for Affiliate tables
+export const insertAffiliateCampaignSchema = createInsertSchema(affiliateCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCommissionTierSchema = createInsertSchema(commissionTiers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertFraudAlertSchema = createInsertSchema(fraudAlerts).omit({
+  id: true,
+  resolvedAt: true,
+  createdAt: true,
+});
+
+export const insertAffiliateMetricsSchema = createInsertSchema(affiliateMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Insert schemas for KOZZII tables
 export const insertCompetitionSchema = createInsertSchema(competitions).omit({
   id: true,
