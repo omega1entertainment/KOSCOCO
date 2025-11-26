@@ -6786,7 +6786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const gifts = [
         { name: 'African Drum', description: 'Rhythmic African drum', iconUrl: '🥁', priceUsd: 100, tier: 'small' },
         { name: 'Cowrie Shell', description: 'Traditional cowrie shells', iconUrl: '🐚', priceUsd: 200, tier: 'medium' },
-        { name: 'Toguh Cloth', description: 'Authentic Northwest Cameroon traditional cloth', iconUrl: '🧵', priceUsd: 300, tier: 'medium' },
+        { name: 'Toguh Cloth', description: 'Authentic Northwest Cameroon traditional cloth', iconUrl: '🧵', priceUsd: 200, tier: 'medium' },
         { name: 'Elephant', description: 'Majestic elephant', iconUrl: '🐘', priceUsd: 250, tier: 'medium' },
         { name: 'Lion', description: 'The King of Beasts', iconUrl: '🦁', priceUsd: 500, tier: 'large' },
         { name: 'African Crown', description: 'Royal African crown', iconUrl: '👑', priceUsd: 1000, tier: 'luxury' },
