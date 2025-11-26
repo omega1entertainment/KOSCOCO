@@ -441,7 +441,7 @@ export default function AdminAffiliateDashboard() {
 
         {/* Affiliate Details Dialog */}
         <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-          <DialogContent className="max-w-2xl" data-testid="dialog-affiliate-details">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" data-testid="dialog-affiliate-details">
             <DialogHeader>
               <DialogTitle>Affiliate Details</DialogTitle>
               <DialogDescription>
@@ -449,11 +449,11 @@ export default function AdminAffiliateDashboard() {
               </DialogDescription>
             </DialogHeader>
             {selectedAffiliateDetails ? (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Personal Information */}
                 <div>
-                  <h3 className="font-semibold mb-3">Personal Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="font-semibold mb-2 text-sm">Personal Information</h3>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Name</p>
                       <p className="font-medium">{selectedAffiliateDetails.first_name} {selectedAffiliateDetails.last_name}</p>
@@ -475,8 +475,8 @@ export default function AdminAffiliateDashboard() {
 
                 {/* Performance Metrics */}
                 <div>
-                  <h3 className="font-semibold mb-3">Performance Metrics</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="font-semibold mb-2 text-sm">Performance Metrics</h3>
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-muted rounded">
                       <p className="text-sm text-muted-foreground">Total Referrals</p>
                       <p className="text-2xl font-bold">{selectedAffiliateDetails.total_referrals}</p>
@@ -498,8 +498,8 @@ export default function AdminAffiliateDashboard() {
 
                 {/* Account Information */}
                 <div>
-                  <h3 className="font-semibold mb-3">Account Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="font-semibold mb-2 text-sm">Account Information</h3>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Status</p>
                       <Badge className="mt-1" variant={selectedAffiliateDetails.status === "active" ? "default" : "destructive"}>
@@ -516,8 +516,8 @@ export default function AdminAffiliateDashboard() {
                 {/* Referrals List */}
                 {selectedAffiliateDetails.referrals && selectedAffiliateDetails.referrals.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3">Recent Referrals</h3>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <h3 className="font-semibold mb-2 text-sm">Recent Referrals</h3>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
                       {selectedAffiliateDetails.referrals.map((referral: any) => (
                         <div key={referral.id} className="p-2 border rounded text-sm">
                           <div className="flex justify-between items-start">
@@ -537,8 +537,8 @@ export default function AdminAffiliateDashboard() {
                 {/* Payout Requests */}
                 {selectedAffiliateDetails.payoutRequests && selectedAffiliateDetails.payoutRequests.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3">Payout Requests</h3>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <h3 className="font-semibold mb-2 text-sm">Payout Requests</h3>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
                       {selectedAffiliateDetails.payoutRequests.map((payout: any) => (
                         <div key={payout.id} className="p-2 border rounded text-sm">
                           <div className="flex justify-between items-start">
