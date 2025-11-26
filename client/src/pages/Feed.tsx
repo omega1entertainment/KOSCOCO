@@ -128,9 +128,9 @@ export default function Feed() {
       return response.json();
     },
     onSuccess: (_, videoId) => {
-      setPurchasedVideos(prev => new Set([...prev, videoId]));
+      setPurchasedVideos(prev => new Set(Array.from(prev).concat(videoId)));
       setPreviewEnded(prev => {
-        const next = new Set(prev);
+        const next = new Set(Array.from(prev));
         next.delete(videoId);
         return next;
       });
@@ -151,7 +151,7 @@ export default function Feed() {
   // Handle exclusive content preview timer
   const handleVideoTimeUpdate = useCallback((video: VideoFeedItem, currentTime: number) => {
     if (video.isExclusive && !purchasedVideos.has(video.id) && currentTime >= 5) {
-      setPreviewEnded(prev => new Set([...prev, video.id]));
+      setPreviewEnded(prev => new Set(Array.from(prev).concat(video.id)));
       const videoEl = videoRefs.current.get(videos.findIndex(v => v.id === video.id));
       if (videoEl) {
         videoEl.pause();
@@ -541,6 +541,16 @@ export default function Feed() {
                       {video.creator.firstName[0]}{video.creator.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
+                  {/* Verification Badge */}
+                  {(video.creator.verificationBadge || video.creator.redStar) && (
+                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
+                      {video.creator.redStar ? (
+                        <Star className="w-4 h-4 text-red-500 fill-red-500" data-testid="badge-red-star" />
+                      ) : (
+                        <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500" data-testid="badge-blue-tick" />
+                      )}
+                    </div>
+                  )}
                   {!video.isFollowing && user?.id !== video.creator.id && (
                     <button
                       className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-primary flex items-center justify-center"

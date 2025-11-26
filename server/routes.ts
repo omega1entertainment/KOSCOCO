@@ -6783,3 +6783,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
+
+  // Seed African-themed gifts
+  app.post('/api/gifts/seed', async (req, res) => {
+    try {
+      const gifts = [
+        { name: 'African Drum', description: 'Rhythmic African drum', iconUrl: '🥁', priceUsd: 100, tier: 'small' },
+        { name: 'Elephant', description: 'Majestic elephant', iconUrl: '🐘', priceUsd: 250, tier: 'medium' },
+        { name: 'Lion', description: 'The King of Beasts', iconUrl: '🦁', priceUsd: 500, tier: 'large' },
+        { name: 'African Crown', description: 'Royal African crown', iconUrl: '👑', priceUsd: 1000, tier: 'luxury' },
+        { name: 'Giraffe', description: 'Tall majestic giraffe', iconUrl: '🦒', priceUsd: 150, tier: 'small' },
+        { name: 'Tribal Mask', description: 'Sacred tribal mask', iconUrl: '🎭', priceUsd: 750, tier: 'large' },
+      ];
+      
+      for (const gift of gifts) {
+        await db.execute(sql`
+          INSERT INTO gifts (name, description, icon_url, price_usd, tier, is_active)
+          VALUES (${gift.name}, ${gift.description}, ${gift.iconUrl}, ${gift.priceUsd}, ${gift.tier}, true)
+          ON CONFLICT DO NOTHING
+        `);
+      }
+      
+      res.json({ message: 'Gifts seeded successfully' });
+    } catch (error) {
+      console.error('Error seeding gifts:', error);
+      res.status(500).json({ message: 'Failed to seed gifts' });
+    }
+  });
+
+  // Send gift with payment
+  app.post('/api/gifts/send', isAuthenticated, async (req: any, res) => {
+    try {
+      const { videoId, creatorId, giftId, quantity } = req.body;
+      const senderId = (req.user as SelectUser).id;
+
+      if (!videoId || !creatorId || !giftId || !quantity) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      // Get gift details
+      const giftResult = await db.execute(sql`SELECT * FROM gifts WHERE id = ${giftId}`);
+      if (giftResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Gift not found' });
+      }
+
+      const gift = giftResult.rows[0] as any;
+      const totalUsd = (gift.price_usd * quantity);
+      const creatorShare = Math.floor(totalUsd * 0.65);
+      const platformShare = totalUsd - creatorShare;
+
+      // Create transaction
+      const txRef = `gift_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const transactionId = randomUUID();
+
+      await db.execute(sql`
+        INSERT INTO gift_transactions 
+        (id, sender_id, recipient_id, video_id, gift_id, quantity, amount_paid_usd, amount_paid_local, creator_share, platform_share, tx_ref, status)
+        VALUES 
+        (${transactionId}, ${senderId}, ${creatorId}, ${videoId}, ${giftId}, ${quantity}, ${totalUsd}, ${totalUsd}, ${creatorShare}, ${platformShare}, ${txRef}, 'completed')
+      `);
+
+      // Update creator wallet
+      await db.execute(sql`
+        UPDATE users SET wallet_balance = wallet_balance + ${creatorShare} WHERE id = ${creatorId}
+      `);
+
+      res.status(201).json({
+        id: transactionId,
+        message: 'Gift sent successfully',
+        creatorEarned: creatorShare / 100,
+      });
+    } catch (error) {
+      console.error('Error sending gift:', error);
+      res.status(500).json({ message: 'Failed to send gift' });
+    }
+  });
