@@ -264,11 +264,11 @@ export default function GiftPage() {
                         data-testid={`button-gift-${gift.id}`}
                       >
                         <div className="flex flex-col items-center gap-2">
-                          <div className={`p-3 rounded-full ${tierColors[gift.tier]}`}>
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${tierColors[gift.tier]}`}>
                             {gift.name === "African Drum" ? (
-                              <img src={drumImageUrl} alt="African Drum" className="h-8 w-8 object-contain" />
+                              <img src={drumImageUrl} alt="African Drum" className="h-10 w-10 object-contain" />
                             ) : (
-                              <Icon className="h-8 w-8" />
+                              <Icon className="h-10 w-10" />
                             )}
                           </div>
                           <span className="font-medium text-sm">{gift.name}</span>
