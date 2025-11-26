@@ -117,29 +117,31 @@ export default function NavigationHeader({
               </Button>
             ))}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="min-h-11"
-                  data-testid="link-judges"
-                >
-                  {t('nav.judges')}
-                  <ChevronDown className="w-4 h-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {judgeMenuItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.label}
-                    onClick={() => onNavigate?.(item.path)}
-                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+            {isAuthenticated && user?.isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11"
+                    data-testid="link-judges"
                   >
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    {t('nav.judges')}
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {judgeMenuItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.label}
+                      onClick={() => onNavigate?.(item.path)}
+                      data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -356,31 +358,33 @@ export default function NavigationHeader({
               </Button>
             ))}
             
-            <div className="mt-2">
-              <Button
-                variant="ghost"
-                className="min-h-11 justify-between w-full px-4"
-                onClick={() => setExpandedJudges(!expandedJudges)}
-                data-testid="button-judges-submenu"
-              >
-                <span className="text-sm font-semibold">Judges</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${expandedJudges ? 'rotate-180' : ''}`} />
-              </Button>
-              {expandedJudges && judgeMenuItems.map((item) => (
+            {isAuthenticated && user?.isAdmin && (
+              <div className="mt-2">
                 <Button
-                  key={item.label}
                   variant="ghost"
-                  className="min-h-11 justify-start w-full ml-4"
-                  onClick={() => {
-                    onNavigate?.(item.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="min-h-11 justify-between w-full px-4"
+                  onClick={() => setExpandedJudges(!expandedJudges)}
+                  data-testid="button-judges-submenu"
                 >
-                  {item.label}
+                  <span className="text-sm font-semibold">Judges</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${expandedJudges ? 'rotate-180' : ''}`} />
                 </Button>
-              ))}
-            </div>
+                {expandedJudges && judgeMenuItems.map((item) => (
+                  <Button
+                    key={item.label}
+                    variant="ghost"
+                    className="min-h-11 justify-start w-full ml-4"
+                    onClick={() => {
+                      onNavigate?.(item.path);
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
+            )}
             
             <div className="mt-2">
               <Button
