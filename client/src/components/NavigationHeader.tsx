@@ -101,10 +101,10 @@ export default function NavigationHeader({
             className="flex items-center hover-elevate active-elevate-2 rounded-md p-2 -ml-2"
             data-testid="button-logo-home"
           >
-            <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
+            <img src={logo} alt="KOSCOCO" className="h-12" data-testid="img-logo" />
           </button>
           
-          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+          <nav className="hidden md:flex items-center gap-0 flex-1 justify-center">
             {navItems.map((item) => (
               <Button
                 key={item.label}
