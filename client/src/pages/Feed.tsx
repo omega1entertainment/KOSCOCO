@@ -27,6 +27,10 @@ import {
   BadgeCheck,
   Lock,
   Unlock,
+  Home,
+  Search,
+  Film,
+  User,
 } from "lucide-react";
 import type { VideoFeedItem, Competition, Category } from "@shared/schema";
 import {
@@ -421,7 +425,7 @@ export default function Feed() {
       {/* Video Feed Container */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide touch-pan-y"
+        className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide touch-pan-y pb-16"
         onScroll={handleScroll}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -696,25 +700,56 @@ export default function Feed() {
         )}
       </div>
 
-      {/* Bottom Navigation Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-6">
+      {/* Bottom Navigation Bar */}
+      <div className="absolute bottom-0 left-0 right-0 bg-black border-t border-white/10 h-16 flex items-center justify-around px-4">
         <Button
           size="icon"
-          className="rounded-full w-12 h-12 bg-white hover:bg-white/90 text-primary"
+          variant="ghost"
+          className="text-white hover:text-primary"
+          onClick={() => setLocation("/")}
+          data-testid="button-home"
+          title="Home"
+        >
+          <Home className="w-6 h-6" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-white hover:text-primary"
+          onClick={() => setLocation("/categories")}
+          data-testid="button-explore"
+          title="Explore"
+        >
+          <Search className="w-6 h-6" />
+        </Button>
+        <Button
+          size="icon"
+          className="rounded-full w-12 h-12 bg-primary hover:bg-primary/90 text-white"
           onClick={() => setLocation("/koscoco")}
-          data-testid="button-koscoco-link"
-          title="Visit KOSCOCO"
+          data-testid="button-koscoco-nav"
+          title="KOSCOCO"
         >
           <Trophy className="w-6 h-6" />
         </Button>
         <Button
           size="icon"
-          className="rounded-full w-12 h-12 bg-primary hover:bg-primary/90 text-white"
+          variant="ghost"
+          className="text-white hover:text-primary"
           onClick={() => setLocation("/upload")}
-          data-testid="button-upload"
-          title="Upload Video"
+          data-testid="button-upload-nav"
+          title="Cinema"
         >
-          <Plus className="w-6 h-6" />
+          <Film className="w-6 h-6" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-white hover:text-primary"
+          onClick={() => user ? setLocation("/creator") : login()}
+          data-testid="button-profile"
+          title="Profile"
+        >
+          <User className="w-6 h-6" />
         </Button>
       </div>
     </div>
