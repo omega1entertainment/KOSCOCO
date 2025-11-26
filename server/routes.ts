@@ -6568,6 +6568,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Create custom payout for affiliate
+  app.post('/api/admin/affiliates/:id/custom-payout', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { amount } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valid payout amount required" });
+      }
+
+      // Verify affiliate exists
+      const affiliateResult = await db.execute(sql`
+        SELECT id FROM affiliates WHERE id = ${id}
+      `);
+
+      if (affiliateResult.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      // Create custom payout request
+      const payoutId = randomUUID();
+      await db.execute(sql`
+        INSERT INTO payout_requests (id, affiliate_id, amount, status, payment_method, requested_at)
+        VALUES (${payoutId}, ${id}, ${amount}, 'pending', 'custom', NOW())
+      `);
+
+      res.status(201).json({
+        id: payoutId,
+        amount,
+        status: 'pending',
+        message: "Custom payout created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating custom payout:", error);
+      res.status(500).json({ message: "Failed to create custom payout" });
+    }
+  });
+
+  // Admin: Get affiliate performance logs
+  app.get('/api/admin/affiliates/:id/performance', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      // Verify affiliate exists
+      const affiliateResult = await db.execute(sql`
+        SELECT id FROM affiliates WHERE id = ${id}
+      `);
+
+      if (affiliateResult.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      // Get performance data from referrals and payouts
+      const performanceData = await db.execute(sql`
+        SELECT 
+          'referral' as event_type,
+          'User registered via referral code' as description,
+          COUNT(r.id) as referrals_count,
+          0 as clicks_count,
+          0 as conversions_count,
+          0 as earnings,
+          MAX(r.created_at) as created_at
+        FROM registrations r
+        WHERE r.referred_by = ${id}
+        UNION ALL
+        SELECT 
+          'payout' as event_type,
+          CONCAT('Payout request: ', pr.status) as description,
+          0 as referrals_count,
+          0 as clicks_count,
+          0 as conversions_count,
+          pr.amount as earnings,
+          pr.requested_at as created_at
+        FROM payout_requests pr
+        WHERE pr.affiliate_id = ${id}
+        ORDER BY created_at DESC
+        LIMIT 20
+      `);
+
+      res.json(performanceData.rows);
+    } catch (error) {
+      console.error("Error fetching performance logs:", error);
+      res.status(500).json({ message: "Failed to fetch performance logs" });
+    }
+  });
+
   // Admin: Upload image for WYSIWYG editor
   app.post('/api/admin/communications/upload-image', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

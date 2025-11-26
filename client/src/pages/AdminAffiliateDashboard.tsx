@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle, Plus, Edit2, Lock, Image as ImageIcon } from "lucide-react";
+import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle, Plus, Edit2, Lock, Image as ImageIcon, TrendingDown } from "lucide-react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -44,6 +44,10 @@ export default function AdminAffiliateDashboard() {
   const [formLastName, setFormLastName] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
+  const [customPayoutDialogOpen, setCustomPayoutDialogOpen] = useState(false);
+  const [performanceDialogOpen, setPerformanceDialogOpen] = useState(false);
+  const [customPayoutAmount, setCustomPayoutAmount] = useState("");
+  const [selectedPayoutAffiliateId, setSelectedPayoutAffiliateId] = useState<string | null>(null);
   const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -110,6 +114,12 @@ export default function AdminAffiliateDashboard() {
     queryKey: ["/api/admin/affiliates", selectedAffiliateId],
     queryFn: () => fetch(`/api/admin/affiliates/${selectedAffiliateId}`).then(r => r.json()),
     enabled: !!selectedAffiliateId,
+  });
+
+  const { data: performanceData = [] } = useQuery({
+    queryKey: ["/api/admin/affiliates", selectedPayoutAffiliateId, "performance"],
+    queryFn: () => fetch(`/api/admin/affiliates/${selectedPayoutAffiliateId}/performance`).then(r => r.json()),
+    enabled: !!selectedPayoutAffiliateId && performanceDialogOpen,
   });
 
   const createCampaignMutation = useMutation({
@@ -260,6 +270,24 @@ export default function AdminAffiliateDashboard() {
     },
     onError: (error: any) => {
       toast({ title: error.message || "Failed to send email", variant: "destructive" });
+    },
+  });
+
+  const createCustomPayoutMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/admin/affiliates/${selectedPayoutAffiliateId}/custom-payout`, "POST", {
+        amount: parseInt(customPayoutAmount),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Custom payout created successfully" });
+      setCustomPayoutAmount("");
+      setSelectedPayoutAffiliateId(null);
+      setCustomPayoutDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payout-requests"] });
+    },
+    onError: (error: any) => {
+      toast({ title: error.message || "Failed to create payout", variant: "destructive" });
     },
   });
 
@@ -460,6 +488,8 @@ export default function AdminAffiliateDashboard() {
                         </div>
                         <div className="flex gap-2 flex-wrap items-center">
                           <Button size="sm" variant="outline" onClick={() => { setSelectedAffiliateId(aff.id); setDetailsDialogOpen(true); }} data-testid={`button-view-details-${aff.id}`}>View Details</Button>
+                          <Button size="sm" variant="outline" onClick={() => { setSelectedPayoutAffiliateId(aff.id); setPerformanceDialogOpen(true); }} data-testid={`button-view-performance-${aff.id}`}><TrendingDown className="w-4 h-4 mr-1" />Performance</Button>
+                          <Button size="sm" variant="outline" onClick={() => { setSelectedPayoutAffiliateId(aff.id); setCustomPayoutDialogOpen(true); }} data-testid={`button-manage-payout-${aff.id}`}><DollarSign className="w-4 h-4 mr-1" />Payout</Button>
                           <Button size="sm" variant="outline" onClick={() => { setEditingAffiliateId(aff.id); setFormEmail(aff.email); setFormFirstName(aff.first_name); setFormLastName(aff.last_name); setEditDialogOpen(true); }} data-testid={`button-edit-${aff.id}`}><Edit2 className="w-4 h-4 mr-1" />Edit</Button>
                           <div className="flex items-center gap-1">
                             <Input type="number" min="0" max="100" defaultValue={aff.commission_rate || 20} className="w-16 h-8" id={`rate-${aff.id}`} data-testid={`input-commission-${aff.id}`} />
@@ -760,6 +790,67 @@ export default function AdminAffiliateDashboard() {
                 <Button onClick={() => editAffiliateMutation.mutate()} disabled={editAffiliateMutation.isPending || !formEmail || !formFirstName || !formLastName} data-testid="button-update-affiliate">{editAffiliateMutation.isPending ? "Updating..." : "Update Affiliate"}</Button>
                 <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Custom Payout Dialog */}
+        <Dialog open={customPayoutDialogOpen} onOpenChange={setCustomPayoutDialogOpen}>
+          <DialogContent className="max-w-md" data-testid="dialog-custom-payout">
+            <DialogHeader>
+              <DialogTitle>Create Custom Payout</DialogTitle>
+              <DialogDescription>Set a custom payout amount for this affiliate</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Payout Amount (XAF)</label>
+                <Input 
+                  type="number" 
+                  placeholder="Enter amount in XAF" 
+                  value={customPayoutAmount}
+                  onChange={(e) => setCustomPayoutAmount(e.target.value)}
+                  data-testid="input-payout-amount"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => createCustomPayoutMutation.mutate()} disabled={createCustomPayoutMutation.isPending || !customPayoutAmount} data-testid="button-create-payout">
+                  {createCustomPayoutMutation.isPending ? "Creating..." : "Create Payout"}
+                </Button>
+                <Button variant="outline" onClick={() => setCustomPayoutDialogOpen(false)}>Cancel</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Performance Logs Dialog */}
+        <Dialog open={performanceDialogOpen} onOpenChange={setPerformanceDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-performance-logs">
+            <DialogHeader>
+              <DialogTitle>Affiliate Performance Logs</DialogTitle>
+              <DialogDescription>Individual performance metrics and activity</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {performanceData && performanceData.length > 0 ? (
+                <div className="space-y-3">
+                  {performanceData.map((log: any, idx: number) => (
+                    <div key={idx} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="font-medium">{log.event_type}</p>
+                        <Badge variant="outline" className="text-xs">{new Date(log.created_at).toLocaleDateString()}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{log.description}</p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div><span className="text-muted-foreground">Referrals:</span> {log.referrals_count}</div>
+                        <div><span className="text-muted-foreground">Clicks:</span> {log.clicks_count}</div>
+                        <div><span className="text-muted-foreground">Conversions:</span> {log.conversions_count}</div>
+                        <div><span className="text-muted-foreground">Earnings:</span> {log.earnings.toLocaleString()} XAF</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No performance logs available</p>
+              )}
             </div>
           </DialogContent>
         </Dialog>
