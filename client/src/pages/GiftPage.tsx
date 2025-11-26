@@ -33,6 +33,7 @@ import maasaiBeadsImageUrl from "@assets/zulu-necklace-removebg-preview_17641409
 import ivoryTusksImageUrl from "@assets/Elephant ivory horn_1764159964584.png";
 import elephantImageUrl from "@assets/elephant_1764160633043.png";
 import lionImageUrl from "@assets/Lion_1764160791058.png";
+import lionVideoUrl from "@assets/media_1764161408469.mp4";
 
 const giftIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "African Drum": Drum,
@@ -284,7 +285,7 @@ export default function GiftPage() {
                             ) : gift.name === "Elephant" ? (
                               <img src={elephantImageUrl} alt="Elephant" className="h-10 w-10 object-contain" />
                             ) : gift.name === "Lion" ? (
-                              <img src={lionImageUrl} alt="Lion" className="h-10 w-10 object-contain" />
+                              <video src={lionVideoUrl} autoPlay muted loop className="h-10 w-10 object-contain" />
                             ) : (
                               <Icon className="h-10 w-10" />
                             )}
