@@ -3161,6 +3161,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/leaderboard/top-creators', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const creators = await storage.getTopCreatorsByFollowers(limit);
+      res.json(creators);
+    } catch (error) {
+      console.error("Error fetching top creators:", error);
+      res.status(500).json({ message: "Failed to fetch top creators" });
+    }
+  });
+
+  app.get('/api/leaderboard/top-videos/:metric', async (req, res) => {
+    try {
+      const { metric } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const validMetrics = ['views', 'likes', 'votes', 'gifts'];
+      
+      if (!validMetrics.includes(metric)) {
+        return res.status(400).json({ message: "Invalid metric. Must be: views, likes, votes, or gifts" });
+      }
+      
+      const videos = await storage.getTopVideosByMetric(metric as any, limit);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching top videos:", error);
+      res.status(500).json({ message: "Failed to fetch top videos" });
+    }
+  });
+
   // Affiliate routes - accepts both authenticated and non-authenticated users
   app.post('/api/affiliate/opt-in', async (req: any, res) => {
     try {

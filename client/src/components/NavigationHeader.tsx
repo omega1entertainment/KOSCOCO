@@ -90,6 +90,7 @@ export default function NavigationHeader({
 
   const kozziiMenuItems = [
     { label: 'KOZZII Feed', path: '/feed' },
+    { label: 'KOZZII Leaderboard', path: '/leaderboard/kozzii' },
     { label: 'Creator Wallet', path: '/creator/wallet' },
   ];
 

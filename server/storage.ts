@@ -2689,6 +2689,39 @@ export class DbStorage implements IStorage {
     return Number(result[0]?.count || 0);
   }
 
+  // Top creators methods
+  async getTopCreatorsByFollowers(limit: number = 20): Promise<(User & { followerCount: number; videoCount: number; totalEarnings: number })[]> {
+    const creators = await db.select({
+      user: schema.users,
+      followerCount: sql<number>`(SELECT COUNT(*) FROM ${schema.follows} WHERE ${eq(schema.follows.followingId, schema.users.id)})`,
+      videoCount: sql<number>`(SELECT COUNT(*) FROM ${schema.videos} WHERE ${eq(schema.videos.userId, schema.users.id)} AND status = 'approved')`,
+      totalEarnings: sql<number>`COALESCE((SELECT total_earnings FROM ${schema.creatorWallets} WHERE ${eq(schema.creatorWallets.userId, schema.users.id)}), 0)`,
+    }).from(schema.users)
+      .where(eq(schema.users.isAdmin, false))
+      .limit(limit);
+    return creators as any;
+  }
+
+  async getTopVideosByMetric(metric: 'views' | 'likes' | 'votes' | 'gifts', limit: number = 20): Promise<(schema.VideoFeedItem)[]> {
+    let orderBy = desc(schema.videos.views);
+    
+    if (metric === 'likes') {
+      orderBy = sql`(SELECT COUNT(*) FROM ${schema.likes} WHERE ${eq(schema.likes.videoId, schema.videos.id)}) DESC`;
+    } else if (metric === 'votes') {
+      orderBy = sql`(SELECT COUNT(*) FROM ${schema.votes} WHERE ${eq(schema.votes.videoId, schema.videos.id)}) + COALESCE((SELECT SUM(quantity) FROM ${schema.paidVotes} WHERE ${eq(schema.paidVotes.videoId, schema.videos.id)}), 0) DESC`;
+    } else if (metric === 'gifts') {
+      orderBy = sql`COALESCE((SELECT SUM(quantity) FROM ${schema.giftTransactions} WHERE ${eq(schema.giftTransactions.videoId, schema.videos.id)} AND status = 'completed'), 0) DESC`;
+    }
+
+    const videos = await db.select()
+      .from(schema.videos)
+      .where(eq(schema.videos.status, 'approved'))
+      .orderBy(orderBy)
+      .limit(limit);
+
+    return videos as any;
+  }
+
   // Gift methods
   async getAllGifts(): Promise<schema.Gift[]> {
     return db.select().from(schema.gifts)
