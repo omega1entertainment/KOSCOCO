@@ -1092,6 +1092,52 @@ export const platformConfig = pgTable("platform_config", {
   updatedBy: varchar("updated_by").references(() => users.id),
 });
 
+// Affiliate campaigns
+export const affiliateCampaigns = pgTable("affiliate_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  commissionPercentage: integer("commission_percentage").notNull().default(20),
+  status: text("status").notNull().default('active'),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Commission tiers for affiliates
+export const commissionTiers = pgTable("commission_tiers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateId: varchar("affiliate_id").notNull().references(() => affiliates.id),
+  referralThreshold: integer("referral_threshold").notNull(),
+  commissionPercentage: integer("commission_percentage").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Fraud detection alerts
+export const fraudAlerts = pgTable("fraud_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateId: varchar("affiliate_id").notNull().references(() => affiliates.id),
+  alertType: text("alert_type").notNull(),
+  description: text("description").notNull(),
+  severity: text("severity").notNull().default('medium'),
+  status: text("status").notNull().default('pending'),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Affiliate performance metrics (daily snapshot)
+export const affiliateMetrics = pgTable("affiliate_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateId: varchar("affiliate_id").notNull().references(() => affiliates.id),
+  date: timestamp("date").notNull(),
+  clicks: integer("clicks").default(0).notNull(),
+  conversions: integer("conversions").default(0).notNull(),
+  revenue: integer("revenue").default(0).notNull(),
+  ctr: text("ctr"),
+  conversionRate: text("conversion_rate"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas for KOZZII tables
 export const insertCompetitionSchema = createInsertSchema(competitions).omit({
   id: true,
