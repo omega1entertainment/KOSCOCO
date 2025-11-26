@@ -346,12 +346,30 @@ export default function GiftPage() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    {giftIcons[selectedGift.name] && (
-                      (() => {
-                        const Icon = giftIcons[selectedGift.name];
-                        return <Icon className="h-5 w-5 text-primary" />;
-                      })()
-                    )}
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white text-neutral-900 flex-shrink-0">
+                      {selectedGift.name === "African Drum" ? (
+                        <img src={drumImageUrl} alt="African Drum" className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Cowrie Shell" ? (
+                        <img src={cowrieImageUrl} alt="Cowrie Shell" className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Toguh Cloth" || selectedGift.name === "Kente Cloth" ? (
+                        <img src={toguhImageUrl} alt="Toguh Cloth" className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Maasai Beads" ? (
+                        <img src={maasaiBeadsImageUrl} alt="Maasai Beads" className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Ivory Tusks" ? (
+                        <img src={ivoryTusksImageUrl} alt="Ivory Tusks" className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Elephant" ? (
+                        <video src={elephantVideoUrl} autoPlay muted loop className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Lion" ? (
+                        <video src={lionVideoUrl} autoPlay muted loop className="h-5 w-5 object-contain" />
+                      ) : selectedGift.name === "Golden Baobab" ? (
+                        <video src={africanThroneVideoUrl} autoPlay muted loop className="h-5 w-5 object-contain" />
+                      ) : (
+                        (() => {
+                          const Icon = giftIcons[selectedGift.name];
+                          return Icon ? <Icon className="h-5 w-5 text-primary" /> : null;
+                        })()
+                      )}
+                    </div>
                     <span className="font-medium">{selectedGift.name}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{selectedGift.description}</p>
