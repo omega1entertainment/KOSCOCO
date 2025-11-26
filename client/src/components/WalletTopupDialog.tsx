@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
 declare const window: any;
 
@@ -16,7 +15,6 @@ interface WalletTopupDialogProps {
 export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopupDialogProps) {
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const presetAmounts = [500, 1000, 2000, 5000];
 
   const handleTopup = async () => {
@@ -32,8 +30,6 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
       return;
     }
 
-    setIsLoading(true);
-    
     try {
       const response = await fetch("/api/wallet/topup/initiate", {
         method: "POST",
@@ -48,36 +44,45 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
 
       const paymentData = await response.json();
 
-      if (window.FlutterwaveCheckout) {
-        const handler = window.FlutterwaveCheckout({
-          public_key: import.meta.env.VITE_FLW_PUBLIC_KEY,
-          tx_ref: paymentData.txRef,
-          amount: paymentData.amount,
-          currency: "XAF",
-          payment_options: "card, mobilemoney, ussd",
-          customer: paymentData.customer,
-          customizations: {
-            title: "KOZZII Wallet Top-up",
-            description: `Top up your wallet with ${paymentData.amount} XAF`,
-            logo: "https://checkout.flutterwave.com/img/logo.png",
-          },
-          callback: (response: any) => {
-            if (response.status === "successful") {
-              verifyPayment(paymentData.txRef, response.transaction_id);
-            } else {
-              toast({ title: "Payment Failed", description: "Please try again", variant: "destructive" });
-            }
-          },
-          onclose: () => {
-            setIsLoading(false);
-          },
-        });
-
-        handler.openIframe();
+      if (!window.FlutterwaveCheckout) {
+        throw new Error("Flutterwave not loaded");
       }
+
+      // Close dialog before opening payment
+      onOpenChange(false);
+      setAmount("");
+
+      // Open Flutterwave checkout in redirect mode
+      const handler = window.FlutterwaveCheckout({
+        public_key: import.meta.env.VITE_FLW_PUBLIC_KEY,
+        tx_ref: paymentData.txRef,
+        amount: paymentData.amount,
+        currency: "XAF",
+        payment_options: "card, mobilemoney, ussd",
+        customer: paymentData.customer,
+        customizations: {
+          title: "KOZZII Wallet Top-up",
+          description: `Top up your wallet with ${paymentData.amount} XAF`,
+          logo: "https://checkout.flutterwave.com/img/logo.png",
+        },
+        callback: (response: any) => {
+          console.log("Payment response:", response);
+          if (response.status === "successful") {
+            verifyPayment(paymentData.txRef, response.transaction_id);
+          } else if (response.status === "cancelled") {
+            toast({ title: "Payment Cancelled", description: "You cancelled the payment", variant: "destructive" });
+          } else {
+            toast({ title: "Payment Failed", description: "Please try again", variant: "destructive" });
+          }
+        },
+        onclose: () => {
+          console.log("Payment modal closed");
+        },
+      });
+
+      handler.openIframe();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-      setIsLoading(false);
     }
   };
 
@@ -90,18 +95,16 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
       });
 
       if (!response.ok) {
-        throw new Error("Payment verification failed");
+        const error = await response.json();
+        throw new Error(error.message);
       }
 
       const result = await response.json();
       toast({ title: "Success", description: "Wallet topped up successfully!" });
-      onOpenChange(false);
-      setAmount("");
       onSuccess?.();
     } catch (error: any) {
+      console.error("Verification error:", error);
       toast({ title: "Verification Failed", description: error.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -122,7 +125,6 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="mt-1"
-              disabled={isLoading}
             />
           </div>
 
@@ -133,7 +135,6 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
                 variant="outline"
                 size="sm"
                 onClick={() => setAmount(preset.toString())}
-                disabled={isLoading}
               >
                 {preset} XAF
               </Button>
@@ -143,10 +144,9 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
           <Button
             className="w-full"
             onClick={handleTopup}
-            disabled={isLoading || !amount}
+            disabled={!amount}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? "Processing..." : `Top Up ${amount ? parseInt(amount).toLocaleString() : "0"} XAF`}
+            Continue to Payment
           </Button>
         </div>
       </DialogContent>

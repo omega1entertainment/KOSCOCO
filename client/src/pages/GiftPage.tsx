@@ -437,9 +437,6 @@ export default function GiftPage() {
         {!selectedGift && (
           <div className="h-24" />
         )}
-        {!selectedGift && (
-          <div className="h-24" />
-        )}
       </div>
 
       <WalletTopupDialog
