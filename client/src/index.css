@@ -354,9 +354,30 @@
     inset: -1px;
   }
 
-  /* ReactQuill WYSIWYG Editor placeholder styling */
+  /* ReactQuill WYSIWYG Editor styling */
+  .ql-editor {
+    color: #000000;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
   .ql-editor.ql-blank::before {
     color: #a4b3b3;
+  }
+
+  /* Black blinking cursor in Quill editor */
+  .ql-cursor {
+    border-left: 2px solid #000000;
+    animation: blink-cursor 1s infinite;
+  }
+
+  @keyframes blink-cursor {
+    0%, 49% {
+      border-left-color: #000000;
+    }
+    50%, 100% {
+      border-left-color: transparent;
+    }
   }
 
   /* Hide scrollbar for all browsers */

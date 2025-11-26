@@ -68,7 +68,7 @@ export default function AdminAffiliateDashboard() {
         const range = editor.getSelection();
         const index = range?.index || 0;
         editor.insertEmbed(index, 'image', data.url, 'user');
-        editor.setSelection(index + 1);
+        editor.setSelection({ index: index + 1, length: 0 });
       }
     },
     onError: () => {
