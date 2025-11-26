@@ -10,11 +10,13 @@ export default function NotificationBell() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: unreadCount = 0 } = useQuery<{ unreadCount: number }>({
+  const { data: unreadData } = useQuery<{ unreadCount: number }>({
     queryKey: ['/api/notifications/unread-count'],
     refetchInterval: 30000, // Refetch every 30 seconds
     enabled: !!user,
   });
+
+  const unreadCount = unreadData?.unreadCount ?? 0;
 
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
