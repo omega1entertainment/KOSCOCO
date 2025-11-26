@@ -42,6 +42,8 @@ export default function AdminAffiliateDashboard() {
   const [formEmail, setFormEmail] = useState("");
   const [formFirstName, setFormFirstName] = useState("");
   const [formLastName, setFormLastName] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
 
   const { data: stats } = useQuery<AffiliateStats>({
     queryKey: ["/api/admin/affiliates/stats"],
@@ -200,6 +202,23 @@ export default function AdminAffiliateDashboard() {
     },
     onError: (error: any) => {
       toast({ title: error.message || "Failed to update commission", variant: "destructive" });
+    },
+  });
+
+  const sendBulkCommunicationMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/admin/communications/send", "POST", {
+        subject: emailSubject,
+        message: emailMessage,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent to all affiliates" });
+      setEmailSubject("");
+      setEmailMessage("");
+    },
+    onError: (error: any) => {
+      toast({ title: error.message || "Failed to send email", variant: "destructive" });
     },
   });
 
