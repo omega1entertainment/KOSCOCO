@@ -27,6 +27,9 @@ const flw = new Flutterwave(
   process.env.FLW_SECRET_KEY || ''
 );
 
+// In-memory wallet payment tracking for development
+const walletPayments = new Map<string, { userId: string; amount: number; timestamp: number }>();
+
 // Admin middleware
 function isAdmin(req: any, res: any, next: any) {
   if (!req.user) {
@@ -901,22 +904,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const txRef = `WLT-${Date.now()}-${user.id.slice(0, 8)}`;
 
-      const payment = await storage.createAdPayment({
-        advertiserId: user.id,
-        campaignId: null,
-        amount,
-        paymentType: 'user_wallet_topup',
-        txRef,
-        status: 'pending',
-      });
+      // Store payment in memory for tracking
+      walletPayments.set(txRef, { userId: user.id, amount, timestamp: Date.now() });
 
       res.json({
         success: true,
-        txRef: payment.txRef,
-        amount: payment.amount,
+        txRef,
+        amount,
         customer: {
           email: user.email,
-          phone: user.phone || '',
+          phone: '',
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         },
       });
@@ -935,18 +932,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Transaction reference and ID are required" });
       }
 
-      const payment = await storage.getAdPaymentByTxRef(txRef);
-      if (!payment) {
+      const paymentRecord = walletPayments.get(txRef);
+      if (!paymentRecord) {
         return res.status(404).json({ message: "Payment not found" });
       }
 
-      if (payment.advertiserId !== user.id) {
+      if (paymentRecord.userId !== user.id) {
         return res.status(403).json({ message: "Forbidden - Not your payment" });
-      }
-
-      if (payment.status !== 'pending') {
-        console.log(`[User Wallet Top-up Callback] Payment not pending (status: ${payment.status}): ${txRef}`);
-        return res.json({ success: true, message: "Payment already processed or failed" });
       }
 
       const flwClient = new Flutterwave(
@@ -966,17 +958,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const terminalFailureStatuses = ['failed', 'cancelled', 'error', 'abandoned', 'reversed'];
         
         if (terminalFailureStatuses.includes(paymentData.status)) {
-          await storage.updateAdPayment(payment.id, {
-            status: 'failed',
-            paymentData: { data: paymentData },
-          });
+          walletPayments.delete(txRef);
           return res.status(400).json({ message: `Payment failed: ${paymentData.status}` });
         }
         
-        await storage.updateAdPayment(payment.id, {
-          paymentData: { data: paymentData },
-        });
-        console.log(`[User Wallet Top-up Callback] Payment still pending: ${txRef}, status: ${paymentData.status}`);
         return res.status(202).json({ message: `Payment not yet complete: ${paymentData.status}` });
       }
 
@@ -988,28 +973,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid payment currency" });
       }
 
-      if (Math.abs(paymentData.amount - payment.amount) > 0.01) {
+      if (Math.abs(paymentData.amount - paymentRecord.amount) > 0.01) {
         return res.status(400).json({ message: "Payment amount mismatch" });
       }
 
-      const wasUpdated = await storage.markAdPaymentSuccessful(
-        payment.id,
-        paymentData.flw_ref,
-        paymentData
-      );
-
-      if (!wasUpdated) {
-        console.log(`[User Wallet Top-up Callback] Payment already marked successful: ${txRef}`);
-        return res.json({ success: true, message: "Payment already processed by concurrent request" });
-      }
-
       // Credit user wallet
-      await storage.updateUserWalletBalance(user.id, payment.amount, 'wallet_topup', 'Wallet top-up');
+      await storage.updateUserWalletBalance(user.id, paymentRecord.amount, 'wallet_topup', 'Wallet top-up');
+
+      // Remove from pending payments
+      walletPayments.delete(txRef);
 
       res.json({ 
         success: true, 
         message: "Wallet topped up successfully",
-        amount: payment.amount
+        amount: paymentRecord.amount
       });
     } catch (error: any) {
       console.error("User wallet top-up callback error:", error);
