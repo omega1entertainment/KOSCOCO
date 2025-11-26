@@ -4537,6 +4537,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Get all users
+  // Admin dashboard stats endpoint
+  app.get('/api/admin/stats', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const allVideos = await storage.getApprovedVideos();
+      
+      const stats = {
+        totalUsers: allUsers.length,
+        totalVideos: allVideos.length,
+        totalViews: allVideos.reduce((sum, v) => sum + (v.views || 0), 0),
+        suspendedUsers: allUsers.filter((u: any) => u.suspended).length,
+        unverifiedEmails: allUsers.filter((u: any) => !u.emailVerified).length,
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Admin: Get live chat messages for moderation
+  app.get('/api/admin/live-chats', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const messages = await db.select({
+        id: schema.liveChats.id,
+        videoId: schema.liveChats.videoId,
+        userId: schema.liveChats.userId,
+        message: schema.liveChats.message,
+        createdAt: schema.liveChats.createdAt,
+        user: {
+          id: schema.users.id,
+          username: schema.users.username,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+        },
+        video: {
+          id: schema.videos.id,
+          title: schema.videos.title,
+        },
+      }).from(schema.liveChats)
+        .innerJoin(schema.users, eq(schema.liveChats.userId, schema.users.id))
+        .innerJoin(schema.videos, eq(schema.liveChats.videoId, schema.videos.id))
+        .orderBy(desc(schema.liveChats.createdAt))
+        .limit(limit);
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching live chats:", error);
+      res.status(500).json({ message: "Failed to fetch live chats" });
+    }
+  });
+
+  // Admin: Delete live chat message
+  app.delete('/api/admin/live-chats/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLiveChat(id);
+      res.json({ message: "Chat message deleted" });
+    } catch (error) {
+      console.error("Error deleting live chat:", error);
+      res.status(500).json({ message: "Failed to delete chat message" });
+    }
+  });
+
+  // Admin: Suspend/Unsuspend user
+  app.patch('/api/admin/users/:id/suspend', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { suspended } = req.body;
+      
+      const user = await storage.getUser(id);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      const updated = await storage.updateUser(id, { suspended });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();

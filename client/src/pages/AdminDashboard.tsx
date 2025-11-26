@@ -67,6 +67,8 @@ import {
 import { useRef, useMemo } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import AdminAffiliateDashboard from "@/pages/AdminAffiliateDashboard";
+import { AdminDashboardOverview } from "@/components/AdminDashboardOverview";
+import { AdminChatModeration } from "@/components/AdminChatModeration";
 import type {
   Video,
   Category,
