@@ -4309,62 +4309,6 @@ function AdminDashboardContent() {
 
             <TabsContent value="affiliates" className="mt-0">
               <AdminAffiliateDashboard />
-                        }
-                      }}
-                      disabled={updateAffiliateStatusMutation.isPending}
-                      data-testid="button-confirm-status"
-                    >
-                      {updateAffiliateStatusMutation.isPending ? "Updating..." : "Update Status"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Payout Action Dialog */}
-              <Dialog open={affiliatePayoutActionDialog} onOpenChange={setAffiliatePayoutActionDialog}>
-                <DialogContent data-testid="dialog-payout-action">
-                  <DialogHeader>
-                    <DialogTitle>{affiliatePayoutAction === "approve" ? "Approve Payout" : "Reject Payout"}</DialogTitle>
-                  </DialogHeader>
-                  {affiliatePayoutAction === "reject" && (
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="rejection-reason">Reason</Label>
-                        <Textarea
-                          id="rejection-reason"
-                          placeholder="Explain why this payout is being rejected..."
-                          value={affiliatePayoutRejectionReason}
-                          onChange={(e) => setAffiliatePayoutRejectionReason(e.target.value)}
-                          data-testid="textarea-rejection-reason"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setAffiliatePayoutActionDialog(false)} data-testid="button-cancel-payout-action">
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        if (affiliateSelectedPayoutId) {
-                          if (affiliatePayoutAction === "approve") {
-                            approveAffiliatePayoutMutation.mutate(affiliateSelectedPayoutId);
-                          } else {
-                            rejectAffiliatePayoutMutation.mutate({ payoutId: affiliateSelectedPayoutId, reason: affiliatePayoutRejectionReason });
-                          }
-                        }
-                      }}
-                      disabled={affiliatePayoutAction === "reject" ? !affiliatePayoutRejectionReason || rejectAffiliatePayoutMutation.isPending : approveAffiliatePayoutMutation.isPending}
-                      variant={affiliatePayoutAction === "reject" ? "destructive" : "default"}
-                      data-testid={`button-confirm-payout-${affiliatePayoutAction}`}
-                    >
-                      {affiliatePayoutAction === "approve"
-                        ? approveAffiliatePayoutMutation.isPending ? "Approving..." : "Approve Payout"
-                        : rejectAffiliatePayoutMutation.isPending ? "Rejecting..." : "Reject Payout"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
             </TabsContent>
 
             <TabsContent value="cms" className="mt-0">
