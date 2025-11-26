@@ -10,12 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle, Plus, Edit2, Lock, Image as ImageIcon } from "lucide-react";
-import ReactQuill, { Quill } from "react-quill";
+import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-
-// Register image handler with Quill
-const CustomImage = Quill.import('formats/image');
-Quill.register(CustomImage, true);
 
 type AffiliateStats = {
   totalAffiliates: number;
