@@ -53,6 +53,7 @@ export default function AdminAffiliateDashboard() {
 
   const { data: selectedAffiliateDetails } = useQuery({
     queryKey: ["/api/admin/affiliates", selectedAffiliateId],
+    queryFn: () => fetch(`/api/admin/affiliates/${selectedAffiliateId}`).then(r => r.json()),
     enabled: !!selectedAffiliateId,
   });
 
