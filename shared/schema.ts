@@ -1083,6 +1083,18 @@ export const walletDeposits = pgTable("wallet_deposits", {
   index("idx_wallet_deposits_status").on(table.status),
 ]);
 
+// Live chat messages for video premieres and broadcasts
+export const liveChats = pgTable("live_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_live_chats_video").on(table.videoId),
+  index("idx_live_chats_created").on(table.createdAt),
+]);
+
 // Platform revenue share configuration (adjustable from backend)
 export const platformConfig = pgTable("platform_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1244,6 +1256,11 @@ export const insertPlatformConfigSchema = createInsertSchema(platformConfig).omi
   updatedAt: true,
 });
 
+export const insertLiveChatSchema = createInsertSchema(liveChats).omit({
+  id: true,
+  createdAt: true,
+});
+
 // KOZZII Types
 export type InsertCompetition = z.infer<typeof insertCompetitionSchema>;
 export type Competition = typeof competitions.$inferSelect;
@@ -1323,4 +1340,17 @@ export type CreatorProfile = User & {
   blueTick: boolean;
   redStar: boolean;
   isFollowing: boolean;
+};
+
+export type InsertLiveChat = z.infer<typeof insertLiveChatSchema>;
+export type LiveChat = typeof liveChats.$inferSelect;
+
+export type LiveChatWithUser = LiveChat & {
+  user: {
+    id: string;
+    username: string | null;
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string | null;
+  };
 };

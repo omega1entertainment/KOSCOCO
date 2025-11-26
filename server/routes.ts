@@ -3190,6 +3190,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Live chat routes
+  app.post('/api/live-chat/:videoId', async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { videoId } = req.params;
+      const { message } = req.body;
+
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      if (message.length > 1000) {
+        return res.status(400).json({ message: "Message too long (max 1000 characters)" });
+      }
+
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      const chat = await storage.createLiveChat({
+        videoId,
+        userId: (req.user as SelectUser).id,
+        message: message.trim(),
+      });
+
+      res.status(201).json(chat);
+    } catch (error) {
+      console.error("Error creating live chat message:", error);
+      res.status(500).json({ message: "Failed to create chat message" });
+    }
+  });
+
+  app.get('/api/live-chat/:videoId', async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+
+      const video = await storage.getVideoById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      const messages = await storage.getLiveChatsByVideo(videoId, limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching live chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.delete('/api/live-chat/:id', async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { id } = req.params;
+      const user = req.user as SelectUser;
+
+      await storage.deleteLiveChat(id);
+      res.json({ message: "Chat message deleted" });
+    } catch (error) {
+      console.error("Error deleting live chat message:", error);
+      res.status(500).json({ message: "Failed to delete chat message" });
+    }
+  });
+
   // Affiliate routes - accepts both authenticated and non-authenticated users
   app.post('/api/affiliate/opt-in', async (req: any, res) => {
     try {

@@ -34,7 +34,8 @@ import type {
   Poll, InsertPoll,
   PollOption, InsertPollOption,
   PollResponse, InsertPollResponse,
-  PollWithOptions, PollWithStats
+  PollWithOptions, PollWithStats,
+  LiveChat, InsertLiveChat, LiveChatWithUser
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -95,6 +96,10 @@ export interface IStorage {
   getRejectedVideos(): Promise<Video[]>;
   updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined>;
   selectTop500VideosPerCategory(): Promise<{ categoryId: string; selectedCount: number }[]>;
+  
+  createLiveChat(chat: InsertLiveChat): Promise<LiveChat>;
+  getLiveChatsByVideo(videoId: string, limit?: number): Promise<LiveChatWithUser[]>;
+  deleteLiveChat(id: string): Promise<void>;
   
   createVote(vote: InsertVote): Promise<Vote>;
   getVideoVoteCount(videoId: string): Promise<number>;
@@ -2687,6 +2692,41 @@ export class DbStorage implements IStorage {
       .from(schema.follows)
       .where(eq(schema.follows.followerId, userId));
     return Number(result[0]?.count || 0);
+  }
+
+  // Live chat methods
+  async createLiveChat(chat: InsertLiveChat): Promise<LiveChat> {
+    const [created] = await db.insert(schema.liveChats)
+      .values(chat)
+      .returning();
+    return created;
+  }
+
+  async getLiveChatsByVideo(videoId: string, limit: number = 50): Promise<LiveChatWithUser[]> {
+    const messages = await db.select({
+      id: schema.liveChats.id,
+      videoId: schema.liveChats.videoId,
+      userId: schema.liveChats.userId,
+      message: schema.liveChats.message,
+      createdAt: schema.liveChats.createdAt,
+      user: {
+        id: schema.users.id,
+        username: schema.users.username,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        profileImageUrl: schema.users.profileImageUrl,
+      },
+    }).from(schema.liveChats)
+      .innerJoin(schema.users, eq(schema.liveChats.userId, schema.users.id))
+      .where(eq(schema.liveChats.videoId, videoId))
+      .orderBy(desc(schema.liveChats.createdAt))
+      .limit(limit);
+    return messages.reverse() as any;
+  }
+
+  async deleteLiveChat(id: string): Promise<void> {
+    await db.delete(schema.liveChats)
+      .where(eq(schema.liveChats.id, id));
   }
 
   // Top creators methods

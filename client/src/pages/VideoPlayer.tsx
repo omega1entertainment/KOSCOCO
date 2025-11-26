@@ -16,6 +16,7 @@ import type { Video, Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { extractIdFromPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
+import LiveChat from "@/components/LiveChat";
 
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
