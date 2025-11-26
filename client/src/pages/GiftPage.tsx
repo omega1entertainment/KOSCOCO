@@ -30,13 +30,14 @@ import drumImageUrl from "@assets/Standard African drum_1764140229973.png";
 import cowrieImageUrl from "@assets/Cowries_1764140169949.png";
 import toguhImageUrl from "@assets/North west toguh_1764140310074.png";
 import maasaiBeadsImageUrl from "@assets/zulu-necklace-removebg-preview_1764140940640.png";
+import ivoryTusksImageUrl from "@assets/Elephant ivory horn_1764159964584.png";
 
 const giftIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "African Drum": Drum,
   "Cowrie Shell": Shell,
   "Kente Cloth": Shirt,
   "Maasai Beads": Circle,
-  "African Mask": Theater,
+  "Ivory Tusks": Theater,
   "Elephant": Cat,
   "Lion Crown": Crown,
   "Golden Baobab": TreeDeciduous,
@@ -276,6 +277,8 @@ export default function GiftPage() {
                               <img src={toguhImageUrl} alt="Toguh Cloth" className="h-10 w-10 object-contain" />
                             ) : gift.name === "Maasai Beads" ? (
                               <img src={maasaiBeadsImageUrl} alt="Maasai Beads" className="h-10 w-10 object-contain" />
+                            ) : gift.name === "Ivory Tusks" ? (
+                              <img src={ivoryTusksImageUrl} alt="Ivory Tusks" className="h-10 w-10 object-contain" />
                             ) : (
                               <Icon className="h-10 w-10" />
                             )}
