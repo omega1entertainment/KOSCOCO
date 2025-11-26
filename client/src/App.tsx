@@ -23,6 +23,7 @@ import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
 import VideoPlayer from "@/pages/VideoPlayer";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminAffiliateDashboard from "@/pages/AdminAffiliateDashboard";
 import Leaderboard from "@/pages/Leaderboard";
 import Prizes from "@/pages/Prizes";
 import HowItWorks from "@/pages/HowItWorks";
@@ -129,6 +130,7 @@ function Router() {
           <Route path="/help" component={Help} />
           <Route path="/rules" component={CompetitionRules} />
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/affiliates" component={AdminAffiliateDashboard} />
           <Route path="/judge-dashboard" component={JudgeDashboard} />
           <Route path="/judge/login" component={JudgeLogin} />
           <Route path="/judges" component={Judges} />
