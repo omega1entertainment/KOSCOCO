@@ -470,15 +470,9 @@ export default function Feed() {
                 className="h-full w-full object-contain"
                 loop={!video.isExclusive || purchasedVideos.has(video.id)}
                 playsInline
-                autoPlay
                 muted={isMuted}
                 onClick={() => setIsPlaying(!isPlaying)}
                 onTimeUpdate={(e) => handleVideoTimeUpdate(video, e.currentTarget.currentTime)}
-                onCanPlay={(e) => {
-                  if (index === currentIndex && isPlaying) {
-                    e.currentTarget.play().catch(() => {});
-                  }
-                }}
                 data-testid={`video-player-${video.id}`}
               />
 

@@ -9,7 +9,7 @@ import VideoCard from "@/components/VideoCard";
 import StatsCard from "@/components/StatsCard";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import VideoOfTheDay from "@/components/home/VideoOfTheDay";
-import { Users, Video, Trophy, TrendingUp, ArrowLeft } from "lucide-react";
+import { Users, Video, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Category } from "@shared/schema";
@@ -134,19 +134,6 @@ export default function Home() {
 
   return (
     <div>
-      <div className="bg-background border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/")}
-            className="gap-2"
-            data-testid="button-back-to-feed"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to KOZZII Feed
-          </Button>
-        </div>
-      </div>
       <Hero 
         onRegisterClick={() => setLocation("/register")}
         onWatchClick={() => console.log("Watch entries")}
