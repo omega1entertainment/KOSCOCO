@@ -542,7 +542,7 @@ export default function Feed() {
                     </AvatarFallback>
                   </Avatar>
                   {/* Verification Badge */}
-                  {(video.creator.verificationBadge || video.creator.redStar) && (
+                  {(video.creator.blueTick || video.creator.redStar) && (
                     <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
                       {video.creator.redStar ? (
                         <Star className="w-4 h-4 text-red-500 fill-red-500" data-testid="badge-red-star" />

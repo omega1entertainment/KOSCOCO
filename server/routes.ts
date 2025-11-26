@@ -6780,12 +6780,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
-}
-
   // Seed African-themed gifts
-  app.post('/api/gifts/seed', async (req, res) => {
+  app.post('/api/gifts/seed', async (req: any, res: any) => {
     try {
       const gifts = [
         { name: 'African Drum', description: 'Rhythmic African drum', iconUrl: '🥁', priceUsd: 100, tier: 'small' },
@@ -6812,7 +6808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send gift with payment
-  app.post('/api/gifts/send', isAuthenticated, async (req: any, res) => {
+  app.post('/api/gifts/send', isAuthenticated, async (req: any, res: any) => {
     try {
       const { videoId, creatorId, giftId, quantity } = req.body;
       const senderId = (req.user as SelectUser).id;
@@ -6858,3 +6854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to send gift' });
     }
   });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
