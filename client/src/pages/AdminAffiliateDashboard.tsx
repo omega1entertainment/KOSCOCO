@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle } from "lucide-react";
+import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle, Plus, Edit2, Lock } from "lucide-react";
 
 type AffiliateStats = {
   totalAffiliates: number;
@@ -30,6 +30,12 @@ export default function AdminAffiliateDashboard() {
   const [campaignDesc, setCampaignDesc] = useState("");
   const [selectedAffiliateId, setSelectedAffiliateId] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAffiliateId, setEditingAffiliateId] = useState<string | null>(null);
+  const [formEmail, setFormEmail] = useState("");
+  const [formFirstName, setFormFirstName] = useState("");
+  const [formLastName, setFormLastName] = useState("");
 
   const { data: stats } = useQuery<AffiliateStats>({
     queryKey: ["/api/admin/affiliates/stats"],
@@ -113,6 +119,68 @@ export default function AdminAffiliateDashboard() {
     onSuccess: () => {
       toast({ title: "Fraud alert resolved" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/fraud-alerts"] });
+    },
+  });
+
+  const createAffiliateMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/admin/affiliates", "POST", {
+        email: formEmail,
+        firstName: formFirstName,
+        lastName: formLastName,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Affiliate created successfully" });
+      setFormEmail("");
+      setFormFirstName("");
+      setFormLastName("");
+      setAddDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+    onError: (error: any) => {
+      toast({ title: error.message || "Failed to create affiliate", variant: "destructive" });
+    },
+  });
+
+  const editAffiliateMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/admin/affiliates/${editingAffiliateId}/edit`, "PATCH", {
+        firstName: formFirstName,
+        lastName: formLastName,
+        email: formEmail,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Affiliate updated successfully" });
+      setFormEmail("");
+      setFormFirstName("");
+      setFormLastName("");
+      setEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+    onError: (error: any) => {
+      toast({ title: error.message || "Failed to update affiliate", variant: "destructive" });
+    },
+  });
+
+  const approveAffiliateMutation = useMutation({
+    mutationFn: async (affiliateId: string) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/approve`, "PATCH", {});
+    },
+    onSuccess: () => {
+      toast({ title: "Affiliate approved" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+  });
+
+  const blockAffiliateMutation = useMutation({
+    mutationFn: async (affiliateId: string) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/block`, "PATCH", {});
+    },
+    onSuccess: () => {
+      toast({ title: "Affiliate blocked" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
     },
   });
 
@@ -227,38 +295,41 @@ export default function AdminAffiliateDashboard() {
 
           {/* AFFILIATES TAB */}
           <TabsContent value="affiliates">
-            <Card>
-              <CardHeader>
-                <CardTitle>Affiliate Accounts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {affiliates.map((aff: any) => (
-                    <div key={aff.id} className="p-4 border rounded-lg">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold">{aff.first_name} {aff.last_name}</h4>
-                          <p className="text-sm text-muted-foreground">{aff.email}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Code: {aff.referral_code}</p>
+            <div className="space-y-4">
+              <Button onClick={() => setAddDialogOpen(true)} data-testid="button-add-affiliate"><Plus className="w-4 h-4 mr-2" />Add Affiliate</Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Affiliate Accounts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {affiliates.map((aff: any) => (
+                      <div key={aff.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="font-semibold">{aff.first_name} {aff.last_name}</h4>
+                            <p className="text-sm text-muted-foreground">{aff.email}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Code: {aff.referral_code}</p>
+                          </div>
+                          <Badge variant={aff.status === "active" ? "default" : "destructive"}>{aff.status}</Badge>
                         </div>
-                        <Badge variant={aff.status === "active" ? "default" : "destructive"}>{aff.status}</Badge>
+                        <div className="grid grid-cols-3 gap-2 text-sm mb-3">
+                          <div><span className="text-muted-foreground">Referrals:</span> {aff.total_referrals}</div>
+                          <div><span className="text-muted-foreground">Earnings:</span> {aff.total_earnings.toLocaleString()} XAF</div>
+                          <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button size="sm" variant="outline" onClick={() => { setSelectedAffiliateId(aff.id); setDetailsDialogOpen(true); }} data-testid={`button-view-details-${aff.id}`}>View Details</Button>
+                          <Button size="sm" variant="outline" onClick={() => { setEditingAffiliateId(aff.id); setFormEmail(aff.email); setFormFirstName(aff.first_name); setFormLastName(aff.last_name); setEditDialogOpen(true); }} data-testid={`button-edit-${aff.id}`}><Edit2 className="w-4 h-4 mr-1" />Edit</Button>
+                          {aff.status !== "approved" && <Button size="sm" variant="outline" onClick={() => approveAffiliateMutation.mutate(aff.id)} data-testid={`button-approve-${aff.id}`}><CheckCircle className="w-4 h-4 mr-1" />Approve</Button>}
+                          {aff.status !== "blocked" && <Button size="sm" variant="destructive" onClick={() => blockAffiliateMutation.mutate(aff.id)} data-testid={`button-block-${aff.id}`}><Lock className="w-4 h-4 mr-1" />Block</Button>}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-sm mb-3">
-                        <div><span className="text-muted-foreground">Referrals:</span> {aff.total_referrals}</div>
-                        <div><span className="text-muted-foreground">Earnings:</span> {aff.total_earnings.toLocaleString()} XAF</div>
-                        <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.created_at).toLocaleDateString()}</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => { setSelectedAffiliateId(aff.id); setDetailsDialogOpen(true); }} data-testid={`button-view-details-${aff.id}`}>View Details</Button>
-                        <Button size="sm" variant="outline" onClick={() => updateAffiliateStatusMutation.mutate({ affiliateId: aff.id, status: aff.status === "active" ? "suspended" : "active" })}>
-                          {aff.status === "active" ? "Suspend" : "Activate"}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* CAMPAIGNS TAB */}
@@ -438,6 +509,62 @@ export default function AdminAffiliateDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Add Affiliate Dialog */}
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogContent className="max-w-md" data-testid="dialog-add-affiliate">
+            <DialogHeader>
+              <DialogTitle>Add New Affiliate</DialogTitle>
+              <DialogDescription>Create a new affiliate account</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="affiliate@example.com" data-testid="input-add-email" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">First Name</label>
+                <Input value={formFirstName} onChange={(e) => setFormFirstName(e.target.value)} placeholder="John" data-testid="input-add-firstname" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Last Name</label>
+                <Input value={formLastName} onChange={(e) => setFormLastName(e.target.value)} placeholder="Doe" data-testid="input-add-lastname" />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => createAffiliateMutation.mutate()} disabled={createAffiliateMutation.isPending || !formEmail || !formFirstName || !formLastName} data-testid="button-create-affiliate">{createAffiliateMutation.isPending ? "Creating..." : "Create Affiliate"}</Button>
+                <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Affiliate Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md" data-testid="dialog-edit-affiliate">
+            <DialogHeader>
+              <DialogTitle>Edit Affiliate</DialogTitle>
+              <DialogDescription>Update affiliate details</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <Input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="affiliate@example.com" data-testid="input-edit-email" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">First Name</label>
+                <Input value={formFirstName} onChange={(e) => setFormFirstName(e.target.value)} placeholder="John" data-testid="input-edit-firstname" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Last Name</label>
+                <Input value={formLastName} onChange={(e) => setFormLastName(e.target.value)} placeholder="Doe" data-testid="input-edit-lastname" />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => editAffiliateMutation.mutate()} disabled={editAffiliateMutation.isPending || !formEmail || !formFirstName || !formLastName} data-testid="button-update-affiliate">{editAffiliateMutation.isPending ? "Updating..." : "Update Affiliate"}</Button>
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Affiliate Details Dialog */}
         <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>

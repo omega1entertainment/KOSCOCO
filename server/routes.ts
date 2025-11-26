@@ -3428,8 +3428,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { status } = req.body;
 
-      if (!status || !['active', 'suspended', 'inactive'].includes(status)) {
-        return res.status(400).json({ message: "Valid status required: active, suspended, or inactive" });
+      if (!status || !['active', 'suspended', 'inactive', 'approved', 'blocked'].includes(status)) {
+        return res.status(400).json({ message: "Valid status required: active, suspended, inactive, approved, or blocked" });
       }
 
       const updatedAffiliate = await storage.updateAffiliateStats(id, 0, 0);
@@ -3454,6 +3454,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating affiliate status:", error);
       res.status(500).json({ message: "Failed to update affiliate status" });
+    }
+  });
+
+  // Admin: Create new affiliate
+  app.post('/api/admin/affiliates', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { email, firstName, lastName } = req.body;
+
+      if (!email || !firstName || !lastName) {
+        return res.status(400).json({ message: "Email, firstName, and lastName required" });
+      }
+
+      // Check if user with email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+
+      // Generate referral code
+      const referralCode = `REF_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+      // Create user first
+      const hashedPassword = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+      const user = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        emailVerified: true,
+      });
+
+      // Create affiliate
+      const affiliate = await storage.createAffiliate({
+        userId: user.id,
+        referralCode,
+        status: 'active',
+      });
+
+      res.status(201).json(affiliate);
+    } catch (error) {
+      console.error("Error creating affiliate:", error);
+      res.status(500).json({ message: "Failed to create affiliate" });
+    }
+  });
+
+  // Admin: Update affiliate details
+  app.patch('/api/admin/affiliates/:id/edit', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { firstName, lastName, email } = req.body;
+
+      // Get affiliate to find user
+      const affiliateResult = await db.execute(sql`
+        SELECT user_id FROM affiliates WHERE id = ${id}
+      `);
+
+      if (affiliateResult.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      const userId = (affiliateResult.rows[0] as any).user_id;
+
+      // Update user details
+      await storage.updateUser(userId, {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        email: email || undefined,
+      });
+
+      res.json({ success: true, message: "Affiliate updated" });
+    } catch (error) {
+      console.error("Error updating affiliate:", error);
+      res.status(500).json({ message: "Failed to update affiliate" });
+    }
+  });
+
+  // Admin: Approve affiliate
+  app.patch('/api/admin/affiliates/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const result = await db.execute(sql`
+        UPDATE affiliates 
+        SET status = 'approved'
+        WHERE id = ${id}
+        RETURNING *
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error approving affiliate:", error);
+      res.status(500).json({ message: "Failed to approve affiliate" });
+    }
+  });
+
+  // Admin: Block affiliate
+  app.patch('/api/admin/affiliates/:id/block', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const result = await db.execute(sql`
+        UPDATE affiliates 
+        SET status = 'blocked'
+        WHERE id = ${id}
+        RETURNING *
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error("Error blocking affiliate:", error);
+      res.status(500).json({ message: "Failed to block affiliate" });
     }
   });
 
