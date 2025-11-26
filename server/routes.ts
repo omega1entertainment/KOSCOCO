@@ -19,7 +19,7 @@ import { generateThumbnail } from "./thumbnailGenerator";
 import { moderateVideo } from "./moderation";
 import { generateSlug } from "../client/src/lib/slugUtils";
 import path from "path";
-import { sendNewsletterWelcomeEmail } from "./emailService";
+import { sendNewsletterWelcomeEmail, sendBulkEmailToAffiliates } from "./emailService";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -6565,6 +6565,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error resolving alert:", error);
       res.status(500).json({ message: "Failed to resolve alert" });
+    }
+  });
+
+  // Admin: Send bulk communications to all affiliates
+  app.post('/api/admin/communications/send', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { subject, message } = req.body;
+
+      if (!subject || !message) {
+        return res.status(400).json({ message: "Subject and message are required" });
+      }
+
+      // Get all active affiliates
+      const affiliatesResult = await db.execute(sql`
+        SELECT 
+          u.email,
+          u.first_name,
+          u.last_name
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        WHERE a.status = 'active' OR a.status = 'approved'
+        ORDER BY a.created_at DESC
+      `);
+
+      if (affiliatesResult.rows.length === 0) {
+        return res.status(400).json({ message: "No active affiliates to send to" });
+      }
+
+      // Send emails in batch
+      const affiliateEmails = affiliatesResult.rows.map((row: any) => ({
+        email: row.email,
+        firstName: row.first_name,
+        lastName: row.last_name,
+      }));
+
+      const result = await sendBulkEmailToAffiliates({
+        emails: affiliateEmails,
+        subject,
+        htmlMessage: message,
+      });
+
+      res.json({
+        success: true,
+        message: `Email sent to ${result.sent} affiliates${result.failed > 0 ? `, ${result.failed} failed` : ''}`,
+        sent: result.sent,
+        failed: result.failed,
+        total: affiliateEmails.length,
+      });
+    } catch (error) {
+      console.error("Error sending bulk communications:", error);
+      res.status(500).json({ message: "Failed to send communications" });
     }
   });
 

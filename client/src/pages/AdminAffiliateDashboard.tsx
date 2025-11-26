@@ -571,9 +571,33 @@ export default function AdminAffiliateDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Textarea placeholder="Email subject" />
-                  <Textarea placeholder="Email message" className="min-h-32" />
-                  <Button>Send to All Affiliates</Button>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Email Subject</label>
+                    <Input 
+                      placeholder="Enter email subject" 
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      data-testid="input-email-subject"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Email Message</label>
+                    <div className="border rounded-md bg-white overflow-hidden" data-testid="editor-email-message">
+                      <ReactQuill 
+                        theme="snow" 
+                        value={emailMessage} 
+                        onChange={setEmailMessage}
+                        placeholder="Write your email message here..."
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => sendBulkCommunicationMutation.mutate()}
+                    disabled={sendBulkCommunicationMutation.isPending || !emailSubject || !emailMessage}
+                    data-testid="button-send-bulk-email"
+                  >
+                    {sendBulkCommunicationMutation.isPending ? "Sending..." : "Send to All Affiliates"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

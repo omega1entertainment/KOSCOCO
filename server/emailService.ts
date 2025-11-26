@@ -288,3 +288,68 @@ export async function sendNewsletterWelcomeEmail({
     console.warn('Newsletter welcome email failed but subscription was successful');
   }
 }
+
+interface SendBulkEmailParams {
+  emails: Array<{ email: string; firstName: string; lastName: string }>;
+  subject: string;
+  htmlMessage: string;
+}
+
+export async function sendBulkEmailToAffiliates({
+  emails,
+  subject,
+  htmlMessage,
+}: SendBulkEmailParams): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  for (const affiliate of emails) {
+    try {
+      const result = await resend.emails.send({
+        from: 'KOSCOCO Affiliate <onboarding@resend.dev>',
+        to: affiliate.email,
+        subject,
+        replyTo: 'support@kozzii.africa',
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${subject}</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background-color: #DC2626; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">KOSCOCO</h1>
+                <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">Affiliate Communication</p>
+              </div>
+              
+              <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd;">
+                <h2 style="color: #DC2626; margin-top: 0;">Hello ${affiliate.firstName},</h2>
+                
+                ${htmlMessage}
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+                  <p style="margin: 0;">© 2024 KOSCOCO - Kozzii Short Content Competition</p>
+                  <p style="margin: 5px 0 0 0;">Limbe, Cameroon 🇨🇲</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      });
+      
+      if (result.error) {
+        console.error(`Failed to send email to ${affiliate.email}:`, result.error);
+        failed++;
+      } else {
+        sent++;
+      }
+    } catch (error) {
+      console.error(`Error sending email to ${affiliate.email}:`, error);
+      failed++;
+    }
+  }
+
+  return { sent, failed };
+}
