@@ -291,6 +291,15 @@ export default function AdminAffiliateDashboard() {
     },
   });
 
+  const formatEventType = (eventType: string) => {
+    const labels: Record<string, string> = {
+      referral_batch: "Referral Batch",
+      payout: "Payout Request",
+      referral: "Referral",
+    };
+    return labels[eventType] || eventType.charAt(0).toUpperCase() + eventType.slice(1);
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
@@ -835,7 +844,7 @@ export default function AdminAffiliateDashboard() {
                   {performanceData.map((log: any, idx: number) => (
                     <div key={idx} className="p-3 border rounded-lg">
                       <div className="flex justify-between items-start mb-2">
-                        <p className="font-medium">{log.event_type}</p>
+                        <p className="font-medium">{formatEventType(log.event_type)}</p>
                         <Badge variant="outline" className="text-xs">{new Date(log.created_at).toLocaleDateString()}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{log.description}</p>
