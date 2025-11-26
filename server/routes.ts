@@ -935,6 +935,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/registrations/count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const registrations = await storage.getUserRegistrations(userId);
+      res.json({ registrationCount: registrations.length });
+    } catch (error) {
+      console.error("Error fetching registration count:", error);
+      res.status(500).json({ message: "Failed to fetch registration count" });
+    }
+  });
+
   // Payment verification endpoint
   app.post('/api/payments/verify', isAuthenticated, async (req: any, res) => {
     try {
