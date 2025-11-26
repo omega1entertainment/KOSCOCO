@@ -94,7 +94,6 @@ export const videos = pgTable("videos", {
   moderationReason: text("moderation_reason"),
   moderatedAt: timestamp("moderated_at"),
   isSelectedForTop500: boolean("is_selected_for_top_500").default(false).notNull(),
-  platform: text("platform").notNull().default('KOZZII'), // KOSCOCO or KOZZII
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
