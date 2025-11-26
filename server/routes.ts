@@ -4565,28 +4565,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Currency detection endpoint
   app.get('/api/currency', async (req: any, res) => {
     try {
-      const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || '0.0.0.0';
-      
       // Default to USD
       let countryCode = 'US';
       let currencyInfo = { rate: 1, symbol: '$', name: 'USD', code: 'USD' };
       
-      // Try to detect country from IP using a simple free service
+      // Try to detect country from IP using a simple free service with timeout
+      const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || '0.0.0.0';
+      
       if (ip && ip !== '0.0.0.0' && ip !== '::1') {
         try {
-          const response = await fetch(`https://ipapi.co/${ip}/json/`);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          const response = await fetch(`https://ipapi.co/${ip}/json/`, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          
           if (response.ok) {
             const data = await response.json();
-            countryCode = data.country_code;
-            
-            // Map country code to currency
-            const currencyKey = countryCode;
-            if (currencyRates[currencyKey]) {
-              currencyInfo = { ...currencyRates[currencyKey], code: currencyKey };
+            if (data.country_code) {
+              countryCode = data.country_code;
+              if (currencyRates[countryCode]) {
+                currencyInfo = { ...currencyRates[countryCode], code: countryCode };
+              }
             }
           }
         } catch (error) {
-          console.log('IP geolocation failed, using default USD');
+          console.log('IP geolocation failed, using default currency');
         }
       }
       

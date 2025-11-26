@@ -82,12 +82,21 @@ export default function GiftPage() {
   useEffect(() => {
     const fetchCurrency = async () => {
       try {
-        const response = await fetch('/api/currency');
-        const data = await response.json();
-        setCurrency({ rate: data.rate, symbol: data.symbol, name: data.name, code: data.code });
-        setExchangeRate(data.rate);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch('/api/currency', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCurrency({ rate: data.rate, symbol: data.symbol, name: data.name, code: data.code });
+          setExchangeRate(data.rate);
+        }
       } catch (error) {
-        console.error('Failed to fetch currency:', error);
+        console.log('Currency detection failed, using USD');
+        setCurrency({ rate: 1, symbol: '$', name: 'USD', code: 'USD' });
+        setExchangeRate(1);
       }
     };
     
