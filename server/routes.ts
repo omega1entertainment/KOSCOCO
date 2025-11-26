@@ -6628,11 +6628,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(ref.id) as referrals_count,
           0 as clicks_count,
           0 as conversions_count,
-          COALESCE(SUM(a.total_earnings), 0) as earnings,
+          COALESCE(SUM(ref.commission), 0) as earnings,
           MAX(ref.created_at) as created_at
         FROM referrals ref
-        LEFT JOIN affiliates a ON a.id = ref.affiliate_id
         WHERE ref.affiliate_id = ${id}
+        GROUP BY ref.affiliate_id
         UNION ALL
         SELECT 
           'payout' as event_type,
