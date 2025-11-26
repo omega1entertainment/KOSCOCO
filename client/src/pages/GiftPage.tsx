@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WalletTopupDialog } from "@/components/WalletTopupDialog";
 import {
   ArrowLeft,
   Gift as GiftIcon,
@@ -62,6 +63,7 @@ export default function GiftPage() {
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showTopupDialog, setShowTopupDialog] = useState(false);
   const [currency, setCurrency] = useState<{ rate: number; symbol: string; name: string; code: string }>({ rate: 1, symbol: '$', name: 'USD', code: 'USD' });
   const [exchangeRate, setExchangeRate] = useState(1);
 
@@ -235,10 +237,14 @@ export default function GiftPage() {
           <h1 className="text-lg font-semibold">Send Gift</h1>
           
           {user && wallet && (
-            <div className="ml-auto flex items-center gap-2 bg-white/10 rounded-full px-3 py-1">
+            <button
+              onClick={() => setShowTopupDialog(true)}
+              className="ml-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 rounded-full px-3 py-1 transition-colors"
+              data-testid="button-topup-wallet"
+            >
               <Wallet className="h-4 w-4 text-yellow-400" />
               <span className="text-sm font-medium" data-testid="text-wallet-balance">{formatCurrency(wallet.balance)}</span>
-            </div>
+            </button>
           )}
         </div>
       </div>
@@ -431,7 +437,16 @@ export default function GiftPage() {
         {!selectedGift && (
           <div className="h-24" />
         )}
+        {!selectedGift && (
+          <div className="h-24" />
+        )}
       </div>
+
+      <WalletTopupDialog
+        open={showTopupDialog}
+        onOpenChange={setShowTopupDialog}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/wallet"] })}
+      />
     </div>
   );
 }

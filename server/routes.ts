@@ -885,6 +885,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Wallet Top-up
+  app.post('/api/wallet/topup/initiate', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const { amount } = req.body;
+
+      if (!amount || amount < 100) {
+        return res.status(400).json({ message: "Minimum top-up amount is 100 XAF" });
+      }
+
+      if (amount > 1000000) {
+        return res.status(400).json({ message: "Maximum top-up amount is 1,000,000 XAF" });
+      }
+
+      const txRef = `WLT-${Date.now()}-${user.id.slice(0, 8)}`;
+
+      const payment = await storage.createAdPayment({
+        advertiserId: user.id,
+        campaignId: null,
+        amount,
+        paymentType: 'user_wallet_topup',
+        txRef,
+        status: 'pending',
+      });
+
+      res.json({
+        success: true,
+        txRef: payment.txRef,
+        amount: payment.amount,
+        customer: {
+          email: user.email,
+          phone: user.phone || '',
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        },
+      });
+    } catch (error) {
+      console.error("Error initiating wallet top-up:", error);
+      res.status(500).json({ message: "Failed to initiate wallet top-up" });
+    }
+  });
+
+  app.post('/api/wallet/topup/callback', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as SelectUser;
+      const { txRef, transactionId } = req.body;
+
+      if (!txRef || !transactionId) {
+        return res.status(400).json({ message: "Transaction reference and ID are required" });
+      }
+
+      const payment = await storage.getAdPaymentByTxRef(txRef);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+
+      if (payment.advertiserId !== user.id) {
+        return res.status(403).json({ message: "Forbidden - Not your payment" });
+      }
+
+      if (payment.status !== 'pending') {
+        console.log(`[User Wallet Top-up Callback] Payment not pending (status: ${payment.status}): ${txRef}`);
+        return res.json({ success: true, message: "Payment already processed or failed" });
+      }
+
+      const flwClient = new Flutterwave(
+        process.env.FLW_PUBLIC_KEY!,
+        process.env.FLW_SECRET_KEY!
+      );
+
+      const verifyResponse = await flwClient.Transaction.verify({ id: transactionId });
+
+      if (verifyResponse.status !== 'success') {
+        return res.status(400).json({ message: "Payment verification failed with Flutterwave" });
+      }
+
+      const paymentData = verifyResponse.data;
+
+      if (paymentData.status !== 'successful') {
+        const terminalFailureStatuses = ['failed', 'cancelled', 'error', 'abandoned', 'reversed'];
+        
+        if (terminalFailureStatuses.includes(paymentData.status)) {
+          await storage.updateAdPayment(payment.id, {
+            status: 'failed',
+            paymentData: { data: paymentData },
+          });
+          return res.status(400).json({ message: `Payment failed: ${paymentData.status}` });
+        }
+        
+        await storage.updateAdPayment(payment.id, {
+          paymentData: { data: paymentData },
+        });
+        console.log(`[User Wallet Top-up Callback] Payment still pending: ${txRef}, status: ${paymentData.status}`);
+        return res.status(202).json({ message: `Payment not yet complete: ${paymentData.status}` });
+      }
+
+      if (paymentData.tx_ref !== txRef) {
+        return res.status(400).json({ message: "Transaction reference mismatch" });
+      }
+
+      if (paymentData.currency !== 'XAF') {
+        return res.status(400).json({ message: "Invalid payment currency" });
+      }
+
+      if (Math.abs(paymentData.amount - payment.amount) > 0.01) {
+        return res.status(400).json({ message: "Payment amount mismatch" });
+      }
+
+      const wasUpdated = await storage.markAdPaymentSuccessful(
+        payment.id,
+        paymentData.flw_ref,
+        paymentData
+      );
+
+      if (!wasUpdated) {
+        console.log(`[User Wallet Top-up Callback] Payment already marked successful: ${txRef}`);
+        return res.json({ success: true, message: "Payment already processed by concurrent request" });
+      }
+
+      // Credit user wallet
+      await storage.updateUserWalletBalance(user.id, payment.amount, 'wallet_topup', 'Wallet top-up');
+
+      res.json({ 
+        success: true, 
+        message: "Wallet topped up successfully",
+        amount: payment.amount
+      });
+    } catch (error: any) {
+      console.error("User wallet top-up callback error:", error);
+      res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
   // Creator Verification Routes
   app.get('/api/creator/verification', isAuthenticated, async (req: any, res) => {
     try {
