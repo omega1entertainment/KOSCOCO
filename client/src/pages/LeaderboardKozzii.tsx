@@ -88,7 +88,9 @@ export default function LeaderboardKozzii() {
                           <div className="relative">
                             <Avatar className="h-12 w-12">
                               <AvatarImage src={creator.profileImageUrl || undefined} />
-                              <AvatarFallback>{creator.firstName.charAt(0)}{creator.lastName.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>
+                                {creator.firstName?.charAt(0)}{creator.lastName?.charAt(0)}
+                              </AvatarFallback>
                             </Avatar>
                             <div className="absolute -top-1 -right-1 bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
                               #{index + 1}
@@ -96,7 +98,7 @@ export default function LeaderboardKozzii() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold truncate" data-testid={`text-creator-name-${index + 1}`}>
-                              {creator.username || `${creator.firstName} ${creator.lastName}`}
+                              {creator.username || `${creator.firstName || ''} ${creator.lastName || ''}`.trim()}
                             </h3>
                             <p className="text-sm text-muted-foreground truncate">@{creator.username || 'user'}</p>
                           </div>
