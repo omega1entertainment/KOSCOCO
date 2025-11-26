@@ -1606,9 +1606,23 @@ function AdminDashboardContent() {
       </Accordion>
 
       {/* Desktop Tabs Version */}
-      <Tabs defaultValue="phases" className="w-full hidden lg:block">
+      <Tabs defaultValue="overview" className="w-full hidden lg:block">
         <div className="flex flex-col lg:flex-row gap-6">
           <TabsList className="flex flex-col h-fit w-full lg:w-48 gap-1">
+            <TabsTrigger
+              value="overview"
+              className="w-full justify-start"
+              data-testid="tab-overview"
+            >
+              Dashboard Overview
+            </TabsTrigger>
+            <TabsTrigger
+              value="chat-moderation"
+              className="w-full justify-start"
+              data-testid="tab-chat-moderation"
+            >
+              Chat Moderation
+            </TabsTrigger>
             <TabsTrigger
               value="phases"
               className="w-full justify-start"
@@ -1738,6 +1752,14 @@ function AdminDashboardContent() {
           </TabsList>
 
           <div className="flex-1">
+            <TabsContent value="overview" className="mt-0 space-y-6">
+              <AdminDashboardOverview />
+            </TabsContent>
+
+            <TabsContent value="chat-moderation" className="mt-0">
+              <AdminChatModeration />
+            </TabsContent>
+
             <TabsContent value="phases" className="mt-0">
               <PhaseManagement />
             </TabsContent>
