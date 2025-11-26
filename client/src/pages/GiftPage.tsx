@@ -26,6 +26,7 @@ import {
   Star,
 } from "lucide-react";
 import type { Gift, Video, User, UserWallet } from "@shared/schema";
+import drumImageUrl from "@assets/generated_images/african_tribal_drum_percussion_instrument.png";
 
 const giftIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "African Drum": Drum,
@@ -265,7 +266,7 @@ export default function GiftPage() {
                         <div className="flex flex-col items-center gap-2">
                           <div className={`p-3 rounded-full ${tierColors[gift.tier]}`}>
                             {gift.name === "African Drum" ? (
-                              <img src="/attached_assets/generated_images/african_tribal_drum_percussion_instrument.png" alt="African Drum" className="h-8 w-8 object-contain" />
+                              <img src={drumImageUrl} alt="African Drum" className="h-8 w-8 object-contain" />
                             ) : (
                               <Icon className="h-8 w-8" />
                             )}
