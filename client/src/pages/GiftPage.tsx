@@ -26,7 +26,7 @@ import {
   Star,
 } from "lucide-react";
 import type { Gift, Video, User, UserWallet } from "@shared/schema";
-import drumImageUrl from "@assets/generated_images/african_tribal_drum_percussion_instrument.png";
+import drumImageUrl from "@assets/generated_images/african_tribal_drum_with_transparent_background.png";
 
 const giftIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "African Drum": Drum,
