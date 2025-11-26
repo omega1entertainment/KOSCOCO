@@ -700,7 +700,7 @@ export default function Feed() {
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-6">
         <Button
           size="icon"
-          className="rounded-full w-12 h-12 bg-white/10 hover:bg-white/20 text-white"
+          className="rounded-full w-12 h-12 bg-white hover:bg-white/90 text-primary"
           onClick={() => setLocation("/koscoco")}
           data-testid="button-koscoco-link"
           title="Visit KOSCOCO"
