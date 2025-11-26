@@ -69,13 +69,12 @@ function ScrollToTop() {
   return null;
 }
 
-const KOZZII_PAGES = ['/', '/gift', '/creator/wallet'];
-
 function Router() {
   const { isLoading } = useAuth();
   const [location, setLocation] = useLocation();
 
-  const isKozziiPage = KOZZII_PAGES.some(page => location.startsWith(page));
+  // Check if current page is a KOZZII page (feed, gift, or creator wallet)
+  const isKozziiPage = location === '/' || location.startsWith('/gift/') || location.startsWith('/creator/wallet');
 
   if (isLoading) {
     return (
