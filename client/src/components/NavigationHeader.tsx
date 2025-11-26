@@ -108,6 +108,15 @@ export default function NavigationHeader({
     { label: 'Affiliate Login', path: '/affiliate/login' },
     { label: t('nav.affiliateDashboard'), path: '/affiliate/dashboard' },
   ];
+
+  // Filter affiliate menu items for authenticated users
+  const filteredAffiliateMenuItems = affiliateMenuItems.filter((item) => {
+    if (isAuthenticated) {
+      // Hide "Join Affiliate" and "Affiliate Login" for logged-in users
+      return item.label !== t('nav.joinAffiliate') && item.label !== 'Affiliate Login';
+    }
+    return true;
+  });
   
   const advertiserMenuItems = [
     { label: 'Advertiser Login', path: '/advertiser/login' },
@@ -206,7 +215,7 @@ export default function NavigationHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {affiliateMenuItems.map((item) => (
+                {filteredAffiliateMenuItems.map((item) => (
                   <DropdownMenuItem
                     key={item.label}
                     onClick={() => {
@@ -463,7 +472,7 @@ export default function NavigationHeader({
                 <span className="text-sm font-semibold">{t('nav.affiliate')}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${expandedAffiliate ? 'rotate-180' : ''}`} />
               </Button>
-              {expandedAffiliate && affiliateMenuItems.map((item) => (
+              {expandedAffiliate && filteredAffiliateMenuItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
