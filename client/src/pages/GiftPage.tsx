@@ -28,6 +28,7 @@ import {
 import type { Gift, Video, User, UserWallet } from "@shared/schema";
 import drumImageUrl from "@assets/Standard African drum_1764140229973.png";
 import cowrieImageUrl from "@assets/Cowries_1764140169949.png";
+import toguhImageUrl from "@assets/North west toguh_1764140310074.png";
 
 const giftIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "African Drum": Drum,
@@ -270,6 +271,8 @@ export default function GiftPage() {
                               <img src={drumImageUrl} alt="African Drum" className="h-10 w-10 object-contain" />
                             ) : gift.name === "Cowrie Shell" ? (
                               <img src={cowrieImageUrl} alt="Cowrie Shell" className="h-10 w-10 object-contain" />
+                            ) : gift.name === "Toguh Cloth" || gift.name === "Kente Cloth" ? (
+                              <img src={toguhImageUrl} alt="Toguh Cloth" className="h-10 w-10 object-contain" />
                             ) : (
                               <Icon className="h-10 w-10" />
                             )}
