@@ -304,15 +304,15 @@ export default function GiftPage() {
                         <div className="flex flex-col items-center gap-2">
                           <div className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 bg-white text-neutral-900">
                             {gift.name === "African Drum" ? (
-                              <img src={drumImageUrl} alt="African Drum" className="h-10 w-10 object-contain" />
+                              <img src={drumImageUrl} alt="African Drum" className="h-10 w-10 object-contain animate-gift-spin" />
                             ) : gift.name === "Cowrie Shell" ? (
-                              <img src={cowrieImageUrl} alt="Cowrie Shell" className="h-10 w-10 object-contain" />
+                              <img src={cowrieImageUrl} alt="Cowrie Shell" className="h-10 w-10 object-contain animate-gift-pulse" />
                             ) : gift.name === "Toguh Cloth" || gift.name === "Kente Cloth" ? (
-                              <img src={toguhImageUrl} alt="Toguh Cloth" className="h-10 w-10 object-contain" />
+                              <img src={toguhImageUrl} alt="Toguh Cloth" className="h-10 w-10 object-contain animate-gift-float" />
                             ) : gift.name === "Maasai Beads" ? (
-                              <img src={maasaiBeadsImageUrl} alt="Maasai Beads" className="h-10 w-10 object-contain" />
+                              <img src={maasaiBeadsImageUrl} alt="Maasai Beads" className="h-10 w-10 object-contain animate-gift-bounce" />
                             ) : gift.name === "Ivory Tusks" ? (
-                              <img src={ivoryTusksImageUrl} alt="Ivory Tusks" className="h-10 w-10 object-contain" />
+                              <img src={ivoryTusksImageUrl} alt="Ivory Tusks" className="h-10 w-10 object-contain animate-gift-spin" />
                             ) : gift.name === "Elephant" ? (
                               <video src={elephantVideoUrl} autoPlay muted loop className="h-10 w-10 object-contain" />
                             ) : gift.name === "Lion" ? (

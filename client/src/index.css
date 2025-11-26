@@ -388,4 +388,65 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
+
+  /* Gift animation keyframes */
+  @keyframes gentle-spin {
+    0%, 100% {
+      transform: rotateZ(0deg);
+    }
+    50% {
+      transform: rotateZ(5deg);
+    }
+  }
+
+  @keyframes gentle-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes gentle-float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes gentle-bounce {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    25% {
+      transform: translateY(-2px);
+    }
+    50% {
+      transform: translateY(0px);
+    }
+    75% {
+      transform: translateY(-1px);
+    }
+  }
+
+  .animate-gift-spin {
+    animation: gentle-spin 3s ease-in-out infinite;
+  }
+
+  .animate-gift-pulse {
+    animation: gentle-pulse 2s ease-in-out infinite;
+  }
+
+  .animate-gift-float {
+    animation: gentle-float 2.5s ease-in-out infinite;
+  }
+
+  .animate-gift-bounce {
+    animation: gentle-bounce 1.5s ease-in-out infinite;
+  }
 }
