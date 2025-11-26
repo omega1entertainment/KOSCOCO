@@ -60,6 +60,15 @@ export default function NavigationHeader({
       });
     },
   });
+
+  const { data: registrationData } = useQuery({
+    queryKey: ["/api/registrations/count"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: isAuthenticated,
+  });
+
+  const registrationCount = registrationData?.registrationCount || 0;
+  const needsRegistration = registrationCount < 5;
   
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
@@ -289,6 +298,15 @@ export default function NavigationHeader({
                 >
                   {t('nav.uploadVideo')}
                 </Button>
+                {needsRegistration && (
+                  <Button
+                    className="min-h-11"
+                    onClick={() => setLocation("/register")}
+                    data-testid="button-register-authenticated"
+                  >
+                    {t('nav.register')}
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="min-h-11" data-testid="button-user-menu">
@@ -575,6 +593,18 @@ export default function NavigationHeader({
                   >
                     {t('nav.uploadVideo')}
                   </Button>
+                  {needsRegistration && (
+                    <Button
+                      className="min-h-11"
+                      onClick={() => {
+                        setLocation("/register");
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="mobile-button-register-authenticated"
+                    >
+                      {t('nav.register')}
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost"
                     className="min-h-11"
