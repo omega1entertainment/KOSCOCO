@@ -245,7 +245,7 @@ export default function AdminAffiliateDashboard() {
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm mb-3">
                         <div><span className="text-muted-foreground">Referrals:</span> {aff.total_referrals}</div>
-                        <div><span className="text-muted-foreground">Earnings:</span> ${(aff.total_earnings / 100).toFixed(2)}</div>
+                        <div><span className="text-muted-foreground">Earnings:</span> {(aff.total_earnings / 100).toFixed(0)} XAF</div>
                         <div><span className="text-muted-foreground">Joined:</span> {new Date(aff.created_at).toLocaleDateString()}</div>
                       </div>
                       <div className="flex gap-2">
@@ -361,7 +361,7 @@ export default function AdminAffiliateDashboard() {
                       <div key={request.id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <p className="font-medium">${(request.amount / 100).toFixed(2)}</p>
+                            <p className="font-medium">{(request.amount / 100).toFixed(0)} XAF</p>
                             <p className="text-sm text-muted-foreground">{request.payment_method} • {request.first_name} {request.last_name}</p>
                             <p className="text-xs text-muted-foreground mt-1">{request.email}</p>
                           </div>
@@ -418,7 +418,7 @@ export default function AdminAffiliateDashboard() {
                     <Input type="number" placeholder="20" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Minimum Withdrawal Amount ($)</label>
+                    <label className="text-sm font-medium">Minimum Withdrawal Amount (XAF)</label>
                     <Input type="number" placeholder="25" />
                   </div>
                   <div>
@@ -483,7 +483,7 @@ export default function AdminAffiliateDashboard() {
                     </div>
                     <div className="p-3 bg-muted rounded">
                       <p className="text-sm text-muted-foreground">Total Earnings</p>
-                      <p className="text-2xl font-bold">${(selectedAffiliateDetails.total_earnings / 100).toFixed(2)}</p>
+                      <p className="text-2xl font-bold">{(selectedAffiliateDetails.total_earnings / 100).toFixed(0)} XAF</p>
                     </div>
                     <div className="p-3 bg-muted rounded">
                       <p className="text-sm text-muted-foreground">Pending Payouts</p>
@@ -491,7 +491,7 @@ export default function AdminAffiliateDashboard() {
                     </div>
                     <div className="p-3 bg-muted rounded">
                       <p className="text-sm text-muted-foreground">Total Paid Out</p>
-                      <p className="text-2xl font-bold">${(selectedAffiliateDetails.total_paid_out / 100).toFixed(2)}</p>
+                      <p className="text-2xl font-bold">{(selectedAffiliateDetails.total_paid_out / 100).toFixed(0)} XAF</p>
                     </div>
                   </div>
                 </div>
@@ -525,7 +525,7 @@ export default function AdminAffiliateDashboard() {
                               <p className="font-medium">{referral.first_name} {referral.last_name}</p>
                               <p className="text-xs text-muted-foreground">{referral.email}</p>
                             </div>
-                            <Badge variant="outline">${(referral.commission / 100).toFixed(2)}</Badge>
+                            <Badge variant="outline">{(referral.commission / 100).toFixed(0)} XAF</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">{new Date(referral.created_at).toLocaleDateString()}</p>
                         </div>
@@ -543,7 +543,7 @@ export default function AdminAffiliateDashboard() {
                         <div key={payout.id} className="p-2 border rounded text-sm">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-medium">${(payout.amount / 100).toFixed(2)}</p>
+                              <p className="font-medium">{(payout.amount / 100).toFixed(0)} XAF</p>
                               <p className="text-xs text-muted-foreground">{payout.payment_method}</p>
                             </div>
                             <Badge variant={payout.status === "pending" ? "secondary" : payout.status === "approved" ? "default" : "destructive"}>
