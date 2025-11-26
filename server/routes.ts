@@ -6568,6 +6568,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Upload image for WYSIWYG editor
+  app.post('/api/admin/communications/upload-image', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const form = new formidable.IncomingForm();
+      const [fields, files] = await form.parse(req);
+      
+      const imageFile = Array.isArray(files.image) ? files.image[0] : files.image;
+      if (!imageFile) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(imageFile.mimetype || '')) {
+        return res.status(400).json({ message: "Invalid image format. Allowed: JPEG, PNG, GIF, WebP" });
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if ((imageFile.size || 0) > maxSize) {
+        return res.status(400).json({ message: "Image size must be less than 5MB" });
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
+      const ext = imageFile.originalFilename?.split('.').pop() || 'jpg';
+      const filename = `affiliate-email-${timestamp}-${random}.${ext}`;
+
+      // Upload to object storage
+      const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+      const bucketPath = `${privateObjectDir}/affiliate-emails`;
+      const objectPath = `${bucketPath}/${filename}`;
+      
+      const fileBuffer = await fs.readFile(imageFile.filepath);
+      const bucketName = privateObjectDir.split('/')[0];
+      const bucket = objectStorageClient.bucket(bucketName);
+      
+      const file = bucket.file(objectPath);
+      const writeStream = file.createWriteStream({
+        metadata: {
+          contentType: imageFile.mimetype || 'image/jpeg',
+        },
+      });
+      
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+        writeStream.end(fileBuffer);
+      });
+
+      // Generate public URL
+      const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectPath}`;
+
+      res.json({
+        url: publicUrl,
+        message: "Image uploaded successfully"
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
   // Admin: Send bulk communications to all affiliates
   app.post('/api/admin/communications/send', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

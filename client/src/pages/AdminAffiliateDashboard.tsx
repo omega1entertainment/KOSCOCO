@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle, Plus, Edit2, Lock } from "lucide-react";
-import ReactQuill from "react-quill";
+import { BarChart3, Users, TrendingUp, AlertTriangle, DollarSign, Mail, Settings, Target, Eye, CheckCircle, XCircle, Plus, Edit2, Lock, Image as ImageIcon } from "lucide-react";
+import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
+
+// Register image handler with Quill
+const CustomImage = Quill.import('formats/image');
+Quill.register(CustomImage, true);
 
 type AffiliateStats = {
   totalAffiliates: number;
@@ -44,6 +48,47 @@ export default function AdminAffiliateDashboard() {
   const [formLastName, setFormLastName] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
+  const quillRef = useRef<ReactQuill>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await fetch('/api/admin/communications/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Upload failed');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (quillRef.current && data.url) {
+        const editor = quillRef.current.getEditor();
+        const range = editor.getSelection();
+        const index = range?.index || 0;
+        editor.insertEmbed(index, 'image', data.url, 'user');
+        editor.setSelection(index + 1);
+      }
+    },
+    onError: () => {
+      toast({ title: "Failed to upload image", variant: "destructive" });
+    },
+  });
+
+  const handleImageUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadImageMutation.mutate(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const { data: stats } = useQuery<AffiliateStats>({
     queryKey: ["/api/admin/affiliates/stats"],
@@ -584,13 +629,43 @@ export default function AdminAffiliateDashboard() {
                     <label className="text-sm font-medium mb-2 block">Email Message</label>
                     <div className="border rounded-md bg-white overflow-hidden" data-testid="editor-email-message">
                       <ReactQuill 
+                        ref={quillRef}
                         theme="snow" 
                         value={emailMessage} 
                         onChange={setEmailMessage}
                         placeholder="Write your email message here..."
+                        modules={{
+                          toolbar: [
+                            ['bold', 'italic', 'underline', 'strike'],
+                            ['blockquote', 'code-block'],
+                            [{ 'header': 1 }, { 'header': 2 }],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }],
+                            [{ 'align': [] }],
+                            ['link', 'image'],
+                          ],
+                        }}
                       />
                     </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      style={{ display: 'none' }}
+                      data-testid="input-email-image"
+                    />
                   </div>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    onClick={handleImageUploadClick}
+                    disabled={uploadImageMutation.isPending}
+                    data-testid="button-insert-image"
+                  >
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    {uploadImageMutation.isPending ? "Uploading..." : "Insert Image"}
+                  </Button>
                   <Button 
                     onClick={() => sendBulkCommunicationMutation.mutate()}
                     disabled={sendBulkCommunicationMutation.isPending || !emailSubject || !emailMessage}
