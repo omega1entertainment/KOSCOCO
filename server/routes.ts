@@ -6620,22 +6620,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Affiliate not found" });
       }
 
-      // Get performance data from referrals and payouts
+      // Get performance data from referrals, payouts, and clicks/conversions
       const performanceData = await db.execute(sql`
         SELECT 
-          'referral' as event_type,
-          'User registered via referral code' as description,
-          COUNT(r.id) as referrals_count,
+          'referral_batch' as event_type,
+          'Batch referral registrations' as description,
+          COUNT(ref.id) as referrals_count,
           0 as clicks_count,
           0 as conversions_count,
-          0 as earnings,
-          MAX(r.created_at) as created_at
-        FROM registrations r
-        WHERE r.referred_by = ${id}
+          COALESCE(SUM(a.total_earnings), 0) as earnings,
+          MAX(ref.created_at) as created_at
+        FROM referrals ref
+        LEFT JOIN affiliates a ON a.id = ref.affiliate_id
+        WHERE ref.affiliate_id = ${id}
         UNION ALL
         SELECT 
           'payout' as event_type,
-          CONCAT('Payout request: ', pr.status) as description,
+          CONCAT('Payout - ', pr.status) as description,
           0 as referrals_count,
           0 as clicks_count,
           0 as conversions_count,
@@ -6644,10 +6645,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM payout_requests pr
         WHERE pr.affiliate_id = ${id}
         ORDER BY created_at DESC
-        LIMIT 20
+        LIMIT 50
       `);
 
-      res.json(performanceData.rows);
+      const logs = (performanceData.rows || []).map((row: any) => ({
+        event_type: row.event_type,
+        description: row.description,
+        referrals_count: Number(row.referrals_count) || 0,
+        clicks_count: Number(row.clicks_count) || 0,
+        conversions_count: Number(row.conversions_count) || 0,
+        earnings: Number(row.earnings) || 0,
+        created_at: row.created_at
+      }));
+
+      res.json(logs);
     } catch (error) {
       console.error("Error fetching performance logs:", error);
       res.status(500).json({ message: "Failed to fetch performance logs" });
