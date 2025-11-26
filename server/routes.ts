@@ -6620,17 +6620,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Affiliate not found" });
       }
 
-      // Get performance data from referrals, payouts, and clicks/conversions
+      // Get performance data from referrals, metrics, and payouts
       const performanceData = await db.execute(sql`
         SELECT 
           'referral_batch' as event_type,
           'Batch referral registrations' as description,
           COUNT(ref.id) as referrals_count,
-          0 as clicks_count,
-          0 as conversions_count,
+          COALESCE(SUM(am.clicks), 0) as clicks_count,
+          COALESCE(SUM(am.conversions), 0) as conversions_count,
           COALESCE(SUM(ref.commission), 0) as earnings,
-          MAX(ref.created_at) as created_at
+          MAX(COALESCE(am.date, ref.created_at)) as created_at
         FROM referrals ref
+        LEFT JOIN affiliate_metrics am ON am.affiliate_id = ref.affiliate_id AND DATE(am.date) = DATE(ref.created_at)
         WHERE ref.affiliate_id = ${id}
         GROUP BY ref.affiliate_id
         UNION ALL
