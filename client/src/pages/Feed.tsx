@@ -48,7 +48,7 @@ export default function Feed() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [selectedCompetition, setSelectedCompetition] = useState<string>("koscoco");
+  const [selectedCompetition, setSelectedCompetition] = useState<string>("kozzii");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const videoRefs = useRef<Map<number, HTMLVideoElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);

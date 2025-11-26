@@ -104,7 +104,8 @@ function Router() {
       {!isKozziiPage && <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />}
       <main className="flex-1">
         <Switch>
-          <Route path="/" component={Home} />
+          <Route path="/" component={Feed} />
+          <Route path="/koscoco" component={Home} />
           <Route path="/login" component={Login} />
           <Route path="/thank-you" component={ThankYou} />
           <Route path="/register" component={Register} />
