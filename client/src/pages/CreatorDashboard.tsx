@@ -83,7 +83,6 @@ type CreatorProfile = {
   email: string;
   username: string | null;
   profileImageUrl: string | null;
-  bio: string | null;
   location: string | null;
   age: number | null;
   emailVerified: boolean;
@@ -618,12 +617,6 @@ export default function CreatorDashboard() {
                       <p className="text-lg">{new Date(profile.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  {profile.bio && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Bio</label>
-                      <p className="text-base whitespace-pre-wrap">{profile.bio}</p>
-                    </div>
-                  )}
                   <Button onClick={() => setLocation('/edit-profile')} data-testid="button-edit-profile">
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile

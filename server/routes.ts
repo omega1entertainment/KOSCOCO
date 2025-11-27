@@ -3020,7 +3020,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         username: user.username,
         profileImageUrl: user.profileImageUrl,
-        bio: user.bio,
         location: user.location,
         age: user.age,
         emailVerified: user.emailVerified,
@@ -3035,13 +3034,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/creator/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
-      const { firstName, lastName, username, bio, location, age } = req.body;
+      const { firstName, lastName, username, location, age } = req.body;
 
       const updates: any = {};
       if (firstName !== undefined) updates.firstName = firstName;
       if (lastName !== undefined) updates.lastName = lastName;
       if (username !== undefined) updates.username = username;
-      if (bio !== undefined) updates.bio = bio || null;
       if (location !== undefined) updates.location = location;
       if (age !== undefined) updates.age = parseInt(age, 10) || null;
 
@@ -3062,7 +3060,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         username: user.username,
         profileImageUrl: user.profileImageUrl,
-        bio: user.bio,
         location: user.location,
         age: user.age,
         emailVerified: user.emailVerified,
