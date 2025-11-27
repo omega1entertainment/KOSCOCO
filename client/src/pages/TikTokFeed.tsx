@@ -11,6 +11,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import type { Video, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import VotePaymentModal from "@/components/VotePaymentModal";
+import ShareModal from "@/components/ShareModal";
 
 export default function TikTokFeed() {
   const [, setLocation] = useLocation();
@@ -27,6 +28,8 @@ export default function TikTokFeed() {
   const [videoStats, setVideoStats] = useState<{ [key: string]: { likeCount: number; voteCount: number } }>({});
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedVideoForShare, setSelectedVideoForShare] = useState<{ id: string; title: string } | null>(null);
   const lastScrollTime = useRef(0);
 
   // Fetch all categories and videos
@@ -293,10 +296,8 @@ export default function TikTokFeed() {
               {/* Share button */}
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/video/${video.id}`
-                  );
-                  toast({ title: "Link copied!" });
+                  setSelectedVideoForShare({ id: video.id, title: video.title });
+                  setShareModalOpen(true);
                 }}
                 className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
                 data-testid={`button-share-${video.id}`}
@@ -365,6 +366,16 @@ export default function TikTokFeed() {
           onOpenChange={setVoteModalOpen}
           videoId={selectedVideo.id}
           videoTitle={selectedVideo.title}
+        />
+      )}
+
+      {/* Share modal */}
+      {selectedVideoForShare && (
+        <ShareModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          videoId={selectedVideoForShare.id}
+          videoTitle={selectedVideoForShare.title}
         />
       )}
 
