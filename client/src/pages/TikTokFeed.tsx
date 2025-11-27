@@ -291,15 +291,6 @@ export default function TikTokFeed() {
               </div>
             </div>
 
-            {/* Video counter */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-2 text-white/50 text-xs space-y-1">
-              <div className="text-center">
-                <span>{index + 1}</span>
-                <div className="text-white/30">/</div>
-                <span>{videos.length}</span>
-              </div>
-            </div>
-
             {/* Loading indicator */}
             {video.videoUrl && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/50 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
