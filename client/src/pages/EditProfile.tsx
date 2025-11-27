@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -47,17 +47,19 @@ export default function EditProfile() {
   });
 
   // Update form when profile data loads
-  if (profile && !firstName) {
-    setFirstName(profile.firstName || "");
-    setLastName(profile.lastName || "");
-    setUsername(profile.username || "");
-    setBio(profile.bio || "");
-    setLocation_(profile.location || "");
-    setAge(profile.age ? profile.age.toString() : "");
-    if (profile.profileImageUrl) {
-      setProfileImagePreview(profile.profileImageUrl);
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.firstName || "");
+      setLastName(profile.lastName || "");
+      setUsername(profile.username || "");
+      setBio(profile.bio || "");
+      setLocation_(profile.location || "");
+      setAge(profile.age ? profile.age.toString() : "");
+      if (profile.profileImageUrl) {
+        setProfileImagePreview(profile.profileImageUrl);
+      }
     }
-  }
+  }, [profile]);
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
