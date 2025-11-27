@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Heart } from "lucide-react";
+import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Video, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -271,7 +271,7 @@ export default function TikTokFeed() {
                 }`}
                 data-testid={`button-like-${video.id}`}
               >
-                <Heart
+                <ThumbsUp
                   className={`w-8 h-8 ${liked.has(video.id) ? "fill-current" : ""}`}
                 />
                 <span className="text-xs">{videoStats[video.id]?.likeCount || 0}</span>
@@ -286,7 +286,7 @@ export default function TikTokFeed() {
                 className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
                 data-testid={`button-vote-${video.id}`}
               >
-                <ThumbsUp className="w-8 h-8" />
+                <Check className="w-8 h-8" />
                 <span className="text-xs">{videoStats[video.id]?.voteCount || 0}</span>
               </button>
 
