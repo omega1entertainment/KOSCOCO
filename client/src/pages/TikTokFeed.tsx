@@ -10,6 +10,7 @@ import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Heart } from "lucide-react
 import { queryKeys } from "@/lib/queryKeys";
 import type { Video, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import VotePaymentModal from "@/components/VotePaymentModal";
 
 export default function TikTokFeed() {
   const [, setLocation] = useLocation();
@@ -23,6 +24,9 @@ export default function TikTokFeed() {
   const [isMuted, setIsMuted] = useState(false);
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [creators, setCreators] = useState<{ [key: string]: { firstName: string; lastName: string } }>({});
+  const [videoStats, setVideoStats] = useState<{ [key: string]: { likeCount: number; voteCount: number } }>({});
+  const [voteModalOpen, setVoteModalOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
   const lastScrollTime = useRef(0);
 
   // Fetch all categories and videos
@@ -70,8 +74,30 @@ export default function TikTokFeed() {
         }
       }
       
+      // Fetch video stats (likes and votes)
+      const statsMap: { [key: string]: { likeCount: number; voteCount: number } } = {};
+      for (const video of allVideos) {
+        try {
+          const [likeRes, voteRes] = await Promise.all([
+            fetch(`/api/likes/video/${video.id}`),
+            fetch(`/api/votes/video/${video.id}`)
+          ]);
+          
+          const likeData = likeRes.ok ? await likeRes.json() : { likeCount: 0 };
+          const voteData = voteRes.ok ? await voteRes.json() : { voteCount: 0 };
+          
+          statsMap[video.id] = {
+            likeCount: likeData.likeCount || 0,
+            voteCount: voteData.voteCount || 0
+          };
+        } catch (err) {
+          statsMap[video.id] = { likeCount: 0, voteCount: 0 };
+        }
+      }
+      
       setVideos(allVideos);
       setCreators(creatorMap);
+      setVideoStats(statsMap);
     };
 
     fetchAllVideos();
@@ -248,16 +274,20 @@ export default function TikTokFeed() {
                 <Heart
                   className={`w-8 h-8 ${liked.has(video.id) ? "fill-current" : ""}`}
                 />
-                <span className="text-xs">0</span>
+                <span className="text-xs">{videoStats[video.id]?.likeCount || 0}</span>
               </button>
 
               {/* Vote button */}
               <button
+                onClick={() => {
+                  setSelectedVideo({ id: video.id, title: video.title });
+                  setVoteModalOpen(true);
+                }}
                 className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
                 data-testid={`button-vote-${video.id}`}
               >
                 <ThumbsUp className="w-8 h-8" />
-                <span className="text-xs">0</span>
+                <span className="text-xs">{videoStats[video.id]?.voteCount || 0}</span>
               </button>
 
               {/* Share button */}
@@ -327,6 +357,16 @@ export default function TikTokFeed() {
           </div>
         ))}
       </div>
+
+      {/* Vote modal */}
+      {selectedVideo && (
+        <VotePaymentModal
+          open={voteModalOpen}
+          onOpenChange={setVoteModalOpen}
+          videoId={selectedVideo.id}
+          videoTitle={selectedVideo.title}
+        />
+      )}
 
       {/* Hide scrollbar styles */}
       <style>{`
