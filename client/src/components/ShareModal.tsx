@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Facebook, Twitter, MessageCircle, Linkedin, Send, Mail, Link2 } from "lucide-react";
+import { Facebook, Twitter, MessageCircle, Linkedin, Send, Mail, Link2, Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ShareModalProps {
@@ -87,6 +87,17 @@ export default function ShareModal({
       icon: Mail,
       onClick: () => {
         window.location.href = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
+      },
+    },
+    {
+      name: "TikTok",
+      icon: Music,
+      onClick: () => {
+        window.open(
+          `https://www.tiktok.com/share/video?url=${encodedUrl}`,
+          "tiktok-share",
+          "width=600,height=400"
+        );
       },
     },
     {
