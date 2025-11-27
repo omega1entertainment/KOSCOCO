@@ -18,6 +18,7 @@ type CreatorProfile = {
   email: string;
   username: string | null;
   profileImageUrl: string | null;
+  bio: string | null;
   location: string | null;
   age: number | null;
   emailVerified: boolean;
@@ -35,6 +36,7 @@ export default function EditProfile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
   const [location, setLocation_] = useState("");
   const [age, setAge] = useState("");
 
@@ -49,6 +51,7 @@ export default function EditProfile() {
     setFirstName(profile.firstName || "");
     setLastName(profile.lastName || "");
     setUsername(profile.username || "");
+    setBio(profile.bio || "");
     setLocation_(profile.location || "");
     setAge(profile.age ? profile.age.toString() : "");
     if (profile.profileImageUrl) {
@@ -81,6 +84,7 @@ export default function EditProfile() {
           firstName,
           lastName,
           username,
+          bio,
           location,
           age: age ? parseInt(age, 10) : null,
         }),
@@ -241,6 +245,22 @@ export default function EditProfile() {
                   placeholder="Enter your username"
                   data-testid="input-username"
                 />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell others about yourself (max 500 characters)"
+                  maxLength={500}
+                  className="w-full px-3 py-2 border rounded-md bg-background text-foreground resize-none"
+                  rows={4}
+                  data-testid="input-bio"
+                />
+                <p className="text-xs text-muted-foreground">{bio.length}/500</p>
               </div>
 
               {/* Location and Age */}

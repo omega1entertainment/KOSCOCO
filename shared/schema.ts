@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
   profileImageUrl: varchar("profile_image_url"),
+  bio: text("bio"),
   age: integer("age"),
   location: text("location"),
   parentalConsent: boolean("parental_consent").default(false),
