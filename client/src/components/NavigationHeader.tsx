@@ -139,7 +139,7 @@ export default function NavigationHeader({
                 <Button
                   key={item.label}
                   variant={item.isFeed ? "default" : "ghost"}
-                  className={`min-h-11 ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90' : ''}`}
+                  className={`min-h-11 ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90 font-bold' : ''}`}
                   onClick={() => onNavigate?.(item.path)}
                   data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
@@ -355,7 +355,7 @@ export default function NavigationHeader({
                 <Button
                   key={item.label}
                   variant={item.isFeed ? "default" : "ghost"}
-                  className={`min-h-11 justify-start ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90' : ''}`}
+                  className={`min-h-11 justify-start ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90 font-bold' : ''}`}
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
