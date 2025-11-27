@@ -93,11 +93,9 @@ export default function ShareModal({
       name: "TikTok",
       icon: Music,
       onClick: () => {
-        window.open(
-          `https://www.tiktok.com/share/video?url=${encodedUrl}`,
-          "tiktok-share",
-          "width=600,height=400"
-        );
+        navigator.clipboard.writeText(shareUrl);
+        toast({ title: "Link copied! Share on TikTok" });
+        onOpenChange(false);
       },
     },
     {
