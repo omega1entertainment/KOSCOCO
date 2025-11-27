@@ -3105,8 +3105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
-          if (!privateObjectDir) {
+          const publicObjectDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || "";
+          if (!publicObjectDir) {
             return res.status(500).json({ message: "Object storage not configured" });
           }
 
@@ -3118,7 +3118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const ext = extMap[photoFile.mimetype?.toLowerCase() || ''] || 'jpg';
 
           const photoId = randomUUID();
-          const photoPath = `${privateObjectDir}/profile-photos/${photoId}.${ext}`;
+          const photoPath = `${publicObjectDir}/profile-photos/${photoId}.${ext}`;
           const { bucketName, objectName } = parseObjectPath(photoPath);
           const bucket = objectStorageClient.bucket(bucketName);
           const photoFileObj = bucket.file(objectName);
@@ -3162,6 +3162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: user.email,
             username: user.username,
             profileImageUrl: user.profileImageUrl,
+            bio: user.bio,
             location: user.location,
             age: user.age,
             emailVerified: user.emailVerified,
