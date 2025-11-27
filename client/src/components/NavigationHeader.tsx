@@ -85,6 +85,7 @@ export default function NavigationHeader({
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
+    { label: 'Feed', path: '/feed', isFeed: true },
   ];
 
   const judgeMenuItems = [
@@ -130,15 +131,15 @@ export default function NavigationHeader({
           </button>
           
           <nav className="hidden md:flex items-center gap-0 flex-1 justify-center">
-            {navItems.map((item) => {
+            {navItems.map((item: any) => {
               if (item.label === t('nav.howItWorks') && isAuthenticated) {
                 return null;
               }
               return (
                 <Button
                   key={item.label}
-                  variant="ghost"
-                  className="min-h-11"
+                  variant={item.isFeed ? "default" : "ghost"}
+                  className={`min-h-11 ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90' : ''}`}
                   onClick={() => onNavigate?.(item.path)}
                   data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
@@ -346,15 +347,15 @@ export default function NavigationHeader({
       {mobileMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
-            {navItems.map((item) => {
+            {navItems.map((item: any) => {
               if (item.label === t('nav.howItWorks') && isAuthenticated) {
                 return null;
               }
               return (
                 <Button
                   key={item.label}
-                  variant="ghost"
-                  className="min-h-11 justify-start"
+                  variant={item.isFeed ? "default" : "ghost"}
+                  className={`min-h-11 justify-start ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90' : ''}`}
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
