@@ -3128,7 +3128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const writeStream = photoFileObj.createWriteStream({
               metadata: {
                 contentType: photoFile.mimetype || 'image/jpeg',
-                cacheControl: 'private, max-age=3600',
+                cacheControl: 'public, max-age=86400',
               },
             });
 
@@ -3149,7 +3149,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             readStream.pipe(writeStream);
           });
 
-          const user = await storage.updateUser(userId, { profileImageUrl: photoPath });
+          // Generate public URL for the profile image
+          const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+          const user = await storage.updateUser(userId, { profileImageUrl: publicUrl });
 
           if (!user) {
             return res.status(404).json({ message: "User not found" });
