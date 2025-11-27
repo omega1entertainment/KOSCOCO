@@ -22,6 +22,7 @@ export default function TikTokFeed() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [liked, setLiked] = useState<Set<string>>(new Set());
+  const [creators, setCreators] = useState<{ [key: string]: { firstName: string; lastName: string } }>({});
   const lastScrollTime = useRef(0);
 
   // Fetch all categories and videos
@@ -35,18 +36,42 @@ export default function TikTokFeed() {
 
     const fetchAllVideos = async () => {
       const allVideos: Video[] = [];
+      const userIds = new Set<string>();
+      
       for (const category of categories) {
         try {
           const response = await fetch(`/api/videos/category/${category.id}`);
           if (response.ok) {
             const categoryVideos = await response.json();
             allVideos.push(...categoryVideos);
+            categoryVideos.forEach((video: Video) => {
+              userIds.add(video.userId);
+            });
           }
         } catch (err) {
           console.error(`Failed to fetch videos for category ${category.id}:`, err);
         }
       }
+      
+      // Fetch creator info for all unique users
+      const creatorMap: { [key: string]: { firstName: string; lastName: string } } = {};
+      for (const userId of Array.from(userIds)) {
+        try {
+          const response = await fetch(`/api/users/${userId}`);
+          if (response.ok) {
+            const userData = await response.json();
+            creatorMap[userId] = {
+              firstName: userData.firstName || "",
+              lastName: userData.lastName || ""
+            };
+          }
+        } catch (err) {
+          console.error(`Failed to fetch user ${userId}:`, err);
+        }
+      }
+      
       setVideos(allVideos);
+      setCreators(creatorMap);
     };
 
     fetchAllVideos();
@@ -259,12 +284,14 @@ export default function TikTokFeed() {
                     <Avatar className="w-10 h-10 border-2 border-white">
                       <AvatarImage src="" />
                       <AvatarFallback>
-                        C
+                        {creators[video.userId]?.firstName?.charAt(0) || "C"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-white font-semibold text-sm">
-                        Creator
+                        {creators[video.userId]
+                          ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
+                          : "Creator"}
                       </p>
                       <p className="text-white/70 text-xs">
                         {video.views || 0} views
