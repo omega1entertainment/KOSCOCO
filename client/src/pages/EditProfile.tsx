@@ -116,16 +116,12 @@ export default function EditProfile() {
 
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated",
       });
-      // Update the cache with the new data immediately
-      queryClient.setQueryData(["/api/creator/profile"], data);
       queryClient.invalidateQueries({ queryKey: ["/api/creator/profile"] });
-      // Also invalidate auth user cache
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       setLocation("/creator");
     },
     onError: (error: Error) => {

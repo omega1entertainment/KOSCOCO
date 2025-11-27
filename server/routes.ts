@@ -3105,8 +3105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          const publicObjectDir = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || "";
-          if (!publicObjectDir) {
+          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+          if (!privateObjectDir) {
             return res.status(500).json({ message: "Object storage not configured" });
           }
 
@@ -3118,7 +3118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const ext = extMap[photoFile.mimetype?.toLowerCase() || ''] || 'jpg';
 
           const photoId = randomUUID();
-          const photoPath = `${publicObjectDir}/profile-photos/${photoId}.${ext}`;
+          const photoPath = `${privateObjectDir}/profile-photos/${photoId}.${ext}`;
           const { bucketName, objectName } = parseObjectPath(photoPath);
           const bucket = objectStorageClient.bucket(bucketName);
           const photoFileObj = bucket.file(objectName);
@@ -3128,7 +3128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const writeStream = photoFileObj.createWriteStream({
               metadata: {
                 contentType: photoFile.mimetype || 'image/jpeg',
-                cacheControl: 'public, max-age=86400',
+                cacheControl: 'private, max-age=3600',
               },
             });
 
@@ -3149,9 +3149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             readStream.pipe(writeStream);
           });
 
-          // Generate public URL for the profile image
-          const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
-          const user = await storage.updateUser(userId, { profileImageUrl: publicUrl });
+          const user = await storage.updateUser(userId, { profileImageUrl: photoPath });
 
           if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -3164,7 +3162,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: user.email,
             username: user.username,
             profileImageUrl: user.profileImageUrl,
-            bio: user.bio,
             location: user.location,
             age: user.age,
             emailVerified: user.emailVerified,
