@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Facebook, Twitter, MessageCircle, Linkedin, Send, Mail, Link2, Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -114,6 +115,7 @@ export default function ShareModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Video</DialogTitle>
+          <DialogDescription>Choose a platform to share this video</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-4 gap-4 py-6">
           {shareOptions.map((option) => {

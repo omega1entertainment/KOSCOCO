@@ -3631,7 +3631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           a.referral_code,
           a.total_referrals,
           a.total_earnings,
-          COALESCE(a.commission_rate, 20) as commission_rate,
+          20 as commission_rate,
           a.status,
           a.created_at,
           u.email,
@@ -3647,33 +3647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(affiliates.rows);
     } catch (error) {
       console.error("Error fetching affiliates:", error);
-      // Fallback: return empty array if commission_rate column doesn't exist yet
-      try {
-        const affiliates = await db.execute(sql`
-          SELECT 
-            a.id,
-            a.user_id,
-            a.referral_code,
-            a.total_referrals,
-            a.total_earnings,
-            20 as commission_rate,
-            a.status,
-            a.created_at,
-            u.email,
-            u.username,
-            u.first_name,
-            u.last_name,
-            (SELECT COUNT(*) FROM payout_requests WHERE affiliate_id = a.id AND status = 'pending') as pending_payouts,
-            (SELECT COALESCE(SUM(amount), 0) FROM payout_requests WHERE affiliate_id = a.id AND (status = 'approved' OR status = 'paid')) as total_paid_out
-          FROM affiliates a
-          JOIN users u ON a.user_id = u.id
-          ORDER BY a.created_at DESC
-        `);
-        res.json(affiliates.rows);
-      } catch (fallbackError) {
-        console.error("Fallback error fetching affiliates:", fallbackError);
-        res.status(500).json({ message: "Failed to fetch affiliates" });
-      }
+      res.status(500).json({ message: "Failed to fetch affiliates" });
     }
   });
 
