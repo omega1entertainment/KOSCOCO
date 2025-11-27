@@ -12,17 +12,17 @@ interface TopBarProps {
 export default function TopBar({ currentPhase: propPhase }: TopBarProps) {
   const { language, setLanguage } = useLanguage();
   
-  const { data: activePhase } = useQuery({
+  const { data: activePhase } = useQuery<{ name?: string }>({
     queryKey: ['/api/phases/active'],
   });
   
   const displayPhase = propPhase || (activePhase?.name ? `${activePhase.name} ACTIVE` : "COMPETITION ACTIVE");
   
   const socialLinks = [
-    { name: "Facebook", icon: SiFacebook, url: "https://web.facebook.com/kozziientertainment", testId: "link-social-facebook" },
-    { name: "Instagram", icon: SiInstagram, url: "https://www.instagram.com/kozzii_237/", testId: "link-social-instagram" },
-    { name: "TikTok", icon: SiTiktok, url: "https://www.tiktok.com/@kozzii_entertainment", testId: "link-social-tiktok" },
-    { name: "X", icon: SiX, url: "https://x.com/KozziiEnte14391", testId: "link-social-x" },
+    { name: "Facebook", icon: SiFacebook, url: "https://web.facebook.com/koscoco", testId: "link-social-facebook" },
+    { name: "Instagram", icon: SiInstagram, url: "https://www.instagram.com/koscoco_237/", testId: "link-social-instagram" },
+    { name: "TikTok", icon: SiTiktok, url: "https://www.tiktok.com/@koscoco_entertainment", testId: "link-social-tiktok" },
+    { name: "X", icon: SiX, url: "https://x.com/koscoco", testId: "link-social-x" },
   ];
 
   const toggleLanguage = () => {
@@ -36,11 +36,11 @@ export default function TopBar({ currentPhase: propPhase }: TopBarProps) {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Mail className="w-4 h-4" />
             <a 
-              href="mailto:support@kozzii.africa"
+              href="mailto:support@koscoco.africa"
               className="hover:text-primary transition-colors"
               data-testid="link-support-email"
             >
-              support@kozzii.africa
+              support@koscoco.africa
             </a>
           </div>
           

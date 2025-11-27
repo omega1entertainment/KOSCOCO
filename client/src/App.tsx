@@ -25,7 +25,6 @@ import VideoPlayer from "@/pages/VideoPlayer";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminAffiliateDashboard from "@/pages/AdminAffiliateDashboard";
 import Leaderboard from "@/pages/Leaderboard";
-import LeaderboardKozzii from "@/pages/LeaderboardKozzii";
 import Prizes from "@/pages/Prizes";
 import HowItWorks from "@/pages/HowItWorks";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -54,9 +53,6 @@ import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
-import Feed from "@/pages/Feed";
-import GiftPage from "@/pages/GiftPage";
-import CreatorWallet from "@/pages/CreatorWallet";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -69,13 +65,9 @@ function ScrollToTop() {
   return null;
 }
 
-const KOZZII_PAGES = ['/feed', '/gift', '/creator/wallet'];
-
 function Router() {
   const { isLoading } = useAuth();
   const [location, setLocation] = useLocation();
-
-  const isKozziiPage = KOZZII_PAGES.some(page => location.startsWith(page));
 
   if (isLoading) {
     return (
@@ -100,8 +92,8 @@ function Router() {
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       <LanguageSelectionModal />
-      {!isKozziiPage && <TopBar />}
-      {!isKozziiPage && <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />}
+      <TopBar />
+      <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
       <main className="flex-1">
         <Switch>
           <Route path="/" component={Home} />
@@ -120,7 +112,6 @@ function Router() {
           <Route path="/category/:id" component={CategoryVideos} />
           <Route path="/video/:permalink" component={VideoPlayer} />
           <Route path="/leaderboard" component={Leaderboard} />
-          <Route path="/leaderboard/kozzii" component={LeaderboardKozzii} />
           <Route path="/prizes" component={Prizes} />
           <Route path="/how-it-works" component={HowItWorks} />
           <Route path="/terms-of-service" component={TermsOfService} />
@@ -146,14 +137,11 @@ function Router() {
           <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
-          <Route path="/creator/wallet" component={CreatorWallet} />
           <Route path="/edit-profile" component={EditProfile} />
-          <Route path="/feed" component={Feed} />
-          <Route path="/gift/:videoId" component={GiftPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
-      {!isKozziiPage && <Footer />}
+      <Footer />
     </div>
   );
 }

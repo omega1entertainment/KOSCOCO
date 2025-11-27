@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h3 className="text-xl font-semibold mb-3">1. Introduction</h3>
-            <p>This Privacy Policy explains how <strong>K-KOMPETITION</strong> ("we," "us," "our") collects, uses, stores, and protects personal information provided by participants, voters, judges, and visitors to the <strong>kozzii.africa</strong> platform in connection with <strong>THE GRAND K- SHORT CONTENT COMPETITION "KOSCOCO – Season 1"</strong> ("the Competition").</p>
+            <p>This Privacy Policy explains how <strong>K-KOMPETITION</strong> ("we," "us," "our") collects, uses, stores, and protects personal information provided by participants, voters, judges, and visitors to the <strong>koscoco.africa</strong> platform in connection with <strong>THE GRAND K- SHORT CONTENT COMPETITION "KOSCOCO – Season 1"</strong> ("the Competition").</p>
             <p className="mt-2">By registering for, participating in, voting in, or otherwise engaging with the Competition, you consent to the collection and use of your information as described in this policy.</p>
           </section>
 
@@ -89,13 +89,13 @@ export default function PrivacyPolicy() {
               <li>Withdraw your consent to the use of your data.</li>
               <li>Object to certain uses of your data (such as marketing).</li>
             </ul>
-            <p>To exercise these rights, contact us at <strong>privacy@kozzii.africa</strong>.</p>
+            <p>To exercise these rights, contact us at <strong>privacy@koscoco.africa</strong>.</p>
           </section>
 
           <section>
             <h3 className="text-xl font-semibold mb-3">8. Content Ownership and Rights</h3>
             <ul className="list-disc pl-6">
-              <li>Participants retain ownership of their submitted content but grant <strong>kozzii.africa</strong> a <strong>non-exclusive, royalty-free, worldwide license</strong> to use, display, distribute, and promote the content for competition and promotional purposes.</li>
+              <li>Participants retain ownership of their submitted content but grant <strong>koscoco.africa</strong> a <strong>non-exclusive, royalty-free, worldwide license</strong> to use, display, distribute, and promote the content for competition and promotional purposes.</li>
               <li>Content may remain visible on the platform even after the competition ends, unless removal is requested in writing.</li>
             </ul>
           </section>
@@ -113,8 +113,8 @@ export default function PrivacyPolicy() {
           <section>
             <h3 className="text-xl font-semibold mb-3">11. Contact Us</h3>
             <p className="mb-2">For questions, concerns, or complaints regarding this Privacy Policy or how your information is handled, please contact:</p>
-            <p className="mb-1"><strong>Email:</strong> privacy@kozzii.africa</p>
-            <p><strong>Website:</strong> <a href="https://kozzii.africa" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://kozzii.africa</a></p>
+            <p className="mb-1"><strong>Email:</strong> privacy@koscoco.africa</p>
+            <p><strong>Website:</strong> <a href="https://koscoco.africa" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://koscoco.africa</a></p>
           </section>
         </div>
       </div>

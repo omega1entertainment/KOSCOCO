@@ -83,7 +83,7 @@ export const queryKeys = {
     active: ["/api/phases/active"] as const,
   },
 
-  // KOZZII Feed
+  // koscoco Feed
   feed: {
     byTab: (tab: string, competition?: string, category?: string | null) => 
       ["/api/feed", tab, competition || "all", category || "all"] as const,
@@ -94,33 +94,33 @@ export const queryKeys = {
       ["/api/feed/competition", slug, category || "all"] as const,
   },
 
-  // KOZZII Competitions
+  // koscoco Competitions
   competitions: {
     all: ["/api/competitions"] as const,
     active: ["/api/competitions/active"] as const,
     bySlug: (slug: string) => ["/api/competitions", slug] as const,
   },
 
-  // KOZZII Gifts
+  // koscoco Gifts
   gifts: {
     all: ["/api/gifts"] as const,
     catalog: ["/api/gifts/catalog"] as const,
   },
 
-  // KOZZII Creator Wallet
+  // koscoco Creator Wallet
   creatorWallet: {
     balance: ["/api/creator/wallet"] as const,
     transactions: ["/api/creator/wallet/transactions"] as const,
     withdrawals: ["/api/creator/wallet/withdrawals"] as const,
   },
 
-  // KOZZII User Wallet
+  // koscoco User Wallet
   userWallet: {
     balance: ["/api/wallet"] as const,
     deposits: ["/api/wallet/deposits"] as const,
   },
 
-  // KOZZII Follows
+  // koscoco Follows
   follows: {
     followers: (userId: string) => ["/api/users", userId, "followers"] as const,
     following: (userId: string) => ["/api/users", userId, "following"] as const,

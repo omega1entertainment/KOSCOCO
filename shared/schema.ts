@@ -876,7 +876,7 @@ export type PollWithStats = Poll & {
 };
 
 // ============================================
-// KOZZII PLATFORM EXTENSIONS
+// koscoco PLATFORM EXTENSIONS
 // ============================================
 
 // Competitions framework (KOSCOCO becomes one of many competitions)
@@ -1173,7 +1173,7 @@ export const insertAffiliateMetricsSchema = createInsertSchema(affiliateMetrics)
   createdAt: true,
 });
 
-// Insert schemas for KOZZII tables
+// Insert schemas for koscoco tables
 export const insertCompetitionSchema = createInsertSchema(competitions).omit({
   id: true,
   createdAt: true,
@@ -1261,7 +1261,7 @@ export const insertLiveChatSchema = createInsertSchema(liveChats).omit({
   createdAt: true,
 });
 
-// KOZZII Types
+// koscoco Types
 export type InsertCompetition = z.infer<typeof insertCompetitionSchema>;
 export type Competition = typeof competitions.$inferSelect;
 
@@ -1301,7 +1301,7 @@ export type WalletDeposit = typeof walletDeposits.$inferSelect;
 export type InsertPlatformConfig = z.infer<typeof insertPlatformConfigSchema>;
 export type PlatformConfig = typeof platformConfig.$inferSelect;
 
-// Extended types for KOZZII
+// Extended types for koscoco
 export type GiftWithDetails = Gift & {
   totalSent: number;
 };

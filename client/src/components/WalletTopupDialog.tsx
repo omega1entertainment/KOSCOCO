@@ -61,7 +61,7 @@ export function WalletTopupDialog({ open, onOpenChange, onSuccess }: WalletTopup
         payment_options: "card, mobilemoney, ussd",
         customer: paymentData.customer,
         customizations: {
-          title: "KOZZII Wallet Top-up",
+          title: "KOSCOCO Wallet Top-up",
           description: `Top up your wallet with ${paymentData.amount} XAF`,
           logo: "https://checkout.flutterwave.com/img/logo.png",
         },

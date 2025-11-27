@@ -12,13 +12,13 @@ export default function TermsOfService() {
         
         <div className="prose prose-slate dark:prose-invert max-w-none space-y-6">
           <section>
-            <h2 className="text-2xl font-bold mb-4">The Grand K–Short Content Competition ("KOSCOCO – Season 1") Organized by KOZZII INC.</h2>
+            <h2 className="text-2xl font-bold mb-4">The Grand K–Short Content Competition ("KOSCOCO – Season 1") Organized by KOSCOCO INC.</h2>
             <p className="text-sm text-muted-foreground italic">Last Updated: 13-August-2025</p>
           </section>
 
           <section>
             <h3 className="text-xl font-semibold mb-3">1. Introduction</h3>
-            <p className="mb-2">1.1. These Terms and Conditions ("Terms") govern participation in <strong>The Grand K–Short Content Competition (KOSCOCO – Season 1)</strong> (the "Competition"), organized by <strong>KOZZII INC.</strong> ("Organizer", "we", "us", "our").</p>
+            <p className="mb-2">1.1. These Terms and Conditions ("Terms") govern participation in <strong>The Grand K–Short Content Competition (KOSCOCO – Season 1)</strong> (the "Competition"), organized by <strong>KOSCOCO INC.</strong> ("Organizer", "we", "us", "our").</p>
             <p className="mb-2">1.2. By registering for and/or participating in the Competition, you ("Participant", "you", "your") agree to be bound by these Terms and all rules, guidelines, and instructions issued by the Organizer.</p>
             <p>1.3. If you do not agree with these Terms, you must not participate in the Competition.</p>
           </section>
@@ -31,7 +31,7 @@ export default function TermsOfService() {
               <li>Minors under 18 years with <strong>parental/guardian consent</strong> and supervision.</li>
             </ul>
             <p className="mb-2">2.2. Participation is open to individuals residing in Cameroon and meeting all registration requirements.</p>
-            <p>2.3. Employees, contractors, or immediate family members of KOZZII INC. or any competition partners are not eligible to win prizes, but may participate for exhibition purposes only.</p>
+            <p>2.3. Employees, contractors, or immediate family members of KOSCOCO INC. or any competition partners are not eligible to win prizes, but may participate for exhibition purposes only.</p>
           </section>
 
           <section>
@@ -54,10 +54,10 @@ export default function TermsOfService() {
               <li><strong>Phase 3 (Top 50):</strong> In search of the top 50 in each category advancing.</li>
               <li><strong>Phase 4 (Top 25):</strong> In search of the top 25 in each category advancing.</li>
               <li><strong>Phase 5 (Top 10):</strong> In search of the top 10 in each category advancing.</li>
-              <li><strong>Phase 6 (Top 3):</strong> Where the top 3 participants in each category are crowned as winners, cash prize amounts will be announced on the website; www.kozzii.africa</li>
+              <li><strong>Phase 6 (Top 3):</strong> Where the top 3 participants in each category are crowned as winners, cash prize amounts will be announced on the website; www.koscoco.africa</li>
               <li><strong>Phase 7 (The Ultimate Winner) – GRANDE FINALE:</strong> The top 3 winners from each of the 5 categories will compete for the "ULTIMATE PRIZE" and will be crowned Cameroon's Next Big Content Creator & influencer.</li>
             </ul>
-            <p>4.2. Detailed weekly schedules will be announced on the official platform <strong>kozzii.africa</strong> and other official communication channels.</p>
+            <p>4.2. Detailed weekly schedules will be announced on the official platform <strong>koscoco.africa</strong> and other official communication channels.</p>
           </section>
 
           <section>
@@ -107,7 +107,7 @@ export default function TermsOfService() {
               <li>Warrant that you are the sole creator and owner of the video(s).</li>
               <li>Confirm that your work does not infringe any third-party rights.</li>
             </ul>
-            <p>8.2. You grant KOZZII INC. a <strong>worldwide, royalty-free, non-exclusive, perpetual licence</strong> to use, reproduce, distribute, modify, adapt, publish, and display your videos for promotional, marketing, and competition-related purposes.</p>
+            <p>8.2. You grant KOSCOCO INC. a <strong>worldwide, royalty-free, non-exclusive, perpetual licence</strong> to use, reproduce, distribute, modify, adapt, publish, and display your videos for promotional, marketing, and competition-related purposes.</p>
           </section>
 
           <section>
@@ -129,7 +129,7 @@ export default function TermsOfService() {
 
           <section>
             <h3 className="text-xl font-semibold mb-3">11. Limitation of Liability</h3>
-            <p className="mb-2">11.1. KOZZII INC. is not responsible for:</p>
+            <p className="mb-2">11.1. KOSCOCO INC. is not responsible for:</p>
             <ul className="list-disc pl-6 mb-2">
               <li>Internet, network, or technical failures.</li>
               <li>Loss, corruption, or delay of submissions.</li>
@@ -161,9 +161,9 @@ export default function TermsOfService() {
           <section>
             <h3 className="text-xl font-semibold mb-3">15. Contact</h3>
             <p className="mb-2"><strong>For all inquiries regarding the Competition:</strong></p>
-            <p className="mb-1"><strong>Email:</strong> support@kozzii.africa</p>
+            <p className="mb-1"><strong>Email:</strong> support@koscoco.africa</p>
             <p className="mb-1"><strong>Phone:</strong> +237 673 988 986</p>
-            <p><strong>Website:</strong> <a href="https://kozzii.africa" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://kozzii.africa</a></p>
+            <p><strong>Website:</strong> <a href="https://koscoco.africa" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://koscoco.africa</a></p>
           </section>
 
           <section className="bg-muted p-6 rounded-md mt-8">

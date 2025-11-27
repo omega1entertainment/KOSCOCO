@@ -34,7 +34,7 @@ export async function sendVerificationEmail({
       from: 'KOSCOCO <onboarding@resend.dev>',
       to: email,
       subject: 'Verify Your Email - KOSCOCO',
-      replyTo: 'support@kozzii.africa',
+      replyTo: 'support@koscoco.africa',
       html: `
         <!DOCTYPE html>
         <html>
@@ -46,13 +46,13 @@ export async function sendVerificationEmail({
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background-color: #DC2626; padding: 20px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px;">KOSCOCO</h1>
-              <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">Kozzii Short Content Competition</p>
+              <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">KOSCOCO Short Content Competition</p>
             </div>
             
             <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd;">
               <h2 style="color: #DC2626; margin-top: 0;">Welcome to KOSCOCO, ${firstName}!</h2>
               
-              <p>Thank you for signing up for the Kozzii Short Content Competition. To complete your registration and start competing, please verify your email address.</p>
+              <p>Thank you for signing up for the KOSCOCO Short Content Competition. To complete your registration and start competing, please verify your email address.</p>
               
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${verificationUrl}" 
@@ -72,7 +72,7 @@ export async function sendVerificationEmail({
             </div>
             
             <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
-              <p>© 2024 KOSCOCO - Kozzii Short Content Competition</p>
+              <p>© 2024 KOSCOCO - KOSCOCO Short Content Competition</p>
               <p>Cameroon</p>
             </div>
           </body>
@@ -112,7 +112,7 @@ export async function sendVerificationReminder({
       from: 'KOSCOCO <onboarding@resend.dev>',
       to: email,
       subject: 'Reminder: Verify Your Email - KOSCOCO',
-      replyTo: 'support@kozzii.africa',
+      replyTo: 'support@koscoco.africa',
       html: `
         <!DOCTYPE html>
         <html>
@@ -124,7 +124,7 @@ export async function sendVerificationReminder({
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background-color: #DC2626; padding: 20px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px;">KOSCOCO</h1>
-              <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">Kozzii Short Content Competition</p>
+              <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">KOSCOCO Short Content Competition</p>
             </div>
             
             <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd;">
@@ -150,7 +150,7 @@ export async function sendVerificationReminder({
             </div>
             
             <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
-              <p>© 2024 KOSCOCO - Kozzii Short Content Competition</p>
+              <p>© 2024 KOSCOCO - KOSCOCO Short Content Competition</p>
               <p>Cameroon</p>
             </div>
           </body>
@@ -183,7 +183,7 @@ export async function sendNewsletterWelcomeEmail({
       from: 'KOSCOCO Newsletter <onboarding@resend.dev>',
       to: email,
       subject: 'Welcome to KOSCOCO Newsletter! 🎬',
-      replyTo: 'support@kozzii.africa',
+      replyTo: 'support@koscoco.africa',
       html: `
         <!DOCTYPE html>
         <html>
@@ -199,7 +199,7 @@ export async function sendNewsletterWelcomeEmail({
                 <img src="https://images.unsplash.com/photo-1556656793-08538906a9f8?w=200&h=200&fit=crop" alt="KOSCOCO" style="width: 100px; height: 100px; border-radius: 10px; object-fit: cover;">
               </div>
               <h1 style="color: white; margin: 20px 0 5px 0; font-size: 32px; font-weight: 700;">KOSCOCO</h1>
-              <p style="color: #fff9e6; margin: 0; font-size: 16px; font-weight: 500;">Kozzii Short Content Competition</p>
+              <p style="color: #fff9e6; margin: 0; font-size: 16px; font-weight: 500;">KOSCOCO Short Content Competition</p>
             </div>
             
             <!-- Main content -->
@@ -249,7 +249,7 @@ export async function sendNewsletterWelcomeEmail({
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
               
               <p style="margin: 0 0 15px 0; font-size: 14px; color: #666;">
-                Questions or feedback? We'd love to hear from you! Reply to this email or contact us at <a href="mailto:support@kozzii.africa" style="color: #DC2626; text-decoration: none;">support@kozzii.africa</a>
+                Questions or feedback? We'd love to hear from you! Reply to this email or contact us at <a href="mailto:support@koscoco.africa" style="color: #DC2626; text-decoration: none;">support@koscoco.africa</a>
               </p>
               
               <p style="margin: 0; font-size: 14px; color: #999;">
@@ -260,7 +260,7 @@ export async function sendNewsletterWelcomeEmail({
             <!-- Footer -->
             <div style="background-color: #1f2937; color: #9ca3af; padding: 30px 20px; text-align: center; font-size: 12px;">
               <p style="margin: 0 0 10px 0;">
-                © 2024 KOSCOCO - Kozzii Short Content Competition
+                © 2024 KOSCOCO - KOSCOCO Short Content Competition
               </p>
               <p style="margin: 0 0 15px 0;">
                 Cameroon 🇨🇲
@@ -309,7 +309,7 @@ export async function sendBulkEmailToAffiliates({
         from: 'KOSCOCO Affiliate <onboarding@resend.dev>',
         to: affiliate.email,
         subject,
-        replyTo: 'support@kozzii.africa',
+        replyTo: 'support@koscoco.africa',
         html: `
           <!DOCTYPE html>
           <html>
@@ -330,7 +330,7 @@ export async function sendBulkEmailToAffiliates({
                 ${htmlMessage}
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
-                  <p style="margin: 0;">© 2024 KOSCOCO - Kozzii Short Content Competition</p>
+                  <p style="margin: 0;">© 2024 KOSCOCO - KOSCOCO Short Content Competition</p>
                   <p style="margin: 5px 0 0 0;">Limbe, Cameroon 🇨🇲</p>
                 </div>
               </div>

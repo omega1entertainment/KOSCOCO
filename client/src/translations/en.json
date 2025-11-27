@@ -2,7 +2,7 @@
   "language.choose": "Choose Your Language",
   "language.select": "Select Language",
   
-  "hero.title": "THE KOZZII SHORT CONTENT COMPETITION",
+  "hero.title": "THE KOSCOCO SHORT CONTENT COMPETITION",
   "hero.subtitle": "Become Cameroon's next biggest content Creator and Influencer",
   "hero.tagline": "Unleash Creativity & Embrace the Spotlight",
   "hero.prize": "Ultimate cash prize:",
@@ -101,7 +101,7 @@
   "nav.dashboard": "Dashboard",
   "nav.adminDashboard": "Admin Dashboard",
   "nav.logout": "Logout",
-  "nav.support": "support@kozzii.africa",
+  "nav.support": "support@koscoco.africa",
   "nav.viewLeaderboard": "View Leaderboard",
   "nav.prizes": "Prizes",
   "nav.affiliate": "Affiliate",
@@ -117,7 +117,7 @@
   "nav.logoutFailedDesc": "Failed to logout. Please try again.",
   
   "footer.about": "About KOSCOCO",
-  "footer.aboutText": "The KOZZII Short Content Competition (KOSCOCO) is Cameroon's premier platform for discovering and celebrating creative talent in short-form video content.",
+  "footer.aboutText": "The KOSCOCO Short Content Competition (KOSCOCO) is Cameroon's premier platform for discovering and celebrating creative talent in short-form video content.",
   "footer.quickLinks": "Quick Links",
   "footer.legal": "Legal",
   "footer.contact": "Contact",
@@ -137,7 +137,7 @@
   "footer.newsletterDescription": "Get updates on competition phases and winners.",
   "footer.emailPlaceholder": "Your email",
   "footer.subscribe": "Subscribe",
-  "footer.copyrightText": "© 2025 KOZZII INC. All rights reserved.",
+  "footer.copyrightText": "© 2025 KOSCOCO INC. All rights reserved.",
   
   "auth.login": "Login",
   "auth.register": "Register",

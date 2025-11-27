@@ -17,7 +17,7 @@ export default function Help() {
           {
             id: "what-is-koscoco",
             heading: "What is KOSCOCO?",
-            content: "KOSCOCO is a video competition platform run by KOZZII INC in Limbe, Cameroon. Creators can participate in competitions across multiple categories, earn money through competitions, attract audiences, and become content creators. The platform features public voting, professional judging, and substantial cash prizes."
+            content: "KOSCOCO is a video competition platform run by KOSCOCO INC in Limbe, Cameroon. Creators can participate in competitions across multiple categories, earn money through competitions, attract audiences, and become content creators. The platform features public voting, professional judging, and substantial cash prizes."
           },
           {
             id: "create-account",
@@ -277,7 +277,7 @@ export default function Help() {
           {
             id: "change-email",
             heading: "How to Change Your Email",
-            content: "Email changes require contacting support. Email support@kozzii.africa with your current email, new email, and account details. Support will process the change. You'll need to verify your new email."
+            content: "Email changes require contacting support. Email support@koscoco.africa with your current email, new email, and account details. Support will process the change. You'll need to verify your new email."
           },
           {
             id: "language-toggle",
@@ -299,7 +299,7 @@ export default function Help() {
           {
             id: "upload-fails",
             heading: "What to Do If Video Upload Fails",
-            content: "1. Check file format (MP4, WebM, MOV). 2. Verify file size is under 500MB. 3. Check internet connection. 4. Try a different browser or incognito mode. 5. Clear browser cache. If issues persist, contact support@kozzii.africa with error details."
+            content: "1. Check file format (MP4, WebM, MOV). 2. Verify file size is under 500MB. 3. Check internet connection. 4. Try a different browser or incognito mode. 5. Clear browser cache. If issues persist, contact support@koscoco.africa with error details."
           },
           {
             id: "loading-issues",
@@ -309,12 +309,12 @@ export default function Help() {
           {
             id: "cant-login",
             heading: "What to Do If You Can't Log In",
-            content: "1. Verify email is correct. 2. Check Caps Lock is off. 3. Reset password using 'Forgot Password'. 4. Check if email is verified. 5. Clear browser cache. 6. Try a different browser. Contact support@kozzii.africa if still unable to log in."
+            content: "1. Verify email is correct. 2. Check Caps Lock is off. 3. Reset password using 'Forgot Password'. 4. Check if email is verified. 5. Clear browser cache. 6. Try a different browser. Contact support@koscoco.africa if still unable to log in."
           },
           {
             id: "contact-support",
             heading: "How to Contact Support",
-            content: "WhatsApp: +237 676 951 397\nEmail: support@kozzii.africa\nContact Form: Visit /contact page\nResponse time: Usually within 24 hours during business hours."
+            content: "WhatsApp: +237 676 951 397\nEmail: support@koscoco.africa\nContact Form: Visit /contact page\nResponse time: Usually within 24 hours during business hours."
           }
         ]
       }
@@ -328,7 +328,7 @@ export default function Help() {
           {
             id: "what-is-koscoco",
             heading: "Qu'est-ce que KOSCOCO ?",
-            content: "KOSCOCO est une plateforme de compétition vidéo gérée par KOZZII INC à Limbé, Cameroun. Les créateurs peuvent participer à des compétitions dans plusieurs catégories, gagner de l'argent, attirer des audiences et devenir créateurs de contenu. La plateforme dispose du vote public, du jugement professionnel et de prix en espèces substantiels."
+            content: "KOSCOCO est une plateforme de compétition vidéo gérée par KOSCOCO INC à Limbé, Cameroun. Les créateurs peuvent participer à des compétitions dans plusieurs catégories, gagner de l'argent, attirer des audiences et devenir créateurs de contenu. La plateforme dispose du vote public, du jugement professionnel et de prix en espèces substantiels."
           },
           {
             id: "create-account",
@@ -588,7 +588,7 @@ export default function Help() {
           {
             id: "change-email",
             heading: "Comment changer votre email",
-            content: "Les modifications d'email nécessitent de contacter le support. Envoyez un email à support@kozzii.africa avec votre email actuel, votre nouvel email et les détails de votre compte. Le support traitera la modification. Vous devrez vérifier votre nouvel email."
+            content: "Les modifications d'email nécessitent de contacter le support. Envoyez un email à support@koscoco.africa avec votre email actuel, votre nouvel email et les détails de votre compte. Le support traitera la modification. Vous devrez vérifier votre nouvel email."
           },
           {
             id: "language-toggle",
@@ -610,7 +610,7 @@ export default function Help() {
           {
             id: "upload-fails",
             heading: "Que faire si le téléchargement vidéo échoue",
-            content: "1. Vérifiez le format du fichier (MP4, WebM, MOV). 2. Vérifiez que la taille du fichier est inférieure à 500 Mo. 3. Vérifiez votre connexion Internet. 4. Essayez un navigateur différent ou le mode incognito. 5. Videz le cache du navigateur. Si les problèmes persistent, contactez support@kozzii.africa avec les détails d'erreur."
+            content: "1. Vérifiez le format du fichier (MP4, WebM, MOV). 2. Vérifiez que la taille du fichier est inférieure à 500 Mo. 3. Vérifiez votre connexion Internet. 4. Essayez un navigateur différent ou le mode incognito. 5. Videz le cache du navigateur. Si les problèmes persistent, contactez support@koscoco.africa avec les détails d'erreur."
           },
           {
             id: "loading-issues",
@@ -620,12 +620,12 @@ export default function Help() {
           {
             id: "cant-login",
             heading: "Que faire si vous ne pouvez pas vous connecter",
-            content: "1. Vérifiez que l'email est correct. 2. Vérifiez que Maj est désactivé. 3. Réinitialisez le mot de passe en utilisant 'Mot de passe oublié'. 4. Vérifiez que l'email est vérifié. 5. Videz le cache du navigateur. 6. Essayez un navigateur différent. Contactez support@kozzii.africa si vous ne pouvez toujours pas vous connecter."
+            content: "1. Vérifiez que l'email est correct. 2. Vérifiez que Maj est désactivé. 3. Réinitialisez le mot de passe en utilisant 'Mot de passe oublié'. 4. Vérifiez que l'email est vérifié. 5. Videz le cache du navigateur. 6. Essayez un navigateur différent. Contactez support@koscoco.africa si vous ne pouvez toujours pas vous connecter."
           },
           {
             id: "contact-support",
             heading: "Comment contacter le support",
-            content: "WhatsApp : +237 676 951 397\nEmail : support@kozzii.africa\nFormulaire de contact : Visitez la page /contact\nTemps de réponse : Généralement dans les 24 heures pendant les heures d'ouverture."
+            content: "WhatsApp : +237 676 951 397\nEmail : support@koscoco.africa\nFormulaire de contact : Visitez la page /contact\nTemps de réponse : Généralement dans les 24 heures pendant les heures d'ouverture."
           }
         ]
       }
@@ -744,7 +744,7 @@ export default function Help() {
               {language === 'fr' ? 'Visitez la FAQ' : 'Visit FAQ'}
             </a>
             <a
-              href="mailto:support@kozzii.africa"
+              href="mailto:support@koscoco.africa"
               className="inline-block px-6 py-2 bg-secondary text-secondary-foreground rounded-md hover:opacity-90 transition-opacity"
               data-testid="button-email-support"
             >

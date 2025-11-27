@@ -299,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============================================
-  // KOZZII PLATFORM ROUTES
+  // koscoco PLATFORM ROUTES
   // ============================================
 
   // Feed Routes
@@ -1006,7 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // END KOZZII PLATFORM ROUTES
+  // END koscoco PLATFORM ROUTES
   // ============================================
 
   app.post('/api/registrations', isAuthenticated, async (req: any, res) => {

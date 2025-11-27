@@ -134,7 +134,7 @@
 - Newsletter signup form
 - Legal links (Terms, Privacy, Rules)
 - Social media icons (Heroicons)
-- Contact: support@kozzii.africa
+- Contact: support@koscoco.africa
 
 ### Video Entry Pages
 

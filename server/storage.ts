@@ -305,7 +305,7 @@ export interface IStorage {
   getPollStats(pollId: string): Promise<PollWithStats | undefined>;
   getUserPollResponse(pollId: string, userId: string | null, ipAddress?: string): Promise<PollResponse | undefined>;
 
-  // KOZZII Platform Methods
+  // koscoco Platform Methods
   
   // Competition methods
   getAllCompetitions(): Promise<schema.Competition[]>;
@@ -347,7 +347,7 @@ export interface IStorage {
   getOrCreateCreatorVerification(userId: string): Promise<schema.CreatorVerification>;
   updateCreatorVerification(userId: string, updates: Partial<schema.InsertCreatorVerification>): Promise<schema.CreatorVerification | undefined>;
   
-  // Video Feed methods (KOZZII-style)
+  // Video Feed methods (koscoco-style)
   getTrendingVideos(limit?: number): Promise<schema.VideoFeedItem[]>;
   getFollowingFeedVideos(userId: string, limit?: number): Promise<schema.VideoFeedItem[]>;
   getExclusiveVideos(limit?: number): Promise<schema.VideoFeedItem[]>;
@@ -2596,7 +2596,7 @@ export class DbStorage implements IStorage {
   }
 
   // ============================================
-  // KOZZII PLATFORM IMPLEMENTATIONS
+  // koscoco PLATFORM IMPLEMENTATIONS
   // ============================================
 
   // Competition methods
@@ -2911,7 +2911,7 @@ export class DbStorage implements IStorage {
     return updated;
   }
 
-  // Video Feed methods (KOZZII-style)
+  // Video Feed methods (koscoco-style)
   async getTrendingVideos(limit: number = 50): Promise<schema.VideoFeedItem[]> {
     // Get trending videos based on views, likes, and engagement in recent period
     const videos = await db.select()
