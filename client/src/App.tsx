@@ -53,6 +53,7 @@ import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
+import TikTokFeed from "@/pages/TikTokFeed";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -88,15 +89,21 @@ function Router() {
     setLocation("/upload");
   };
 
+  // Check if we should hide header and footer (for immersive pages like feed)
+  const hideHeaderFooter = location === "/feed";
+
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       <LanguageSelectionModal />
-      <TopBar />
-      <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
+      {!hideHeaderFooter && <TopBar />}
+      {!hideHeaderFooter && (
+        <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
+      )}
       <main className="flex-1">
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/feed" component={TikTokFeed} />
           <Route path="/login" component={Login} />
           <Route path="/thank-you" component={ThankYou} />
           <Route path="/register" component={Register} />
@@ -141,7 +148,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      <Footer />
+      {!hideHeaderFooter && <Footer />}
     </div>
   );
 }
