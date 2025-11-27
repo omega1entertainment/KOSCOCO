@@ -83,9 +83,9 @@ export default function NavigationHeader({
   const needsRegistration = registrationCount < 5;
   
   const navItems = [
+    { label: 'Feed', path: '/feed', isFeed: true },
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
-    { label: 'Feed', path: '/feed', isFeed: true },
   ];
 
   const judgeMenuItems = [
