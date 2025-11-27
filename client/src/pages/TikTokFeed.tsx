@@ -318,7 +318,7 @@ export default function TikTokFeed() {
       {/* Video container */}
       <div
         ref={containerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide pb-[50px]"
+        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
         style={{ scrollBehavior: "smooth" }}
       >
         {videos.map((video, index) => (
@@ -446,6 +446,8 @@ export default function TikTokFeed() {
             )}
           </div>
         ))}
+        {/* Bottom spacer */}
+        <div className="h-[50px] flex-shrink-0"></div>
       </div>
 
       {/* Vote modal */}
