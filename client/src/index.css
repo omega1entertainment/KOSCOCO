@@ -265,6 +265,11 @@
  */
 @layer utilities {
 
+  /* Safe area insets for notched devices */
+  .safe-area-bottom {
+    padding-bottom: max(var(--pb, 0.5rem), env(safe-area-inset-bottom));
+  }
+
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;

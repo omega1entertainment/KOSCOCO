@@ -37,7 +37,7 @@ export default function TikTokFeed() {
     queryKey: queryKeys.categories.all,
   });
 
-  // Fetch all videos from all categories
+  // Fetch all videos from all categories (lazy load)
   useEffect(() => {
     if (categories.length === 0) return;
 
@@ -60,51 +60,140 @@ export default function TikTokFeed() {
         }
       }
       
-      // Fetch creator info for all unique users
-      const creatorMap: { [key: string]: { firstName: string; lastName: string } } = {};
-      for (const userId of Array.from(userIds)) {
-        try {
-          const response = await fetch(`/api/users/${userId}`);
-          if (response.ok) {
-            const userData = await response.json();
-            creatorMap[userId] = {
-              firstName: userData.firstName || "",
-              lastName: userData.lastName || ""
-            };
-          }
-        } catch (err) {
-          console.error(`Failed to fetch user ${userId}:`, err);
-        }
-      }
-      
-      // Fetch video stats (likes and votes)
-      const statsMap: { [key: string]: { likeCount: number; voteCount: number } } = {};
-      for (const video of allVideos) {
-        try {
-          const [likeRes, voteRes] = await Promise.all([
-            fetch(`/api/likes/video/${video.id}`),
-            fetch(`/api/votes/video/${video.id}`)
-          ]);
-          
-          const likeData = likeRes.ok ? await likeRes.json() : { likeCount: 0 };
-          const voteData = voteRes.ok ? await voteRes.json() : { voteCount: 0 };
-          
-          statsMap[video.id] = {
-            likeCount: likeData.likeCount || 0,
-            voteCount: voteData.voteCount || 0
-          };
-        } catch (err) {
-          statsMap[video.id] = { likeCount: 0, voteCount: 0 };
-        }
-      }
-      
       setVideos(allVideos);
-      setCreators(creatorMap);
-      setVideoStats(statsMap);
+
+      // Fetch creator info and stats for videos near current index
+      const fetchMetadata = async (videoIndices: number[]) => {
+        const usersToFetch = new Set<string>();
+        const videosToFetch: Video[] = [];
+        
+        videoIndices.forEach((idx) => {
+          if (allVideos[idx]) {
+            usersToFetch.add(allVideos[idx].userId);
+            videosToFetch.push(allVideos[idx]);
+          }
+        });
+
+        // Fetch creator info
+        const creatorMap: { [key: string]: { firstName: string; lastName: string } } = {};
+        for (const userId of Array.from(usersToFetch)) {
+          try {
+            const response = await fetch(`/api/users/${userId}`);
+            if (response.ok) {
+              const userData = await response.json();
+              creatorMap[userId] = {
+                firstName: userData.firstName || "",
+                lastName: userData.lastName || ""
+              };
+            }
+          } catch (err) {
+            console.error(`Failed to fetch user ${userId}:`, err);
+          }
+        }
+
+        // Fetch video stats
+        const statsMap: { [key: string]: { likeCount: number; voteCount: number } } = {};
+        for (const video of videosToFetch) {
+          try {
+            const [likeRes, voteRes] = await Promise.all([
+              fetch(`/api/likes/video/${video.id}`),
+              fetch(`/api/votes/video/${video.id}`)
+            ]);
+            
+            const likeData = likeRes.ok ? await likeRes.json() : { likeCount: 0 };
+            const voteData = voteRes.ok ? await voteRes.json() : { voteCount: 0 };
+            
+            statsMap[video.id] = {
+              likeCount: likeData.likeCount || 0,
+              voteCount: voteData.voteCount || 0
+            };
+          } catch (err) {
+            statsMap[video.id] = { likeCount: 0, voteCount: 0 };
+          }
+        }
+
+        setCreators((prev) => ({ ...prev, ...creatorMap }));
+        setVideoStats((prev) => ({ ...prev, ...statsMap }));
+      };
+
+      // Fetch metadata for first 3 videos immediately
+      fetchMetadata([0, 1, 2]);
     };
 
     fetchAllVideos();
   }, [categories]);
+
+  // Lazy load metadata for nearby videos as user scrolls
+  useEffect(() => {
+    const indicesToFetch: number[] = [];
+    
+    // Load current and next 2 videos
+    for (let i = currentVideoIndex; i < Math.min(currentVideoIndex + 3, videos.length); i++) {
+      indicesToFetch.push(i);
+    }
+    
+    if (indicesToFetch.length > 0) {
+      const fetchMetadata = async () => {
+        const usersToFetch = new Set<string>();
+        const videosToFetch: Video[] = [];
+        
+        indicesToFetch.forEach((idx) => {
+          if (videos[idx]) {
+            usersToFetch.add(videos[idx].userId);
+            videosToFetch.push(videos[idx]);
+          }
+        });
+
+        // Fetch creator info
+        for (const userId of Array.from(usersToFetch)) {
+          if (!creators[userId]) {
+            try {
+              const response = await fetch(`/api/users/${userId}`);
+              if (response.ok) {
+                const userData = await response.json();
+                setCreators((prev) => ({
+                  ...prev,
+                  [userId]: {
+                    firstName: userData.firstName || "",
+                    lastName: userData.lastName || ""
+                  }
+                }));
+              }
+            } catch (err) {
+              console.error(`Failed to fetch user ${userId}:`, err);
+            }
+          }
+        }
+
+        // Fetch video stats
+        for (const video of videosToFetch) {
+          if (!videoStats[video.id]) {
+            try {
+              const [likeRes, voteRes] = await Promise.all([
+                fetch(`/api/likes/video/${video.id}`),
+                fetch(`/api/votes/video/${video.id}`)
+              ]);
+              
+              const likeData = likeRes.ok ? await likeRes.json() : { likeCount: 0 };
+              const voteData = voteRes.ok ? await voteRes.json() : { voteCount: 0 };
+              
+              setVideoStats((prev) => ({
+                ...prev,
+                [video.id]: {
+                  likeCount: likeData.likeCount || 0,
+                  voteCount: voteData.voteCount || 0
+                }
+              }));
+            } catch (err) {
+              console.error(`Failed to fetch stats for video ${video.id}:`, err);
+            }
+          }
+        }
+      };
+
+      fetchMetadata();
+    }
+  }, [currentVideoIndex, videos]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -265,7 +354,7 @@ export default function TikTokFeed() {
             </div>
 
             {/* Right sidebar - interactions */}
-            <div className="absolute right-4 bottom-20 z-40 flex flex-col items-center gap-6">
+            <div className="absolute right-2 sm:right-4 bottom-24 sm:bottom-20 z-40 flex flex-col items-center gap-4 sm:gap-6">
               {/* Like button */}
               <button
                 onClick={() => handleDoubleClick(video.id)}
@@ -307,7 +396,7 @@ export default function TikTokFeed() {
             </div>
 
             {/* Bottom info - creator and video details */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-6">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8 sm:pb-6 safe-area-bottom">
               <div className="flex items-end gap-3">
                 {/* Creator info */}
                 <div className="flex-1">
