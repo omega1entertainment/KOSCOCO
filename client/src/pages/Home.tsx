@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import Hero from "@/components/Hero";
 import CategoryCard from "@/components/CategoryCard";
 import PhaseTimeline from "@/components/PhaseTimeline";
@@ -27,6 +28,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
+  const { isAuthenticated } = useAuth();
 
   // Fetch real categories from API
   const { data: apiCategories = [] } = useQuery<Category[]>({
@@ -137,6 +139,7 @@ export default function Home() {
       <Hero 
         onRegisterClick={() => setLocation("/register")}
         onWatchClick={() => console.log("Watch entries")}
+        isAuthenticated={isAuthenticated}
       />
       
       <section className="py-12 md:py-16 bg-background">

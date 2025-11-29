@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
 import heroBackground from "@assets/hero-gold-coins-background.jpeg";
 import seasonLogo from "@assets/kOSCOCO-SEASON 1_1762052498157.png";
 
@@ -9,11 +8,11 @@ interface HeroProps {
   currentPhase?: string;
   onRegisterClick?: () => void;
   onWatchClick?: () => void;
+  isAuthenticated?: boolean;
 }
 
-export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onRegisterClick, onWatchClick }: HeroProps) {
+export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onRegisterClick, onWatchClick, isAuthenticated = false }: HeroProps) {
   const { t } = useLanguage();
-  const { isAuthenticated } = useAuth();
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ paddingTop: '50px', paddingBottom: '50px' }}>
       <div 
