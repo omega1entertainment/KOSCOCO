@@ -185,6 +185,36 @@ export const payoutRequests = pgTable("payout_requests", {
   rejectionReason: text("rejection_reason"),
 });
 
+export const affiliateCampaigns = pgTable("affiliate_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  objective: text("objective"),
+  targetAudience: text("target_audience"),
+  status: text("status").notNull().default('active'),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  budget: integer("budget"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const marketingAssets = pgTable("marketing_assets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => affiliateCampaigns.id),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  content: text("content"),
+  downloadUrl: text("download_url"),
+  previewUrl: text("preview_url"),
+  dimensions: text("dimensions"),
+  fileSize: integer("file_size"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const likes = pgTable("likes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   videoId: varchar("video_id").notNull().references(() => videos.id),
@@ -843,6 +873,9 @@ export const insertPollSchema = createInsertSchema(polls).omit({ id: true, creat
 export const insertPollOptionSchema = createInsertSchema(pollOptions).omit({ id: true, createdAt: true });
 export const insertPollResponseSchema = createInsertSchema(pollResponses).omit({ id: true, respondedAt: true });
 
+export const insertAffiliateCampaignSchema = createInsertSchema(affiliateCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMarketingAssetSchema = createInsertSchema(marketingAssets).omit({ id: true, createdAt: true, updatedAt: true });
+
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
@@ -871,6 +904,12 @@ export type InsertPollResponse = z.infer<typeof insertPollResponseSchema>;
 export type PollResponse = typeof pollResponses.$inferSelect;
 
 export type PollWithOptions = Poll & { options: PollOption[] };
+
+export type InsertAffiliateCampaign = z.infer<typeof insertAffiliateCampaignSchema>;
+export type AffiliateCampaign = typeof affiliateCampaigns.$inferSelect;
+
+export type InsertMarketingAsset = z.infer<typeof insertMarketingAssetSchema>;
+export type MarketingAsset = typeof marketingAssets.$inferSelect;
 export type PollWithStats = Poll & { 
   options: (PollOption & { responseCount: number; percentage: number })[];
   totalResponses: number;

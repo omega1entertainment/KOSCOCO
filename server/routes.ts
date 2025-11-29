@@ -5909,6 +5909,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Manage affiliate campaigns
+  app.get('/api/admin/campaigns', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const campaigns = await db.execute(sql`
+        SELECT ac.*, u.username as created_by_name
+        FROM affiliate_campaigns ac
+        JOIN users u ON ac.created_by = u.id
+        ORDER BY ac.created_at DESC
+      `);
+      res.json(campaigns.rows);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post('/api/admin/campaigns', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { name, description, objective, targetAudience, startDate, endDate, budget } = req.body;
+      const result = await db.execute(sql`
+        INSERT INTO affiliate_campaigns (name, description, objective, target_audience, start_date, end_date, budget, created_by)
+        VALUES (${name}, ${description}, ${objective}, ${targetAudience}, ${startDate ? new Date(startDate) : null}, ${endDate ? new Date(endDate) : null}, ${budget}, ${req.user.id})
+        RETURNING *
+      `);
+      res.json(result.rows[0]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  app.delete('/api/admin/campaigns/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await db.execute(sql`DELETE FROM marketing_assets WHERE campaign_id = ${req.params.id}`);
+      await db.execute(sql`DELETE FROM affiliate_campaigns WHERE id = ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete campaign" });
+    }
+  });
+
+  // Admin: Manage marketing assets
+  app.get('/api/admin/campaigns/:campaignId/assets', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const assets = await db.execute(sql`
+        SELECT * FROM marketing_assets
+        WHERE campaign_id = ${req.params.campaignId}
+        ORDER BY created_at DESC
+      `);
+      res.json(assets.rows);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch assets" });
+    }
+  });
+
+  app.post('/api/admin/campaigns/:campaignId/assets', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { type, title, description, content, downloadUrl, previewUrl, dimensions, fileSize } = req.body;
+      const result = await db.execute(sql`
+        INSERT INTO marketing_assets (campaign_id, type, title, description, content, download_url, preview_url, dimensions, file_size)
+        VALUES (${req.params.campaignId}, ${type}, ${title}, ${description}, ${content}, ${downloadUrl}, ${previewUrl}, ${dimensions}, ${fileSize})
+        RETURNING *
+      `);
+      res.json(result.rows[0]);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create asset" });
+    }
+  });
+
+  app.delete('/api/admin/campaigns/:campaignId/assets/:assetId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await db.execute(sql`DELETE FROM marketing_assets WHERE id = ${req.params.assetId}`);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete asset" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
