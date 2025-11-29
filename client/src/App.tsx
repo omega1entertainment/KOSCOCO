@@ -150,6 +150,7 @@ function Router() {
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
           <Route path="/profile" component={EditProfile} />
+          <Route path="/edit-profile" component={EditProfile} />
           <Route path="/advertise" component={Advertise} />
           <Route component={NotFound} />
         </Switch>
