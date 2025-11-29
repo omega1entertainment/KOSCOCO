@@ -322,6 +322,12 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/affiliates"],
   });
 
+  const { data: affiliateAnalytics = { summary: {}, payoutSummary: {}, topPerformers: [], allAffiliates: [] }, isLoading: analyticsLoading } = useQuery<any>({
+    queryKey: ["/api/admin/affiliate-analytics"],
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+  });
+
   const { data: payoutRequestsData = [], isLoading: payoutRequestsLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/payout-requests"],
   });
@@ -4447,150 +4453,256 @@ function AdminDashboardContent() {
             </TabsContent>
 
             <TabsContent value="affiliates" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Affiliate Management</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {affiliatesLoading ? (
-                    <div className="text-center py-12">
-                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              {analyticsLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Global Performance Overview */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Global Performance Overview</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Total Affiliates</p>
+                          <p className="text-2xl font-bold">{affiliateAnalytics.summary.totalAffiliates || 0}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Active Affiliates</p>
+                          <p className="text-2xl font-bold text-green-600">{affiliateAnalytics.summary.activeAffiliates || 0}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Total Referrals</p>
+                          <p className="text-2xl font-bold">{affiliateAnalytics.summary.totalReferrals || 0}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Conversions</p>
+                          <p className="text-2xl font-bold text-blue-600">{affiliateAnalytics.summary.totalConversions || 0}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Total Revenue</p>
+                          <p className="text-2xl font-bold text-purple-600">{(affiliateAnalytics.summary.totalEarnings || 0).toLocaleString()} FCFA</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Commission Generated</p>
+                          <p className="text-2xl font-bold text-orange-600">{(affiliateAnalytics.summary.totalCommission || 0).toLocaleString()} FCFA</p>
+                        </CardContent>
+                      </Card>
                     </div>
-                  ) : affiliates.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">No affiliates found</div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="overflow-x-auto border rounded-md">
-                        <table className="w-full text-sm">
-                          <thead className="bg-muted/50">
-                            <tr className="border-b">
-                              <th className="text-left p-3 font-semibold">User</th>
-                              <th className="text-left p-3 font-semibold">Referral Code</th>
-                              <th className="text-left p-3 font-semibold">Referrals</th>
-                              <th className="text-left p-3 font-semibold">Earnings</th>
-                              <th className="text-left p-3 font-semibold">Status</th>
-                              <th className="text-left p-3 font-semibold">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(affiliates as any[]).map((affiliate) => (
-                              <tr key={affiliate.id} className="border-b hover:bg-muted/50">
-                                <td className="p-3">
-                                  <div className="font-medium">{affiliate.username || affiliate.email}</div>
-                                  <div className="text-xs text-muted-foreground">{affiliate.email}</div>
-                                </td>
-                                <td className="p-3 font-mono text-sm">{affiliate.referral_code}</td>
-                                <td className="p-3">{affiliate.total_referrals}</td>
-                                <td className="p-3 font-semibold">{affiliate.total_earnings} FCFA</td>
-                                <td className="p-3">
-                                  <Badge variant={affiliate.status === "active" ? "default" : "secondary"}>
-                                    {affiliate.status}
-                                  </Badge>
-                                </td>
-                                <td className="p-3">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setSelectedAffiliateId(affiliate.id);
-                                      setNewAffiliateStatus(affiliate.status);
-                                      setAffiliateStatusDialog(true);
-                                    }}
-                                    data-testid={`button-update-affiliate-status-${affiliate.id}`}
-                                  >
-                                    Edit Status
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
 
-              {/* Payout Requests Section */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Payout Requests</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {payoutRequestsLoading ? (
-                    <div className="text-center py-12">
-                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  {/* Payout Summary */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Payout Summary</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="border-yellow-200 dark:border-yellow-900">
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                          <p className="text-2xl font-bold text-yellow-600">{affiliateAnalytics.payoutSummary.pending?.count || 0}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{(affiliateAnalytics.payoutSummary.pending?.amount || 0).toLocaleString()} FCFA</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-blue-200 dark:border-blue-900">
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Approved Payouts</p>
+                          <p className="text-2xl font-bold text-blue-600">{affiliateAnalytics.payoutSummary.approved?.count || 0}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{(affiliateAnalytics.payoutSummary.approved?.amount || 0).toLocaleString()} FCFA</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-green-200 dark:border-green-900">
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground">Paid Payouts</p>
+                          <p className="text-2xl font-bold text-green-600">{affiliateAnalytics.payoutSummary.paid?.count || 0}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{(affiliateAnalytics.payoutSummary.paid?.amount || 0).toLocaleString()} FCFA</p>
+                        </CardContent>
+                      </Card>
                     </div>
-                  ) : payoutRequestsData.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">No payout requests</div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="overflow-x-auto border rounded-md">
-                        <table className="w-full text-sm">
-                          <thead className="bg-muted/50">
-                            <tr className="border-b">
-                              <th className="text-left p-3 font-semibold">Affiliate</th>
-                              <th className="text-left p-3 font-semibold">Amount</th>
-                              <th className="text-left p-3 font-semibold">Status</th>
-                              <th className="text-left p-3 font-semibold">Method</th>
-                              <th className="text-left p-3 font-semibold">Requested</th>
-                              <th className="text-left p-3 font-semibold">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(payoutRequestsData as any[]).map((payout) => (
-                              <tr key={payout.id} className="border-b hover:bg-muted/50">
-                                <td className="p-3">
-                                  <div className="font-medium">{payout.username || payout.email}</div>
-                                  <div className="text-xs text-muted-foreground">{payout.referral_code}</div>
-                                </td>
-                                <td className="p-3 font-semibold">{payout.amount} FCFA</td>
-                                <td className="p-3">
-                                  <Badge variant={payout.status === "pending" ? "destructive" : payout.status === "approved" ? "default" : "secondary"}>
-                                    {payout.status}
-                                  </Badge>
-                                </td>
-                                <td className="p-3 text-sm">{payout.payment_method}</td>
-                                <td className="p-3 text-xs">{new Date(payout.requested_at).toLocaleDateString()}</td>
-                                <td className="p-3">
-                                  {payout.status === "pending" && (
-                                    <div className="flex gap-2">
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          setAffiliateSelectedPayoutId(payout.id);
-                                          setAffiliatePayoutAction("approve");
-                                          setAffiliatePayoutActionDialog(true);
-                                        }}
-                                        data-testid={`button-approve-payout-${payout.id}`}
-                                      >
-                                        Approve
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={() => {
-                                          setAffiliateSelectedPayoutId(payout.id);
-                                          setAffiliatePayoutAction("reject");
-                                          setAffiliatePayoutActionDialog(true);
-                                        }}
-                                        data-testid={`button-reject-payout-${payout.id}`}
-                                      >
-                                        Reject
-                                      </Button>
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                  </div>
+
+                  {/* Top Performing Affiliates */}
+                  {affiliateAnalytics.topPerformers && affiliateAnalytics.topPerformers.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Top-Performing Affiliates</h3>
+                      <Card>
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-muted/50">
+                                <tr className="border-b">
+                                  <th className="text-left p-3 font-semibold">Affiliate</th>
+                                  <th className="text-right p-3 font-semibold">Referrals</th>
+                                  <th className="text-right p-3 font-semibold">Revenue</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(affiliateAnalytics.topPerformers || []).map((affiliate: any, idx: number) => (
+                                  <tr key={affiliate.id} className="border-b hover:bg-muted/50">
+                                    <td className="p-3">
+                                      <div className="font-medium">#{idx + 1} {affiliate.username}</div>
+                                      <div className="text-xs text-muted-foreground">{affiliate.email}</div>
+                                    </td>
+                                    <td className="p-3 text-right font-semibold">{affiliate.total_referrals}</td>
+                                    <td className="p-3 text-right font-bold text-green-600">{(affiliate.total_earnings || 0).toLocaleString()} FCFA</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+
+                  {/* All Affiliates Table */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>All Affiliates</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {affiliateAnalytics.allAffiliates.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">No affiliates found</div>
+                      ) : (
+                        <div className="overflow-x-auto border rounded-md">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr className="border-b">
+                                <th className="text-left p-3 font-semibold">User</th>
+                                <th className="text-left p-3 font-semibold">Referral Code</th>
+                                <th className="text-right p-3 font-semibold">Referrals</th>
+                                <th className="text-right p-3 font-semibold">Earnings</th>
+                                <th className="text-left p-3 font-semibold">Status</th>
+                                <th className="text-left p-3 font-semibold">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(affiliateAnalytics.allAffiliates as any[]).map((affiliate) => (
+                                <tr key={affiliate.id} className="border-b hover:bg-muted/50">
+                                  <td className="p-3">
+                                    <div className="font-medium">{affiliate.username || affiliate.email}</div>
+                                    <div className="text-xs text-muted-foreground">{affiliate.email}</div>
+                                  </td>
+                                  <td className="p-3 font-mono text-sm">{affiliate.referral_code}</td>
+                                  <td className="p-3 text-right">{affiliate.total_referrals}</td>
+                                  <td className="p-3 text-right font-semibold">{(affiliate.total_earnings || 0).toLocaleString()} FCFA</td>
+                                  <td className="p-3">
+                                    <Badge variant={affiliate.status === "active" ? "default" : "secondary"}>
+                                      {affiliate.status}
+                                    </Badge>
+                                  </td>
+                                  <td className="p-3">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedAffiliateId(affiliate.id);
+                                        setNewAffiliateStatus(affiliate.status);
+                                        setAffiliateStatusDialog(true);
+                                      }}
+                                      data-testid={`button-update-affiliate-status-${affiliate.id}`}
+                                    >
+                                      Edit Status
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Payout Requests Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Payout Requests</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {payoutRequestsLoading ? (
+                        <div className="text-center py-12">
+                          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        </div>
+                      ) : payoutRequestsData.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">No payout requests</div>
+                      ) : (
+                        <div className="overflow-x-auto border rounded-md">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr className="border-b">
+                                <th className="text-left p-3 font-semibold">Affiliate</th>
+                                <th className="text-right p-3 font-semibold">Amount</th>
+                                <th className="text-left p-3 font-semibold">Status</th>
+                                <th className="text-left p-3 font-semibold">Method</th>
+                                <th className="text-left p-3 font-semibold">Requested</th>
+                                <th className="text-left p-3 font-semibold">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(payoutRequestsData as any[]).map((payout) => (
+                                <tr key={payout.id} className="border-b hover:bg-muted/50">
+                                  <td className="p-3">
+                                    <div className="font-medium">{payout.username || payout.email}</div>
+                                    <div className="text-xs text-muted-foreground">{payout.referral_code}</div>
+                                  </td>
+                                  <td className="p-3 text-right font-semibold">{(payout.amount || 0).toLocaleString()} FCFA</td>
+                                  <td className="p-3">
+                                    <Badge variant={payout.status === "pending" ? "destructive" : payout.status === "approved" ? "default" : "secondary"}>
+                                      {payout.status}
+                                    </Badge>
+                                  </td>
+                                  <td className="p-3 text-sm">{payout.payment_method}</td>
+                                  <td className="p-3 text-xs">{new Date(payout.requested_at).toLocaleDateString()}</td>
+                                  <td className="p-3">
+                                    {payout.status === "pending" && (
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            setAffiliateSelectedPayoutId(payout.id);
+                                            setAffiliatePayoutAction("approve");
+                                            setAffiliatePayoutActionDialog(true);
+                                          }}
+                                          data-testid={`button-approve-payout-${payout.id}`}
+                                        >
+                                          Approve
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          onClick={() => {
+                                            setAffiliateSelectedPayoutId(payout.id);
+                                            setAffiliatePayoutAction("reject");
+                                            setAffiliatePayoutActionDialog(true);
+                                          }}
+                                          data-testid={`button-reject-payout-${payout.id}`}
+                                        >
+                                          Reject
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
               {/* Update Affiliate Status Dialog */}
               <Dialog open={affiliateStatusDialog} onOpenChange={setAffiliateStatusDialog}>

@@ -5716,6 +5716,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get affiliate performance analytics
+  app.get('/api/admin/affiliate-analytics', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const allAffiliates = await db.execute(sql`
+        SELECT a.*, u.username, u.email
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        ORDER BY a.total_earnings DESC
+      `);
+
+      const referralStats = await db.execute(sql`
+        SELECT COUNT(*) as total_conversions, SUM(af.commission) as total_commission
+        FROM referrals af
+        WHERE af.status = 'completed'
+      `);
+
+      const payoutStats = await db.execute(sql`
+        SELECT 
+          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+          COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END) as paid_count,
+          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending_amount,
+          SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END) as approved_amount,
+          SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) as paid_amount
+        FROM payout_requests
+      `);
+
+      const topPerformers = await db.execute(sql`
+        SELECT a.*, u.username, u.email
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        WHERE a.status = 'active'
+        ORDER BY a.total_earnings DESC
+        LIMIT 5
+      `);
+
+      const activeCount = allAffiliates.rows.filter((a: any) => a.status === 'active').length;
+      const totalEarnings = allAffiliates.rows.reduce((sum: number, a: any) => sum + (a.total_earnings || 0), 0);
+      const totalReferrals = allAffiliates.rows.reduce((sum: number, a: any) => sum + (a.total_referrals || 0), 0);
+
+      res.json({
+        summary: {
+          totalAffiliates: allAffiliates.rows.length,
+          activeAffiliates: activeCount,
+          totalReferrals,
+          totalConversions: referralStats.rows[0]?.total_conversions || 0,
+          totalEarnings,
+          totalCommission: referralStats.rows[0]?.total_commission || 0,
+        },
+        payoutSummary: {
+          pending: {
+            count: payoutStats.rows[0]?.pending_count || 0,
+            amount: payoutStats.rows[0]?.pending_amount || 0,
+          },
+          approved: {
+            count: payoutStats.rows[0]?.approved_count || 0,
+            amount: payoutStats.rows[0]?.approved_amount || 0,
+          },
+          paid: {
+            count: payoutStats.rows[0]?.paid_count || 0,
+            amount: payoutStats.rows[0]?.paid_amount || 0,
+          },
+        },
+        topPerformers: topPerformers.rows,
+        allAffiliates: allAffiliates.rows,
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate analytics:", error);
+      res.status(500).json({ message: "Failed to fetch affiliate analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
