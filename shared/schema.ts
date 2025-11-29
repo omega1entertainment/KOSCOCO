@@ -227,6 +227,20 @@ export const likes = pgTable("likes", {
   index("idx_likes_video_id").on(table.videoId),
 ]);
 
+export const emojiReactions = pgTable("emoji_reactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => videos.id),
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: text("ip_address"),
+  emoji: text("emoji").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_emoji_user").on(table.videoId, table.userId, table.emoji),
+  unique("unique_emoji_ip").on(table.videoId, table.ipAddress, table.emoji),
+  index("idx_emoji_reactions_video_id").on(table.videoId),
+  index("idx_emoji_reactions_emoji").on(table.emoji),
+]);
+
 export const watchHistory = pgTable("watch_history", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -876,6 +890,11 @@ export const insertPollResponseSchema = createInsertSchema(pollResponses).omit({
 export const insertAffiliateCampaignSchema = createInsertSchema(affiliateCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMarketingAssetSchema = createInsertSchema(marketingAssets).omit({ id: true, createdAt: true, updatedAt: true });
 
+export const insertEmojiReactionSchema = createInsertSchema(emojiReactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
@@ -910,6 +929,10 @@ export type AffiliateCampaign = typeof affiliateCampaigns.$inferSelect;
 
 export type InsertMarketingAsset = z.infer<typeof insertMarketingAssetSchema>;
 export type MarketingAsset = typeof marketingAssets.$inferSelect;
+
+export type InsertEmojiReaction = z.infer<typeof insertEmojiReactionSchema>;
+export type EmojiReaction = typeof emojiReactions.$inferSelect;
+
 export type PollWithStats = Poll & { 
   options: (PollOption & { responseCount: number; percentage: number })[];
   totalResponses: number;

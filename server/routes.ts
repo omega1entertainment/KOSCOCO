@@ -2104,6 +2104,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Emoji Reaction Routes
+  app.post('/api/emoji-reactions', async (req: any, res) => {
+    try {
+      const { videoId, emoji } = req.body;
+      if (!videoId || !emoji) {
+        return res.status(400).json({ message: "Video ID and emoji are required" });
+      }
+
+      const userId = req.user ? (req.user as SelectUser).id : null;
+      const ipAddress = !userId ? (req.ip || req.connection.remoteAddress || '0.0.0.0') : null;
+
+      // Check if already reacted with this emoji
+      const existingReactions = await storage.getUserEmojiReactionForVideo(userId, videoId, emoji, ipAddress);
+      if (existingReactions.length > 0) {
+        // Toggle off by deleting
+        await storage.deleteEmojiReaction(videoId, emoji, userId, ipAddress);
+        const reactions = await storage.getVideoEmojiReactions(videoId);
+        return res.json({ success: true, reactions, removed: true });
+      }
+
+      // Add new reaction
+      const reaction = await storage.createEmojiReaction({
+        videoId,
+        userId,
+        ipAddress: !userId ? ipAddress : null,
+        emoji,
+      });
+
+      const reactions = await storage.getVideoEmojiReactions(videoId);
+      res.json({ success: true, reaction, reactions, removed: false });
+    } catch (error: any) {
+      console.error("Error creating emoji reaction:", error);
+      res.status(500).json({ message: "Failed to create emoji reaction" });
+    }
+  });
+
+  app.get('/api/emoji-reactions/video/:videoId', async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const reactions = await storage.getVideoEmojiReactions(videoId);
+      res.json(reactions);
+    } catch (error) {
+      console.error("Error fetching emoji reactions:", error);
+      res.status(500).json({ message: "Failed to fetch emoji reactions" });
+    }
+  });
+
   app.post('/api/watch-history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;

@@ -58,6 +58,11 @@ export default function VideoPlayer() {
     enabled: !!videoId,
   });
 
+  const { data: emojiReactionsData = [] } = useQuery<{ emoji: string; count: number }[]>({
+    queryKey: ['/api/emoji-reactions', videoId],
+    enabled: !!videoId,
+  });
+
   const { data: judgeScoresData } = useQuery<{
     scores: Array<{
       id: string;
@@ -138,6 +143,21 @@ export default function VideoPlayer() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const emojiReactionMutation = useMutation({
+    mutationFn: async (emoji: string) => {
+      return await apiRequest(`/api/emoji-reactions`, "POST", {
+        videoId,
+        emoji,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/emoji-reactions', videoId] });
+    },
+    onError: (error: Error) => {
+      console.error("Emoji reaction error:", error);
     },
   });
 
@@ -563,6 +583,44 @@ export default function VideoPlayer() {
                       </p>
                     </div>
                   )}
+
+                  {/* Emoji Reactions Section */}
+                  {emojiReactionsData && emojiReactionsData.length > 0 && (
+                    <div className="mb-6 flex flex-wrap gap-2" data-testid="section-emoji-reactions">
+                      {emojiReactionsData.map((reaction) => (
+                        <Button
+                          key={reaction.emoji}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => emojiReactionMutation.mutate(reaction.emoji)}
+                          disabled={emojiReactionMutation.isPending}
+                          data-testid={`button-emoji-${reaction.emoji}`}
+                          className="text-lg h-9"
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span className="ml-1 text-xs">{reaction.count}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Quick Emoji Reactions */}
+                  <div className="mb-6 flex flex-wrap gap-2" data-testid="section-quick-emojis">
+                    {['👍', '❤️', '😂', '🔥', '😢', '😍'].map((emoji) => (
+                      <Button
+                        key={emoji}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => emojiReactionMutation.mutate(emoji)}
+                        disabled={emojiReactionMutation.isPending}
+                        data-testid={`button-quick-emoji-${emoji}`}
+                        className="text-2xl h-10 w-10 p-0"
+                        title={`React with ${emoji}`}
+                      >
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
 
                   {/* Judge Scores Section */}
                   {judgeScoresData && judgeScoresData.count > 0 && (
