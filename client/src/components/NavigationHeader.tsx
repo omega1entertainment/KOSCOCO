@@ -99,7 +99,7 @@ export default function NavigationHeader({
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
           </button>
           
-          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+          <nav className="hidden md:flex items-center gap-px flex-1 justify-center">
             {navItems.map((item) => (
               <Button
                 key={item.label}
