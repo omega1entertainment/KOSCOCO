@@ -530,15 +530,12 @@ export default function TikTokFeed() {
           className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
           style={{ scrollBehavior: "auto" }}
         >
-          {filteredVideos.map((video, index) => {
-            // Only render current video, previous, and next for better mobile performance
-            const shouldRender = Math.abs(index - currentVideoIndex) <= 1;
-            
-            return shouldRender ? (
+          {filteredVideos.map((video, index) => (
             <div
               key={video.id}
               className="h-screen w-full flex-shrink-0 snap-start relative bg-black flex items-center justify-center group"
               data-testid={`video-container-${index}`}
+              style={{ visibility: Math.abs(index - currentVideoIndex) > 2 ? "hidden" : "visible" }}
             >
               {/* Video */}
               <video
@@ -547,7 +544,7 @@ export default function TikTokFeed() {
                 }}
                 src={video.videoUrl}
                 muted={isMuted}
-                preload={index === currentVideoIndex ? "auto" : "metadata"}
+                preload={Math.abs(index - currentVideoIndex) <= 1 ? "auto" : "metadata"}
                 playsInline
                 className="h-full w-full object-contain cursor-pointer"
                 onClick={togglePlayPause}
@@ -700,15 +697,7 @@ export default function TikTokFeed() {
                 </div>
               )}
             </div>
-            ) : (
-              // Placeholder for off-screen videos
-              <div
-                key={video.id}
-                className="h-screen w-full flex-shrink-0 snap-start relative bg-black"
-                data-testid={`video-container-${index}`}
-              />
-            );
-          })}
+          ))}
           {/* Bottom spacer */}
           <div className="h-[50px] flex-shrink-0"></div>
         </div>
