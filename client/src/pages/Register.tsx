@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Category } from "@shared/schema";
+import { AlertCircle } from "lucide-react";
+import type { Category, Registration } from "@shared/schema";
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ export default function Register() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState("");
   const [paymentData, setPaymentData] = useState<any>(null);
+  const [registeredCategoryIds, setRegisteredCategoryIds] = useState<Set<string>>(new Set());
   const scriptLoaded = useRef(false);
 
   useEffect(() => {
@@ -60,6 +62,23 @@ export default function Register() {
   const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  const { data: userRegistrations = [] } = useQuery<Registration[]>({
+    queryKey: ["/api/registrations/user"],
+    enabled: !!user,
+  });
+
+  // Extract already registered category IDs (approved registrations only)
+  useEffect(() => {
+    const approvedRegs = userRegistrations.filter(reg => reg.paymentStatus === 'approved');
+    const categoryIds = new Set<string>();
+    for (const reg of approvedRegs) {
+      for (const catId of reg.categoryIds) {
+        categoryIds.add(catId);
+      }
+    }
+    setRegisteredCategoryIds(categoryIds);
+  }, [userRegistrations]);
 
   const FEE_PER_CATEGORY = 2500;
   const totalAmount = selectedCategories.length * FEE_PER_CATEGORY;
@@ -174,6 +193,15 @@ export default function Register() {
   });
 
   const handleCategoryToggle = (categoryId: string) => {
+    // Don't allow selecting already registered categories
+    if (registeredCategoryIds.has(categoryId)) {
+      toast({
+        title: "Already Registered",
+        description: "You are already registered for this category.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedCategories(prev =>
       prev.includes(categoryId)
         ? prev.filter(id => id !== categoryId)
@@ -247,49 +275,73 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {registeredCategoryIds.size > 0 && (
+              <Card className="mb-6 border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                <CardContent className="pt-6 flex gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-900 dark:text-amber-100">Already Registered</p>
+                    <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
+                      You have already paid for and registered in {registeredCategoryIds.size} {registeredCategoryIds.size === 1 ? 'category' : 'categories'}. You can register for new categories below.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <div className="grid gap-6 mb-6">
-              {categories?.map((category) => (
-                <Card
-                  key={category.id}
-                  className={`cursor-pointer transition-colors ${selectedCategories.includes(category.id) ? "border-primary border-2" : ""}`}
-                  onClick={() => handleCategoryToggle(category.id)}
-                  data-testid={`card-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <Checkbox
-                        id={category.id}
-                        checked={selectedCategories.includes(category.id)}
-                        onCheckedChange={() => handleCategoryToggle(category.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        data-testid={`checkbox-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      />
-                      <div className="flex-1">
-                        <Label
-                          htmlFor={category.id}
-                          className="text-lg font-semibold cursor-pointer"
-                        >
-                          {category.name}
-                        </Label>
-                        <CardDescription className="mt-1">
-                          {category.description}
-                        </CardDescription>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {category.subcategories.map((sub, index) => (
-                            <span
-                              key={sub}
-                              className="text-xs px-2 py-1 bg-muted rounded-md"
-                              data-testid={`badge-subcategory-${index}`}
+              {categories?.map((category) => {
+                const isAlreadyRegistered = registeredCategoryIds.has(category.id);
+                return (
+                  <Card
+                    key={category.id}
+                    className={`transition-colors ${isAlreadyRegistered ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${selectedCategories.includes(category.id) ? "border-primary border-2" : ""}`}
+                    onClick={() => !isAlreadyRegistered && handleCategoryToggle(category.id)}
+                    data-testid={`card-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          id={category.id}
+                          checked={selectedCategories.includes(category.id)}
+                          onCheckedChange={() => !isAlreadyRegistered && handleCategoryToggle(category.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isAlreadyRegistered}
+                          data-testid={`checkbox-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={category.id}
+                              className={`text-lg font-semibold ${isAlreadyRegistered ? 'cursor-not-allowed line-through' : 'cursor-pointer'}`}
                             >
-                              {sub}
-                            </span>
-                          ))}
+                              {category.name}
+                            </Label>
+                            {isAlreadyRegistered && (
+                              <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-md font-medium">
+                                Already Registered
+                              </span>
+                            )}
+                          </div>
+                          <CardDescription className="mt-1">
+                            {category.description}
+                          </CardDescription>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {category.subcategories.map((sub, index) => (
+                              <span
+                                key={sub}
+                                className="text-xs px-2 py-1 bg-muted rounded-md"
+                                data-testid={`badge-subcategory-${index}`}
+                              >
+                                {sub}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
+                    </CardHeader>
+                  </Card>
+                );
+              })}
             </div>
 
             <Card className="mb-6">
