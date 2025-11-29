@@ -16,6 +16,7 @@ import type { Video, Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { extractIdFromPermalink, createPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
+import { getImageUrl } from "@/lib/imageUtils";
 
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
@@ -400,9 +401,7 @@ export default function VideoPlayer() {
   }
 
   const category = categories?.find(c => c.id === video.categoryId);
-  const videoUrl = video.videoUrl.startsWith('/objects/') 
-    ? video.videoUrl 
-    : `/objects/${video.videoUrl}`;
+  const videoUrl = getImageUrl(video.videoUrl) || video.videoUrl;
 
   const isVideoRejected = video.moderationStatus === 'rejected';
   
@@ -719,11 +718,7 @@ export default function VideoPlayer() {
                 ) : (
                   <div className="space-y-3">
                     {otherVideos.map((relatedVideo) => {
-                      const thumbnailUrl = relatedVideo.thumbnailUrl
-                        ? (relatedVideo.thumbnailUrl.startsWith('.private/') 
-                          ? `/objects/${relatedVideo.thumbnailUrl.replace('.private/', '')}`
-                          : relatedVideo.thumbnailUrl)
-                        : undefined;
+                      const thumbnailUrl = getImageUrl(relatedVideo.thumbnailUrl) || undefined;
                       
                       return (
                         <Card 

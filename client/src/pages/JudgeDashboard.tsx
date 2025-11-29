@@ -20,6 +20,7 @@ import type { VideoForJudging, JudgeScoreWithVideo, User } from "@shared/schema"
 import { useEffect } from "react";
 import { createPermalink } from "@/lib/slugUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getImageUrl } from "@/lib/imageUtils";
 
 //Profile form schema - will be created with translations inside component
 const createProfileFormSchema = (t: (key: string) => string) => z.object({
@@ -353,11 +354,13 @@ export default function JudgeDashboard() {
                             {video.thumbnailUrl ? (
                               <div className="relative w-full h-full">
                                 <img
-                                  src={video.thumbnailUrl.startsWith('.private/') 
-                                    ? `/objects/${video.thumbnailUrl.replace('.private/', '')}`
-                                    : video.thumbnailUrl}
+                                  src={getImageUrl(video.thumbnailUrl) || ""}
                                   alt={video.title}
                                   className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                   <Button
@@ -546,11 +549,13 @@ export default function JudgeDashboard() {
                           >
                             {video.thumbnailUrl ? (
                               <img
-                                src={video.thumbnailUrl.startsWith('.private/') 
-                                  ? `/objects/${video.thumbnailUrl.replace('.private/', '')}`
-                                  : video.thumbnailUrl}
+                                src={getImageUrl(video.thumbnailUrl) || ""}
                                 alt={video.title}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">

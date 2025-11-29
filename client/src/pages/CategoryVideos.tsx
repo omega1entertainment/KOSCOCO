@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { createPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
+import { getImageUrl } from "@/lib/imageUtils";
 
 export default function CategoryVideos() {
   const { t } = useLanguage();
@@ -132,11 +133,13 @@ export default function CategoryVideos() {
                     <div className="aspect-video relative overflow-hidden bg-muted">
                       {video.thumbnailUrl ? (
                         <img
-                          src={video.thumbnailUrl.startsWith('.private/') 
-                            ? `/objects/${video.thumbnailUrl.replace('.private/', '')}`
-                            : video.thumbnailUrl}
+                          src={getImageUrl(video.thumbnailUrl) || ""}
                           alt={video.title}
                           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted">
