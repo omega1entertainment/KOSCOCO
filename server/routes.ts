@@ -601,13 +601,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const objectStorageService = new ObjectStorageService();
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      const canAccess = await objectStorageService.canAccessObjectEntity({
-        objectFile,
-        userId: (req.user as SelectUser | undefined)?.id,
-        requestedPermission: ObjectPermission.READ,
-      });
-      if (!canAccess) {
-        return res.sendStatus(401);
+      // Allow public access to thumbnail images without authentication
+      if (!req.path.includes('thumbnails')) {
+        const canAccess = await objectStorageService.canAccessObjectEntity({
+          objectFile,
+          userId: (req.user as SelectUser | undefined)?.id,
+          requestedPermission: ObjectPermission.READ,
+        });
+        if (!canAccess) {
+          return res.sendStatus(401);
+        }
       }
       objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
@@ -829,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         thumbnailUrl,
         {
           owner: userId,
-          visibility: "private",
+          visibility: "public",
         }
       );
 
