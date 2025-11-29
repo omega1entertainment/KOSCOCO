@@ -62,6 +62,7 @@ export default function NavigationHeader({
   
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
+    { label: 'Feed', path: '/feed' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
   ];
 
@@ -102,9 +103,12 @@ export default function NavigationHeader({
             {navItems.map((item) => (
               <Button
                 key={item.label}
-                variant="ghost"
-                className="min-h-11"
-                onClick={() => onNavigate?.(item.path)}
+                variant={item.label === 'Feed' ? 'default' : 'ghost'}
+                className={`min-h-11 ${item.label === 'Feed' ? 'bg-white text-black hover:bg-gray-100' : ''}`}
+                onClick={() => {
+                  setLocation(item.path);
+                  onNavigate?.(item.path);
+                }}
                 data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {item.label}
