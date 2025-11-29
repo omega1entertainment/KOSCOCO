@@ -3066,7 +3066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           SELECT 
             r.id,
             r.user_id,
-            r.amount_paid as amount,
+            r.total_fee as amount,
             r.payment_status as status,
             r.created_at,
             u.username,
