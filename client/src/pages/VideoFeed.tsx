@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, Eye, Share2, Volume2, VolumeX, ChevronDown } from "lucide-react";
-import type { VideoWithStats } from "@shared/schema";
+import { ThumbsUp, Eye, Share2, Volume2, VolumeX, ChevronDown, RefreshCw } from "lucide-react";
+import type { VideoWithStats, Category } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -16,16 +16,47 @@ export default function VideoFeed() {
   const [, setLocation] = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
+  const [sortBy, setSortBy] = useState<'newest' | 'trending'>('newest');
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Fetch all approved videos
-  const { data: allVideos = [], isLoading } = useQuery<VideoWithStats[]>({
+  // Fetch all approved videos from all categories
+  const { data: allVideos = [], isLoading, refetch } = useQuery<VideoWithStats[]>({
     queryKey: queryKeys.videos.all,
+    staleTime: 10000, // 10 seconds - ensure fresh data frequently
+    refetchOnWindowFocus: true, // Auto-refetch when window regains focus
   });
 
-  const videos = allVideos.filter(v => v.status === 'approved');
+  // Fetch categories for reference
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: queryKeys.categories.all,
+  });
+
+  // Filter approved videos and sort them
+  const videos = allVideos
+    .filter(v => v.status === 'approved')
+    .sort((a, b) => {
+      if (sortBy === 'trending') {
+        // Sort by engagement: (views + likes) descending
+        return (b.views + b.likeCount) - (a.views + a.likeCount);
+      } else {
+        // Sort by newest first - assume higher id means newer
+        return b.id.localeCompare(a.id);
+      }
+    });
+
+  // Auto-refresh on visibility change (when app regains focus)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refetch(); // Refresh videos when user returns to the app
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [refetch]);
 
   // Snap scroll effect
   useEffect(() => {
@@ -88,7 +119,7 @@ export default function VideoFeed() {
         title: t("videoFeed.liked"),
         description: t("videoFeed.likedDescription"),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
+      await refetch(); // Refresh to show updated stats
       queryClient.invalidateQueries({ queryKey: queryKeys.likes.byVideo(video.id) });
     } catch (error) {
       toast({
@@ -227,8 +258,11 @@ export default function VideoFeed() {
             <div className="absolute bottom-6 left-4 right-16 text-white z-10">
               <h2 className="text-xl font-bold mb-2 line-clamp-2">{currentVideo.title}</h2>
 
-              <div className="flex items-center gap-3 mb-3">
-                <Badge variant="secondary" className="bg-white/20" data-testid={`badge-category-${index}`}>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <Badge variant="secondary" className="bg-white/20 text-xs" data-testid={`badge-category-${index}`}>
+                  {categories.find(c => c.id === currentVideo.categoryId)?.name || currentVideo.subcategory}
+                </Badge>
+                <Badge variant="secondary" className="bg-white/10 text-xs" data-testid={`badge-subcategory-${index}`}>
                   {currentVideo.subcategory}
                 </Badge>
               </div>
@@ -257,20 +291,47 @@ export default function VideoFeed() {
         </div>
       ))}
 
-      {/* Video Counter */}
-      <div className="fixed top-4 right-4 bg-white/20 text-white px-3 py-1 rounded-full text-sm z-20" data-testid="text-video-counter">
-        {currentIndex + 1} / {videos.length}
-      </div>
+      {/* Header Controls */}
+      <div className="fixed top-4 left-4 right-4 flex items-center justify-between z-20">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          className="bg-white/20 hover:bg-white/30 text-white"
+          onClick={() => setLocation("/")}
+          data-testid="button-back-home"
+        >
+          ← {t("videoFeed.back")}
+        </Button>
 
-      {/* Back Button */}
-      <Button
-        variant="ghost"
-        className="fixed top-4 left-4 bg-white/20 hover:bg-white/30 text-white z-20"
-        onClick={() => setLocation("/")}
-        data-testid="button-back-home"
-      >
-        ← {t("videoFeed.back")}
-      </Button>
+        {/* Video Counter */}
+        <div className="bg-white/20 text-white px-3 py-1 rounded-full text-sm" data-testid="text-video-counter">
+          {currentIndex + 1} / {videos.length}
+        </div>
+
+        {/* Sort & Refresh Controls */}
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="bg-white/20 hover:bg-white/30 text-white"
+            onClick={() => refetch()}
+            data-testid="button-refresh-feed"
+            title="Refresh feed"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'newest' | 'trending')}
+            className="bg-white/20 text-white text-xs px-2 py-1 rounded border border-white/30 cursor-pointer hover:bg-white/30 transition"
+            data-testid="select-sort-videos"
+          >
+            <option value="newest">Newest</option>
+            <option value="trending">Trending</option>
+          </select>
+        </div>
+      </div>
     </div>
   );
 }
