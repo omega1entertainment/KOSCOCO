@@ -35,6 +35,8 @@ export default function TikTokFeed() {
   const [selectedStatus, setSelectedStatus] = useState<"all" | "active" | "disqualified">("all");
   const [activePhase, setActivePhase] = useState<{ id: string; name: string } | null>(null);
   const lastScrollTime = useRef(0);
+  const isScrolling = useRef(false);
+  const scrollTimeout = useRef<NodeJS.Timeout>();
 
   // Fetch all categories and videos
   const { data: categories = [] } = useQuery<Category[]>({
@@ -265,12 +267,13 @@ export default function TikTokFeed() {
   useEffect(() => {
     if (!containerRef.current || filteredVideos.length === 0) return;
 
-    let scrollTimeout: NodeJS.Timeout;
-
     const handleScroll = () => {
+      // Mark as scrolling
+      isScrolling.current = true;
+      
       // Debounce scroll detection
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
+      clearTimeout(scrollTimeout.current);
+      scrollTimeout.current = setTimeout(() => {
         const container = containerRef.current;
         if (!container) return;
 
@@ -308,18 +311,24 @@ export default function TikTokFeed() {
             currentVideo.play().catch(() => {});
           }
         }
+        
+        // Mark scroll complete
+        isScrolling.current = false;
       }, 50); // Debounce by 50ms
     };
 
     const container = containerRef.current;
     container?.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
-      clearTimeout(scrollTimeout);
+      clearTimeout(scrollTimeout.current);
       container?.removeEventListener("scroll", handleScroll);
     };
   }, [filteredVideos, currentVideoIndex]);
 
   const togglePlayPause = () => {
+    // Ignore clicks during scrolling on mobile
+    if (isScrolling.current) return;
+    
     const currentVideo = videoRefs.current.get(filteredVideos[currentVideoIndex]?.id);
     if (currentVideo) {
       if (currentVideo.paused) {
@@ -331,6 +340,9 @@ export default function TikTokFeed() {
   };
 
   const handleDoubleClick = (videoId: string) => {
+    // Ignore double clicks during scrolling on mobile
+    if (isScrolling.current) return;
+    
     const newLiked = new Set(liked);
     if (newLiked.has(videoId)) {
       newLiked.delete(videoId);
