@@ -411,6 +411,11 @@ export class DbStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
+    // Delete all follows where this user is either the follower or following
+    await db.delete(schema.follows).where(eq(schema.follows.followerId, id));
+    await db.delete(schema.follows).where(eq(schema.follows.followingId, id));
+    
+    // Delete user
     await db.delete(schema.users).where(eq(schema.users.id, id));
   }
 
