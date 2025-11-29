@@ -157,37 +157,37 @@ export default function CreatorDashboard() {
 
   // Fetch creator stats
   const { data: stats, isLoading: statsLoading } = useQuery<CreatorStats>({
-    queryKey: queryKeys.creator.stats(user?.id),
+    queryKey: queryKeys.creator.stats,
     enabled: !!user,
   });
 
   // Fetch creator videos
   const { data: videos = [], isLoading: videosLoading } = useQuery<VideoWithStats[]>({
-    queryKey: queryKeys.creator.videos(user?.id),
+    queryKey: queryKeys.creator.videos,
     enabled: !!user,
   });
 
   // Fetch creator profile
   const { data: profile, isLoading: profileLoading } = useQuery<CreatorProfile>({
-    queryKey: queryKeys.creator.profile(user?.id),
+    queryKey: queryKeys.creator.profile,
     enabled: !!user,
   });
 
   // Fetch creator competitions
   const { data: competitions = [], isLoading: competitionsLoading } = useQuery<Competition[]>({
-    queryKey: queryKeys.creator.competitions(user?.id),
+    queryKey: queryKeys.creator.competitions,
     enabled: !!user,
   });
 
   // Fetch creator watch history
   const { data: watchHistory = [], isLoading: historyLoading } = useQuery<WatchHistoryEntry[]>({
-    queryKey: queryKeys.creator.watchHistory(user?.id),
+    queryKey: queryKeys.creator.watchHistory,
     enabled: !!user,
   });
 
   // Fetch creator earnings
   const { data: earnings, isLoading: earningsLoading } = useQuery<CreatorEarnings>({
-    queryKey: queryKeys.creator.earnings(user?.id),
+    queryKey: queryKeys.creator.earnings,
     enabled: !!user,
   });
 
@@ -227,8 +227,8 @@ export default function CreatorDashboard() {
         title: t('creator.toast.videoDeleted'),
         description: t('creator.toast.videoDeletedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos(user?.id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.creator.stats(user?.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos });
+      queryClient.invalidateQueries({ queryKey: queryKeys.creator.stats });
       setDeleteDialogOpen(false);
       setVideoToDelete(null);
     },
@@ -252,7 +252,7 @@ export default function CreatorDashboard() {
         title: t('creator.toast.videoUpdated'),
         description: t('creator.toast.videoUpdatedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos(user?.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos });
       setEditDialogOpen(false);
       setEditingVideo(null);
     },
