@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check, UserPlus, UserCheck, ChevronDown } from "lucide-react";
+import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check, UserPlus, UserCheck, Trophy, Grid3X3, CheckCircle, XCircle } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Video, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,6 @@ export default function TikTokFeed() {
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [allVideos, setAllVideos] = useState<Video[]>([]);
-  const [filteredVideos, setFilteredVideos] = useState<Video[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [creators, setCreators] = useState<{ [key: string]: { firstName: string; lastName: string } }>({});
@@ -58,102 +57,64 @@ export default function TikTokFeed() {
     fetchActivePhase();
   }, []);
 
-  // Fetch all videos from all categories (lazy load)
+  // Fetch all videos from all categories
   useEffect(() => {
     if (categories.length === 0) return;
 
     const fetchAllVideos = async () => {
-      const allVideos: Video[] = [];
-      const userIds = new Set<string>();
+      const videos: Video[] = [];
       
       for (const category of categories) {
         try {
           const response = await fetch(`/api/videos/category/${category.id}`);
           if (response.ok) {
             const categoryVideos = await response.json();
-            allVideos.push(...categoryVideos);
-            categoryVideos.forEach((video: Video) => {
-              userIds.add(video.userId);
-            });
+            videos.push(...categoryVideos);
           }
         } catch (err) {
           console.error(`Failed to fetch videos for category ${category.id}:`, err);
         }
       }
       
-      setAllVideos(allVideos);
-      // Set first category as default
-      if (allVideos.length > 0 && !selectedCategory) {
-        setSelectedCategory(allVideos[0].categoryId);
-      }
-
-      // Fetch creator info and stats for videos near current index
-      const fetchMetadata = async (videoIndices: number[]) => {
-        const usersToFetch = new Set<string>();
-        const videosToFetch: Video[] = [];
-        
-        videoIndices.forEach((idx) => {
-          if (allVideos[idx]) {
-            usersToFetch.add(allVideos[idx].userId);
-            videosToFetch.push(allVideos[idx]);
-          }
-        });
-
-        // Fetch creator info
-        const creatorMap: { [key: string]: { firstName: string; lastName: string } } = {};
-        for (const userId of Array.from(usersToFetch)) {
-          try {
-            const response = await fetch(`/api/users/${userId}`);
-            if (response.ok) {
-              const userData = await response.json();
-              creatorMap[userId] = {
-                firstName: userData.firstName || "",
-                lastName: userData.lastName || ""
-              };
-            }
-          } catch (err) {
-            console.error(`Failed to fetch user ${userId}:`, err);
-          }
-        }
-
-        // Fetch video stats
-        const statsMap: { [key: string]: { likeCount: number; voteCount: number } } = {};
-        for (const video of videosToFetch) {
-          try {
-            const [likeRes, voteRes] = await Promise.all([
-              fetch(`/api/likes/video/${video.id}`),
-              fetch(`/api/votes/video/${video.id}`)
-            ]);
-            
-            const likeData = likeRes.ok ? await likeRes.json() : { likeCount: 0 };
-            const voteData = voteRes.ok ? await voteRes.json() : { voteCount: 0 };
-            
-            statsMap[video.id] = {
-              likeCount: likeData.likeCount || 0,
-              voteCount: voteData.voteCount || 0
-            };
-          } catch (err) {
-            statsMap[video.id] = { likeCount: 0, voteCount: 0 };
-          }
-        }
-
-        setCreators((prev) => ({ ...prev, ...creatorMap }));
-        setVideoStats((prev) => ({ ...prev, ...statsMap }));
-      };
-
-      // Fetch metadata for first 3 videos immediately
-      fetchMetadata([0, 1, 2]);
+      setAllVideos(videos);
     };
 
     fetchAllVideos();
   }, [categories]);
 
+  // Filter videos based on selected category and status
+  const filteredVideos = useMemo(() => {
+    let filtered = allVideos;
+    
+    if (selectedCategory) {
+      filtered = filtered.filter(v => v.categoryId === selectedCategory);
+    }
+    
+    if (selectedStatus === "active") {
+      filtered = filtered.filter(v => v.status === "active" || v.status === "approved");
+    } else if (selectedStatus === "disqualified") {
+      filtered = filtered.filter(v => v.status === "disqualified" || v.status === "rejected");
+    }
+    
+    return filtered;
+  }, [allVideos, selectedCategory, selectedStatus]);
+
+  // Reset currentVideoIndex when filters change
+  useEffect(() => {
+    setCurrentVideoIndex(0);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [selectedCategory, selectedStatus]);
+
   // Lazy load metadata for nearby videos as user scrolls
   useEffect(() => {
+    if (filteredVideos.length === 0) return;
+    
     const indicesToFetch: number[] = [];
     
     // Load current and next 2 videos
-    for (let i = currentVideoIndex; i < Math.min(currentVideoIndex + 3, videos.length); i++) {
+    for (let i = currentVideoIndex; i < Math.min(currentVideoIndex + 3, filteredVideos.length); i++) {
       indicesToFetch.push(i);
     }
     
@@ -163,9 +124,9 @@ export default function TikTokFeed() {
         const videosToFetch: Video[] = [];
         
         indicesToFetch.forEach((idx) => {
-          if (videos[idx]) {
-            usersToFetch.add(videos[idx].userId);
-            videosToFetch.push(videos[idx]);
+          if (filteredVideos[idx]) {
+            usersToFetch.add(filteredVideos[idx].userId);
+            videosToFetch.push(filteredVideos[idx]);
           }
         });
 
@@ -218,7 +179,7 @@ export default function TikTokFeed() {
 
       fetchMetadata();
     }
-  }, [currentVideoIndex, videos]);
+  }, [currentVideoIndex, filteredVideos]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -228,7 +189,7 @@ export default function TikTokFeed() {
         scrollToVideo(Math.max(0, currentVideoIndex - 1));
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        scrollToVideo(Math.min(videos.length - 1, currentVideoIndex + 1));
+        scrollToVideo(Math.min(filteredVideos.length - 1, currentVideoIndex + 1));
       } else if (e.key === " ") {
         e.preventDefault();
         togglePlayPause();
@@ -241,7 +202,7 @@ export default function TikTokFeed() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentVideoIndex, videos.length, isMuted, setLocation]);
+  }, [currentVideoIndex, filteredVideos.length, isMuted, setLocation]);
 
   // Scroll to specific video
   const scrollToVideo = useCallback((index: number) => {
@@ -258,17 +219,17 @@ export default function TikTokFeed() {
 
     // Pause all other videos
     videoRefs.current.forEach((video, key) => {
-      if (key !== videos[index]?.id) {
+      if (key !== filteredVideos[index]?.id) {
         video.pause();
       }
     });
 
     // Play current video
-    const currentVideo = videoRefs.current.get(videos[index]?.id);
+    const currentVideo = videoRefs.current.get(filteredVideos[index]?.id);
     if (currentVideo) {
       currentVideo.play().catch(() => {});
     }
-  }, [videos]);
+  }, [filteredVideos]);
 
   // Wheel scroll handler
   useEffect(() => {
@@ -277,7 +238,7 @@ export default function TikTokFeed() {
       if (now - lastScrollTime.current < 300) return;
 
       if (e.deltaY > 0) {
-        scrollToVideo(Math.min(videos.length - 1, currentVideoIndex + 1));
+        scrollToVideo(Math.min(filteredVideos.length - 1, currentVideoIndex + 1));
       } else if (e.deltaY < 0) {
         scrollToVideo(Math.max(0, currentVideoIndex - 1));
       }
@@ -286,10 +247,10 @@ export default function TikTokFeed() {
     const container = containerRef.current;
     container?.addEventListener("wheel", handleWheel, { passive: true });
     return () => container?.removeEventListener("wheel", handleWheel);
-  }, [currentVideoIndex, videos.length, scrollToVideo]);
+  }, [currentVideoIndex, filteredVideos.length, scrollToVideo]);
 
   const togglePlayPause = () => {
-    const currentVideo = videoRefs.current.get(videos[currentVideoIndex]?.id);
+    const currentVideo = videoRefs.current.get(filteredVideos[currentVideoIndex]?.id);
     if (currentVideo) {
       if (currentVideo.paused) {
         currentVideo.play().catch(() => {});
@@ -351,7 +312,8 @@ export default function TikTokFeed() {
     }
   };
 
-  if (videos.length === 0) {
+  // Loading state
+  if (allVideos.length === 0) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center">
@@ -364,178 +326,291 @@ export default function TikTokFeed() {
 
   return (
     <div className="h-screen w-full bg-black overflow-hidden relative">
-      {/* Close button */}
-      <button
-        onClick={() => setLocation("/")}
-        className="absolute top-4 right-16 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-        data-testid="button-close-feed"
-      >
-        <X className="w-6 h-6" />
-      </button>
-
-
-      {/* Mute button */}
-      <button
-        onClick={() => setIsMuted(!isMuted)}
-        className="absolute top-4 left-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-        data-testid="button-toggle-mute"
-      >
-        {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-      </button>
-
-      {/* Video container */}
-      <div
-        ref={containerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollBehavior: "smooth" }}
-      >
-        {videos.map((video, index) => (
-          <div
-            key={video.id}
-            className="h-screen w-full flex-shrink-0 snap-start relative bg-black flex items-center justify-center group"
-            data-testid={`video-container-${index}`}
+      {/* Top navigation bar - Competition arrangement */}
+      <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-3 safe-area-top">
+        {/* Top row: Close, Phase badge, Mute */}
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+            data-testid="button-toggle-mute"
           >
-            {/* Video */}
-            <video
-              ref={(el) => {
-                if (el) videoRefs.current.set(video.id, el);
-              }}
-              src={video.videoUrl}
-              muted={isMuted}
-              className="h-full w-full object-contain cursor-pointer"
-              onClick={togglePlayPause}
-              onDoubleClick={() => handleDoubleClick(video.id)}
-              data-testid={`video-${video.id}`}
-              onEnded={() => scrollToVideo(Math.min(videos.length - 1, index + 1))}
-            />
-
-            {/* Play button overlay */}
-            <div
-              className="absolute inset-0 flex items-center justify-center cursor-pointer"
-              onClick={togglePlayPause}
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+          
+          {/* Active Phase Badge */}
+          {activePhase && (
+            <Badge 
+              variant="secondary" 
+              className="bg-yellow-500/90 text-black font-bold px-3 py-1"
+              data-testid="badge-active-phase"
             >
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-16 h-16 rounded-full bg-white/30 flex items-center justify-center backdrop-blur">
-                  <Play className="w-8 h-8 text-white fill-white ml-1" />
+              <Trophy className="w-4 h-4 mr-1" />
+              {activePhase.name}
+            </Badge>
+          )}
+          
+          <button
+            onClick={() => setLocation("/")}
+            className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+            data-testid="button-close-feed"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Category pills */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              selectedCategory === null
+                ? "bg-red-600 text-white"
+                : "bg-white/20 text-white hover:bg-white/30"
+            }`}
+            data-testid="button-category-all"
+          >
+            <Grid3X3 className="w-3 h-3" />
+            All Categories
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                selectedCategory === category.id
+                  ? "bg-red-600 text-white"
+                  : "bg-white/20 text-white hover:bg-white/30"
+              }`}
+              data-testid={`button-category-${category.id}`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Status filter buttons */}
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => setSelectedStatus("all")}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedStatus === "all"
+                ? "bg-white text-black"
+                : "bg-white/20 text-white hover:bg-white/30"
+            }`}
+            data-testid="button-status-all"
+          >
+            All
+          </button>
+          <button
+            onClick={() => setSelectedStatus("active")}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedStatus === "active"
+                ? "bg-green-600 text-white"
+                : "bg-white/20 text-white hover:bg-white/30"
+            }`}
+            data-testid="button-status-active"
+          >
+            <CheckCircle className="w-3 h-3" />
+            Active
+          </button>
+          <button
+            onClick={() => setSelectedStatus("disqualified")}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedStatus === "disqualified"
+                ? "bg-red-800 text-white"
+                : "bg-white/20 text-white hover:bg-white/30"
+            }`}
+            data-testid="button-status-disqualified"
+          >
+            <XCircle className="w-3 h-3" />
+            Disqualified
+          </button>
+        </div>
+      </div>
+
+      {/* Empty state when no videos match filters */}
+      {filteredVideos.length === 0 ? (
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="text-center text-white">
+            <XCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-semibold mb-2">No videos found</p>
+            <p className="text-white/70 text-sm">
+              Try selecting a different category or status filter
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* Video container */
+        <div
+          ref={containerRef}
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide pt-32"
+          style={{ scrollBehavior: "smooth" }}
+        >
+          {filteredVideos.map((video, index) => (
+            <div
+              key={video.id}
+              className="h-screen w-full flex-shrink-0 snap-start relative bg-black flex items-center justify-center group"
+              data-testid={`video-container-${index}`}
+            >
+              {/* Video */}
+              <video
+                ref={(el) => {
+                  if (el) videoRefs.current.set(video.id, el);
+                }}
+                src={video.videoUrl}
+                muted={isMuted}
+                className="h-full w-full object-contain cursor-pointer"
+                onClick={togglePlayPause}
+                onDoubleClick={() => handleDoubleClick(video.id)}
+                data-testid={`video-${video.id}`}
+                onEnded={() => scrollToVideo(Math.min(filteredVideos.length - 1, index + 1))}
+              />
+
+              {/* Play button overlay */}
+              <div
+                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                onClick={togglePlayPause}
+              >
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-16 h-16 rounded-full bg-white/30 flex items-center justify-center backdrop-blur">
+                    <Play className="w-8 h-8 text-white fill-white ml-1" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right sidebar - interactions */}
-            <div className="absolute right-2 sm:right-4 bottom-24 sm:bottom-20 z-40 flex flex-col items-center gap-4 sm:gap-6">
-              {/* Like button */}
-              <button
-                onClick={() => handleDoubleClick(video.id)}
-                className={`flex flex-col items-center gap-2 transition-transform hover:scale-110 ${
-                  liked.has(video.id) ? "text-red-500" : "text-white"
-                }`}
-                data-testid={`button-like-${video.id}`}
-              >
-                <ThumbsUp
-                  className={`w-8 h-8 ${liked.has(video.id) ? "fill-current" : ""}`}
-                />
-                <span className="text-xs">{videoStats[video.id]?.likeCount || 0}</span>
-              </button>
+              {/* Right sidebar - interactions */}
+              <div className="absolute right-2 sm:right-4 bottom-24 sm:bottom-20 z-40 flex flex-col items-center gap-4 sm:gap-6">
+                {/* Like button */}
+                <button
+                  onClick={() => handleDoubleClick(video.id)}
+                  className={`flex flex-col items-center gap-2 transition-transform hover:scale-110 ${
+                    liked.has(video.id) ? "text-red-500" : "text-white"
+                  }`}
+                  data-testid={`button-like-${video.id}`}
+                >
+                  <ThumbsUp
+                    className={`w-8 h-8 ${liked.has(video.id) ? "fill-current" : ""}`}
+                  />
+                  <span className="text-xs">{videoStats[video.id]?.likeCount || 0}</span>
+                </button>
 
-              {/* Vote button */}
-              <button
-                onClick={() => {
-                  setSelectedVideo({ id: video.id, title: video.title });
-                  setVoteModalOpen(true);
-                }}
-                className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
-                data-testid={`button-vote-${video.id}`}
-              >
-                <Check className="w-8 h-8" />
-                <span className="text-xs">{videoStats[video.id]?.voteCount || 0}</span>
-              </button>
+                {/* Vote button */}
+                <button
+                  onClick={() => {
+                    setSelectedVideo({ id: video.id, title: video.title });
+                    setVoteModalOpen(true);
+                  }}
+                  className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
+                  data-testid={`button-vote-${video.id}`}
+                >
+                  <Check className="w-8 h-8" />
+                  <span className="text-xs">{videoStats[video.id]?.voteCount || 0}</span>
+                </button>
 
-              {/* Share button */}
-              <button
-                onClick={() => {
-                  setSelectedVideoForShare({ id: video.id, title: video.title });
-                  setShareModalOpen(true);
-                }}
-                className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
-                data-testid={`button-share-${video.id}`}
-              >
-                <Share2 className="w-8 h-8" />
-              </button>
-            </div>
+                {/* Share button */}
+                <button
+                  onClick={() => {
+                    setSelectedVideoForShare({ id: video.id, title: video.title });
+                    setShareModalOpen(true);
+                  }}
+                  className="flex flex-col items-center gap-2 transition-transform hover:scale-110 text-white"
+                  data-testid={`button-share-${video.id}`}
+                >
+                  <Share2 className="w-8 h-8" />
+                </button>
+              </div>
 
-            {/* Bottom info - creator and video details */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8 sm:pb-6 safe-area-bottom">
-              <div className="flex items-end gap-3">
-                {/* Creator info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="w-10 h-10 border-2 border-white">
-                      <AvatarImage src="" />
-                      <AvatarFallback>
-                        {creators[video.userId]?.firstName?.charAt(0) || "C"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-white font-semibold text-sm">
-                        {creators[video.userId]
-                          ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
-                          : "Creator"}
-                      </p>
-                      <p className="text-white/70 text-xs">
-                        {video.views || 0} views
-                      </p>
-                      {user && video.userId !== user.id && (
-                        <button
-                          onClick={() => handleFollow(video.userId)}
-                          className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold whitespace-nowrap transition-colors mt-1"
-                          data-testid={`button-follow-${video.userId}`}
+              {/* Bottom info - creator and video details */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8 sm:pb-6 safe-area-bottom">
+                <div className="flex items-end gap-3">
+                  {/* Creator info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Avatar className="w-10 h-10 border-2 border-white">
+                        <AvatarImage src="" />
+                        <AvatarFallback>
+                          {creators[video.userId]?.firstName?.charAt(0) || "C"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-white font-semibold text-sm">
+                          {creators[video.userId]
+                            ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
+                            : "Creator"}
+                        </p>
+                        <p className="text-white/70 text-xs">
+                          {video.views || 0} views
+                        </p>
+                        {user && video.userId !== user.id && (
+                          <button
+                            onClick={() => handleFollow(video.userId)}
+                            className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold whitespace-nowrap transition-colors mt-1"
+                            data-testid={`button-follow-${video.userId}`}
+                          >
+                            {following.has(video.userId) ? (
+                              <>
+                                <UserCheck className="w-3 h-3" />
+                                Following
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="w-3 h-3" />
+                                Follow
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Video title and category/status badges */}
+                    <p className="text-white text-sm mb-2 line-clamp-2">
+                      {video.title}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {video.categoryId && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-white/20 text-white border-0"
                         >
-                          {following.has(video.userId) ? (
-                            <>
-                              <UserCheck className="w-3 h-3" />
-                              Following
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-3 h-3" />
-                              Follow
-                            </>
-                          )}
-                        </button>
+                          {categories.find((c) => c.id === video.categoryId)?.name ||
+                            "Category"}
+                        </Badge>
+                      )}
+                      {video.status && (
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs border-0 ${
+                            video.status === "active" || video.status === "approved"
+                              ? "bg-green-600/80 text-white"
+                              : video.status === "disqualified" || video.status === "rejected"
+                              ? "bg-red-800/80 text-white"
+                              : "bg-yellow-500/80 text-black"
+                          }`}
+                        >
+                          {video.status === "active" || video.status === "approved" ? "Active" : 
+                           video.status === "disqualified" || video.status === "rejected" ? "Disqualified" : 
+                           video.status.charAt(0).toUpperCase() + video.status.slice(1)}
+                        </Badge>
                       )}
                     </div>
                   </div>
-
-                  {/* Video title and category */}
-                  <p className="text-white text-sm mb-2 line-clamp-2">
-                    {video.title}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {video.categoryId && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-white/20 text-white border-0"
-                      >
-                        {categories.find((c) => c.id === video.categoryId)?.name ||
-                          "Category"}
-                      </Badge>
-                    )}
-                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Loading indicator */}
-            {video.videoUrl && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/50 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                Press SPACE to play/pause • ↑↓ to navigate
-              </div>
-            )}
-          </div>
-        ))}
-        {/* Bottom spacer */}
-        <div className="h-[50px] flex-shrink-0"></div>
-      </div>
+              {/* Loading indicator */}
+              {video.videoUrl && (
+                <div className="absolute top-36 left-1/2 -translate-x-1/2 text-white/50 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                  Press SPACE to play/pause • ↑↓ to navigate
+                </div>
+              )}
+            </div>
+          ))}
+          {/* Bottom spacer */}
+          <div className="h-[50px] flex-shrink-0"></div>
+        </div>
+      )}
 
       {/* Vote modal */}
       {selectedVideo && (
