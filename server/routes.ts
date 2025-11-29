@@ -1007,17 +1007,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all approved videos (for feed)
-  app.get('/api/videos', async (req, res) => {
-    try {
-      const videos = await storage.getApprovedVideos();
-      res.json(videos);
-    } catch (error) {
-      console.error("Error fetching all videos:", error);
-      res.status(500).json({ message: "Failed to fetch videos" });
-    }
-  });
-
   app.get('/api/videos/video-of-the-day', async (req, res) => {
     try {
       const video = await storage.getVideoOfTheDay();

@@ -63,7 +63,6 @@ export default function NavigationHeader({
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
-    { label: 'Feed', path: '/feed' },
   ];
 
   const judgeMenuItems = [
@@ -226,13 +225,6 @@ export default function NavigationHeader({
             {!isAuthenticated ? (
               <>
                 <Button 
-                  className="min-h-11 bg-white text-black hover:bg-white/90"
-                  onClick={() => setLocation("/feed")}
-                  data-testid="button-feed-white"
-                >
-                  Watch Feed
-                </Button>
-                <Button 
                   variant="ghost"
                   className="min-h-11"
                   onClick={() => setLocation("/login")}
@@ -310,13 +302,12 @@ export default function NavigationHeader({
             {navItems.map((item) => (
               <Button
                 key={item.label}
-                variant={item.label === 'Feed' ? 'default' : 'ghost'}
-                className={`min-h-11 justify-start ${item.label === 'Feed' ? 'bg-white text-black hover:bg-white/90 w-full' : ''}`}
+                variant="ghost"
+                className="min-h-11 justify-start"
                 onClick={() => {
                   onNavigate?.(item.path);
                   setMobileMenuOpen(false);
                 }}
-                data-testid={item.label === 'Feed' ? 'button-feed-mobile' : undefined}
               >
                 {item.label}
               </Button>

@@ -1060,14 +1060,5 @@
   "creator.toast.updateFailed": "Update Failed",
   
   "common.saving": "Saving...",
-  "common.deleting": "Deleting...",
-
-  "videoFeed.loading": "Loading video feed...",
-  "videoFeed.noVideos": "No videos available",
-  "videoFeed.backToCategories": "Back to Categories",
-  "videoFeed.liked": "Video Liked",
-  "videoFeed.likedDescription": "Thanks for your support!",
-  "videoFeed.linkCopied": "Link Copied",
-  "videoFeed.linkCopiedDescription": "Video link copied to clipboard",
-  "videoFeed.back": "Back"
+  "common.deleting": "Deleting..."
 }

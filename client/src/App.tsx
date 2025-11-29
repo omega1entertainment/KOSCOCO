@@ -22,7 +22,6 @@ import AffiliateDashboard from "@/pages/AffiliateDashboard";
 import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
 import VideoPlayer from "@/pages/VideoPlayer";
-import VideoFeed from "@/pages/VideoFeed";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Leaderboard from "@/pages/Leaderboard";
 import Prizes from "@/pages/Prizes";
@@ -111,7 +110,6 @@ function Router() {
           <Route path="/categories" component={Categories} />
           <Route path="/category/:id" component={CategoryVideos} />
           <Route path="/video/:permalink" component={VideoPlayer} />
-          <Route path="/feed" component={VideoFeed} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/prizes" component={Prizes} />
           <Route path="/how-it-works" component={HowItWorks} />

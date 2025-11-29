@@ -1060,14 +1060,5 @@
   "creator.toast.updateFailed": "Échec de la Mise à Jour",
   
   "common.saving": "Enregistrement...",
-  "common.deleting": "Suppression...",
-
-  "videoFeed.loading": "Chargement du fil vidéo...",
-  "videoFeed.noVideos": "Aucune vidéo disponible",
-  "videoFeed.backToCategories": "Retour aux Catégories",
-  "videoFeed.liked": "Vidéo Aimée",
-  "videoFeed.likedDescription": "Merci pour votre soutien!",
-  "videoFeed.linkCopied": "Lien Copié",
-  "videoFeed.linkCopiedDescription": "Lien vidéo copié dans le presse-papiers",
-  "videoFeed.back": "Retour"
+  "common.deleting": "Suppression..."
 }
