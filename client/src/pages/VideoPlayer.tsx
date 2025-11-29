@@ -303,7 +303,7 @@ export default function VideoPlayer() {
     let hasRecordedInitialWatch = false;
 
     const handleTimeUpdate = () => {
-      if (!videoElement || watchHistoryRecorded || hasRecordedInitialWatch) return;
+      if (!videoElement || hasRecordedInitialWatch) return;
 
       const currentTime = videoElement.currentTime;
       const duration = videoElement.duration;
@@ -321,8 +321,8 @@ export default function VideoPlayer() {
     };
 
     const handleEnded = () => {
-      if (!watchHistoryRecorded && videoElement) {
-        setWatchHistoryRecorded(true);
+      if (!hasRecordedInitialWatch && videoElement) {
+        hasRecordedInitialWatch = true;
         watchHistoryMutation.mutate({
           watchDuration: Math.floor(videoElement.duration),
           completed: true,
@@ -343,7 +343,7 @@ export default function VideoPlayer() {
       videoElement.removeEventListener('ended', handleEnded);
       videoElement.removeEventListener('play', handlePlay);
     };
-  }, [videoId, video, user, watchHistoryRecorded, preRollAdCompleted]);
+  }, [videoId, video, user, preRollAdCompleted]);
 
   const handlePreRollAdComplete = () => {
     setShowPreRollAd(false);
