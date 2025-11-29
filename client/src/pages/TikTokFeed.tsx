@@ -542,12 +542,12 @@ export default function TikTokFeed() {
                 ref={(el) => {
                   if (el) videoRefs.current.set(video.id, el);
                 }}
-                src={video.videoUrl}
+                src={`/api/videos/stream/${video.id}`}
                 muted={isMuted}
                 preload={Math.abs(index - currentVideoIndex) <= 1 ? "auto" : "metadata"}
                 playsInline
                 autoPlay={index === currentVideoIndex}
-                crossOrigin="anonymous"
+                crossOrigin="use-credentials"
                 className="h-full w-full object-contain cursor-pointer"
                 onClick={togglePlayPause}
                 onDoubleClick={() => handleDoubleClick(video.id)}
