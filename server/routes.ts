@@ -3054,7 +3054,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           FROM vote_purchases vp
           JOIN users u ON vp.user_id = u.id
           LEFT JOIN videos v ON vp.video_id = v.id
-          ${status ? sql`WHERE vp.status = ${status}` : sql``}
+          WHERE vp.status != 'pending'
+          ${status ? sql`AND vp.status = ${status}` : sql``}
           ORDER BY vp.created_at DESC
         `);
         payments.push(...votePurchases.rows);
@@ -3095,7 +3096,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'ad_payment' as payment_type
           FROM ad_payments ap
           JOIN advertisers a ON ap.advertiser_id = a.id
-          ${status ? sql`WHERE ap.status = ${status}` : sql``}
+          WHERE ap.status != 'pending'
+          ${status ? sql`AND ap.status = ${status}` : sql``}
           ORDER BY ap.created_at DESC
         `);
         payments.push(...adPayments.rows);
@@ -3116,7 +3118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           FROM payout_requests pr
           JOIN affiliates af ON pr.affiliate_id = af.id
           JOIN users u ON af.user_id = u.id
-          ${status ? sql`WHERE pr.status = ${status}` : sql``}
+          WHERE pr.status != 'pending'
+          ${status ? sql`AND pr.status = ${status}` : sql``}
           ORDER BY pr.requested_at DESC
         `);
         payments.push(...payouts.rows);
