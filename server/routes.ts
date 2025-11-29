@@ -2871,28 +2871,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Valid status required: active, suspended, or inactive" });
       }
 
-      const updatedAffiliate = await storage.updateAffiliateStats(id, 0, 0);
+      const updatedAffiliate = await storage.updateAffiliateStatus(id, status);
       
       if (!updatedAffiliate) {
         return res.status(404).json({ message: "Affiliate not found" });
       }
 
-      // Update status in database
-      const result = await db.execute(sql`
-        UPDATE affiliates 
-        SET status = ${status}
-        WHERE id = ${id}
-        RETURNING *
-      `);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Affiliate not found" });
-      }
-
-      res.json(result.rows[0]);
+      res.json(updatedAffiliate);
     } catch (error) {
       console.error("Error updating affiliate status:", error);
       res.status(500).json({ message: "Failed to update affiliate status" });
+    }
+  });
+
+  // Admin: Update affiliate commission rate
+  app.patch('/api/admin/affiliates/:id/commission', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { commissionRate } = req.body;
+
+      if (commissionRate === undefined || commissionRate < 0 || commissionRate > 100) {
+        return res.status(400).json({ message: "Commission rate must be between 0 and 100" });
+      }
+
+      const updatedAffiliate = await storage.updateAffiliateCommissionRate(id, commissionRate);
+      
+      if (!updatedAffiliate) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      res.json(updatedAffiliate);
+    } catch (error) {
+      console.error("Error updating affiliate commission:", error);
+      res.status(500).json({ message: "Failed to update affiliate commission" });
+    }
+  });
+
+  // Admin: Get all affiliates
+  app.get('/api/admin/all-affiliates', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const affiliates = await storage.getAllAffiliates();
+      res.json(affiliates);
+    } catch (error) {
+      console.error("Error fetching all affiliates:", error);
+      res.status(500).json({ message: "Failed to fetch affiliates" });
     }
   });
 

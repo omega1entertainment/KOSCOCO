@@ -137,6 +137,9 @@ export interface IStorage {
   getAffiliateByUserId(userId: string): Promise<Affiliate | undefined>;
   getAffiliateByReferralCode(code: string): Promise<Affiliate | undefined>;
   updateAffiliateStats(id: string, referrals: number, earnings: number): Promise<Affiliate | undefined>;
+  updateAffiliateStatus(id: string, status: string): Promise<Affiliate | undefined>;
+  updateAffiliateCommissionRate(id: string, commissionRate: number): Promise<Affiliate | undefined>;
+  getAllAffiliates(): Promise<any[]>;
   
   createReferral(referral: InsertReferral): Promise<Referral>;
   getAffiliateReferrals(affiliateId: string): Promise<Referral[]>;
@@ -1394,6 +1397,42 @@ export class DbStorage implements IStorage {
       .where(eq(schema.affiliates.id, id))
       .returning();
     return affiliate;
+  }
+
+  async updateAffiliateStatus(id: string, status: string): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.update(schema.affiliates)
+      .set({ status })
+      .where(eq(schema.affiliates.id, id))
+      .returning();
+    return affiliate;
+  }
+
+  async updateAffiliateCommissionRate(id: string, commissionRate: number): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.update(schema.affiliates)
+      .set({ commissionRate })
+      .where(eq(schema.affiliates.id, id))
+      .returning();
+    return affiliate;
+  }
+
+  async getAllAffiliates(): Promise<any[]> {
+    return await db.select({
+      id: schema.affiliates.id,
+      userId: schema.affiliates.userId,
+      referralCode: schema.affiliates.referralCode,
+      totalReferrals: schema.affiliates.totalReferrals,
+      totalEarnings: schema.affiliates.totalEarnings,
+      status: schema.affiliates.status,
+      commissionRate: schema.affiliates.commissionRate,
+      createdAt: schema.affiliates.createdAt,
+      email: schema.users.email,
+      username: schema.users.username,
+      firstName: schema.users.firstName,
+      lastName: schema.users.lastName,
+    })
+    .from(schema.affiliates)
+    .leftJoin(schema.users, eq(schema.affiliates.userId, schema.users.id))
+    .orderBy(desc(schema.affiliates.createdAt));
   }
 
   async createReferral(insertReferral: InsertReferral): Promise<Referral> {

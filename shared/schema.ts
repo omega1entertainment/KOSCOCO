@@ -159,6 +159,7 @@ export const affiliates = pgTable("affiliates", {
   totalReferrals: integer("total_referrals").default(0).notNull(),
   totalEarnings: integer("total_earnings").default(0).notNull(),
   status: text("status").notNull().default('active'),
+  commissionRate: integer("commission_rate").default(20).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -463,6 +464,7 @@ export const insertAffiliateSchema = createInsertSchema(affiliates).omit({
   createdAt: true,
   totalReferrals: true,
   totalEarnings: true,
+  commissionRate: true,
 });
 
 export const insertReferralSchema = createInsertSchema(referrals).omit({
