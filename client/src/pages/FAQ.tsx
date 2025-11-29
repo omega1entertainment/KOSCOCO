@@ -12,19 +12,19 @@ export default function FAQ() {
         id: "general-1",
         category: "General Information",
         question: "What is KOSCOCO?",
-        answer: "KOSCOCO (KOSCOCO Short Content Competition) is a premier video competition platform designed for Cameroonian content creators. Operated by KOSCOCO INC, a company based in Limbe, we host regular competitions across multiple categories with substantial cash prizes, aiming to discover and celebrate talent from Cameroon."
+        answer: "KOSCOCO (KOZZII Short Content Competition) is a premier video competition platform designed for Cameroonian content creators. Operated by KOZZII INC, a company based in Limbe, we host regular competitions across multiple categories with substantial cash prizes, aiming to discover and celebrate talent from Cameroon."
       },
       {
         id: "general-2",
         category: "General Information",
         question: "Where is KOSCOCO based?",
-        answer: "KOSCOCO is run by KOSCOCO based in Cameroon, specifically in Limbe, South West Region (Bonjo Street). We serve creators across Cameroon and beyond."
+        answer: "KOSCOCO is run by KOZZII based in Cameroon, specifically in Limbe, South West Region (Bonjo Street). We serve creators across Cameroon and beyond."
       },
       {
         id: "general-3",
         category: "General Information",
         question: "How can I contact KOSCOCO for support?",
-        answer: "You can reach us via: WhatsApp: +237 676 951 397 | Email: support@koscoco.africa | Visit our contact page for more options."
+        answer: "You can reach us via: WhatsApp: +237 676 951 397 | Email: support@kozzii.africa | Visit our contact page for more options."
       },
       {
         id: "registration-1",
@@ -156,7 +156,7 @@ export default function FAQ() {
         id: "technical-2",
         category: "Technical Issues",
         question: "The platform isn't loading properly. How do I fix this?",
-        answer: "Try clearing your browser cache, disabling extensions, or using an incognito/private window. If problems continue, contact support@koscoco.africa."
+        answer: "Try clearing your browser cache, disabling extensions, or using an incognito/private window. If problems continue, contact support@kozzii.africa."
       },
       {
         id: "technical-3",
@@ -174,7 +174,7 @@ export default function FAQ() {
         id: "account-2",
         category: "Account & Profile",
         question: "Can I change my registered email address?",
-        answer: "Currently, email changes require contacting support. Email support@koscoco.africa with your account details and new email address."
+        answer: "Currently, email changes require contacting support. Email support@kozzii.africa with your account details and new email address."
       },
       {
         id: "account-3",
@@ -186,7 +186,7 @@ export default function FAQ() {
         id: "account-4",
         category: "Account & Profile",
         question: "How do I delete my account?",
-        answer: "Contact support@koscoco.africa with your account details to request account deletion. Note: This is permanent and cannot be undone."
+        answer: "Contact support@kozzii.africa with your account details to request account deletion. Note: This is permanent and cannot be undone."
       },
       {
         id: "affiliate-1",
@@ -222,7 +222,7 @@ export default function FAQ() {
         id: "judge-1",
         category: "Becoming a Judge",
         question: "How can I become a judge?",
-        answer: "If you're an industry expert or established content creator, reach out to us at support@koscoco.africa with your credentials and experience."
+        answer: "If you're an industry expert or established content creator, reach out to us at support@kozzii.africa with your credentials and experience."
       },
       {
         id: "voting-4",
@@ -252,7 +252,7 @@ export default function FAQ() {
         id: "payment-3",
         category: "Payment & Billing",
         question: "Can I get a refund if I change my mind?",
-        answer: "Refund policies vary by category and competition. Check the specific competition terms or contact support@koscoco.africa for refund inquiries."
+        answer: "Refund policies vary by category and competition. Check the specific competition terms or contact support@kozzii.africa for refund inquiries."
       },
       {
         id: "content-1",
@@ -308,19 +308,19 @@ export default function FAQ() {
         id: "general-1",
         category: "Informations Générales",
         question: "Qu'est-ce que KOSCOCO ?",
-        answer: "KOSCOCO (KOSCOCO Short Content Competition) est une plateforme de compétition vidéo de premier plan conçue pour les créateurs de contenu camerounais. Exploitée par KOSCOCO INC, une entreprise basée à Limbé, nous organisons des compétitions régulières dans plusieurs catégories avec des prix en espèces substantiels, dans le but de découvrir et de célébrer les talents du Cameroun."
+        answer: "KOSCOCO (KOZZII Short Content Competition) est une plateforme de compétition vidéo de premier plan conçue pour les créateurs de contenu camerounais. Exploitée par KOZZII INC, une entreprise basée à Limbé, nous organisons des compétitions régulières dans plusieurs catégories avec des prix en espèces substantiels, dans le but de découvrir et de célébrer les talents du Cameroun."
       },
       {
         id: "general-2",
         category: "Informations Générales",
         question: "Où se trouve KOSCOCO ?",
-        answer: "KOSCOCO est gérée par KOSCOCO basée au Cameroun, spécifiquement à Limbé, Région du Sud-Ouest (Bonjo Street). Nous servons les créateurs du Cameroun et au-delà."
+        answer: "KOSCOCO est gérée par KOZZII basée au Cameroun, spécifiquement à Limbé, Région du Sud-Ouest (Bonjo Street). Nous servons les créateurs du Cameroun et au-delà."
       },
       {
         id: "general-3",
         category: "Informations Générales",
         question: "Comment puis-je contacter KOSCOCO pour obtenir de l'aide ?",
-        answer: "Vous pouvez nous joindre via : WhatsApp : +237 676 951 397 | Email : support@koscoco.africa | Visitez notre page de contact pour plus d'options."
+        answer: "Vous pouvez nous joindre via : WhatsApp : +237 676 951 397 | Email : support@kozzii.africa | Visitez notre page de contact pour plus d'options."
       },
       {
         id: "registration-1",
@@ -458,7 +458,7 @@ export default function FAQ() {
         id: "technical-2",
         category: "Problèmes Techniques",
         question: "La plateforme ne se charge pas correctement. Comment corriger cela ?",
-        answer: "Essayez de vider le cache de votre navigateur, de désactiver les extensions ou d'utiliser une fenêtre incognito/privée. Si les problèmes persistent, contactez support@koscoco.africa."
+        answer: "Essayez de vider le cache de votre navigateur, de désactiver les extensions ou d'utiliser une fenêtre incognito/privée. Si les problèmes persistent, contactez support@kozzii.africa."
       },
       {
         id: "technical-3",
@@ -476,7 +476,7 @@ export default function FAQ() {
         id: "account-2",
         category: "Compte et Profil",
         question: "Puis-je changer mon adresse email enregistrée ?",
-        answer: "Actuellement, les modifications d'email nécessitent de contacter le support. Envoyez un email à support@koscoco.africa avec les détails de votre compte et la nouvelle adresse email."
+        answer: "Actuellement, les modifications d'email nécessitent de contacter le support. Envoyez un email à support@kozzii.africa avec les détails de votre compte et la nouvelle adresse email."
       },
       {
         id: "account-3",
@@ -488,7 +488,7 @@ export default function FAQ() {
         id: "account-4",
         category: "Compte et Profil",
         question: "Comment supprimer mon compte ?",
-        answer: "Contactez support@koscoco.africa avec les détails de votre compte pour demander la suppression du compte. Remarque : C'est permanent et ne peut pas être annulé."
+        answer: "Contactez support@kozzii.africa avec les détails de votre compte pour demander la suppression du compte. Remarque : C'est permanent et ne peut pas être annulé."
       },
       {
         id: "affiliate-1",
@@ -524,7 +524,7 @@ export default function FAQ() {
         id: "judge-1",
         category: "Devenir Juge",
         question: "Comment puis-je devenir juge ?",
-        answer: "Si vous êtes un expert de l'industrie ou un créateur de contenu établi, contactez-nous à support@koscoco.africa avec vos références et votre expérience."
+        answer: "Si vous êtes un expert de l'industrie ou un créateur de contenu établi, contactez-nous à support@kozzii.africa avec vos références et votre expérience."
       },
       {
         id: "judge-2",
@@ -548,7 +548,7 @@ export default function FAQ() {
         id: "payment-3",
         category: "Paiement et Facturation",
         question: "Puis-je obtenir un remboursement si je change d'avis ?",
-        answer: "Les politiques de remboursement varient selon la catégorie et la compétition. Consultez les conditions spécifiques de la compétition ou contactez support@koscoco.africa pour les demandes de remboursement."
+        answer: "Les politiques de remboursement varient selon la catégorie et la compétition. Consultez les conditions spécifiques de la compétition ou contactez support@kozzii.africa pour les demandes de remboursement."
       },
       {
         id: "content-1",
@@ -678,7 +678,7 @@ export default function FAQ() {
               : 'Contact us directly for support.'}
           </p>
           <a 
-            href="mailto:support@koscoco.africa"
+            href="mailto:support@kozzii.africa"
             className="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
             data-testid="button-contact-support"
           >

@@ -240,11 +240,11 @@ export default function CompetitionRules() {
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 font-semibold text-foreground">•</span>
-                  <span>By entering the competition, participants grant KOSCOCO INC. the right to use, publish, and display their submitted videos for promotional and competition-related purposes, and on all KOSCOCO platforms.</span>
+                  <span>By entering the competition, participants grant KOZZII INC. the right to use, publish, and display their submitted videos for promotional and competition-related purposes, and on all Kozzii platforms.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 font-semibold text-foreground">•</span>
-                  <span>KOSCOCO is not responsible for any technical issues, lost entries, or connectivity problems that may hinder participation.</span>
+                  <span>KOZZII is not responsible for any technical issues, lost entries, or connectivity problems that may hinder participation.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 font-semibold text-foreground">•</span>
@@ -263,11 +263,11 @@ export default function CompetitionRules() {
               <p>
                 For more information about the competition rules, please contact us at{' '}
                 <a
-                  href="mailto:support@koscoco.africa"
+                  href="mailto:support@kozzii.africa"
                   className="text-primary hover:underline"
                   data-testid="link-rules-support-email"
                 >
-                  support@koscoco.africa
+                  support@kozzii.africa
                 </a>
               </p>
             </CardContent>

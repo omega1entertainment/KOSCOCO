@@ -265,11 +265,6 @@
  */
 @layer utilities {
 
-  /* Safe area insets for notched devices */
-  .safe-area-bottom {
-    padding-bottom: max(var(--pb, 0.5rem), env(safe-area-inset-bottom));
-  }
-
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
@@ -359,99 +354,8 @@
     inset: -1px;
   }
 
-  /* ReactQuill WYSIWYG Editor styling */
-  .ql-editor {
-    color: #000000;
-    font-size: 16px;
-    line-height: 1.6;
-  }
-
+  /* ReactQuill WYSIWYG Editor placeholder styling */
   .ql-editor.ql-blank::before {
     color: #a4b3b3;
-  }
-
-  /* Black blinking cursor in Quill editor */
-  .ql-cursor {
-    border-left: 2px solid #000000;
-    animation: blink-cursor 1s infinite;
-  }
-
-  @keyframes blink-cursor {
-    0%, 49% {
-      border-left-color: #000000;
-    }
-    50%, 100% {
-      border-left-color: transparent;
-    }
-  }
-
-  /* Hide scrollbar for all browsers */
-  .scrollbar-hide {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
-  }
-
-  /* Gift animation keyframes */
-  @keyframes gentle-spin {
-    0%, 100% {
-      transform: rotateZ(0deg);
-    }
-    50% {
-      transform: rotateZ(5deg);
-    }
-  }
-
-  @keyframes gentle-pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.9;
-      transform: scale(1.05);
-    }
-  }
-
-  @keyframes gentle-float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-3px);
-    }
-  }
-
-  @keyframes gentle-bounce {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    25% {
-      transform: translateY(-2px);
-    }
-    50% {
-      transform: translateY(0px);
-    }
-    75% {
-      transform: translateY(-1px);
-    }
-  }
-
-  .animate-gift-spin {
-    animation: gentle-spin 3s ease-in-out infinite;
-  }
-
-  .animate-gift-pulse {
-    animation: gentle-pulse 2s ease-in-out infinite;
-  }
-
-  .animate-gift-float {
-    animation: gentle-float 2.5s ease-in-out infinite;
-  }
-
-  .animate-gift-bounce {
-    animation: gentle-bounce 1.5s ease-in-out infinite;
   }
 }

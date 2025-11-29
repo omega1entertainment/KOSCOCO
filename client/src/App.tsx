@@ -23,7 +23,6 @@ import Categories from "@/pages/Categories";
 import CategoryVideos from "@/pages/CategoryVideos";
 import VideoPlayer from "@/pages/VideoPlayer";
 import AdminDashboard from "@/pages/AdminDashboard";
-import AdminAffiliateDashboard from "@/pages/AdminAffiliateDashboard";
 import Leaderboard from "@/pages/Leaderboard";
 import Prizes from "@/pages/Prizes";
 import HowItWorks from "@/pages/HowItWorks";
@@ -53,7 +52,6 @@ import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
-import TikTokFeed from "@/pages/TikTokFeed";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -68,7 +66,7 @@ function ScrollToTop() {
 
 function Router() {
   const { isLoading } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -89,21 +87,15 @@ function Router() {
     setLocation("/upload");
   };
 
-  // Check if we should hide header and footer (for immersive pages like feed)
-  const hideHeaderFooter = location === "/feed";
-
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       <LanguageSelectionModal />
-      {!hideHeaderFooter && <TopBar />}
-      {!hideHeaderFooter && (
-        <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
-      )}
+      <TopBar />
+      <NavigationHeader onNavigate={handleNavigate} onUploadClick={handleUploadClick} />
       <main className="flex-1">
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/feed" component={TikTokFeed} />
           <Route path="/login" component={Login} />
           <Route path="/thank-you" component={ThankYou} />
           <Route path="/register" component={Register} />
@@ -130,7 +122,6 @@ function Router() {
           <Route path="/help" component={Help} />
           <Route path="/rules" component={CompetitionRules} />
           <Route path="/admin" component={AdminDashboard} />
-          <Route path="/admin/affiliates" component={AdminAffiliateDashboard} />
           <Route path="/judge-dashboard" component={JudgeDashboard} />
           <Route path="/judge/login" component={JudgeLogin} />
           <Route path="/judges" component={Judges} />
@@ -148,7 +139,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      {!hideHeaderFooter && <Footer />}
+      <Footer />
     </div>
   );
 }

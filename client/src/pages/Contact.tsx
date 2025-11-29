@@ -80,11 +80,11 @@ export default function Contact() {
               </CardHeader>
               <CardContent>
                 <a
-                  href="mailto:support@koscoco.africa"
+                  href="mailto:support@kozzii.africa"
                   className="text-foreground hover:text-primary transition-colors break-all"
                   data-testid="link-email-contact"
                 >
-                  support@koscoco.africa
+                  support@kozzii.africa
                 </a>
               </CardContent>
             </Card>

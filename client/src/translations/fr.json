@@ -2,7 +2,7 @@
   "language.choose": "Choisissez Votre Langue",
   "language.select": "Sélectionnez la Langue",
   
-  "hero.title": "LE CONCOURS DE CONTENU COURT KOSCOCO",
+  "hero.title": "LE CONCOURS DE CONTENU COURT KOZZII",
   "hero.subtitle": "Devenez le prochain plus grand créateur de contenu et influenceur du Cameroun",
   "hero.tagline": "Libérez votre créativité et embrassez les projecteurs",
   "hero.prize": "Prix en espèces ultime:",
@@ -101,7 +101,7 @@
   "nav.dashboard": "Tableau de Bord",
   "nav.adminDashboard": "Tableau de Bord Admin",
   "nav.logout": "Déconnexion",
-  "nav.support": "support@koscoco.africa",
+  "nav.support": "support@kozzii.africa",
   "nav.viewLeaderboard": "Voir le Classement",
   "nav.prizes": "Prix",
   "nav.affiliate": "Affiliation",
@@ -117,7 +117,7 @@
   "nav.logoutFailedDesc": "Échec de la déconnexion. Veuillez réessayer.",
   
   "footer.about": "À Propos de KOSCOCO",
-  "footer.aboutText": "Le KOSCOCO Short Content Competition (KOSCOCO) est la plateforme principale du Cameroun pour découvrir et célébrer les talents créatifs dans le contenu vidéo de courte durée.",
+  "footer.aboutText": "Le KOZZII Short Content Competition (KOSCOCO) est la plateforme principale du Cameroun pour découvrir et célébrer les talents créatifs dans le contenu vidéo de courte durée.",
   "footer.quickLinks": "Liens Rapides",
   "footer.legal": "Légal",
   "footer.contact": "Contact",
@@ -137,7 +137,7 @@
   "footer.newsletterDescription": "Recevez les mises à jour sur les phases du concours et les gagnants.",
   "footer.emailPlaceholder": "Votre email",
   "footer.subscribe": "S'abonner",
-  "footer.copyrightText": "© 2025 KOSCOCO INC. Tous droits réservés.",
+  "footer.copyrightText": "© 2025 KOZZII INC. Tous droits réservés.",
   
   "auth.login": "Connexion",
   "auth.register": "S'inscrire",

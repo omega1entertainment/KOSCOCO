@@ -10,8 +10,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -59,31 +59,8 @@ export default function NavigationHeader({
       });
     },
   });
-
-  const { data: registrationData } = useQuery({
-    queryKey: ["/api/registrations/count"],
-    queryFn: async () => {
-      try {
-        const res = await fetch("/api/registrations/count", {
-          credentials: "include",
-        });
-        if (res.status === 401) {
-          return null;
-        }
-        if (!res.ok) throw new Error("Failed to fetch registration count");
-        return await res.json();
-      } catch (error) {
-        return null;
-      }
-    },
-    enabled: isAuthenticated,
-  });
-
-  const registrationCount = (registrationData as any)?.registrationCount || 0;
-  const needsRegistration = registrationCount < 5;
   
   const navItems = [
-    { label: 'Feed', path: '/feed', isFeed: true },
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
   ];
@@ -103,15 +80,6 @@ export default function NavigationHeader({
     { label: 'Affiliate Login', path: '/affiliate/login' },
     { label: t('nav.affiliateDashboard'), path: '/affiliate/dashboard' },
   ];
-
-  // Filter affiliate menu items for authenticated users
-  const filteredAffiliateMenuItems = affiliateMenuItems.filter((item) => {
-    if (isAuthenticated) {
-      // Hide "Join Affiliate" and "Affiliate Login" for logged-in users
-      return item.label !== t('nav.joinAffiliate') && item.label !== 'Affiliate Login';
-    }
-    return true;
-  });
   
   const advertiserMenuItems = [
     { label: 'Advertiser Login', path: '/advertiser/login' },
@@ -127,52 +95,45 @@ export default function NavigationHeader({
             className="flex items-center hover-elevate active-elevate-2 rounded-md p-2 -ml-2"
             data-testid="button-logo-home"
           >
-            <img src={logo} alt="KOSCOCO" className="h-12" data-testid="img-logo" />
+            <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
           </button>
           
-          <nav className="hidden md:flex items-center gap-0 flex-1 justify-center">
-            {navItems.map((item: any) => {
-              if (item.label === t('nav.howItWorks') && isAuthenticated) {
-                return null;
-              }
-              return (
-                <Button
-                  key={item.label}
-                  variant={item.isFeed ? "default" : "ghost"}
-                  className={`min-h-11 ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90 font-bold' : ''}`}
-                  onClick={() => onNavigate?.(item.path)}
-                  data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  {item.label}
-                </Button>
-              );
-            })}
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+            {navItems.map((item) => (
+              <Button
+                key={item.label}
+                variant="ghost"
+                className="min-h-11"
+                onClick={() => onNavigate?.(item.path)}
+                data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                {item.label}
+              </Button>
+            ))}
 
-            {isAuthenticated && user?.isAdmin && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="min-h-11"
-                    data-testid="link-judges"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
+                  data-testid="link-judges"
+                >
+                  {t('nav.judges')}
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {judgeMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => onNavigate?.(item.path)}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                   >
-                    {t('nav.judges')}
-                    <ChevronDown className="w-4 h-4 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {judgeMenuItems.map((item) => (
-                    <DropdownMenuItem
-                      key={item.label}
-                      onClick={() => onNavigate?.(item.path)}
-                      data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {item.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -210,7 +171,7 @@ export default function NavigationHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {filteredAffiliateMenuItems.map((item) => (
+                {affiliateMenuItems.map((item) => (
                   <DropdownMenuItem
                     key={item.label}
                     onClick={() => {
@@ -289,15 +250,6 @@ export default function NavigationHeader({
                 >
                   {t('nav.uploadVideo')}
                 </Button>
-                {needsRegistration && (
-                  <Button
-                    className="min-h-11"
-                    onClick={() => setLocation("/register")}
-                    data-testid="button-register-authenticated"
-                  >
-                    {t('nav.register')}
-                  </Button>
-                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="min-h-11" data-testid="button-user-menu">
@@ -347,52 +299,45 @@ export default function NavigationHeader({
       {mobileMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
-            {navItems.map((item: any) => {
-              if (item.label === t('nav.howItWorks') && isAuthenticated) {
-                return null;
-              }
-              return (
+            {navItems.map((item) => (
+              <Button
+                key={item.label}
+                variant="ghost"
+                className="min-h-11 justify-start"
+                onClick={() => {
+                  onNavigate?.(item.path);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+            
+            <div className="mt-2">
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedJudges(!expandedJudges)}
+                data-testid="button-judges-submenu"
+              >
+                <span className="text-sm font-semibold">Judges</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedJudges ? 'rotate-180' : ''}`} />
+              </Button>
+              {expandedJudges && judgeMenuItems.map((item) => (
                 <Button
                   key={item.label}
-                  variant={item.isFeed ? "default" : "ghost"}
-                  className={`min-h-11 justify-start ${item.isFeed ? 'bg-white dark:bg-white text-red-600 dark:text-red-600 hover:bg-white/90 dark:hover:bg-white/90 font-bold' : ''}`}
+                  variant="ghost"
+                  className="min-h-11 justify-start w-full ml-4"
                   onClick={() => {
                     onNavigate?.(item.path);
                     setMobileMenuOpen(false);
                   }}
+                  data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   {item.label}
                 </Button>
-              );
-            })}
-            
-            {isAuthenticated && user?.isAdmin && (
-              <div className="mt-2">
-                <Button
-                  variant="ghost"
-                  className="min-h-11 justify-between w-full px-4"
-                  onClick={() => setExpandedJudges(!expandedJudges)}
-                  data-testid="button-judges-submenu"
-                >
-                  <span className="text-sm font-semibold">Judges</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${expandedJudges ? 'rotate-180' : ''}`} />
-                </Button>
-                {expandedJudges && judgeMenuItems.map((item) => (
-                  <Button
-                    key={item.label}
-                    variant="ghost"
-                    className="min-h-11 justify-start w-full ml-4"
-                    onClick={() => {
-                      onNavigate?.(item.path);
-                      setMobileMenuOpen(false);
-                    }}
-                    data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </div>
-            )}
+              ))}
+            </div>
             
             <div className="mt-2">
               <Button
@@ -430,7 +375,7 @@ export default function NavigationHeader({
                 <span className="text-sm font-semibold">{t('nav.affiliate')}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${expandedAffiliate ? 'rotate-180' : ''}`} />
               </Button>
-              {expandedAffiliate && filteredAffiliateMenuItems.map((item) => (
+              {expandedAffiliate && affiliateMenuItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
@@ -534,18 +479,6 @@ export default function NavigationHeader({
                   >
                     {t('nav.uploadVideo')}
                   </Button>
-                  {needsRegistration && (
-                    <Button
-                      className="min-h-11"
-                      onClick={() => {
-                        setLocation("/register");
-                        setMobileMenuOpen(false);
-                      }}
-                      data-testid="mobile-button-register-authenticated"
-                    >
-                      {t('nav.register')}
-                    </Button>
-                  )}
                   <Button 
                     variant="ghost"
                     className="min-h-11"

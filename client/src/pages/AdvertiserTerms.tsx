@@ -40,7 +40,7 @@ export default function AdvertiserTerms() {
                   please do not use the Platform.
                 </p>
                 <p>
-                  KOSCOCO is operated by KOSCOCO INC, located at Bonjo Street, Limbe, South West Region, Cameroon.
+                  KOSCOCO is operated by KOZZII INC, located at Bonjo Street, Limbe, South West Region, Cameroon.
                 </p>
               </section>
 
@@ -334,7 +334,7 @@ export default function AdvertiserTerms() {
                   For questions, support requests, or to report violations:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li><strong>Email:</strong> support@koscoco.africa</li>
+                  <li><strong>Email:</strong> support@kozzii.africa</li>
                   <li><strong>WhatsApp:</strong> +237 676 951 397</li>
                   <li><strong>Address:</strong> Bonjo Street, Limbe, South West Region, Cameroon</li>
                 </ul>
@@ -391,7 +391,7 @@ export default function AdvertiserTerms() {
 
             <div className="mt-12 pt-6 border-t">
               <p className="text-sm text-muted-foreground">
-                © 2024 KOSCOCO by KOSCOCO INC. All rights reserved.
+                © 2024 KOSCOCO by KOZZII INC. All rights reserved.
               </p>
             </div>
           </CardContent>

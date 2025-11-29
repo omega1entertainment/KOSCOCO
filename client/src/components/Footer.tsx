@@ -39,7 +39,7 @@ export default function Footer() {
       } else {
         toast({
           title: "Subscription Failed",
-          description: "Please try again later or contact support@koscoco.africa",
+          description: "Please try again later or contact support@kozzii.africa",
           variant: "destructive",
         });
       }
@@ -73,22 +73,22 @@ export default function Footer() {
               {t('footer.description')}
             </p>
             <div className="flex items-center gap-2">
-              <a href="https://web.facebook.com/koscoco" target="_blank" rel="noopener noreferrer" data-testid="link-social-facebook">
+              <a href="https://web.facebook.com/kozziientertainment" target="_blank" rel="noopener noreferrer" data-testid="link-social-facebook">
                 <Button size="icon" variant="ghost">
                   <Facebook className="w-5 h-5" />
                 </Button>
               </a>
-              <a href="https://www.instagram.com/koscoco_237/" target="_blank" rel="noopener noreferrer" data-testid="link-social-instagram">
+              <a href="https://www.instagram.com/kozzii_237/" target="_blank" rel="noopener noreferrer" data-testid="link-social-instagram">
                 <Button size="icon" variant="ghost">
                   <Instagram className="w-5 h-5" />
                 </Button>
               </a>
-              <a href="https://www.tiktok.com/@koscoco_entertainment" target="_blank" rel="noopener noreferrer" data-testid="link-social-tiktok">
+              <a href="https://www.tiktok.com/@kozzii_entertainment" target="_blank" rel="noopener noreferrer" data-testid="link-social-tiktok">
                 <Button size="icon" variant="ghost">
                   <SiTiktok className="w-5 h-5" />
                 </Button>
               </a>
-              <a href="https://x.com/koscoco" target="_blank" rel="noopener noreferrer" data-testid="link-social-x">
+              <a href="https://x.com/KozziiEnte14391" target="_blank" rel="noopener noreferrer" data-testid="link-social-x">
                 <Button size="icon" variant="ghost">
                   <SiX className="w-5 h-5" />
                 </Button>

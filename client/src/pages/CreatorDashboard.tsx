@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { queryKeys } from "@/lib/queryKeys";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Video, 
@@ -157,37 +156,37 @@ export default function CreatorDashboard() {
 
   // Fetch creator stats
   const { data: stats, isLoading: statsLoading } = useQuery<CreatorStats>({
-    queryKey: queryKeys.creator.stats,
+    queryKey: ["/api/creator/stats"],
     enabled: !!user,
   });
 
   // Fetch creator videos
   const { data: videos = [], isLoading: videosLoading } = useQuery<VideoWithStats[]>({
-    queryKey: queryKeys.creator.videos,
+    queryKey: ["/api/creator/videos"],
     enabled: !!user,
   });
 
   // Fetch creator profile
   const { data: profile, isLoading: profileLoading } = useQuery<CreatorProfile>({
-    queryKey: queryKeys.creator.profile,
+    queryKey: ["/api/creator/profile"],
     enabled: !!user,
   });
 
   // Fetch creator competitions
   const { data: competitions = [], isLoading: competitionsLoading } = useQuery<Competition[]>({
-    queryKey: queryKeys.creator.competitions,
+    queryKey: ["/api/creator/competitions"],
     enabled: !!user,
   });
 
   // Fetch creator watch history
   const { data: watchHistory = [], isLoading: historyLoading } = useQuery<WatchHistoryEntry[]>({
-    queryKey: queryKeys.creator.watchHistory,
+    queryKey: ["/api/creator/watch-history"],
     enabled: !!user,
   });
 
   // Fetch creator earnings
   const { data: earnings, isLoading: earningsLoading } = useQuery<CreatorEarnings>({
-    queryKey: queryKeys.creator.earnings,
+    queryKey: ["/api/creator/earnings"],
     enabled: !!user,
   });
 
@@ -227,8 +226,8 @@ export default function CreatorDashboard() {
         title: t('creator.toast.videoDeleted'),
         description: t('creator.toast.videoDeletedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos });
-      queryClient.invalidateQueries({ queryKey: queryKeys.creator.stats });
+      queryClient.invalidateQueries({ queryKey: ["/api/creator/videos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/creator/stats"] });
       setDeleteDialogOpen(false);
       setVideoToDelete(null);
     },
@@ -252,7 +251,7 @@ export default function CreatorDashboard() {
         title: t('creator.toast.videoUpdated'),
         description: t('creator.toast.videoUpdatedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos });
+      queryClient.invalidateQueries({ queryKey: ["/api/creator/videos"] });
       setEditDialogOpen(false);
       setEditingVideo(null);
     },
