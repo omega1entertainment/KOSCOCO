@@ -34,6 +34,7 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
     - **Interactive Polls and Quizzes**: Embedded within videos for engagement, with timing control, duration settings, and creator management tools. Supports anonymous or authenticated responses.
     - **Mobile Feed Experience**: TikTok-style full-screen vertical video feed with smooth scroll detection, auto-play, and disabled interactions during scrolling to prevent accidental clicks.
     - **Progressive Web App (PWA)**: Installable web app on mobile devices (iOS/Android) with native app-like experience and offline support via manifest.json.
+    - **Personalized Video Recommendations**: Algorithm-based recommendations using user watch history to identify preferred categories and suggest popular unwatched videos. Returns trending videos from categories user previously watched.
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon) with Drizzle ORM

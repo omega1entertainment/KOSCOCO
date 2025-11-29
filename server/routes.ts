@@ -1798,6 +1798,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/videos/recommendations/personalized', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as SelectUser).id;
+      const limit = Math.min(parseInt(req.query.limit || '10'), 50);
+      const recommendations = await storage.getPersonalizedRecommendations(userId, limit);
+      res.json(recommendations);
+    } catch (error: any) {
+      console.error('Error fetching personalized recommendations:', error);
+      res.status(500).json({ message: 'Failed to fetch personalized recommendations' });
+    }
+  });
+
   app.get('/api/videos/:id', async (req, res) => {
     try {
       const { id } = req.params;

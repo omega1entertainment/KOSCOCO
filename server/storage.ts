@@ -118,6 +118,7 @@ export interface IStorage {
   getUserWatchHistory(userId: string, limit?: number): Promise<(WatchHistory & { video: Video })[]>;
   checkIfWatched(userId: string, videoId: string): Promise<boolean>;
   updateWatchHistory(id: string, updates: Partial<InsertWatchHistory>): Promise<WatchHistory | undefined>;
+  getPersonalizedRecommendations(userId: string, limit?: number): Promise<VideoWithStats[]>;
   
   createVotePurchase(purchase: InsertVotePurchase): Promise<VotePurchase>;
   getVotePurchaseByTxRef(txRef: string): Promise<VotePurchase | undefined>;
@@ -921,6 +922,70 @@ export class DbStorage implements IStorage {
   async createWatchHistory(insertWatchHistory: InsertWatchHistory): Promise<WatchHistory> {
     const [watchHistory] = await db.insert(schema.watchHistory).values(insertWatchHistory).returning();
     return watchHistory;
+  }
+
+  async getPersonalizedRecommendations(userId: string, limit: number = 10): Promise<VideoWithStats[]> {
+    // Get user's watch history to identify preferred categories
+    const userWatchHistory = await db.select({
+      categoryId: schema.videos.categoryId,
+      videoId: schema.videos.id
+    })
+    .from(schema.watchHistory)
+    .innerJoin(schema.videos, eq(schema.watchHistory.videoId, schema.videos.id))
+    .where(eq(schema.watchHistory.userId, userId))
+    .orderBy(desc(schema.watchHistory.watchedAt))
+    .limit(50);
+
+    if (userWatchHistory.length === 0) {
+      // If no watch history, return trending videos
+      return this.getApprovedVideos().then(videos => videos.slice(0, limit));
+    }
+
+    // Get unique category IDs from watch history
+    const categorySet = new Set<string>();
+    userWatchHistory.forEach(w => categorySet.add(w.categoryId));
+    const preferredCategoryIds = Array.from(categorySet);
+    const watchedVideoIds = userWatchHistory.map(w => w.videoId);
+
+    // Get popular videos from preferred categories that user hasn't watched
+    const recommendations = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        slug: schema.videos.slug,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        moderationStatus: schema.videos.moderationStatus,
+        moderationCategories: schema.videos.moderationCategories,
+        moderationReason: schema.videos.moderationReason,
+        moderatedAt: schema.videos.moderatedAt,
+        isSelectedForTop500: schema.videos.isSelectedForTop500,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        likeCount: sql<number>`COALESCE((SELECT COUNT(*) FROM ${schema.likes} WHERE ${schema.likes.videoId} = ${schema.videos.id}), 0)`,
+        voteCount: sql<number>`COALESCE((SELECT COUNT(*) FROM ${schema.votes} WHERE ${schema.votes.videoId} = ${schema.videos.id}), 0) + COALESCE((SELECT SUM(${schema.paidVotes.quantity}) FROM ${schema.paidVotes} WHERE ${schema.paidVotes.videoId} = ${schema.videos.id}), 0)`,
+      })
+      .from(schema.videos)
+      .where(
+        and(
+          inArray(schema.videos.categoryId, preferredCategoryIds),
+          eq(schema.videos.status, 'approved'),
+          watchedVideoIds.length > 0 ? sql`${schema.videos.id} NOT IN (${inArray(schema.videos.id, watchedVideoIds)})` : sql`1=1`
+        )
+      )
+      .orderBy(desc(schema.videos.views))
+      .limit(limit);
+
+    return recommendations as any as VideoWithStats[];
   }
 
   async getUserWatchHistory(userId: string, limit: number = 50): Promise<(WatchHistory & { video: Video })[]> {
