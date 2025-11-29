@@ -218,11 +218,6 @@ export default function TikTokFeed() {
           </div>
         </div>
 
-        {/* Video Counter */}
-        <div className="absolute top-6 right-6 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
-          {currentVideoIndex + 1} / {videosData.length}
-        </div>
-
         {/* Navigation Hint */}
         {videosData.length > 1 && (
           <div className="absolute bottom-6 right-6 text-white/60 text-xs text-center">
