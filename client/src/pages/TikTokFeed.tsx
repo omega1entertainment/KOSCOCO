@@ -546,11 +546,19 @@ export default function TikTokFeed() {
                 muted={isMuted}
                 preload={Math.abs(index - currentVideoIndex) <= 1 ? "auto" : "metadata"}
                 playsInline
+                autoPlay={index === currentVideoIndex}
+                crossOrigin="anonymous"
                 className="h-full w-full object-contain cursor-pointer"
                 onClick={togglePlayPause}
                 onDoubleClick={() => handleDoubleClick(video.id)}
                 data-testid={`video-${video.id}`}
                 onEnded={() => scrollToVideo(Math.min(filteredVideos.length - 1, index + 1))}
+                onCanPlayThrough={() => {
+                  if (index === currentVideoIndex) {
+                    const videoEl = videoRefs.current.get(video.id);
+                    if (videoEl) videoEl.play().catch(() => {});
+                  }
+                }}
               />
 
               {/* Play button overlay - desktop only */}
