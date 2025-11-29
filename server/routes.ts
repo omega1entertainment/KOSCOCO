@@ -5996,6 +5996,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Fraud alerts and API tracking
+  app.get('/api/admin/fraud-alerts', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const alerts = await storage.getFraudAlerts();
+      res.json(alerts);
+    } catch (error) {
+      console.error("Get fraud alerts error:", error);
+      res.status(500).json({ message: "Failed to fetch fraud alerts" });
+    }
+  });
+
+  app.post('/api/admin/fraud-alerts', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const alert = await storage.createFraudAlert(req.body);
+      res.status(201).json(alert);
+    } catch (error) {
+      console.error("Create fraud alert error:", error);
+      res.status(500).json({ message: "Failed to create alert" });
+    }
+  });
+
+  app.patch('/api/admin/fraud-alerts/:id/resolve', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await storage.updateFraudAlert(req.params.id, { isResolved: true });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Resolve fraud alert error:", error);
+      res.status(500).json({ message: "Failed to resolve alert" });
+    }
+  });
+
+  app.get('/api/admin/api-tracking', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const logs = await storage.getApiTrackingLogs();
+      res.json(logs);
+    } catch (error) {
+      console.error("Get API tracking error:", error);
+      res.status(500).json({ message: "Failed to fetch API logs" });
+    }
+  });
+
+  app.post('/api/admin/postback-urls', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { affiliate_id, endpoint_url, event_type } = req.body;
+      if (!affiliate_id || !endpoint_url || !event_type) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      const postback = await storage.createPostbackUrl({
+        id: require("crypto").randomUUID(),
+        affiliate_id,
+        endpoint_url,
+        event_type,
+        is_active: true,
+      });
+      res.status(201).json(postback);
+    } catch (error) {
+      console.error("Create postback URL error:", error);
+      res.status(500).json({ message: "Failed to create postback URL" });
+    }
+  });
+
+  app.get('/api/admin/postback-urls/:affiliateId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const urls = await storage.getPostbackUrls(req.params.affiliateId);
+      res.json(urls);
+    } catch (error) {
+      console.error("Get postback URLs error:", error);
+      res.status(500).json({ message: "Failed to fetch postback URLs" });
+    }
+  });
+
+  app.delete('/api/admin/postback-urls/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await storage.deletePostbackUrl(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete postback URL error:", error);
+      res.status(500).json({ message: "Failed to delete postback URL" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

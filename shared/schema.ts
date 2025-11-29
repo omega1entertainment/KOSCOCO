@@ -876,6 +876,55 @@ export const insertPollResponseSchema = createInsertSchema(pollResponses).omit({
 export const insertAffiliateCampaignSchema = createInsertSchema(affiliateCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMarketingAssetSchema = createInsertSchema(marketingAssets).omit({ id: true, createdAt: true, updatedAt: true });
 
+export const apiTracking = pgTable("api_tracking", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateId: varchar("affiliate_id").references(() => affiliates.id),
+  campaignId: varchar("campaign_id").references(() => affiliateCampaigns.id),
+  endpoint: varchar("endpoint"),
+  method: varchar("method"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  responseStatus: integer("response_status"),
+  isSuspicious: boolean("is_suspicious").default(false).notNull(),
+  isBot: boolean("is_bot").default(false).notNull(),
+  clickCount: integer("click_count").default(1).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_api_tracking_affiliate").on(table.affiliateId),
+  index("idx_api_tracking_created").on(table.createdAt),
+]);
+
+export const postbackUrls = pgTable("postback_urls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateId: varchar("affiliate_id").notNull().references(() => affiliates.id),
+  endpointUrl: text("endpoint_url").notNull(),
+  eventType: text("event_type").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_postback_urls_affiliate").on(table.affiliateId),
+]);
+
+export const fraudAlerts = pgTable("fraud_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateId: varchar("affiliate_id").references(() => affiliates.id),
+  alertType: text("alert_type").notNull(),
+  suspiciousPattern: varchar("suspicious_pattern"),
+  ipAddress: text("ip_address"),
+  clickCount: integer("click_count"),
+  isResolved: boolean("is_resolved").default(false).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_fraud_alerts_created").on(table.createdAt),
+]);
+
+export const insertApiTrackingSchema = createInsertSchema(apiTracking).omit({ id: true, createdAt: true });
+export const insertPostbackUrlSchema = createInsertSchema(postbackUrls).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertFraudAlertSchema = createInsertSchema(fraudAlerts).omit({ id: true, createdAt: true, updatedAt: true });
+
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
@@ -910,6 +959,16 @@ export type AffiliateCampaign = typeof affiliateCampaigns.$inferSelect;
 
 export type InsertMarketingAsset = z.infer<typeof insertMarketingAssetSchema>;
 export type MarketingAsset = typeof marketingAssets.$inferSelect;
+
+export type InsertApiTracking = z.infer<typeof insertApiTrackingSchema>;
+export type ApiTracking = typeof apiTracking.$inferSelect;
+
+export type InsertPostbackUrl = z.infer<typeof insertPostbackUrlSchema>;
+export type PostbackUrl = typeof postbackUrls.$inferSelect;
+
+export type InsertFraudAlert = z.infer<typeof insertFraudAlertSchema>;
+export type FraudAlert = typeof fraudAlerts.$inferSelect;
+
 export type PollWithStats = Poll & { 
   options: (PollOption & { responseCount: number; percentage: number })[];
   totalResponses: number;

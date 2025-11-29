@@ -2590,6 +2590,59 @@ export class DbStorage implements IStorage {
   async deleteMarketingAsset(id: string): Promise<void> {
     await db.delete(schema.marketingAssets).where(eq(schema.marketingAssets.id, id));
   }
+
+  async trackApiCall(tracking: any): Promise<void> {
+    await db.insert(schema.apiTracking).values(tracking);
+  }
+
+  async getApiTrackingLogs(limit: number = 100): Promise<any[]> {
+    const rows = await db.query.apiTracking.findMany({ limit, orderBy: desc(schema.apiTracking.createdAt) }) as any[];
+    return rows || [];
+  }
+
+  async getFraudAlerts(): Promise<any[]> {
+    const rows = await db.query.fraudAlerts.findMany({ orderBy: desc(schema.fraudAlerts.createdAt) }) as any[];
+    return rows || [];
+  }
+
+  async createFraudAlert(alert: any): Promise<any> {
+    const [created] = await db.insert(schema.fraudAlerts).values({
+      affiliateId: alert.affiliate_id,
+      alertType: alert.alert_type,
+      suspiciousPattern: alert.suspicious_pattern,
+      ipAddress: alert.ip_address,
+      clickCount: alert.click_count,
+      notes: alert.notes,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+    return created;
+  }
+
+  async updateFraudAlert(id: string, updates: any): Promise<void> {
+    await db.update(schema.fraudAlerts).set(updates).where(eq(schema.fraudAlerts.id, id));
+  }
+
+  async getPostbackUrls(affiliateId: string): Promise<any[]> {
+    const rows = await db.query.postbackUrls.findMany({ where: eq(schema.postbackUrls.affiliateId, affiliateId) }) as any[];
+    return rows || [];
+  }
+
+  async createPostbackUrl(postback: any): Promise<any> {
+    const [created] = await db.insert(schema.postbackUrls).values({
+      affiliateId: postback.affiliate_id,
+      endpointUrl: postback.endpoint_url,
+      eventType: postback.event_type,
+      isActive: postback.is_active ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+    return created;
+  }
+
+  async deletePostbackUrl(id: string): Promise<void> {
+    await db.delete(schema.postbackUrls).where(eq(schema.postbackUrls.id, id));
+  }
 }
 
 export const storage = new DbStorage();

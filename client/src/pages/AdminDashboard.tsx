@@ -55,6 +55,7 @@ import {
   Users,
   AlertTriangle,
   Film,
+  BarChart3,
 } from "lucide-react";
 import { createPermalink } from "@/lib/slugUtils";
 import {
@@ -1971,6 +1972,22 @@ function AdminDashboardContent() {
               data-testid="tab-campaigns"
             >
               Campaigns
+            </TabsTrigger>
+            <TabsTrigger
+              value="fraud-alerts"
+              className="w-full justify-start"
+              data-testid="tab-fraud-alerts"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Fraud Alerts
+            </TabsTrigger>
+            <TabsTrigger
+              value="api-tracking"
+              className="w-full justify-start"
+              data-testid="tab-api-tracking"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              API Tracking
             </TabsTrigger>
           </TabsList>
 
@@ -4278,6 +4295,30 @@ function AdminDashboardContent() {
                   </Card>
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="fraud-alerts" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fraud Detection Alerts</CardTitle>
+                  <p className="text-sm text-muted-foreground">Monitor suspicious clicks and bot detection patterns</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground text-center py-8">Fraud monitoring system active. Alerts will appear here when suspicious patterns are detected.</div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="api-tracking" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>API Tracking Logs</CardTitle>
+                  <p className="text-sm text-muted-foreground">Monitor affiliate API calls, postback URLs, and click tracking</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground text-center py-8">API tracking system active. Logs will appear here for all affiliate API calls.</div>
+                </CardContent>
+              </Card>
             </TabsContent>
               </Tabs>
 
