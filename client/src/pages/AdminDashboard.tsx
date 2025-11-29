@@ -411,6 +411,12 @@ function AdminDashboardContent() {
   const [newAffiliateStatus, setNewAffiliateStatus] = useState("active");
   const [affiliateCommissionDialog, setAffiliateCommissionDialog] = useState(false);
   const [newCommissionRate, setNewCommissionRate] = useState(20);
+  const [affiliateDetailDialog, setAffiliateDetailDialog] = useState(false);
+  const [affiliatePerformanceData, setAffiliatePerformanceData] = useState<any>(null);
+  const [performanceLoading, setPerformanceLoading] = useState(false);
+  const [customPayoutDialog, setCustomPayoutDialog] = useState(false);
+  const [customPayoutAmount, setCustomPayoutAmount] = useState("");
+  const [customPayoutMethod, setCustomPayoutMethod] = useState("bank_transfer");
   const [affiliatePayoutActionDialog, setAffiliatePayoutActionDialog] = useState(false);
   const [affiliatePayoutAction, setAffiliatePayoutAction] = useState<"approve" | "reject">("approve");
   const [affiliateSelectedPayoutId, setAffiliateSelectedPayoutId] = useState<string | null>(null);
@@ -608,6 +614,47 @@ function AdminDashboardContent() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const customPayoutMutation = useMutation({
+    mutationFn: async ({ affiliateId, amount }: { affiliateId: string; amount: number }) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/custom-payout`, "POST", {
+        amount,
+        paymentMethod: customPayoutMethod,
+        accountDetails: 'admin_custom'
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Custom payout created" });
+      setCustomPayoutDialog(false);
+      setCustomPayoutAmount("");
+      if (selectedAffiliateId) {
+        loadAffiliatePerformance(selectedAffiliateId);
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliate-analytics"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const loadAffiliatePerformance = async (affiliateId: string) => {
+    setPerformanceLoading(true);
+    try {
+      const res = await apiRequest(`/api/admin/affiliates/${affiliateId}/performance`, "GET");
+      const data = await res.json();
+      setAffiliatePerformanceData(data);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load performance data", variant: "destructive" });
+    } finally {
+      setPerformanceLoading(false);
+    }
+  };
+
+  const handleViewAffiliateDetail = (affiliateId: string) => {
+    setSelectedAffiliateId(affiliateId);
+    setAffiliateDetailDialog(true);
+    loadAffiliatePerformance(affiliateId);
+  };
 
   const approveAffiliatePayoutMutation = useMutation({
     mutationFn: async (payoutId: string) => {
@@ -4620,7 +4667,7 @@ function AdminDashboardContent() {
                                     </Badge>
                                   </td>
                                   <td className="p-3">
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-1 flex-wrap">
                                       <Button
                                         size="sm"
                                         variant="outline"
@@ -4644,6 +4691,14 @@ function AdminDashboardContent() {
                                         data-testid={`button-update-affiliate-commission-${affiliate.id}`}
                                       >
                                         Commission
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleViewAffiliateDetail(affiliate.id)}
+                                        data-testid={`button-view-affiliate-details-${affiliate.id}`}
+                                      >
+                                        Details
                                       </Button>
                                     </div>
                                   </td>
@@ -4772,6 +4827,125 @@ function AdminDashboardContent() {
                       data-testid="button-confirm-status"
                     >
                       {updateAffiliateStatusMutation.isPending ? "Updating..." : "Update Status"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Affiliate Performance Detail Dialog */}
+              <Dialog open={affiliateDetailDialog} onOpenChange={setAffiliateDetailDialog}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-affiliate-performance">
+                  <DialogHeader>
+                    <DialogTitle>Affiliate Performance Details</DialogTitle>
+                  </DialogHeader>
+                  {performanceLoading ? (
+                    <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+                  ) : affiliatePerformanceData ? (
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Affiliate Info</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div className="flex justify-between"><span className="text-muted-foreground">Name:</span><span>{affiliatePerformanceData.affiliate.first_name} {affiliatePerformanceData.affiliate.last_name}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Email:</span><span>{affiliatePerformanceData.affiliate.email}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Referral Code:</span><span className="font-mono">{affiliatePerformanceData.affiliate.referral_code}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Commission Rate:</span><span className="font-semibold">{affiliatePerformanceData.affiliate.commission_rate}%</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Total Referrals:</span><span className="font-semibold">{affiliatePerformanceData.affiliate.total_referrals}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Total Earnings:</span><span className="font-semibold text-green-600">{(affiliatePerformanceData.affiliate.total_earnings || 0).toLocaleString()} FCFA</span></div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-3">
+                          <CardTitle className="text-base">Referral History</CardTitle>
+                          <Button size="sm" onClick={() => setCustomPayoutDialog(true)} data-testid="button-create-custom-payout">Create Payout</Button>
+                        </CardHeader>
+                        <CardContent>
+                          {affiliatePerformanceData.referrals.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No referrals</p>
+                          ) : (
+                            <div className="space-y-2 text-sm max-h-48 overflow-y-auto">
+                              {affiliatePerformanceData.referrals.map((ref: any) => (
+                                <div key={ref.id} className="flex justify-between p-2 bg-muted/30 rounded">
+                                  <div><p className="font-medium">{ref.username}</p><p className="text-xs text-muted-foreground">{new Date(ref.created_at).toLocaleDateString()}</p></div>
+                                  <div className="text-right"><p className="font-semibold">{(ref.commission || 0).toLocaleString()} FCFA</p><Badge variant="outline" className="text-xs mt-1">{ref.status}</Badge></div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Payout History</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {affiliatePerformanceData.payouts.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No payouts</p>
+                          ) : (
+                            <div className="space-y-2 text-sm max-h-48 overflow-y-auto">
+                              {affiliatePerformanceData.payouts.map((payout: any) => (
+                                <div key={payout.id} className="flex justify-between p-2 bg-muted/30 rounded">
+                                  <div><p className="font-medium">{payout.payment_method}</p><p className="text-xs text-muted-foreground">{new Date(payout.requested_at).toLocaleDateString()}</p></div>
+                                  <div className="text-right"><p className="font-semibold">{(payout.amount || 0).toLocaleString()} FCFA</p><Badge variant={payout.status === 'approved' ? 'default' : 'secondary'} className="text-xs mt-1">{payout.status}</Badge></div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : null}
+                </DialogContent>
+              </Dialog>
+
+              {/* Custom Payout Dialog */}
+              <Dialog open={customPayoutDialog} onOpenChange={setCustomPayoutDialog}>
+                <DialogContent data-testid="dialog-custom-payout">
+                  <DialogHeader>
+                    <DialogTitle>Create Custom Payout</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="payout-amount">Amount (FCFA)</Label>
+                      <Input
+                        id="payout-amount"
+                        type="number"
+                        min="0"
+                        value={customPayoutAmount}
+                        onChange={(e) => setCustomPayoutAmount(e.target.value)}
+                        placeholder="Enter amount"
+                        data-testid="input-payout-amount"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="payout-method">Payment Method</Label>
+                      <Select value={customPayoutMethod} onValueChange={setCustomPayoutMethod}>
+                        <SelectTrigger id="payout-method">
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                          <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                          <SelectItem value="wallet">Wallet</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setCustomPayoutDialog(false)} data-testid="button-cancel-payout">Cancel</Button>
+                    <Button
+                      onClick={() => {
+                        if (selectedAffiliateId && customPayoutAmount) {
+                          customPayoutMutation.mutate({ affiliateId: selectedAffiliateId, amount: parseInt(customPayoutAmount) });
+                        }
+                      }}
+                      disabled={!customPayoutAmount || customPayoutMutation.isPending}
+                      data-testid="button-confirm-payout"
+                    >
+                      {customPayoutMutation.isPending ? "Creating..." : "Create Payout"}
                     </Button>
                   </div>
                 </DialogContent>

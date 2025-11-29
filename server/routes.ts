@@ -2918,6 +2918,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Create custom payout for affiliate
+  app.post('/api/admin/affiliates/:id/custom-payout', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { amount, paymentMethod, accountDetails, notes } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Amount must be greater than 0" });
+      }
+
+      const payout = await storage.createPayoutRequest({
+        affiliateId: id,
+        amount,
+        paymentMethod: paymentMethod || 'bank_transfer',
+        accountDetails: accountDetails || 'admin_custom',
+        status: 'approved'
+      });
+
+      res.json(payout);
+    } catch (error) {
+      console.error("Error creating custom payout:", error);
+      res.status(500).json({ message: "Failed to create payout" });
+    }
+  });
+
+  // Admin: Get affiliate performance logs
+  app.get('/api/admin/affiliates/:id/performance', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const affiliateData = await db.execute(sql`
+        SELECT 
+          a.id,
+          a.user_id,
+          a.referral_code,
+          a.total_referrals,
+          a.total_earnings,
+          a.commission_rate,
+          a.status,
+          a.created_at,
+          u.email,
+          u.username,
+          u.first_name,
+          u.last_name
+        FROM affiliates a
+        JOIN users u ON a.user_id = u.id
+        WHERE a.id = ${id}
+      `);
+
+      if (affiliateData.rows.length === 0) {
+        return res.status(404).json({ message: "Affiliate not found" });
+      }
+
+      const referralsData = await db.execute(sql`
+        SELECT 
+          r.id,
+          r.commission,
+          r.status,
+          r.created_at,
+          reg.total_fee,
+          reg.payment_status,
+          u.email,
+          u.username
+        FROM referrals r
+        JOIN registrations reg ON r.registration_id = reg.id
+        JOIN users u ON reg.user_id = u.id
+        WHERE r.affiliate_id = ${id}
+        ORDER BY r.created_at DESC
+        LIMIT 100
+      `);
+
+      const payoutsData = await db.execute(sql`
+        SELECT 
+          pr.id,
+          pr.amount,
+          pr.status,
+          pr.payment_method,
+          pr.requested_at,
+          pr.processed_at
+        FROM payout_requests pr
+        WHERE pr.affiliate_id = ${id}
+        ORDER BY pr.requested_at DESC
+        LIMIT 100
+      `);
+
+      res.json({
+        affiliate: affiliateData.rows[0],
+        referrals: referralsData.rows,
+        payouts: payoutsData.rows
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate performance:", error);
+      res.status(500).json({ message: "Failed to fetch performance data" });
+    }
+  });
+
   // Admin: Get all payout requests with affiliate details
   app.get('/api/admin/payout-requests', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
