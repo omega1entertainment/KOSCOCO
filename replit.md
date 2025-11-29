@@ -20,10 +20,12 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
     - **RESTful API**: For clear communication between frontend and backend.
     - **Video Management**: Supports specific formats, size/duration limits, and a moderation queue.
     - **Voting System**: Public voting with anti-spam, judge scoring, and Flutterwave-integrated paid voting.
-    - **Affiliate Program**: Opt-in system with unique referral links, 20% commission tracking, and comprehensive payout workflow. Supports integrated account creation for affiliates.
+    - **Affiliate Program**: Opt-in system with unique referral links, 20% commission tracking, and comprehensive payout workflow. Supports integrated account creation for affiliates. Referral codes preserved across login redirects using sessionStorage.
     - **Competition Structure**: Seven distinct phases (e.g., TOP 500, TOP 100), managed by admin controls to ensure one active phase.
     - **Automatic Top 500 Selection**: Videos automatically selected per category based on likes, triggered by admin.
-    - **Dashboards**: Separate user and admin dashboards for statistics, moderation, phase management, advertiser approval, and user management.
+    - **Dashboards**: 
+      - **Admin Dashboard Overview**: Central stats display showing Total Users, Total Videos, Total Views, Suspended Users, and Unverified Emails
+      - Separate user and admin dashboards for statistics, moderation, phase management, advertiser approval, and user management.
     - **Email Verification**: Comprehensive system using Resend.
     - **Advertising System**: MVP supports Skippable In-Stream Video and Overlay Banner ads, including advertiser account approval, ad creation, serving, and tracking.
     - **Watch History**: Tracks user video watch duration and completion, displayed in a dashboard.

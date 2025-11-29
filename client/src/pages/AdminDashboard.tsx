@@ -52,6 +52,9 @@ import {
   Edit,
   Mail,
   Send,
+  Users,
+  AlertTriangle,
+  Film,
 } from "lucide-react";
 import { createPermalink } from "@/lib/slugUtils";
 import {
@@ -329,6 +332,10 @@ function AdminDashboardContent() {
 
   const { data: paymentsData = { payments: [], summary: {} }, isLoading: paymentsLoading } = useQuery<any>({
     queryKey: ["/api/admin/payments"],
+  });
+
+  const { data: dashboardStats = null, isLoading: statsLoading } = useQuery<any>({
+    queryKey: ["/api/admin/stats/dashboard"],
   });
 
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
@@ -1248,6 +1255,67 @@ function AdminDashboardContent() {
 
       {/* Mobile Accordion Version */}
       <Accordion type="single" collapsible className="w-full lg:hidden" data-testid="accordion-admin-mobile">
+        <AccordionItem value="overview" data-testid="accordion-item-overview">
+          <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-overview">
+            Dashboard Overview
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4">
+              {statsLoading ? (
+                <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+              ) : dashboardStats ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats.totalUsers || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Videos</CardTitle>
+                      <Film className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats.totalVideos || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats.totalViews || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Suspended Users</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats.suspendedUsers || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Unverified Emails</CardTitle>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{dashboardStats.unverifiedEmails || 0}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : null}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
         <AccordionItem value="phases" data-testid="accordion-item-phases">
           <AccordionTrigger className="text-base font-medium" data-testid="accordion-trigger-phases">
             {t("admin.tabs.phases")}
@@ -1603,9 +1671,16 @@ function AdminDashboardContent() {
       </Accordion>
 
       {/* Desktop Tabs Version */}
-      <Tabs defaultValue="phases" className="w-full hidden lg:block">
+      <Tabs defaultValue="overview" className="w-full hidden lg:block">
         <div className="flex flex-col lg:flex-row gap-6">
           <TabsList className="flex flex-col h-fit w-full lg:w-48 gap-1">
+            <TabsTrigger
+              value="overview"
+              className="w-full justify-start"
+              data-testid="tab-overview"
+            >
+              Dashboard Overview
+            </TabsTrigger>
             <TabsTrigger
               value="phases"
               className="w-full justify-start"
@@ -1735,6 +1810,67 @@ function AdminDashboardContent() {
           </TabsList>
 
           <div className="flex-1">
+            <TabsContent value="overview" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dashboard Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {statsLoading ? (
+                    <div className="text-center py-12"><div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>
+                  ) : dashboardStats ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{dashboardStats.totalUsers || 0}</div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Total Videos</CardTitle>
+                          <Video className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{dashboardStats.totalVideos || 0}</div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{dashboardStats.totalViews || 0}</div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Suspended Users</CardTitle>
+                          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{dashboardStats.suspendedUsers || 0}</div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-sm font-medium">Unverified Emails</CardTitle>
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{dashboardStats.unverifiedEmails || 0}</div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="phases" className="mt-0">
               <PhaseManagement />
             </TabsContent>
