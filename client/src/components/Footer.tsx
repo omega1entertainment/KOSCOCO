@@ -189,7 +189,7 @@ export default function Footer() {
         <div className="pt-8 border-t text-center">
           <p className="text-sm text-muted-foreground">
             {t('footer.copyrightText')} |{' '}
-            <a href="mailto:support@koscoco.africa" className="hover:text-foreground transition-colors">
+            <a href="mailto:support@kozzii.africa" className="hover:text-foreground transition-colors">
               {t('nav.support')}
             </a>
           </p>
