@@ -5727,20 +5727,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `);
 
       const referralStats = await db.execute(sql`
-        SELECT COUNT(*) as total_conversions, SUM(af.commission) as total_commission
+        SELECT 
+          COUNT(*) as total_conversions,
+          SUM(af.commission) as total_commission
         FROM referrals af
-        WHERE af.status = 'completed'
+        JOIN registrations reg ON af.registration_id = reg.id
+        WHERE reg.payment_status IN ('approved', 'completed')
       `);
 
       const payoutStats = await db.execute(sql`
         SELECT 
-          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-          COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
-          COUNT(CASE WHEN status = 'completed' THEN 1 END) as paid_count,
-          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending_amount,
-          SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END) as approved_amount,
-          SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) as paid_amount
-        FROM payout_requests
+          COUNT(CASE WHEN pr.status = 'pending' THEN 1 END) as pending_count,
+          COUNT(CASE WHEN pr.status = 'approved' THEN 1 END) as approved_count,
+          COUNT(CASE WHEN pr.status = 'completed' THEN 1 END) as paid_count,
+          COALESCE(SUM(CASE WHEN pr.status = 'pending' THEN pr.amount ELSE 0 END), 0) as pending_amount,
+          COALESCE(SUM(CASE WHEN pr.status = 'approved' THEN pr.amount ELSE 0 END), 0) as approved_amount,
+          COALESCE(SUM(CASE WHEN pr.status = 'completed' THEN pr.amount ELSE 0 END), 0) as paid_amount
+        FROM payout_requests pr
       `);
 
       const topPerformers = await db.execute(sql`
