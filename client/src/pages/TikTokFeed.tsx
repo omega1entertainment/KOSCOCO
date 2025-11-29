@@ -217,13 +217,6 @@ export default function TikTokFeed() {
           </div>
         </div>
 
-        {/* Navigation Hint */}
-        {videosData.length > 1 && (
-          <div className="absolute bottom-6 right-6 text-white/60 text-xs text-center">
-            <p>Scroll or use</p>
-            <p>arrow keys</p>
-          </div>
-        )}
       </div>
     </div>
   );
