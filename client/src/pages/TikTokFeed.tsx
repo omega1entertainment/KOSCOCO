@@ -550,9 +550,9 @@ export default function TikTokFeed() {
                 onEnded={() => scrollToVideo(Math.min(filteredVideos.length - 1, index + 1))}
               />
 
-              {/* Play button overlay */}
+              {/* Play button overlay - desktop only */}
               <div
-                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                className="absolute inset-0 hidden sm:flex items-center justify-center cursor-pointer"
                 onClick={togglePlayPause}
               >
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -581,6 +581,7 @@ export default function TikTokFeed() {
                 {/* Vote button */}
                 <button
                   onClick={() => {
+                    if (isScrolling.current) return;
                     setSelectedVideo({ id: video.id, title: video.title });
                     setVoteModalOpen(true);
                   }}
@@ -594,6 +595,7 @@ export default function TikTokFeed() {
                 {/* Share button */}
                 <button
                   onClick={() => {
+                    if (isScrolling.current) return;
                     setSelectedVideoForShare({ id: video.id, title: video.title });
                     setShareModalOpen(true);
                   }}
@@ -627,7 +629,10 @@ export default function TikTokFeed() {
                         </p>
                         {user && video.userId !== user.id && (
                           <button
-                            onClick={() => handleFollow(video.userId)}
+                            onClick={() => {
+                              if (isScrolling.current) return;
+                              handleFollow(video.userId);
+                            }}
                             className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold whitespace-nowrap transition-colors mt-1"
                             data-testid={`button-follow-${video.userId}`}
                           >
