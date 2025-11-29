@@ -156,37 +156,37 @@ export default function CreatorDashboard() {
 
   // Fetch creator stats
   const { data: stats, isLoading: statsLoading } = useQuery<CreatorStats>({
-    queryKey: ["/api/creator/stats"],
+    queryKey: queryKeys.creator.stats(user?.id),
     enabled: !!user,
   });
 
   // Fetch creator videos
   const { data: videos = [], isLoading: videosLoading } = useQuery<VideoWithStats[]>({
-    queryKey: ["/api/creator/videos"],
+    queryKey: queryKeys.creator.videos(user?.id),
     enabled: !!user,
   });
 
   // Fetch creator profile
   const { data: profile, isLoading: profileLoading } = useQuery<CreatorProfile>({
-    queryKey: ["/api/creator/profile"],
+    queryKey: queryKeys.creator.profile(user?.id),
     enabled: !!user,
   });
 
   // Fetch creator competitions
   const { data: competitions = [], isLoading: competitionsLoading } = useQuery<Competition[]>({
-    queryKey: ["/api/creator/competitions"],
+    queryKey: queryKeys.creator.competitions(user?.id),
     enabled: !!user,
   });
 
   // Fetch creator watch history
   const { data: watchHistory = [], isLoading: historyLoading } = useQuery<WatchHistoryEntry[]>({
-    queryKey: ["/api/creator/watch-history"],
+    queryKey: queryKeys.creator.watchHistory(user?.id),
     enabled: !!user,
   });
 
   // Fetch creator earnings
   const { data: earnings, isLoading: earningsLoading } = useQuery<CreatorEarnings>({
-    queryKey: ["/api/creator/earnings"],
+    queryKey: queryKeys.creator.earnings(user?.id),
     enabled: !!user,
   });
 
@@ -226,8 +226,8 @@ export default function CreatorDashboard() {
         title: t('creator.toast.videoDeleted'),
         description: t('creator.toast.videoDeletedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/creator/videos"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/creator/stats"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos(user?.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.creator.stats(user?.id) });
       setDeleteDialogOpen(false);
       setVideoToDelete(null);
     },
@@ -251,7 +251,7 @@ export default function CreatorDashboard() {
         title: t('creator.toast.videoUpdated'),
         description: t('creator.toast.videoUpdatedDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/creator/videos"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.creator.videos(user?.id) });
       setEditDialogOpen(false);
       setEditingVideo(null);
     },

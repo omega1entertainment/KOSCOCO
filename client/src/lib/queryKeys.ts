@@ -59,10 +59,12 @@ export const queryKeys = {
 
   // Creator Dashboard
   creator: {
-    profile: ["/api/creator/profile"] as const,
-    videos: ["/api/creator/videos"] as const,
-    competitions: ["/api/creator/competitions"] as const,
-    earnings: ["/api/creator/earnings"] as const,
+    profile: (userId?: string) => userId ? ["/api/creator/profile", userId] as const : ["/api/creator/profile"] as const,
+    videos: (userId?: string) => userId ? ["/api/creator/videos", userId] as const : ["/api/creator/videos"] as const,
+    competitions: (userId?: string) => userId ? ["/api/creator/competitions", userId] as const : ["/api/creator/competitions"] as const,
+    earnings: (userId?: string) => userId ? ["/api/creator/earnings", userId] as const : ["/api/creator/earnings"] as const,
+    stats: (userId?: string) => userId ? ["/api/creator/stats", userId] as const : ["/api/creator/stats"] as const,
+    watchHistory: (userId?: string) => userId ? ["/api/creator/watch-history", userId] as const : ["/api/creator/watch-history"] as const,
   },
 
   // Admin Dashboard
