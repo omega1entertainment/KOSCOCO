@@ -2536,11 +2536,26 @@ export class DbStorage implements IStorage {
   }
 
   async getAllAffiliateCampaigns(): Promise<any[]> {
-    return db.select().from(schema.affiliateCampaigns);
+    const rows = await db.query.affiliateCampaigns.findMany() as any[];
+    return rows || [];
   }
 
   async createAffiliateCampaign(campaign: any): Promise<any> {
-    const [created] = await db.insert(schema.affiliateCampaigns).values(campaign).returning();
+    const { id, name, description, objective, target_audience, status, start_date, end_date, budget, created_by } = campaign;
+    const [created] = await db.insert(schema.affiliateCampaigns).values({
+      id,
+      name,
+      description,
+      objective,
+      targetAudience: target_audience,
+      status: status || 'active',
+      startDate: start_date,
+      endDate: end_date,
+      budget,
+      createdBy: created_by || 'system',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
     return created;
   }
 
@@ -2550,11 +2565,25 @@ export class DbStorage implements IStorage {
   }
 
   async getAffiliateCampaignAssets(campaignId: string): Promise<any[]> {
-    return db.select().from(schema.marketingAssets).where(eq(schema.marketingAssets.campaignId, campaignId));
+    const rows = await db.query.marketingAssets.findMany({ where: eq(schema.marketingAssets.campaignId, campaignId) }) as any[];
+    return rows || [];
   }
 
   async createMarketingAsset(asset: any): Promise<any> {
-    const [created] = await db.insert(schema.marketingAssets).values(asset).returning();
+    const { id, campaign_id, type, title, description, download_url, preview_url, dimensions, file_size } = asset;
+    const [created] = await db.insert(schema.marketingAssets).values({
+      id,
+      campaignId: campaign_id,
+      type: type || 'banner',
+      title,
+      description,
+      downloadUrl: download_url,
+      previewUrl: preview_url,
+      dimensions,
+      fileSize: file_size,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
     return created;
   }
 
