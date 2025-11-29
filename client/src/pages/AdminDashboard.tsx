@@ -330,12 +330,16 @@ function AdminDashboardContent() {
     queryKey: ["/api/admin/users"],
   });
 
-  const { data: paymentsData = { payments: [], summary: {} }, isLoading: paymentsLoading } = useQuery<any>({
+  const { data: paymentsData = { payments: [], summary: {} }, isLoading: paymentsLoading, refetch: refetchPayments } = useQuery<any>({
     queryKey: ["/api/admin/payments"],
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 
-  const { data: dashboardStats = null, isLoading: statsLoading } = useQuery<any>({
+  const { data: dashboardStats = null, isLoading: statsLoading, refetch: refetchDashboardStats } = useQuery<any>({
     queryKey: ["/api/admin/stats/dashboard"],
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
@@ -3421,11 +3425,17 @@ function AdminDashboardContent() {
 
             <TabsContent value="payments" className="mt-0">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5" />
                     Payment Tracking
                   </CardTitle>
+                  <Button size="sm" variant="outline" onClick={() => refetchPayments()} disabled={paymentsLoading} data-testid="button-refresh-payments">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {paymentsLoading ? (
