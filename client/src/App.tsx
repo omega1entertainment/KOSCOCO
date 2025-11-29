@@ -145,7 +145,7 @@ function Router() {
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
           <Route path="/advertiser/terms" component={AdvertiserTerms} />
           <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
-          <Route path="/advertiser/create-campaign" component={CreateCampaign} />
+          <Route path="/advertiser/campaign/create" component={CreateCampaign} />
           <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
