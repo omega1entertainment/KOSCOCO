@@ -359,11 +359,11 @@ export default function TikTokFeed() {
           </button>
         </div>
 
-        {/* Category pills */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+        {/* Category pills - wrap on mobile, scroll on desktop */}
+        <div className="flex flex-wrap gap-1 sm:gap-2 sm:overflow-x-auto sm:scrollbar-hide pb-2">
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
               selectedCategory === null
                 ? "bg-red-600 text-white"
                 : "bg-white/20 text-white hover:bg-white/30"
@@ -371,13 +371,14 @@ export default function TikTokFeed() {
             data-testid="button-category-all"
           >
             <Grid3X3 className="w-3 h-3" />
-            All Categories
+            <span className="hidden sm:inline">All Categories</span>
+            <span className="sm:hidden">All</span>
           </button>
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
                 selectedCategory === category.id
                   ? "bg-red-600 text-white"
                   : "bg-white/20 text-white hover:bg-white/30"
