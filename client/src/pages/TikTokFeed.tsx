@@ -183,6 +183,7 @@ export default function TikTokFeed() {
             {/* Follow Button */}
             {currentUser?.id !== video.userId && (
               <Button
+                size="sm"
                 variant={isFollowing ? "outline" : "default"}
                 onClick={() => {
                   if (isFollowing) {
@@ -194,17 +195,17 @@ export default function TikTokFeed() {
                 disabled={
                   followMutation.isPending || unfollowMutation.isPending
                 }
-                className="w-full mb-3"
+                className="w-fit mb-3"
                 data-testid={`button-follow-${video.userId}`}
               >
                 {isFollowing ? (
                   <>
-                    <Check className="h-4 w-4 mr-2" />
+                    <Check className="h-3 w-3 mr-1" />
                     Following
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-4 w-4 mr-2" />
+                    <UserPlus className="h-3 w-3 mr-1" />
                     Follow
                   </>
                 )}
