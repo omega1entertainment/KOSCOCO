@@ -232,6 +232,9 @@ export default function NavigationHeader({
                 >
                   {t('nav.login')}
                 </Button>
+              </>
+            ) : (
+              <>
                 <Button
                   className="min-h-11"
                   onClick={() => setLocation("/register")}
@@ -239,9 +242,6 @@ export default function NavigationHeader({
                 >
                   {t('nav.register')}
                 </Button>
-              </>
-            ) : (
-              <>
                 <Button 
                   variant="outline"
                   className="min-h-11"
@@ -454,6 +454,10 @@ export default function NavigationHeader({
                   >
                     {t('nav.login')}
                   </Button>
+                </>
+              )}
+              {isAuthenticated && (
+                <>
                   <Button
                     className="min-h-11"
                     onClick={() => {
@@ -464,10 +468,6 @@ export default function NavigationHeader({
                   >
                     {t('nav.register')}
                   </Button>
-                </>
-              )}
-              {isAuthenticated && (
-                <>
                   <Button 
                     variant="outline"
                     className="min-h-11"
