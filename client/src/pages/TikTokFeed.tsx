@@ -231,7 +231,7 @@ export default function TikTokFeed() {
     }
   }, [filteredVideos]);
 
-  // Wheel scroll handler
+  // Wheel scroll handler (desktop)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       const now = Date.now();
@@ -248,6 +248,53 @@ export default function TikTokFeed() {
     container?.addEventListener("wheel", handleWheel, { passive: true });
     return () => container?.removeEventListener("wheel", handleWheel);
   }, [currentVideoIndex, filteredVideos.length, scrollToVideo]);
+
+  // Scroll handler (mobile and desktop)
+  useEffect(() => {
+    if (!containerRef.current || filteredVideos.length === 0) return;
+
+    const handleScroll = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      // Find which video is most visible
+      let mostVisibleIndex = currentVideoIndex;
+      let maxVisibility = 0;
+
+      Array.from(container.children).forEach((child, index) => {
+        const element = child as HTMLElement;
+        const rect = element.getBoundingClientRect();
+        const visibility = Math.max(0, Math.min(window.innerHeight, rect.bottom) - Math.max(0, rect.top));
+        
+        if (visibility > maxVisibility) {
+          maxVisibility = visibility;
+          mostVisibleIndex = index;
+        }
+      });
+
+      // Update current video index
+      if (mostVisibleIndex !== currentVideoIndex) {
+        setCurrentVideoIndex(mostVisibleIndex);
+
+        // Pause all other videos
+        videoRefs.current.forEach((video, key) => {
+          if (key !== filteredVideos[mostVisibleIndex]?.id) {
+            video.pause();
+          }
+        });
+
+        // Play current video
+        const currentVideo = videoRefs.current.get(filteredVideos[mostVisibleIndex]?.id);
+        if (currentVideo) {
+          currentVideo.play().catch(() => {});
+        }
+      }
+    };
+
+    const container = containerRef.current;
+    container?.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container?.removeEventListener("scroll", handleScroll);
+  }, [filteredVideos]);
 
   const togglePlayPause = () => {
     const currentVideo = videoRefs.current.get(filteredVideos[currentVideoIndex]?.id);
