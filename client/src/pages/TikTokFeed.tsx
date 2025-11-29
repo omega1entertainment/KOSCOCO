@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check, UserPlus, UserCheck } from "lucide-react";
+import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check, UserPlus, UserCheck, ChevronDown } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Video, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,8 @@ export default function TikTokFeed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [allVideos, setAllVideos] = useState<Video[]>([]);
+  const [filteredVideos, setFilteredVideos] = useState<Video[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [creators, setCreators] = useState<{ [key: string]: { firstName: string; lastName: string } }>({});
@@ -31,12 +32,31 @@ export default function TikTokFeed() {
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedVideoForShare, setSelectedVideoForShare] = useState<{ id: string; title: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<"all" | "active" | "disqualified">("all");
+  const [activePhase, setActivePhase] = useState<{ id: string; name: string } | null>(null);
   const lastScrollTime = useRef(0);
 
   // Fetch all categories and videos
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: queryKeys.categories.all,
   });
+
+  // Fetch active phase
+  useEffect(() => {
+    const fetchActivePhase = async () => {
+      try {
+        const response = await fetch("/api/phases/active");
+        if (response.ok) {
+          const phase = await response.json();
+          setActivePhase({ id: phase.id, name: phase.name });
+        }
+      } catch (err) {
+        console.error("Failed to fetch active phase:", err);
+      }
+    };
+    fetchActivePhase();
+  }, []);
 
   // Fetch all videos from all categories (lazy load)
   useEffect(() => {
@@ -61,7 +81,11 @@ export default function TikTokFeed() {
         }
       }
       
-      setVideos(allVideos);
+      setAllVideos(allVideos);
+      // Set first category as default
+      if (allVideos.length > 0 && !selectedCategory) {
+        setSelectedCategory(allVideos[0].categoryId);
+      }
 
       // Fetch creator info and stats for videos near current index
       const fetchMetadata = async (videoIndices: number[]) => {
