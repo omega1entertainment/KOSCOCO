@@ -1912,75 +1912,72 @@ export class DbStorage implements IStorage {
 
   // Ad Tracking methods
   async createAdImpression(insertImpression: InsertAdImpression): Promise<AdImpression> {
-    // Use transaction to ensure ALL operations are atomic
-    // If any step fails (e.g., insufficient balance), everything rolls back including the impression record
-    return await db.transaction(async (tx) => {
-      // 1. Insert impression record
-      const [impression] = await tx.insert(schema.adImpressions).values(insertImpression).returning();
-      
-      // 2. Update ad impressions and get ALL ad data atomically
-      const [updatedAd] = await tx.update(schema.ads)
+    // Note: neon-http driver doesn't support transactions, so we do operations sequentially
+    // 1. Insert impression record
+    const [impression] = await db.insert(schema.adImpressions).values(insertImpression).returning();
+    
+    // 2. Update ad impressions and get ALL ad data
+    const [updatedAd] = await db.update(schema.ads)
+      .set({
+        totalImpressions: sql`${schema.ads.totalImpressions} + 1`,
+      })
+      .where(eq(schema.ads.id, impression.adId))
+      .returning();
+
+    if (!updatedAd) {
+      throw new Error(`Ad not found: ${impression.adId}`);
+    }
+
+    // 3. Calculate cost based on the UPDATED impression count and FRESH ad data
+    let cost = 0;
+    if (updatedAd.pricingModel === 'cpm') {
+      // For CPM: Calculate exact spend based on updated impression count
+      // Expected spend = floor(totalImpressions * bidAmount / 1000)
+      // Charge the difference between expected and actual spend
+      const expectedSpend = Math.floor((updatedAd.totalImpressions * updatedAd.bidAmount) / 1000);
+      const actualSpend = updatedAd.totalSpent || 0;
+      cost = Math.max(0, expectedSpend - actualSpend);
+    }
+    // Note: CPC charges are handled in createAdClick
+    // Note: CPV (cost per view) requires actual view-complete events, not impressions
+    // CPV ads do NOT charge or increment totalViews on impressions
+
+    // 4. Deduct cost if needed
+    if (cost > 0) {
+      // Deduct from advertiser wallet
+      const walletResult = await db.update(schema.advertisers)
         .set({
-          totalImpressions: sql`${schema.ads.totalImpressions} + 1`,
+          walletBalance: sql`${schema.advertisers.walletBalance} - ${cost}`,
+          totalSpent: sql`${schema.advertisers.totalSpent} + ${cost}`,
         })
-        .where(eq(schema.ads.id, impression.adId))
-        .returning();
-
-      if (!updatedAd) {
-        throw new Error(`Ad not found: ${impression.adId}`);
-      }
-
-      // 3. Calculate cost based on the UPDATED impression count and FRESH ad data
-      let cost = 0;
-      if (updatedAd.pricingModel === 'cpm') {
-        // For CPM: Calculate exact spend based on updated impression count
-        // Expected spend = floor(totalImpressions * bidAmount / 1000)
-        // Charge the difference between expected and actual spend
-        const expectedSpend = Math.floor((updatedAd.totalImpressions * updatedAd.bidAmount) / 1000);
-        const actualSpend = updatedAd.totalSpent || 0;
-        cost = Math.max(0, expectedSpend - actualSpend);
-      }
-      // Note: CPC charges are handled in createAdClick
-      // Note: CPV (cost per view) requires actual view-complete events, not impressions
-      // CPV ads do NOT charge or increment totalViews on impressions
-
-      // 4. Deduct cost if needed, all within the same transaction
-      if (cost > 0) {
-        // Deduct from advertiser wallet
-        const walletResult = await tx.update(schema.advertisers)
-          .set({
-            walletBalance: sql`${schema.advertisers.walletBalance} - ${cost}`,
-            totalSpent: sql`${schema.advertisers.totalSpent} + ${cost}`,
-          })
-          .where(
-            and(
-              eq(schema.advertisers.id, updatedAd.advertiserId),
-              sql`${schema.advertisers.walletBalance} >= ${cost}`
-            )
+        .where(
+          and(
+            eq(schema.advertisers.id, updatedAd.advertiserId),
+            sql`${schema.advertisers.walletBalance} >= ${cost}`
           )
-          .returning();
-        
-        if (walletResult.length === 0) {
-          throw new Error(`Insufficient wallet balance for advertiser ${updatedAd.advertiserId}`);
-        }
-
-        // Update ad totalSpent
-        await tx.update(schema.ads)
-          .set({
-            totalSpent: sql`${schema.ads.totalSpent} + ${cost}`,
-          })
-          .where(eq(schema.ads.id, updatedAd.id));
-
-        // Update campaign totalSpent
-        await tx.update(schema.adCampaigns)
-          .set({
-            totalSpent: sql`${schema.adCampaigns.totalSpent} + ${cost}`,
-          })
-          .where(eq(schema.adCampaigns.id, updatedAd.campaignId));
+        )
+        .returning();
+      
+      if (walletResult.length === 0) {
+        throw new Error(`Insufficient wallet balance for advertiser ${updatedAd.advertiserId}`);
       }
 
-      return impression;
-    });
+      // Update ad totalSpent
+      await db.update(schema.ads)
+        .set({
+          totalSpent: sql`${schema.ads.totalSpent} + ${cost}`,
+        })
+        .where(eq(schema.ads.id, updatedAd.id));
+
+      // Update campaign totalSpent
+      await db.update(schema.adCampaigns)
+        .set({
+          totalSpent: sql`${schema.adCampaigns.totalSpent} + ${cost}`,
+        })
+        .where(eq(schema.adCampaigns.id, updatedAd.campaignId));
+    }
+
+    return impression;
   }
 
   async createAdClick(insertClick: InsertAdClick): Promise<AdClick> {

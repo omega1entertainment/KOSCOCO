@@ -37,6 +37,7 @@ export default function VideoPlayer() {
   const autoPiPTriggered = useRef(false);
   const manualPiPDisabled = useRef(false);
   const autoExitInProgress = useRef(false);
+  const hasRecordedInitialWatchRef = useRef(false);
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
     queryKey: queryKeys.videos.byId(videoId),
@@ -168,6 +169,7 @@ export default function VideoPlayer() {
     autoPiPTriggered.current = false;
     manualPiPDisabled.current = false;
     autoExitInProgress.current = false;
+    hasRecordedInitialWatchRef.current = false;
   }, [videoId]);
 
   useEffect(() => {
@@ -300,10 +302,9 @@ export default function VideoPlayer() {
 
     const videoElement = videoRef.current;
     let watchStartTime = 0;
-    let hasRecordedInitialWatch = false;
 
     const handleTimeUpdate = () => {
-      if (!videoElement || hasRecordedInitialWatch) return;
+      if (!videoElement || hasRecordedInitialWatchRef.current) return;
 
       const currentTime = videoElement.currentTime;
       const duration = videoElement.duration;
@@ -311,8 +312,8 @@ export default function VideoPlayer() {
       // Record watch history after 30 seconds OR 50% of video (whichever comes first)
       const watchThreshold = Math.min(30, duration * 0.5);
       
-      if (currentTime >= watchThreshold && !hasRecordedInitialWatch) {
-        hasRecordedInitialWatch = true;
+      if (currentTime >= watchThreshold && !hasRecordedInitialWatchRef.current) {
+        hasRecordedInitialWatchRef.current = true;
         watchHistoryMutation.mutate({
           watchDuration: Math.floor(currentTime),
           completed: false,
@@ -321,8 +322,8 @@ export default function VideoPlayer() {
     };
 
     const handleEnded = () => {
-      if (!hasRecordedInitialWatch && videoElement) {
-        hasRecordedInitialWatch = true;
+      if (!hasRecordedInitialWatchRef.current && videoElement) {
+        hasRecordedInitialWatchRef.current = true;
         watchHistoryMutation.mutate({
           watchDuration: Math.floor(videoElement.duration),
           completed: true,
