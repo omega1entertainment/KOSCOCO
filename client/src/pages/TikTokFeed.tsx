@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check } from "lucide-react";
+import { ThumbsUp, Share2, Play, X, VolumeX, Volume2, Check, UserPlus, UserCheck } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Video, Category } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ export default function TikTokFeed() {
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [creators, setCreators] = useState<{ [key: string]: { firstName: string; lastName: string } }>({});
   const [videoStats, setVideoStats] = useState<{ [key: string]: { likeCount: number; voteCount: number } }>({});
+  const [following, setFollowing] = useState<Set<string>>(new Set());
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -284,6 +285,48 @@ export default function TikTokFeed() {
     setLiked(newLiked);
   };
 
+  const handleFollow = async (creatorId: string) => {
+    if (!user) {
+      toast({
+        title: "Not Logged In",
+        description: "Please log in to follow creators.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const newFollowing = new Set(following);
+      
+      if (newFollowing.has(creatorId)) {
+        // Unfollow
+        await fetch(`/api/users/${creatorId}/unfollow`, { method: "POST" });
+        newFollowing.delete(creatorId);
+        toast({
+          title: "Unfollowed",
+          description: "You unfollowed this creator.",
+        });
+      } else {
+        // Follow
+        await fetch(`/api/users/${creatorId}/follow`, { method: "POST" });
+        newFollowing.add(creatorId);
+        toast({
+          title: "Following",
+          description: "You are now following this creator.",
+        });
+      }
+      
+      setFollowing(newFollowing);
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (videos.length === 0) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -400,23 +443,44 @@ export default function TikTokFeed() {
               <div className="flex items-end gap-3">
                 {/* Creator info */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="w-10 h-10 border-2 border-white">
-                      <AvatarImage src="" />
-                      <AvatarFallback>
-                        {creators[video.userId]?.firstName?.charAt(0) || "C"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-white font-semibold text-sm">
-                        {creators[video.userId]
-                          ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
-                          : "Creator"}
-                      </p>
-                      <p className="text-white/70 text-xs">
-                        {video.views || 0} views
-                      </p>
+                  <div className="flex items-center gap-3 mb-3 justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10 border-2 border-white">
+                        <AvatarImage src="" />
+                        <AvatarFallback>
+                          {creators[video.userId]?.firstName?.charAt(0) || "C"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-white font-semibold text-sm">
+                          {creators[video.userId]
+                            ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
+                            : "Creator"}
+                        </p>
+                        <p className="text-white/70 text-xs">
+                          {video.views || 0} views
+                        </p>
+                      </div>
                     </div>
+                    {user && video.userId !== user.id && (
+                      <button
+                        onClick={() => handleFollow(video.userId)}
+                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
+                        data-testid={`button-follow-${video.userId}`}
+                      >
+                        {following.has(video.userId) ? (
+                          <>
+                            <UserCheck className="w-4 h-4" />
+                            Following
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4" />
+                            Follow
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Video title and category */}
