@@ -138,9 +138,9 @@ function Router() {
           <Route path="/rules" component={CompetitionRules} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/judges" component={Judges} />
-          <Route path="/judge/:id" component={JudgeProfile} />
           <Route path="/judge/dashboard" component={JudgeDashboard} />
           <Route path="/judge/login" component={JudgeLogin} />
+          <Route path="/judge/:id" component={JudgeProfile} />
           <Route path="/advertiser/login" component={AdvertiserLogin} />
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
           <Route path="/advertiser/terms" component={AdvertiserTerms} />
