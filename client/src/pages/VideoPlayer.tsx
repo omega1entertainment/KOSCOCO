@@ -14,7 +14,7 @@ import { ArrowLeft, Check, ThumbsUp, Eye, Share2, Flag, AlertTriangle, ExternalL
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { extractIdFromPermalink } from "@/lib/slugUtils";
+import { extractIdFromPermalink, createPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
 import LiveChat from "@/components/LiveChat";
 
@@ -730,7 +730,6 @@ export default function VideoPlayer() {
                           key={relatedVideo.id}
                           className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer"
                           onClick={() => {
-                            const { createPermalink } = require("@/lib/slugUtils");
                             setLocation(`/video/${createPermalink(relatedVideo.id, relatedVideo.title)}`);
                           }}
                           data-testid={`related-video-${relatedVideo.id}`}
