@@ -158,41 +158,31 @@ export default function TikTokFeed() {
 
         {/* Creator Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/50 to-transparent p-6">
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex-1">
-              {/* Creator Profile */}
-              <div className="flex items-center gap-3 mb-4">
-                <Avatar className="h-12 w-12 border-2 border-primary">
-                  <AvatarImage src={video.creator?.profileImageUrl} />
-                  <AvatarFallback className="bg-primary text-white">
-                    {video.creator?.firstName?.[0]}
-                    {video.creator?.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-white font-semibold text-lg">
-                    {video.creator?.firstName} {video.creator?.lastName}
-                  </h3>
-                  {category && (
-                    <Badge variant="secondary" className="mt-1">
-                      {category.name}
-                    </Badge>
-                  )}
-                </div>
+          <div className="flex-1">
+            {/* Creator Profile */}
+            <div className="flex items-center gap-3 mb-4">
+              <Avatar className="h-12 w-12 border-2 border-primary">
+                <AvatarImage src={video.creator?.profileImageUrl} />
+                <AvatarFallback className="bg-primary text-white">
+                  {video.creator?.firstName?.[0]}
+                  {video.creator?.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h3 className="text-white font-semibold text-lg">
+                  {video.creator?.firstName} {video.creator?.lastName}
+                </h3>
+                {category && (
+                  <Badge variant="secondary" className="mt-1">
+                    {category.name}
+                  </Badge>
+                )}
               </div>
-
-              {/* Video Title */}
-              {video.title && (
-                <p className="text-white text-sm line-clamp-2 mb-3">
-                  {video.title}
-                </p>
-              )}
             </div>
 
             {/* Follow Button */}
             {currentUser?.id !== video.userId && (
               <Button
-                size="icon"
                 variant={isFollowing ? "outline" : "default"}
                 onClick={() => {
                   if (isFollowing) {
@@ -204,15 +194,28 @@ export default function TikTokFeed() {
                 disabled={
                   followMutation.isPending || unfollowMutation.isPending
                 }
-                className="rounded-full h-12 w-12"
+                className="w-full mb-3"
                 data-testid={`button-follow-${video.userId}`}
               >
                 {isFollowing ? (
-                  <Check className="h-5 w-5" />
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Following
+                  </>
                 ) : (
-                  <UserPlus className="h-5 w-5" />
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Follow
+                  </>
                 )}
               </Button>
+            )}
+
+            {/* Video Title */}
+            {video.title && (
+              <p className="text-white text-sm line-clamp-2">
+                {video.title}
+              </p>
             )}
           </div>
         </div>
