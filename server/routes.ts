@@ -1810,47 +1810,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/videos/stream/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const video = await storage.getVideoById(id);
-      
-      if (!video) {
-        return res.status(404).json({ message: "Video not found" });
-      }
-
-      if (video.status !== 'approved') {
-        return res.status(403).json({ message: "Video not available" });
-      }
-
-      if (!video.videoUrl) {
-        return res.status(404).json({ message: "Video file not found" });
-      }
-
-      try {
-        const { bucketName, objectName } = parseObjectPath(video.videoUrl);
-        const bucket = objectStorageClient.bucket(bucketName);
-        const file = bucket.file(objectName);
-        
-        const [exists] = await file.exists();
-        if (!exists) {
-          return res.status(404).json({ message: "Video file not found in storage" });
-        }
-
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Accept-Ranges', 'bytes');
-        
-        file.createReadStream().pipe(res);
-      } catch (storageError) {
-        console.error("Error streaming video:", storageError);
-        res.status(500).json({ message: "Failed to stream video" });
-      }
-    } catch (error) {
-      console.error("Error fetching video:", error);
-      res.status(500).json({ message: "Failed to fetch video" });
-    }
-  });
-
   app.get('/api/videos/:id', async (req, res) => {
     try {
       const { id } = req.params;
