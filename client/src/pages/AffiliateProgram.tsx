@@ -26,7 +26,6 @@ import type { Affiliate } from "@shared/schema";
 const createAffiliateFormSchema = (t: (key: string) => string, isAuthenticated: boolean = false) => {
   const baseSchema = {
     website: z.string().optional(),
-    promotionMethod: z.string().min(10, t('affiliateProgram.validation.promotionMethodMin')),
     agreeToTerms: z.boolean().refine(val => val === true, {
       message: t('affiliateProgram.validation.termsRequired')
     })
@@ -72,7 +71,6 @@ export default function AffiliateProgram() {
       username: user?.username || "",
       password: "",
       website: "",
-      promotionMethod: "",
       agreeToTerms: false
     }
   });
@@ -89,7 +87,7 @@ export default function AffiliateProgram() {
     mutationFn: async (data: AffiliateFormData) => {
       // For authenticated users, only send the fields that the backend expects
       const payload = user 
-        ? { website: data.website, promotionMethod: data.promotionMethod }
+        ? { website: data.website }
         : data;
       return await apiRequest("/api/affiliate/opt-in", "POST", payload);
     },
