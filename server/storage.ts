@@ -2534,6 +2534,33 @@ export class DbStorage implements IStorage {
     }
     return undefined;
   }
+
+  async getAllAffiliateCampaigns(): Promise<any[]> {
+    return db.select().from(schema.affiliateCampaigns);
+  }
+
+  async createAffiliateCampaign(campaign: any): Promise<any> {
+    const [created] = await db.insert(schema.affiliateCampaigns).values(campaign).returning();
+    return created;
+  }
+
+  async deleteAffiliateCampaign(id: string): Promise<void> {
+    await db.delete(schema.marketingAssets).where(eq(schema.marketingAssets.campaignId, id));
+    await db.delete(schema.affiliateCampaigns).where(eq(schema.affiliateCampaigns.id, id));
+  }
+
+  async getAffiliateCampaignAssets(campaignId: string): Promise<any[]> {
+    return db.select().from(schema.marketingAssets).where(eq(schema.marketingAssets.campaignId, campaignId));
+  }
+
+  async createMarketingAsset(asset: any): Promise<any> {
+    const [created] = await db.insert(schema.marketingAssets).values(asset).returning();
+    return created;
+  }
+
+  async deleteMarketingAsset(id: string): Promise<void> {
+    await db.delete(schema.marketingAssets).where(eq(schema.marketingAssets.id, id));
+  }
 }
 
 export const storage = new DbStorage();
