@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Check, UserPlus } from "lucide-react";
+import { Check, UserPlus, Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import type { VideoWithStats, Category } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,7 @@ interface VideoWithCreator extends VideoWithStats {
 export default function TikTokFeed() {
   const { user: currentUser } = useAuth();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [likedVideoIds, setLikedVideoIds] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -77,6 +78,35 @@ export default function TikTokFeed() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async (videoId: string) => {
+      return await apiRequest(`/api/likes`, "POST", { videoId });
+    },
+    onSuccess: (_, videoId) => {
+      setLikedVideoIds(prev => new Set(Array.from(prev).concat(videoId)));
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
+    },
+  });
+
+  const shareMutation = useMutation({
+    mutationFn: async (videoId: string) => {
+      const video = videosData.find(v => v.id === videoId);
+      if (navigator.share) {
+        await navigator.share({
+          title: video?.title,
+          text: `Check out this video by ${video?.creator?.firstName}`,
+          url: window.location.origin + `/feed`,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.origin + `/feed`);
+        toast({
+          title: "Link copied",
+          description: "Feed link copied to clipboard",
+        });
+      }
     },
   });
 
@@ -155,6 +185,68 @@ export default function TikTokFeed() {
           autoPlay
           data-testid={`video-${video.id}`}
         />
+
+        {/* Right Side Menu */}
+        <div className="absolute right-4 bottom-24 flex flex-col gap-6 text-white">
+          {/* Like Button */}
+          <button
+            onClick={() => {
+              const isLiked = likedVideoIds.has(video.id);
+              if (!isLiked) {
+                likeMutation.mutate(video.id);
+              }
+              setLikedVideoIds(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(video.id)) {
+                  newSet.delete(video.id);
+                } else {
+                  newSet.add(video.id);
+                }
+                return newSet;
+              });
+            }}
+            className="flex flex-col items-center gap-1 hover-elevate"
+            data-testid={`button-like-${video.id}`}
+          >
+            <Heart
+              className={`h-7 w-7 transition-all ${
+                likedVideoIds.has(video.id)
+                  ? "fill-red-500 text-red-500"
+                  : "text-white"
+              }`}
+            />
+            <span className="text-xs font-semibold">
+              {Number(video.likeCount) + (likedVideoIds.has(video.id) ? 1 : 0)}
+            </span>
+          </button>
+
+          {/* Comment Button */}
+          <button
+            className="flex flex-col items-center gap-1 hover-elevate"
+            data-testid={`button-comment-${video.id}`}
+          >
+            <MessageCircle className="h-7 w-7" />
+            <span className="text-xs font-semibold">0</span>
+          </button>
+
+          {/* Share Button */}
+          <button
+            onClick={() => shareMutation.mutate(video.id)}
+            className="flex flex-col items-center gap-1 hover-elevate"
+            data-testid={`button-share-${video.id}`}
+          >
+            <Share2 className="h-7 w-7" />
+            <span className="text-xs font-semibold">Share</span>
+          </button>
+
+          {/* Bookmark Button */}
+          <button
+            className="flex flex-col items-center gap-1 hover-elevate"
+            data-testid={`button-bookmark-${video.id}`}
+          >
+            <Bookmark className="h-7 w-7" />
+          </button>
+        </div>
 
         {/* Creator Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/50 to-transparent p-6">
