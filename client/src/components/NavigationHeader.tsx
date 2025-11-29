@@ -61,6 +61,7 @@ export default function NavigationHeader({
   });
   
   const navItems = [
+    { label: t('nav.feed'), path: '/feed' },
     { label: t('nav.categories'), path: '/categories' },
     { label: t('nav.howItWorks'), path: '/how-it-works' },
   ];
@@ -232,6 +233,13 @@ export default function NavigationHeader({
                 >
                   {t('nav.login')}
                 </Button>
+                <Button
+                  className="min-h-11 bg-white text-black hover:bg-white/90"
+                  onClick={() => setLocation("/feed")}
+                  data-testid="button-feed-white"
+                >
+                  Watch Feed
+                </Button>
               </>
             ) : (
               <>
@@ -241,6 +249,13 @@ export default function NavigationHeader({
                   data-testid="button-register"
                 >
                   {t('nav.register')}
+                </Button>
+                <Button
+                  className="min-h-11 bg-white text-black hover:bg-white/90"
+                  onClick={() => setLocation("/feed")}
+                  data-testid="button-feed-white"
+                >
+                  Watch Feed
                 </Button>
                 <Button 
                   variant="outline"
