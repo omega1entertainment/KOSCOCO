@@ -527,7 +527,7 @@ export default function TikTokFeed() {
         /* Video container */
         <div
           ref={containerRef}
-          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide pt-32"
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
           style={{ scrollBehavior: "smooth" }}
         >
           {filteredVideos.map((video, index) => (
