@@ -407,9 +407,9 @@ export default function TikTokFeed() {
   }
 
   return (
-    <div className="h-screen w-screen bg-black flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-black overflow-hidden relative">
       {/* Top navigation bar - Competition arrangement */}
-      <div className="z-50 bg-gradient-to-b from-black/80 to-transparent p-3 safe-area-top flex-shrink-0 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-3 safe-area-top">
         {/* Top row: Close, Phase badge, Mute */}
         <div className="flex items-center justify-between mb-3">
           <button
@@ -514,7 +514,7 @@ export default function TikTokFeed() {
 
       {/* Empty state when no videos match filters */}
       {filteredVideos.length === 0 ? (
-        <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
+        <div className="h-full w-full flex items-center justify-center">
           <div className="text-center text-white">
             <XCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-semibold mb-2">No videos found</p>
@@ -527,13 +527,13 @@ export default function TikTokFeed() {
         /* Video container */
         <div
           ref={containerRef}
-          className="flex-1 w-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide overflow-x-hidden"
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
           style={{ scrollBehavior: "smooth" }}
         >
           {filteredVideos.map((video, index) => (
             <div
               key={video.id}
-              className="h-screen w-screen flex-shrink-0 snap-start relative bg-black flex items-center justify-center group overflow-hidden"
+              className="h-screen w-full flex-shrink-0 snap-start relative bg-black flex items-center justify-center group"
               data-testid={`video-container-${index}`}
             >
               {/* Video */}
@@ -543,7 +543,7 @@ export default function TikTokFeed() {
                 }}
                 src={video.videoUrl}
                 muted={isMuted}
-                className="h-full w-screen object-cover cursor-pointer -mx-px"
+                className="h-full w-full object-contain cursor-pointer"
                 onClick={togglePlayPause}
                 onDoubleClick={() => handleDoubleClick(video.id)}
                 data-testid={`video-${video.id}`}
