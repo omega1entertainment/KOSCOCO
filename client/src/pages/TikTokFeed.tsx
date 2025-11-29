@@ -127,8 +127,8 @@ export default function TikTokFeed() {
     
     const indicesToFetch: number[] = [];
     
-    // Load current and next 2 videos
-    for (let i = currentVideoIndex; i < Math.min(currentVideoIndex + 3, filteredVideos.length); i++) {
+    // Load current and next video only (optimized for mobile)
+    for (let i = Math.max(0, currentVideoIndex); i < Math.min(currentVideoIndex + 2, filteredVideos.length); i++) {
       indicesToFetch.push(i);
     }
     
@@ -325,7 +325,7 @@ export default function TikTokFeed() {
     };
   }, [filteredVideos, currentVideoIndex]);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     // Ignore clicks during scrolling on mobile
     if (isScrolling.current) return;
     
@@ -337,9 +337,9 @@ export default function TikTokFeed() {
         currentVideo.pause();
       }
     }
-  };
+  }, [currentVideoIndex, filteredVideos]);
 
-  const handleDoubleClick = (videoId: string) => {
+  const handleDoubleClick = useCallback((videoId: string) => {
     // Ignore double clicks during scrolling on mobile
     if (isScrolling.current) return;
     
@@ -350,9 +350,9 @@ export default function TikTokFeed() {
       newLiked.add(videoId);
     }
     setLiked(newLiked);
-  };
+  }, [liked]);
 
-  const handleFollow = async (creatorId: string) => {
+  const handleFollow = useCallback(async (creatorId: string) => {
     if (!user) {
       toast({
         title: "Not Logged In",
@@ -392,7 +392,7 @@ export default function TikTokFeed() {
         variant: "destructive",
       });
     }
-  };
+  }, [user, following, toast]);
 
   // Loading state
   if (allVideos.length === 0) {
@@ -528,9 +528,13 @@ export default function TikTokFeed() {
         <div
           ref={containerRef}
           className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-          style={{ scrollBehavior: "smooth" }}
+          style={{ scrollBehavior: "auto" }}
         >
-          {filteredVideos.map((video, index) => (
+          {filteredVideos.map((video, index) => {
+            // Only render current video, previous, and next for better mobile performance
+            const shouldRender = Math.abs(index - currentVideoIndex) <= 1;
+            
+            return shouldRender ? (
             <div
               key={video.id}
               className="h-screen w-full flex-shrink-0 snap-start relative bg-black flex items-center justify-center group"
@@ -543,6 +547,8 @@ export default function TikTokFeed() {
                 }}
                 src={video.videoUrl}
                 muted={isMuted}
+                preload={index === currentVideoIndex ? "auto" : "metadata"}
+                playsInline
                 className="h-full w-full object-contain cursor-pointer"
                 onClick={togglePlayPause}
                 onDoubleClick={() => handleDoubleClick(video.id)}
@@ -694,7 +700,15 @@ export default function TikTokFeed() {
                 </div>
               )}
             </div>
-          ))}
+            ) : (
+              // Placeholder for off-screen videos
+              <div
+                key={video.id}
+                className="h-screen w-full flex-shrink-0 snap-start relative bg-black"
+                data-testid={`video-container-${index}`}
+              />
+            );
+          })}
           {/* Bottom spacer */}
           <div className="h-[50px] flex-shrink-0"></div>
         </div>
