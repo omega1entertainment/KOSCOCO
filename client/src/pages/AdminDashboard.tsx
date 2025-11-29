@@ -4122,6 +4122,21 @@ function AdminDashboardContent() {
                     </div>
                   )}
                 </TabsContent>
+
+            <TabsContent value="campaigns" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Affiliate Campaigns & Marketing Assets</CardTitle>
+                  <p className="text-sm text-muted-foreground">Create and manage campaigns with marketing assets (banners, creatives, tracking links)</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button onClick={() => { const name = prompt("Campaign name:"); if (name) { apiRequest("/api/admin/campaigns", "POST", { name, description: "New campaign" }).then(() => queryClient.invalidateQueries({ queryKey: ["/api/admin/campaigns"] })); } }} data-testid="button-create-campaign">Create Campaign</Button>
+                    <p className="text-sm text-muted-foreground">API Endpoints available for campaigns and marketing assets. Use admin dashboard to manage affiliate promotional materials.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
               </Tabs>
 
               {/* Ad Rejection Dialog */}
@@ -5197,21 +5212,6 @@ function AdminDashboardContent() {
           }}
         />
       )}
-
-            <TabsContent value="campaigns" className="mt-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Affiliate Campaigns & Marketing Assets</CardTitle>
-                  <p className="text-sm text-muted-foreground">Create and manage campaigns with marketing assets (banners, creatives, tracking links)</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <Button onClick={() => { const name = prompt("Campaign name:"); if (name) { apiRequest("/api/admin/campaigns", "POST", { name, description: "New campaign" }).then(() => queryClient.invalidateQueries({ queryKey: ["/api/admin/campaigns"] })); } }} data-testid="button-create-campaign">Create Campaign</Button>
-                    <p className="text-sm text-muted-foreground">API Endpoints available for campaigns and marketing assets. Use admin dashboard to manage affiliate promotional materials.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
       {/* Delete Advertiser Confirmation Dialog */}
       <AlertDialog open={deleteAdvertiserDialogOpen} onOpenChange={setDeleteAdvertiserDialogOpen}>
