@@ -152,7 +152,6 @@ export default function TikTokFeed() {
           key={video.id}
           src={video.videoUrl}
           className="w-full h-full object-contain"
-          controls
           autoPlay
           data-testid={`video-${video.id}`}
         />
