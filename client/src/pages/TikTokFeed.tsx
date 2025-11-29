@@ -444,44 +444,42 @@ export default function TikTokFeed() {
               <div className="flex items-end gap-3">
                 {/* Creator info */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3 justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10 border-2 border-white">
-                        <AvatarImage src="" />
-                        <AvatarFallback>
-                          {creators[video.userId]?.firstName?.charAt(0) || "C"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-white font-semibold text-sm">
-                          {creators[video.userId]
-                            ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
-                            : "Creator"}
-                        </p>
-                        <p className="text-white/70 text-xs">
-                          {video.views || 0} views
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Avatar className="w-10 h-10 border-2 border-white">
+                      <AvatarImage src="" />
+                      <AvatarFallback>
+                        {creators[video.userId]?.firstName?.charAt(0) || "C"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-white font-semibold text-sm">
+                        {creators[video.userId]
+                          ? `${creators[video.userId].firstName} ${creators[video.userId].lastName}`.trim()
+                          : "Creator"}
+                      </p>
+                      <p className="text-white/70 text-xs">
+                        {video.views || 0} views
+                      </p>
+                      {user && video.userId !== user.id && (
+                        <button
+                          onClick={() => handleFollow(video.userId)}
+                          className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold whitespace-nowrap transition-colors mt-1"
+                          data-testid={`button-follow-${video.userId}`}
+                        >
+                          {following.has(video.userId) ? (
+                            <>
+                              <UserCheck className="w-3 h-3" />
+                              Following
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="w-3 h-3" />
+                              Follow
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
-                    {user && video.userId !== user.id && (
-                      <button
-                        onClick={() => handleFollow(video.userId)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold whitespace-nowrap transition-colors"
-                        data-testid={`button-follow-${video.userId}`}
-                      >
-                        {following.has(video.userId) ? (
-                          <>
-                            <UserCheck className="w-3 h-3" />
-                            Following
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-3 h-3" />
-                            Follow
-                          </>
-                        )}
-                      </button>
-                    )}
                   </div>
 
                   {/* Video title and category */}
