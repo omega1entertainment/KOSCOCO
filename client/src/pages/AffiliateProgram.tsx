@@ -390,28 +390,6 @@ export default function AffiliateProgram() {
 
                   <FormField
                     control={form.control}
-                    name="promotionMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('affiliateProgram.form.promotionMethod')}</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder={t('affiliateProgram.form.promotionMethodPlaceholder')}
-                            className="min-h-[100px]"
-                            {...field}
-                            data-testid="textarea-promotion-method"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t('affiliateProgram.form.promotionMethodDescription')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="agreeToTerms"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
