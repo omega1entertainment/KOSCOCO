@@ -675,8 +675,8 @@ export class DbStorage implements IStorage {
     await db.delete(schema.videos).where(eq(schema.videos.id, id));
   }
 
-  async getApprovedVideos(): Promise<VideoWithStats[]> {
-    const videosWithVotes = await db
+  async getApprovedVideos(): Promise<any[]> {
+    const videosWithStats = await db
       .select({
         id: schema.videos.id,
         userId: schema.videos.userId,
@@ -699,6 +699,7 @@ export class DbStorage implements IStorage {
         moderatedAt: schema.videos.moderatedAt,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
+        likeCount: sql<number>`COALESCE((SELECT COUNT(*) FROM likes WHERE likes.video_id = videos.id), 0)`,
         voteCount: sql<number>`COALESCE(COUNT(DISTINCT ${schema.votes.id}), 0)`,
       })
       .from(schema.videos)
@@ -707,7 +708,7 @@ export class DbStorage implements IStorage {
       .groupBy(schema.videos.id)
       .orderBy(desc(schema.videos.createdAt));
 
-    return videosWithVotes;
+    return videosWithStats;
   }
 
   async getRejectedVideos(): Promise<Video[]> {
