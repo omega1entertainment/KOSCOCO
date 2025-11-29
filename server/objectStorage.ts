@@ -95,6 +95,12 @@ export class ObjectStorageService {
         "Cache-Control": `${
           isPublic ? "public" : "private"
         }, max-age=${cacheTtlSec}`,
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Accept-Ranges": "bytes",
+        "X-Content-Type-Options": "nosniff",
       });
 
       const stream = file.createReadStream();
