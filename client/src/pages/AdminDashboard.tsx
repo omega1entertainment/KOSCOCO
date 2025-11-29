@@ -409,6 +409,8 @@ function AdminDashboardContent() {
   const [selectedAffiliateId, setSelectedAffiliateId] = useState<string | null>(null);
   const [affiliateStatusDialog, setAffiliateStatusDialog] = useState(false);
   const [newAffiliateStatus, setNewAffiliateStatus] = useState("active");
+  const [affiliateCommissionDialog, setAffiliateCommissionDialog] = useState(false);
+  const [newCommissionRate, setNewCommissionRate] = useState(20);
   const [affiliatePayoutActionDialog, setAffiliatePayoutActionDialog] = useState(false);
   const [affiliatePayoutAction, setAffiliatePayoutAction] = useState<"approve" | "reject">("approve");
   const [affiliateSelectedPayoutId, setAffiliateSelectedPayoutId] = useState<string | null>(null);
@@ -584,6 +586,21 @@ function AdminDashboardContent() {
     onSuccess: () => {
       toast({ title: "Success", description: "Affiliate status updated" });
       setAffiliateStatusDialog(false);
+      setSelectedAffiliateId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateAffiliateCommissionMutation = useMutation({
+    mutationFn: async ({ affiliateId, commissionRate }: { affiliateId: string; commissionRate: number }) => {
+      return await apiRequest(`/api/admin/affiliates/${affiliateId}/commission`, "PATCH", { commissionRate });
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Commission rate updated" });
+      setAffiliateCommissionDialog(false);
       setSelectedAffiliateId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/affiliates"] });
     },
@@ -4581,6 +4598,7 @@ function AdminDashboardContent() {
                                 <th className="text-left p-3 font-semibold">Referral Code</th>
                                 <th className="text-right p-3 font-semibold">Referrals</th>
                                 <th className="text-right p-3 font-semibold">Earnings</th>
+                                <th className="text-center p-3 font-semibold">Commission %</th>
                                 <th className="text-left p-3 font-semibold">Status</th>
                                 <th className="text-left p-3 font-semibold">Actions</th>
                               </tr>
@@ -4595,24 +4613,39 @@ function AdminDashboardContent() {
                                   <td className="p-3 font-mono text-sm">{affiliate.referral_code}</td>
                                   <td className="p-3 text-right">{affiliate.total_referrals}</td>
                                   <td className="p-3 text-right font-semibold">{(affiliate.total_earnings || 0).toLocaleString()} FCFA</td>
+                                  <td className="p-3 text-center font-semibold">{affiliate.commission_rate || 20}%</td>
                                   <td className="p-3">
                                     <Badge variant={affiliate.status === "active" ? "default" : "secondary"}>
                                       {affiliate.status}
                                     </Badge>
                                   </td>
                                   <td className="p-3">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedAffiliateId(affiliate.id);
-                                        setNewAffiliateStatus(affiliate.status);
-                                        setAffiliateStatusDialog(true);
-                                      }}
-                                      data-testid={`button-update-affiliate-status-${affiliate.id}`}
-                                    >
-                                      Edit Status
-                                    </Button>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedAffiliateId(affiliate.id);
+                                          setNewAffiliateStatus(affiliate.status);
+                                          setAffiliateStatusDialog(true);
+                                        }}
+                                        data-testid={`button-update-affiliate-status-${affiliate.id}`}
+                                      >
+                                        Status
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedAffiliateId(affiliate.id);
+                                          setNewCommissionRate(affiliate.commission_rate || 20);
+                                          setAffiliateCommissionDialog(true);
+                                        }}
+                                        data-testid={`button-update-affiliate-commission-${affiliate.id}`}
+                                      >
+                                        Commission
+                                      </Button>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
@@ -4739,6 +4772,45 @@ function AdminDashboardContent() {
                       data-testid="button-confirm-status"
                     >
                       {updateAffiliateStatusMutation.isPending ? "Updating..." : "Update Status"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Update Commission Rate Dialog */}
+              <Dialog open={affiliateCommissionDialog} onOpenChange={setAffiliateCommissionDialog}>
+                <DialogContent data-testid="dialog-update-affiliate-commission">
+                  <DialogHeader>
+                    <DialogTitle>Update Commission Rate</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="commission-rate">Commission Rate (%)</Label>
+                      <Input
+                        id="commission-rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={newCommissionRate}
+                        onChange={(e) => setNewCommissionRate(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                        data-testid="input-commission-rate"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setAffiliateCommissionDialog(false)} data-testid="button-cancel-commission">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (selectedAffiliateId) {
+                          updateAffiliateCommissionMutation.mutate({ affiliateId: selectedAffiliateId, commissionRate: newCommissionRate });
+                        }
+                      }}
+                      disabled={updateAffiliateCommissionMutation.isPending}
+                      data-testid="button-confirm-commission"
+                    >
+                      {updateAffiliateCommissionMutation.isPending ? "Updating..." : "Update Commission"}
                     </Button>
                   </div>
                 </DialogContent>
