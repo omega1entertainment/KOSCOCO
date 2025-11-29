@@ -349,26 +349,6 @@ export default function TikTokFeed() {
         <X className="w-6 h-6" />
       </button>
 
-      {/* Follow button - only show if viewing another creator's video */}
-      {user && videos.length > 0 && videos[currentVideoIndex] && videos[currentVideoIndex].userId !== user.id && (
-        <button
-          onClick={() => handleFollow(videos[currentVideoIndex].userId)}
-          className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors"
-          data-testid={`button-follow-top-${videos[currentVideoIndex].userId}`}
-        >
-          {following.has(videos[currentVideoIndex].userId) ? (
-            <>
-              <UserCheck className="w-5 h-5" />
-              Following
-            </>
-          ) : (
-            <>
-              <UserPlus className="w-5 h-5" />
-              Follow
-            </>
-          )}
-        </button>
-      )}
 
       {/* Mute button */}
       <button
@@ -464,7 +444,7 @@ export default function TikTokFeed() {
               <div className="flex items-end gap-3">
                 {/* Creator info */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3 justify-between">
+                  <div className="flex items-center gap-2 mb-3 justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10 border-2 border-white">
                         <AvatarImage src="" />
@@ -483,6 +463,25 @@ export default function TikTokFeed() {
                         </p>
                       </div>
                     </div>
+                    {user && video.userId !== user.id && (
+                      <button
+                        onClick={() => handleFollow(video.userId)}
+                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold whitespace-nowrap transition-colors"
+                        data-testid={`button-follow-${video.userId}`}
+                      >
+                        {following.has(video.userId) ? (
+                          <>
+                            <UserCheck className="w-3 h-3" />
+                            Following
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-3 h-3" />
+                            Follow
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Video title and category */}
