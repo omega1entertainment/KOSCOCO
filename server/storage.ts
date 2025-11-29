@@ -205,12 +205,9 @@ export interface IStorage {
   getDashboardStats(): Promise<{
     totalUsers: number;
     totalVideos: number;
-    pendingVideos: number;
-    approvedVideos: number;
-    totalVotes: number;
-    totalRevenue: number;
-    pendingPayouts: number;
-    activeAdvertisers: number;
+    totalViews: number;
+    suspendedUsers: number;
+    unverifiedEmails: number;
   }>;
   getVideoStats(videoId: string): Promise<{
     views: number;
@@ -2067,41 +2064,22 @@ export class DbStorage implements IStorage {
   async getDashboardStats(): Promise<{
     totalUsers: number;
     totalVideos: number;
-    pendingVideos: number;
-    approvedVideos: number;
-    totalVotes: number;
-    totalRevenue: number;
-    pendingPayouts: number;
-    activeAdvertisers: number;
+    totalViews: number;
+    suspendedUsers: number;
+    unverifiedEmails: number;
   }> {
     const [users] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.users);
     const [videos] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.videos);
-    const [pendingVids] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.videos).where(eq(schema.videos.status, 'pending'));
-    const [approvedVids] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.videos).where(eq(schema.videos.status, 'approved'));
-    const [votes] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.votes);
-    const [pendingPay] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.payoutRequests).where(eq(schema.payoutRequests.status, 'pending'));
-    const [activeAdv] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.advertisers).where(eq(schema.advertisers.status, 'active'));
-
-    // Calculate total revenue from registrations and paid votes
-    const [regRevenue] = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${schema.registrations.amountPaid}), 0)` 
-    }).from(schema.registrations).where(eq(schema.registrations.paymentStatus, 'successful'));
-    
-    const [voteRevenue] = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${schema.votePurchases.amount}), 0)` 
-    }).from(schema.votePurchases).where(eq(schema.votePurchases.status, 'successful'));
-
-    const totalRevenue = (regRevenue.total || 0) + (voteRevenue.total || 0);
+    const [views] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.watchHistory);
+    const [suspended] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.users).where(eq(schema.users.suspended, true));
+    const [unverified] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.users).where(eq(schema.users.emailVerified, false));
 
     return {
       totalUsers: users.count,
       totalVideos: videos.count,
-      pendingVideos: pendingVids.count,
-      approvedVideos: approvedVids.count,
-      totalVotes: votes.count,
-      totalRevenue,
-      pendingPayouts: pendingPay.count,
-      activeAdvertisers: activeAdv.count,
+      totalViews: views.count,
+      suspendedUsers: suspended.count,
+      unverifiedEmails: unverified.count,
     };
   }
 
