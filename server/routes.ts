@@ -5,7 +5,7 @@ import * as schema from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { setupAuth, isAuthenticated, isAdvertiser } from "./auth";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
-import { ObjectPermission } from "./objectAcl";
+import { ObjectPermission, getObjectAclPolicy } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
 import type { SelectUser } from "@shared/schema";
 import { insertJudgeScoreSchema, insertNewsletterSubscriberSchema } from "@shared/schema";
@@ -601,16 +601,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const objectStorageService = new ObjectStorageService();
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      // Allow public access to thumbnail images without authentication
-      if (!req.path.includes('thumbnails')) {
-        const canAccess = await objectStorageService.canAccessObjectEntity({
-          objectFile,
-          userId: (req.user as SelectUser | undefined)?.id,
-          requestedPermission: ObjectPermission.READ,
-        });
-        if (!canAccess) {
-          return res.sendStatus(401);
-        }
+      
+      // Allow public access to all thumbnails and videos
+      // These are competition content that should be publicly viewable
+      if (req.path.includes('thumbnails') || req.path.includes('videos')) {
+        objectStorageService.downloadObject(objectFile, res);
+        return;
+      }
+      
+      // For other objects, check ACL policy
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: (req.user as SelectUser | undefined)?.id,
+        requestedPermission: ObjectPermission.READ,
+      });
+      
+      if (!canAccess) {
+        return res.sendStatus(401);
       }
       objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
