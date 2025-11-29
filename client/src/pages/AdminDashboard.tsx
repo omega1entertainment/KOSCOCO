@@ -3452,7 +3452,7 @@ function AdminDashboardContent() {
                   ) : (
                     <div className="space-y-6">
                       {/* Summary Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Card className="bg-muted/50">
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground">Total Amount</p>
@@ -3461,14 +3461,8 @@ function AdminDashboardContent() {
                         </Card>
                         <Card className="bg-green-50/50 dark:bg-green-950/20">
                           <CardContent className="p-4">
-                            <p className="text-sm text-muted-foreground">Completed</p>
+                            <p className="text-sm text-muted-foreground">Completed/Approved</p>
                             <p className="text-2xl font-bold text-green-600">{(paymentsData.summary.completedAmount || 0).toLocaleString()} FCFA</p>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-yellow-50/50 dark:bg-yellow-950/20">
-                          <CardContent className="p-4">
-                            <p className="text-sm text-muted-foreground">Pending</p>
-                            <p className="text-2xl font-bold text-yellow-600">{(paymentsData.summary.pendingAmount || 0).toLocaleString()} FCFA</p>
                           </CardContent>
                         </Card>
                         <Card className="bg-blue-50/50 dark:bg-blue-950/20">
