@@ -52,7 +52,6 @@ import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
-import VideoFeed from "@/pages/VideoFeed";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -111,7 +110,6 @@ function Router() {
           <Route path="/categories" component={Categories} />
           <Route path="/category/:id" component={CategoryVideos} />
           <Route path="/video/:permalink" component={VideoPlayer} />
-          <Route path="/feed" component={VideoFeed} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/prizes" component={Prizes} />
           <Route path="/how-it-works" component={HowItWorks} />

@@ -1059,18 +1059,6 @@
   "creator.toast.videoUpdatedDescription": "Your video has been updated successfully",
   "creator.toast.updateFailed": "Update Failed",
   
-  "videoFeed.views": "views",
-  "videoFeed.followedSuccess": "Followed",
-  "videoFeed.followedDescription": "You are now following this creator",
-  "videoFeed.followFailed": "Follow Failed",
-  "videoFeed.likedTitle": "Liked",
-  "videoFeed.likedDescription": "You liked this video",
-  "videoFeed.likeFailedTitle": "Like Failed",
-  "videoFeed.noVideosAvailable": "No videos available",
-  "videoFeed.backHome": "Back Home",
-  "videoFeed.shareCopied": "Link Copied",
-  "videoFeed.linkCopiedDescription": "Video link copied to clipboard",
-  
   "common.saving": "Saving...",
   "common.deleting": "Deleting..."
 }
