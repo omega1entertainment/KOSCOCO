@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ type CreatorProfile = {
   email: string;
   username: string | null;
   profileImageUrl: string | null;
+  bio: string | null;
   location: string | null;
   age: number | null;
   emailVerified: boolean;
@@ -35,6 +37,7 @@ export default function EditProfile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
   const [location, setLocation_] = useState("");
   const [age, setAge] = useState("");
 
@@ -49,6 +52,7 @@ export default function EditProfile() {
     setFirstName(profile.firstName || "");
     setLastName(profile.lastName || "");
     setUsername(profile.username || "");
+    setBio(profile.bio || "");
     setLocation_(profile.location || "");
     setAge(profile.age ? profile.age.toString() : "");
     if (profile.profileImageUrl) {
@@ -81,6 +85,7 @@ export default function EditProfile() {
           firstName,
           lastName,
           username,
+          bio,
           location,
           age: age ? parseInt(age, 10) : null,
         }),
@@ -240,6 +245,20 @@ export default function EditProfile() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
                   data-testid="input-username"
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself"
+                  data-testid="textarea-bio"
+                  className="resize-none"
+                  rows={4}
                 />
               </div>
 
