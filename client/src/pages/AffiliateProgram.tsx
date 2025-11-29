@@ -425,7 +425,6 @@ export default function AffiliateProgram() {
                   <div className="flex justify-center pt-4">
                     <Button
                       type="submit"
-                      disabled={optInMutation.isPending}
                       size="lg"
                       data-testid="button-submit-affiliate"
                     >
