@@ -2590,49 +2590,6 @@ export class DbStorage implements IStorage {
   async deleteMarketingAsset(id: string): Promise<void> {
     await db.delete(schema.marketingAssets).where(eq(schema.marketingAssets.id, id));
   }
-
-  async createEmojiReaction(reaction: InsertEmojiReaction): Promise<EmojiReaction> {
-    const [created] = await db.insert(schema.emojiReactions).values(reaction).returning();
-    return created;
-  }
-
-  async deleteEmojiReaction(videoId: string, emoji: string, userId?: string, ipAddress?: string): Promise<void> {
-    if (userId) {
-      await db.delete(schema.emojiReactions).where(
-        and(eq(schema.emojiReactions.videoId, videoId), eq(schema.emojiReactions.emoji, emoji), eq(schema.emojiReactions.userId, userId))
-      );
-    } else if (ipAddress) {
-      await db.delete(schema.emojiReactions).where(
-        and(eq(schema.emojiReactions.videoId, videoId), eq(schema.emojiReactions.emoji, emoji), eq(schema.emojiReactions.ipAddress, ipAddress))
-      );
-    }
-  }
-
-  async getVideoEmojiReactions(videoId: string): Promise<{ emoji: string; count: number }[]> {
-    const result = await db
-      .select({
-        emoji: schema.emojiReactions.emoji,
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(schema.emojiReactions)
-      .where(eq(schema.emojiReactions.videoId, videoId))
-      .groupBy(schema.emojiReactions.emoji)
-      .orderBy(desc(sql<number>`COUNT(*)`));
-    return result;
-  }
-
-  async getUserEmojiReactionForVideo(userId: string | null, videoId: string, emoji: string, ipAddress?: string): Promise<EmojiReaction[]> {
-    if (userId) {
-      return await db.select().from(schema.emojiReactions).where(
-        and(eq(schema.emojiReactions.videoId, videoId), eq(schema.emojiReactions.emoji, emoji), eq(schema.emojiReactions.userId, userId))
-      );
-    } else if (ipAddress) {
-      return await db.select().from(schema.emojiReactions).where(
-        and(eq(schema.emojiReactions.videoId, videoId), eq(schema.emojiReactions.emoji, emoji), eq(schema.emojiReactions.ipAddress, ipAddress))
-      );
-    }
-    return [];
-  }
 }
 
 export const storage = new DbStorage();
