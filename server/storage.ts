@@ -711,6 +711,58 @@ export class DbStorage implements IStorage {
     return videosWithStats;
   }
 
+  async getAllApprovedVideosWithCreator(): Promise<any[]> {
+    const videosWithStats = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        slug: schema.videos.slug,
+        createdAt: schema.videos.createdAt,
+        likeCount: sql<number>`COALESCE((SELECT COUNT(*) FROM likes WHERE likes.video_id = videos.id), 0)`,
+        voteCount: sql<number>`COALESCE(COUNT(DISTINCT ${schema.votes.id}), 0)`,
+        creator: {
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          profileImageUrl: schema.users.profileImageUrl,
+        },
+      })
+      .from(schema.videos)
+      .innerJoin(schema.users, eq(schema.videos.userId, schema.users.id))
+      .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
+      .where(eq(schema.videos.status, 'approved'))
+      .groupBy(schema.videos.id, schema.users.id)
+      .orderBy(desc(schema.videos.createdAt));
+
+    return videosWithStats;
+  }
+
+  async follow(followerId: string, followingId: string): Promise<void> {
+    await db.insert(schema.follows).values({ followerId, followingId }).onConflictDoNothing();
+  }
+
+  async unfollow(followerId: string, followingId: string): Promise<void> {
+    await db.delete(schema.follows).where(
+      and(eq(schema.follows.followerId, followerId), eq(schema.follows.followingId, followingId))
+    );
+  }
+
+  async getFollowing(userId: string): Promise<string[]> {
+    const result = await db.select({ followingId: schema.follows.followingId })
+      .from(schema.follows)
+      .where(eq(schema.follows.followerId, userId));
+    return result.map(r => r.followingId);
+  }
+
   async getRejectedVideos(): Promise<Video[]> {
     return await db.select().from(schema.videos)
       .where(eq(schema.videos.status, 'rejected'))

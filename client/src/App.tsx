@@ -52,6 +52,7 @@ import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
+import TikTokFeed from "@/pages/TikTokFeed";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -66,7 +67,7 @@ function ScrollToTop() {
 
 function Router() {
   const { isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -86,6 +87,20 @@ function Router() {
   const handleUploadClick = () => {
     setLocation("/upload");
   };
+
+  // Check if current location is feed - render without header/footer
+  const isFeedPage = location === "/feed";
+
+  if (isFeedPage) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <ScrollToTop />
+        <Switch>
+          <Route path="/feed" component={TikTokFeed} />
+        </Switch>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -122,20 +137,20 @@ function Router() {
           <Route path="/help" component={Help} />
           <Route path="/rules" component={CompetitionRules} />
           <Route path="/admin" component={AdminDashboard} />
-          <Route path="/judge-dashboard" component={JudgeDashboard} />
-          <Route path="/judge/login" component={JudgeLogin} />
           <Route path="/judges" component={Judges} />
-          <Route path="/judges/:id" component={JudgeProfile} />
-          <Route path="/advertise" component={Advertise} />
+          <Route path="/judge/:id" component={JudgeProfile} />
+          <Route path="/judge/dashboard" component={JudgeDashboard} />
+          <Route path="/judge/login" component={JudgeLogin} />
           <Route path="/advertiser/login" component={AdvertiserLogin} />
           <Route path="/advertiser/signup" component={AdvertiserSignup} />
           <Route path="/advertiser/terms" component={AdvertiserTerms} />
           <Route path="/advertiser/dashboard" component={AdvertiserDashboard} />
-          <Route path="/advertiser/campaign/create" component={CreateCampaign} />
+          <Route path="/advertiser/create-campaign" component={CreateCampaign} />
           <Route path="/advertiser/campaign/:id/edit" component={EditCampaign} />
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
-          <Route path="/edit-profile" component={EditProfile} />
+          <Route path="/profile" component={EditProfile} />
+          <Route path="/advertise" component={Advertise} />
           <Route component={NotFound} />
         </Switch>
       </main>

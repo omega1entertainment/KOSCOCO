@@ -6087,6 +6087,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public: Get all approved videos with creator info for feed
+  app.get('/api/videos', async (req: any, res) => {
+    try {
+      const videos = await storage.getAllApprovedVideosWithCreator();
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching all videos:", error);
+      res.status(500).json({ message: "Failed to fetch videos" });
+    }
+  });
+
+  // User: Follow another user
+  app.post('/api/user/follow', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ message: "User ID required" });
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+      await storage.follow(req.user.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Failed to follow user" });
+    }
+  });
+
+  // User: Unfollow another user
+  app.post('/api/user/unfollow', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ message: "User ID required" });
+      await storage.unfollow(req.user.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Failed to unfollow user" });
+    }
+  });
+
+  // User: Get list of users being followed
+  app.get('/api/user/following', isAuthenticated, async (req: any, res) => {
+    try {
+      const following = await storage.getFollowing(req.user.id);
+      res.json(following);
+    } catch (error) {
+      console.error("Error fetching following list:", error);
+      res.status(500).json({ message: "Failed to fetch following list" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
