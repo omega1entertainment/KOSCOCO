@@ -20,8 +20,6 @@ export default function VideoFeed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "disqualified">("all");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // Fetch categories
   const { data: categories = [] } = useQuery<Category[]>({
@@ -49,10 +47,8 @@ export default function VideoFeed() {
     enabled: categories.length > 0,
   });
 
-  // Filter videos based on selection
-  const filteredVideos = selectedCategory
-    ? allVideos.filter(v => v.categoryId === selectedCategory)
-    : allVideos;
+  // Use all videos without filtering
+  const filteredVideos = allVideos;
 
   const currentVideo = filteredVideos[currentVideoIndex];
 
@@ -163,46 +159,6 @@ export default function VideoFeed() {
 
   return (
     <div className="h-screen w-full bg-black overflow-hidden" ref={containerRef}>
-      {/* Category Filter Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <Badge
-            variant={selectedCategory === "" ? "default" : "outline"}
-            className="cursor-pointer whitespace-nowrap"
-            onClick={() => setSelectedCategory("")}
-            data-testid="badge-all-categories"
-          >
-            All
-          </Badge>
-          {categories.map((cat) => (
-            <Badge
-              key={cat.id}
-              variant={selectedCategory === cat.id ? "default" : "outline"}
-              className="cursor-pointer whitespace-nowrap"
-              onClick={() => setSelectedCategory(cat.id)}
-              data-testid={`badge-category-${cat.id}`}
-            >
-              {cat.name}
-            </Badge>
-          ))}
-        </div>
-
-        {/* Status Badges */}
-        <div className="flex gap-2 mt-3">
-          {["all", "active", "disqualified"].map((filter) => (
-            <Badge
-              key={filter}
-              variant={activeFilter === filter as any ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => setActiveFilter(filter as any)}
-              data-testid={`badge-filter-${filter}`}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
       {/* Main Video Container */}
       <div className="h-full w-full flex items-center justify-center relative">
         {/* Video */}
@@ -227,7 +183,7 @@ export default function VideoFeed() {
                   <div className="flex items-center gap-3 mb-3">
                     <div>
                       <p className="font-bold text-white text-sm" data-testid="text-creator-name">
-                        {currentVideo.createdByName || "Creator"}
+                        Creator
                       </p>
                       <p className="text-xs text-gray-300">
                         {currentVideo.views || 0} {t("videoFeed.views")}
@@ -249,9 +205,9 @@ export default function VideoFeed() {
                 </div>
 
                 {/* Follow Button */}
-                {isAuthenticated && user?.id !== currentVideo.createdBy && (
+                {isAuthenticated && user?.id !== currentVideo.userId && (
                   <Button
-                    onClick={() => followMutation.mutate(currentVideo.createdBy)}
+                    onClick={() => followMutation.mutate(currentVideo.userId)}
                     disabled={followMutation.isPending}
                     className="ml-3 bg-red-600 hover:bg-red-700 text-white whitespace-nowrap"
                     size="sm"
