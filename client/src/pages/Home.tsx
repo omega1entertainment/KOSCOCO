@@ -196,9 +196,9 @@ export default function Home() {
                     <div
                       key={idx}
                       className={`flex-shrink-0 transition-all duration-300 ${
-                        isCenter ? 'scale-100 opacity-100 w-48' : 
-                        isAdjacent ? 'scale-75 opacity-40 w-48' : 
-                        'scale-50 opacity-0 w-48'
+                        isCenter ? 'scale-100 opacity-100 w-96' : 
+                        isAdjacent ? 'scale-75 opacity-40 w-96' : 
+                        'scale-50 opacity-0 w-96'
                       }`}
                     >
                       <div className="bg-white dark:bg-muted rounded-2xl overflow-hidden shadow-lg hover-elevate">
