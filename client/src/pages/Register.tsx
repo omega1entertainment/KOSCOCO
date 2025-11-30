@@ -64,19 +64,27 @@ export default function Register() {
         setReferralCode(storedRef);
       }
     }
-  }, [toast]);
+  }, []);
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: userRegistrations = [] } = useQuery<Registration[]>({
     queryKey: ["/api/registrations/user"],
     enabled: !!user,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   const { data: registrationStatus } = useQuery<{ enabled: boolean }>({
     queryKey: ["/api/registrations/status"],
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Extract already registered category IDs (approved registrations only)
@@ -159,7 +167,7 @@ export default function Register() {
 
       window.FlutterwaveCheckout(config);
     }
-  }, [paymentData, user, toast, setLocation]);
+  }, [paymentData, user]);
 
   const registerMutation = useMutation({
     mutationFn: async () => {
