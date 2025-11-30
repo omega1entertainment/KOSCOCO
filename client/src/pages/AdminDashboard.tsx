@@ -1090,6 +1090,26 @@ function AdminDashboardContent() {
     },
   });
 
+  const deleteReportMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      return await apiRequest(`/api/admin/reports/${reportId}`, "DELETE");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Report Deleted",
+        description: "The report has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reports"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const createJudgeSchema = z.object({
     email: z.string().email(),
     password: z.string().min(8, t("admin.validation.passwordMinLength")),
@@ -3956,6 +3976,18 @@ function AdminDashboardContent() {
                                   data-testid={`button-dismiss-${report.id}`}
                                 >
                                   {t("admin.reports.dismiss")}
+                                </Button>
+                                <Button
+                                  onClick={() =>
+                                    deleteReportMutation.mutate(report.id)
+                                  }
+                                  disabled={deleteReportMutation.isPending}
+                                  variant="destructive"
+                                  size="icon"
+                                  data-testid={`button-delete-report-${report.id}`}
+                                  title="Delete report"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
                             )}

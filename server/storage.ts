@@ -159,6 +159,7 @@ export interface IStorage {
   getAllReports(): Promise<Report[]>;
   getReportsByVideo(videoId: string): Promise<Report[]>;
   updateReportStatus(id: string, status: string, reviewedBy: string): Promise<Report | undefined>;
+  deleteReport(id: string): Promise<void>;
   
   // Advertiser methods
   getAdvertiser(id: string): Promise<Advertiser | undefined>;
@@ -1599,6 +1600,10 @@ export class DbStorage implements IStorage {
       .where(eq(schema.reports.id, id))
       .returning();
     return report;
+  }
+
+  async deleteReport(id: string): Promise<void> {
+    await db.delete(schema.reports).where(eq(schema.reports.id, id));
   }
 
   // Advertiser methods

@@ -4270,6 +4270,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Delete report
+  app.delete('/api/admin/reports/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deleteReport(id);
+      res.json({ message: "Report deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      res.status(500).json({ message: "Failed to delete report" });
+    }
+  });
+
   app.post('/api/seed', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
