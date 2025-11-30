@@ -136,13 +136,18 @@ export default function Register() {
               });
               
               queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-              setLocation("/dashboard");
+              
+              // Add a small delay to ensure modal closes properly, then redirect
+              setTimeout(() => {
+                setLocation("/dashboard");
+              }, 500);
             } catch (error: any) {
               toast({
                 title: "Payment Verification Failed",
                 description: error.message || "Please contact support.",
                 variant: "destructive",
               });
+              setPaymentData(null);
             }
           } else {
             toast({
@@ -150,9 +155,8 @@ export default function Register() {
               description: "Your registration was created but payment was not completed. Please complete payment from your dashboard.",
               variant: "destructive",
             });
+            setPaymentData(null);
           }
-          
-          setPaymentData(null);
         },
         onclose: () => {
           toast({
