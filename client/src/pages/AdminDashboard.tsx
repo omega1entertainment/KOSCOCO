@@ -4387,7 +4387,6 @@ function AdminDashboardContent() {
                 </CardContent>
               </Card>
             </TabsContent>
-            </Tabs>
 
             {/* Ad Rejection Dialog - moved outside tabs */}
             <AlertDialog
