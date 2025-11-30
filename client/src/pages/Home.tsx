@@ -24,6 +24,10 @@ import promoVideoEnglish from "@assets/Koscoco Promo Video English_1763290871496
 import promoVideoFrench from "@assets/Koscoco Promo Video French_1763290871498.mp4";
 import landryGnambaImage from "@assets/LANDRY-GNAMBA-copy_1764500930213.jpg";
 import nadiaImage from "@assets/Nadia-B-copy_1764501005739.jpg";
+import mitoumbaImage from "@assets/EBENEZER-KEPOMBIA-MITOUMBA-cop_1764501444814.png";
+import rosineImage from "@assets/ROSINE-NGUEMGAING-copy_1764501444816.jpg";
+import stephanieImage from "@assets/Stephanie-Tum-copy_1764501444815.jpg";
+import stanleyImage from "@assets/STANLEY-ENOW-copy_1764501444815.jpg";
 
 const ambassadors = [
   { name: "NADIA BUARI", origin: "FROM GHANA", image: nadiaImage },
@@ -31,10 +35,10 @@ const ambassadors = [
 ];
 
 const cameroonianAmbassadors = [
-  { name: "MITOUMBA", role: "CAMEROONION ACTOR & COMEDIAN", image: musicImage },
-  { name: "ROSINE NGUEMGAING", role: "CAMEROONION ACTRESS", image: comedyImage },
-  { name: "STEPHANIE TUM", role: "CAMEROONION ACTRESS & MODEL", image: fashionImage },
-  { name: "STANLEY ENOW", role: "CAMEROONION RAPPER", image: educationImage },
+  { name: "MITOUMBA", role: "CAMEROONION ACTOR & COMEDIAN", image: mitoumbaImage },
+  { name: "ROSINE NGUEMGAING", role: "CAMEROONION ACTRESS", image: rosineImage },
+  { name: "STEPHANIE TUM", role: "CAMEROONION ACTRESS & MODEL", image: stephanieImage },
+  { name: "STANLEY ENOW", role: "CAMEROONION RAPPER", image: stanleyImage },
 ];
 
 export default function Home() {
