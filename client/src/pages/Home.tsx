@@ -23,10 +23,11 @@ import gospelImage from "@assets/generated_images/gospel_choir_performing_togeth
 import promoVideoEnglish from "@assets/Koscoco Promo Video English_1763290871496.mp4";
 import promoVideoFrench from "@assets/Koscoco Promo Video French_1763290871498.mp4";
 import landryGnambaImage from "@assets/LANDRY-GNAMBA-copy_1764500930213.jpg";
+import nadiaImage from "@assets/Nadia-B-copy_1764501005739.jpg";
 
 const ambassadors = [
+  { name: "NADIA BUARI", origin: "FROM GHANA", image: nadiaImage },
   { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: landryGnambaImage },
-  { name: "NADIA BUARI", origin: "FROM GHANA", image: comedyImage },
 ];
 
 export default function Home() {
