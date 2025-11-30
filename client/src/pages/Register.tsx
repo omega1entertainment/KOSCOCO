@@ -167,7 +167,7 @@ export default function Register() {
 
       window.FlutterwaveCheckout(config);
     }
-  }, [paymentData, user]);
+  }, [paymentData?.registrationId]);
 
   const registerMutation = useMutation({
     mutationFn: async () => {
@@ -287,7 +287,7 @@ export default function Register() {
 
   return (
     <>
-      <Dialog open={registrationsDisabled} onOpenChange={() => {}}>
+      <Dialog open={registrationsDisabled}>
         <DialogContent data-testid="dialog-registrations-coming-soon">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
