@@ -137,10 +137,10 @@ export default function Register() {
               
               queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
               
-              // Add a small delay to ensure modal closes properly, then redirect
+              // Use hard redirect to properly close Flutterwave modal and navigate
               setTimeout(() => {
-                setLocation("/dashboard");
-              }, 500);
+                window.location.href = "/dashboard";
+              }, 1000);
             } catch (error: any) {
               toast({
                 title: "Payment Verification Failed",
@@ -164,7 +164,7 @@ export default function Register() {
             description: "Registration created but payment pending. Complete payment from your dashboard.",
           });
           queryClient.invalidateQueries({ queryKey: ["/api/registrations/user"] });
-          setLocation("/dashboard");
+          window.location.href = "/dashboard";
           setPaymentData(null);
         },
       };
