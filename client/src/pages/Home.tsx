@@ -22,9 +22,10 @@ import educationImage from "@assets/generated_images/black_male_educational_cont
 import gospelImage from "@assets/generated_images/gospel_choir_performing_together.png";
 import promoVideoEnglish from "@assets/Koscoco Promo Video English_1763290871496.mp4";
 import promoVideoFrench from "@assets/Koscoco Promo Video French_1763290871498.mp4";
+import landryGnambaImage from "@assets/LANDRY-GNAMBA-copy_1764500930213.jpg";
 
 const ambassadors = [
-  { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: musicImage },
+  { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: landryGnambaImage },
   { name: "NADIA BUARI", origin: "FROM GHANA", image: comedyImage },
 ];
 
