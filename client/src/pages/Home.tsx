@@ -416,7 +416,7 @@ export default function Home() {
               size="lg" 
               variant="outline" 
               className="w-full sm:w-auto px-8 md:px-12" 
-              onClick={() => console.log("Learn more")}
+              onClick={() => setLocation("/how-it-works")}
               data-testid="button-learn-more"
             >
               {t('home.learnMore')}
