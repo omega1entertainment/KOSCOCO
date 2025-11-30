@@ -4274,6 +4274,8 @@ function AdminDashboardContent() {
                     </div>
                   )}
                 </TabsContent>
+              </Tabs>
+            </TabsContent>
 
             <TabsContent value="campaigns" className="mt-0">
               <div className="space-y-4">
@@ -4385,54 +4387,53 @@ function AdminDashboardContent() {
                 </CardContent>
               </Card>
             </TabsContent>
-              </Tabs>
+            </Tabs>
 
-              {/* Ad Rejection Dialog */}
-              <AlertDialog
-                open={adRejectionDialogOpen}
-                onOpenChange={setAdRejectionDialogOpen}
-              >
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Reject Ad</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Please provide a reason for rejecting this ad. This will
-                      be sent to the advertiser.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <Textarea
-                    value={adRejectionReason}
-                    onChange={(e) => setAdRejectionReason(e.target.value)}
-                    placeholder="Enter rejection reason..."
-                    className="min-h-24"
-                    data-testid="textarea-ad-rejection-reason"
-                  />
-                  <AlertDialogFooter>
-                    <AlertDialogCancel
-                      onClick={() => {
-                        setAdRejectionDialogOpen(false);
-                        setSelectedAdId(null);
-                        setAdRejectionReason("");
-                      }}
-                    >
-                      Cancel
-                    </AlertDialogCancel>
-                    <Button
-                      onClick={handleRejectAd}
-                      disabled={
-                        !adRejectionReason || rejectAdMutation.isPending
-                      }
-                      variant="destructive"
-                      data-testid="button-confirm-reject-ad"
-                    >
-                      {rejectAdMutation.isPending
-                        ? "Rejecting..."
-                        : "Confirm Rejection"}
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </TabsContent>
+            {/* Ad Rejection Dialog - moved outside tabs */}
+            <AlertDialog
+              open={adRejectionDialogOpen}
+              onOpenChange={setAdRejectionDialogOpen}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reject Ad</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Please provide a reason for rejecting this ad. This will
+                    be sent to the advertiser.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Textarea
+                  value={adRejectionReason}
+                  onChange={(e) => setAdRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason..."
+                  className="min-h-24"
+                  data-testid="textarea-ad-rejection-reason"
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel
+                    onClick={() => {
+                      setAdRejectionDialogOpen(false);
+                      setSelectedAdId(null);
+                      setAdRejectionReason("");
+                    }}
+                  >
+                    Cancel
+                  </AlertDialogCancel>
+                  <Button
+                    onClick={handleRejectAd}
+                    disabled={
+                      !adRejectionReason || rejectAdMutation.isPending
+                    }
+                    variant="destructive"
+                    data-testid="button-confirm-reject-ad"
+                  >
+                    {rejectAdMutation.isPending
+                      ? "Rejecting..."
+                      : "Confirm Rejection"}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <TabsContent value="newsletter" className="mt-0">
               <Card>
