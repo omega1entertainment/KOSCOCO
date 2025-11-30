@@ -26,7 +26,6 @@ import promoVideoFrench from "@assets/Koscoco Promo Video French_1763290871498.m
 const ambassadors = [
   { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: musicImage },
   { name: "NADIA BUARI", origin: "FROM GHANA", image: comedyImage },
-  { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: fashionImage },
 ];
 
 export default function Home() {
