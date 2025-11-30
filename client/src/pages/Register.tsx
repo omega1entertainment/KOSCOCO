@@ -33,7 +33,9 @@ export default function Register() {
   const [referralCode, setReferralCode] = useState("");
   const [paymentData, setPaymentData] = useState<any>(null);
   const [registeredCategoryIds, setRegisteredCategoryIds] = useState<Set<string>>(new Set());
+  const [modalOpen, setModalOpen] = useState(true);
   const scriptLoaded = useRef(false);
+  const referralToastShown = useRef(false);
 
   useEffect(() => {
     if (!scriptLoaded.current) {
@@ -49,7 +51,7 @@ export default function Register() {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
     
-    if (ref) {
+    if (ref && !referralToastShown.current) {
       setReferralCode(ref);
       // Store in sessionStorage to preserve across login redirects
       sessionStorage.setItem('affiliateReferralCode', ref);
@@ -57,11 +59,13 @@ export default function Register() {
         title: "Referral Code Applied",
         description: `You're registering with referral code: ${ref}`,
       });
-    } else {
+      referralToastShown.current = true;
+    } else if (!ref) {
       // Check if referral code was stored from a previous login redirect
       const storedRef = sessionStorage.getItem('affiliateReferralCode');
-      if (storedRef) {
+      if (storedRef && !referralToastShown.current) {
         setReferralCode(storedRef);
+        referralToastShown.current = true;
       }
     }
   }, []);
@@ -283,11 +287,11 @@ export default function Register() {
   }
 
   // Show modal if registrations are disabled
-  const registrationsDisabled = registrationStatus && !registrationStatus.enabled;
+  const registrationsDisabled = registrationStatus && !registrationStatus.enabled && modalOpen;
 
   return (
     <>
-      <Dialog open={registrationsDisabled} onOpenChange={() => {}}>
+      <Dialog open={registrationsDisabled} onOpenChange={(open) => setModalOpen(open)}>
         <DialogContent data-testid="dialog-registrations-coming-soon">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
