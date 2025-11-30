@@ -4351,11 +4351,18 @@ function AdminDashboardContent() {
             <TabsContent value="fraud-alerts" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>Fraud Detection Alerts</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    Fraud Detection Alerts
+                  </CardTitle>
                   <p className="text-sm text-muted-foreground">Monitor suspicious clicks and bot detection patterns</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-muted-foreground text-center py-8">Fraud monitoring system active. Alerts will appear here when suspicious patterns are detected.</div>
+                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-12 text-center">
+                    <AlertTriangle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-sm font-medium text-muted-foreground mb-2">No Alerts Yet</p>
+                    <p className="text-xs text-muted-foreground">Fraud monitoring system is active. Alerts will appear here when suspicious click patterns or bot activity is detected.</p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -4363,11 +4370,18 @@ function AdminDashboardContent() {
             <TabsContent value="api-tracking" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>API Tracking Logs</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    API Tracking Logs
+                  </CardTitle>
                   <p className="text-sm text-muted-foreground">Monitor affiliate API calls, postback URLs, and click tracking</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-muted-foreground text-center py-8">API tracking system active. Logs will appear here for all affiliate API calls.</div>
+                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-12 text-center">
+                    <BarChart3 className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-sm font-medium text-muted-foreground mb-2">No Logs Yet</p>
+                    <p className="text-xs text-muted-foreground">API tracking system is active. Logs will appear here once affiliates start making API calls and using postback URLs for click tracking.</p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
