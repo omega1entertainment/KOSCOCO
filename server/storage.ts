@@ -6,6 +6,7 @@ import type {
   User, InsertUser,
   Category, InsertCategory,
   Phase, InsertPhase,
+  SystemSettings, InsertSystemSettings,
   Registration, InsertRegistration,
   Video, InsertVideo, VideoWithStats,
   Vote, InsertVote,
@@ -70,6 +71,8 @@ export interface IStorage {
   
   getAllPhases(): Promise<Phase[]>;
   getActivePhase(): Promise<Phase | undefined>;
+  getRegistrationStatus(): Promise<boolean>;
+  toggleRegistrationStatus(enabled: boolean): Promise<void>;
   
   getVideoOfTheDay(): Promise<VideoWithStats | null>;
   createPhase(phase: InsertPhase): Promise<Phase>;
@@ -452,6 +455,20 @@ export class DbStorage implements IStorage {
   async getActivePhase(): Promise<Phase | undefined> {
     const [phase] = await db.select().from(schema.phases).where(eq(schema.phases.status, 'active'));
     return phase;
+  }
+
+  async getRegistrationStatus(): Promise<boolean> {
+    const [setting] = await db.select().from(schema.systemSettings).where(eq(schema.systemSettings.key, 'registrations_enabled'));
+    return setting?.value === 'true';
+  }
+
+  async toggleRegistrationStatus(enabled: boolean): Promise<void> {
+    const existing = await db.select().from(schema.systemSettings).where(eq(schema.systemSettings.key, 'registrations_enabled'));
+    if (existing.length > 0) {
+      await db.update(schema.systemSettings).set({ value: enabled ? 'true' : 'false', updatedAt: new Date() }).where(eq(schema.systemSettings.key, 'registrations_enabled'));
+    } else {
+      await db.insert(schema.systemSettings).values({ key: 'registrations_enabled', value: enabled ? 'true' : 'false' });
+    }
   }
 
   async createPhase(insertPhase: InsertPhase): Promise<Phase> {

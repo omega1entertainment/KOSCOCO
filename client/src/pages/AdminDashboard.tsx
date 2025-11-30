@@ -79,7 +79,7 @@ import type {
   SelectUser,
   CmsContent,
 } from "@shared/schema";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Power } from "lucide-react";
 import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
 import {
   Select,
@@ -88,6 +88,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -321,6 +322,10 @@ function AdminDashboardContent() {
 
   const { data: affiliates = [], isLoading: affiliatesLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/affiliates"],
+  });
+
+  const { data: registrationStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/registrations/status"],
   });
 
   const { data: affiliateAnalytics = { summary: {}, payoutSummary: {}, topPerformers: [], allAffiliates: [] }, isLoading: analyticsLoading } = useQuery<any>({
@@ -1029,6 +1034,26 @@ function AdminDashboardContent() {
     onError: (error: Error) => {
       toast({
         title: t("admin.toast.thumbnailGenerationFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleRegistrationMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      return await apiRequest("/api/admin/registrations/toggle", "POST", { enabled });
+    },
+    onSuccess: (_, enabled) => {
+      toast({
+        title: "Registration Status Updated",
+        description: enabled ? "Registrations are now OPEN" : "Registrations are now CLOSED",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/registrations/status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -1993,6 +2018,32 @@ function AdminDashboardContent() {
 
           <div className="flex-1">
             <TabsContent value="overview" className="mt-0">
+              <Card className="mb-6">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <Power className="w-4 h-4" />
+                    Registration Control
+                  </CardTitle>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">
+                      {registrationStatus?.enabled ? "Open" : "Closed"}
+                    </span>
+                    <Switch
+                      checked={registrationStatus?.enabled || false}
+                      onCheckedChange={(enabled) => toggleRegistrationMutation.mutate(enabled)}
+                      disabled={toggleRegistrationMutation.isPending}
+                      data-testid="switch-toggle-registrations"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground">
+                    {registrationStatus?.enabled 
+                      ? "Registrations are currently OPEN. Users can register for competitions."
+                      : "Registrations are currently CLOSED. Users will see a 'Coming Soon' message on the registration page."}
+                  </p>
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle>Dashboard Overview</CardTitle>

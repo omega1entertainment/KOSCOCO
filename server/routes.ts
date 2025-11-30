@@ -295,6 +295,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get registration status
+  app.get('/api/registrations/status', async (req, res) => {
+    try {
+      const enabled = await storage.getRegistrationStatus();
+      res.json({ enabled });
+    } catch (error) {
+      console.error("Error getting registration status:", error);
+      res.status(500).json({ message: "Failed to get registration status" });
+    }
+  });
+
+  // Admin: Toggle registration status
+  app.post('/api/admin/registrations/toggle', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { enabled } = req.body;
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: "Invalid request: enabled must be boolean" });
+      }
+      await storage.toggleRegistrationStatus(enabled);
+      res.json({ message: "Registration status updated", enabled });
+    } catch (error) {
+      console.error("Error toggling registration status:", error);
+      res.status(500).json({ message: "Failed to toggle registration status" });
+    }
+  });
+
   app.post('/api/registrations', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as SelectUser;

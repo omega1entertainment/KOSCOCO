@@ -9,8 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import type { Category, Registration } from "@shared/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 declare global {
   interface Window {
@@ -66,6 +73,10 @@ export default function Register() {
   const { data: userRegistrations = [] } = useQuery<Registration[]>({
     queryKey: ["/api/registrations/user"],
     enabled: !!user,
+  });
+
+  const { data: registrationStatus } = useQuery<{ enabled: boolean }>({
+    queryKey: ["/api/registrations/status"],
   });
 
   // Extract already registered category IDs (approved registrations only)
@@ -263,7 +274,34 @@ export default function Register() {
     );
   }
 
+  // Show modal if registrations are disabled
+  const registrationsDisabled = registrationStatus && !registrationStatus.enabled;
+
   return (
+    <>
+      <Dialog open={registrationsDisabled} onOpenChange={() => {}}>
+        <DialogContent data-testid="dialog-registrations-coming-soon">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Registrations Coming Soon
+            </DialogTitle>
+            <DialogDescription>
+              Registrations for KOSCOCO will begin shortly. We're preparing everything for you!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              You can continue exploring the platform and browsing existing competitions. We'll notify you as soon as registrations open.
+            </p>
+            <Button className="w-full" onClick={() => setLocation("/")} data-testid="button-back-to-home">
+              Back to Home
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {!registrationsDisabled && (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -409,5 +447,7 @@ export default function Register() {
         </div>
       </div>
     </div>
+      )}
+    </>
   );
 }
