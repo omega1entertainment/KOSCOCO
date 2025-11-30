@@ -30,12 +30,20 @@ const ambassadors = [
   { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: landryGnambaImage },
 ];
 
+const cameroonianAmbassadors = [
+  { name: "MITOUMBA", role: "CAMEROONION ACTOR & COMEDIAN", image: musicImage },
+  { name: "ROSINE NGUEMGAING", role: "CAMEROONION ACTRESS", image: comedyImage },
+  { name: "STEPHANIE TUM", role: "CAMEROONION ACTRESS & MODEL", image: fashionImage },
+  { name: "STANLEY ENOW", role: "CAMEROONION RAPPER", image: educationImage },
+];
+
 export default function Home() {
   const { t, language } = useLanguage();
   const [, setLocation] = useLocation();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
   const [ambassadorIndex, setAmbassadorIndex] = useState(0);
+  const [cameroonianIndex, setCameroonianIndex] = useState(0);
   const { isAuthenticated } = useAuth();
 
   // Fetch real categories from API
@@ -238,6 +246,70 @@ export default function Home() {
                   idx === ambassadorIndex ? 'bg-red-600' : 'bg-muted-foreground/30'
                 }`}
                 data-testid={`button-ambassador-dot-${idx}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 md:py-16 bg-muted/5">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-12 uppercase tracking-wide">
+            Meet Our Awesome Cameroonians Ambassadors
+          </h2>
+          
+          <div className="relative flex items-center justify-center gap-4">
+            <button 
+              onClick={() => setCameroonianIndex((i) => (i - 1 + cameroonianAmbassadors.length) % cameroonianAmbassadors.length)}
+              className="absolute left-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              data-testid="button-cameroonians-prev"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <div className="w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+                {cameroonianAmbassadors.map((ambassador, idx) => {
+                  const isVisible = Math.abs((idx - cameroonianIndex + cameroonianAmbassadors.length) % cameroonianAmbassadors.length - 0) < 2 || 
+                                   cameroonianAmbassadors.length === 4;
+                  
+                  return (
+                    <div key={idx} className={isVisible ? '' : 'hidden lg:block'}>
+                      <div className="bg-white dark:bg-muted rounded-xl overflow-hidden shadow-md hover-elevate transition-all">
+                        <img 
+                          src={ambassador.image} 
+                          alt={ambassador.name}
+                          className="w-full aspect-square object-cover"
+                        />
+                        <div className="p-4 text-center">
+                          <p className="text-red-600 dark:text-red-500 font-bold text-sm">{ambassador.name}</p>
+                          <p className="text-muted-foreground text-xs mt-2">{ambassador.role}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setCameroonianIndex((i) => (i + 1) % cameroonianAmbassadors.length)}
+              className="absolute right-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              data-testid="button-cameroonians-next"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex justify-center gap-2 mt-8">
+            {cameroonianAmbassadors.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCameroonianIndex(idx)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  idx === cameroonianIndex ? 'bg-red-600' : 'bg-muted-foreground/30'
+                }`}
+                data-testid={`button-cameroonians-dot-${idx}`}
               />
             ))}
           </div>
