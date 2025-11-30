@@ -258,7 +258,7 @@ export default function Home() {
 
       <section className="py-12 md:py-16 bg-muted/5">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-center mb-12 uppercase tracking-wide">
+          <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-center mb-12 uppercase tracking-wide">
             Meet Our Awesome Cameroonians Ambassadors
           </h2>
           
