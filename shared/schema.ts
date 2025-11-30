@@ -23,7 +23,6 @@ export const users = pgTable("users", {
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
   profileImageUrl: varchar("profile_image_url"),
-  bio: text("bio"),
   age: integer("age"),
   location: text("location"),
   parentalConsent: boolean("parental_consent").default(false),
@@ -922,21 +921,9 @@ export const fraudAlerts = pgTable("fraud_alerts", {
   index("idx_fraud_alerts_created").on(table.createdAt),
 ]);
 
-export const follows = pgTable("follows", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  followerId: varchar("follower_id").notNull().references(() => users.id),
-  followingId: varchar("following_id").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => [
-  unique("unique_follow").on(table.followerId, table.followingId),
-  index("idx_follows_follower").on(table.followerId),
-  index("idx_follows_following").on(table.followingId),
-]);
-
 export const insertApiTrackingSchema = createInsertSchema(apiTracking).omit({ id: true, createdAt: true });
 export const insertPostbackUrlSchema = createInsertSchema(postbackUrls).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertFraudAlertSchema = createInsertSchema(fraudAlerts).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertFollowSchema = createInsertSchema(follows).omit({ id: true, createdAt: true });
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
@@ -981,9 +968,6 @@ export type PostbackUrl = typeof postbackUrls.$inferSelect;
 
 export type InsertFraudAlert = z.infer<typeof insertFraudAlertSchema>;
 export type FraudAlert = typeof fraudAlerts.$inferSelect;
-
-export type InsertFollow = z.infer<typeof insertFollowSchema>;
-export type Follow = typeof follows.$inferSelect;
 
 export type PollWithStats = Poll & { 
   options: (PollOption & { responseCount: number; percentage: number })[];

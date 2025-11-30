@@ -2262,7 +2262,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         username: user.username,
         profileImageUrl: user.profileImageUrl,
-        bio: user.bio,
         location: user.location,
         age: user.age,
         emailVerified: user.emailVerified,
@@ -2277,13 +2276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/creator/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
-      const { firstName, lastName, username, bio, location, age } = req.body;
+      const { firstName, lastName, username, location, age } = req.body;
 
       const updates: any = {};
       if (firstName !== undefined) updates.firstName = firstName;
       if (lastName !== undefined) updates.lastName = lastName;
       if (username !== undefined) updates.username = username;
-      if (bio !== undefined) updates.bio = bio || null;
       if (location !== undefined) updates.location = location;
       if (age !== undefined) updates.age = parseInt(age, 10) || null;
 
@@ -2304,7 +2302,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         username: user.username,
         profileImageUrl: user.profileImageUrl,
-        bio: user.bio,
         location: user.location,
         age: user.age,
         emailVerified: user.emailVerified,
@@ -6087,57 +6084,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete postback URL error:", error);
       res.status(500).json({ message: "Failed to delete postback URL" });
-    }
-  });
-
-  // Public: Get all approved videos with creator info for feed
-  app.get('/api/videos', async (req: any, res) => {
-    try {
-      const videos = await storage.getAllApprovedVideosWithCreator();
-      res.json(videos);
-    } catch (error) {
-      console.error("Error fetching all videos:", error);
-      res.status(500).json({ message: "Failed to fetch videos" });
-    }
-  });
-
-  // User: Follow another user
-  app.post('/api/user/follow', isAuthenticated, async (req: any, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) return res.status(400).json({ message: "User ID required" });
-      if (userId === req.user.id) {
-        return res.status(400).json({ message: "Cannot follow yourself" });
-      }
-      await storage.follow(req.user.id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error following user:", error);
-      res.status(500).json({ message: "Failed to follow user" });
-    }
-  });
-
-  // User: Unfollow another user
-  app.post('/api/user/unfollow', isAuthenticated, async (req: any, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) return res.status(400).json({ message: "User ID required" });
-      await storage.unfollow(req.user.id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error unfollowing user:", error);
-      res.status(500).json({ message: "Failed to unfollow user" });
-    }
-  });
-
-  // User: Get list of users being followed
-  app.get('/api/user/following', isAuthenticated, async (req: any, res) => {
-    try {
-      const following = await storage.getFollowing(req.user.id);
-      res.json(following);
-    } catch (error) {
-      console.error("Error fetching following list:", error);
-      res.status(500).json({ message: "Failed to fetch following list" });
     }
   });
 
