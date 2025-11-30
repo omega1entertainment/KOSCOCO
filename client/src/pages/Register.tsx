@@ -294,8 +294,7 @@ export default function Register() {
                 return (
                   <Card
                     key={category.id}
-                    className={`transition-colors ${isAlreadyRegistered ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${selectedCategories.includes(category.id) ? "border-primary border-2" : ""}`}
-                    onClick={() => !isAlreadyRegistered && handleCategoryToggle(category.id)}
+                    className={`transition-colors ${isAlreadyRegistered ? 'opacity-60 cursor-not-allowed' : ''} ${selectedCategories.includes(category.id) ? "border-primary border-2" : ""}`}
                     data-testid={`card-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <CardHeader>
@@ -304,7 +303,6 @@ export default function Register() {
                           id={category.id}
                           checked={selectedCategories.includes(category.id)}
                           onCheckedChange={() => !isAlreadyRegistered && handleCategoryToggle(category.id)}
-                          onClick={(e) => e.stopPropagation()}
                           disabled={isAlreadyRegistered}
                           data-testid={`checkbox-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                         />
