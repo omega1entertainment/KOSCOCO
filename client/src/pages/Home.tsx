@@ -174,7 +174,7 @@ export default function Home() {
 
       <section className="py-12 md:py-16 bg-background">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-center mb-8 md:mb-12 uppercase tracking-wide">
+          <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-center mb-8 md:mb-12 uppercase tracking-wide">
             Meet Our Amazing Guest Ambassadors
           </h2>
           
