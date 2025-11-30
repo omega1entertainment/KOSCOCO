@@ -10,7 +10,7 @@ import VideoCard from "@/components/VideoCard";
 import StatsCard from "@/components/StatsCard";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import VideoOfTheDay from "@/components/home/VideoOfTheDay";
-import { Users, Video, Trophy, TrendingUp } from "lucide-react";
+import { Users, Video, Trophy, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Category } from "@shared/schema";
@@ -23,11 +23,18 @@ import gospelImage from "@assets/generated_images/gospel_choir_performing_togeth
 import promoVideoEnglish from "@assets/Koscoco Promo Video English_1763290871496.mp4";
 import promoVideoFrench from "@assets/Koscoco Promo Video French_1763290871498.mp4";
 
+const ambassadors = [
+  { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: musicImage },
+  { name: "NADIA BUARI", origin: "FROM GHANA", image: comedyImage },
+  { name: "LANDRY GNAMBA", origin: "FROM IVORY COAST", image: fashionImage },
+];
+
 export default function Home() {
   const { t, language } = useLanguage();
   const [, setLocation] = useLocation();
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<{ id: string; title: string } | null>(null);
+  const [ambassadorIndex, setAmbassadorIndex] = useState(0);
   const { isAuthenticated } = useAuth();
 
   // Fetch real categories from API
@@ -160,6 +167,78 @@ export default function Home() {
               />
               Your browser does not support the video tag.
             </video>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 md:py-16 bg-background">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-center mb-8 md:mb-12 uppercase tracking-wide">
+            Meet Our Amazing Guest Ambassadors
+          </h2>
+          
+          <div className="relative flex items-center justify-center gap-4">
+            <button 
+              onClick={() => setAmbassadorIndex((i) => (i - 1 + ambassadors.length) % ambassadors.length)}
+              className="absolute left-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              data-testid="button-ambassador-prev"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <div className="w-full max-w-2xl">
+              <div className="flex gap-4 justify-center overflow-hidden px-12">
+                {ambassadors.map((ambassador, idx) => {
+                  const offset = (idx - ambassadorIndex + ambassadors.length) % ambassadors.length;
+                  const isCenter = offset === 0;
+                  const isAdjacent = offset === 1 || offset === ambassadors.length - 1;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex-shrink-0 transition-all duration-300 ${
+                        isCenter ? 'scale-100 opacity-100 w-48' : 
+                        isAdjacent ? 'scale-75 opacity-40 w-48' : 
+                        'scale-50 opacity-0 w-48'
+                      }`}
+                    >
+                      <div className="bg-white dark:bg-muted rounded-2xl overflow-hidden shadow-lg hover-elevate">
+                        <img 
+                          src={ambassador.image} 
+                          alt={ambassador.name}
+                          className="w-full aspect-square object-cover"
+                        />
+                        <div className="p-4 text-center">
+                          <p className="text-red-600 dark:text-red-500 font-bold text-sm">{ambassador.name}</p>
+                          <p className="text-muted-foreground text-xs mt-1">{ambassador.origin}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setAmbassadorIndex((i) => (i + 1) % ambassadors.length)}
+              className="absolute right-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              data-testid="button-ambassador-next"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex justify-center gap-2 mt-6">
+            {ambassadors.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setAmbassadorIndex(idx)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  idx === ambassadorIndex ? 'bg-red-600' : 'bg-muted-foreground/30'
+                }`}
+                data-testid={`button-ambassador-dot-${idx}`}
+              />
+            ))}
           </div>
         </div>
       </section>
