@@ -35,7 +35,15 @@ import type {
   Poll, InsertPoll,
   PollOption, InsertPollOption,
   PollResponse, InsertPollResponse,
-  PollWithOptions, PollWithStats
+  PollWithOptions, PollWithStats,
+  NotificationPreferences, InsertNotificationPreferences,
+  Watchlist, InsertWatchlist,
+  WatchlistVideo, InsertWatchlistVideo,
+  Favorite, InsertFavorite,
+  ScheduledVideo, InsertScheduledVideo,
+  RecommendationEvent, InsertRecommendationEvent,
+  UserRecommendation, InsertUserRecommendation,
+  UserPreferences, InsertUserPreferences
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -302,6 +310,52 @@ export interface IStorage {
   createPollResponse(response: InsertPollResponse): Promise<PollResponse>;
   getPollStats(pollId: string): Promise<PollWithStats | undefined>;
   getUserPollResponse(pollId: string, userId: string | null, ipAddress?: string): Promise<PollResponse | undefined>;
+  
+  // Enhanced notification methods
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  
+  // Notification preferences methods
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
+  createNotificationPreferences(prefs: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  updateNotificationPreferences(userId: string, updates: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined>;
+  
+  // Watchlist methods
+  createWatchlist(watchlist: InsertWatchlist): Promise<Watchlist>;
+  getUserWatchlists(userId: string): Promise<Watchlist[]>;
+  getWatchlist(id: string): Promise<Watchlist | undefined>;
+  updateWatchlist(id: string, updates: Partial<InsertWatchlist>): Promise<Watchlist | undefined>;
+  deleteWatchlist(id: string): Promise<void>;
+  addVideoToWatchlist(watchlistId: string, videoId: string): Promise<WatchlistVideo>;
+  removeVideoFromWatchlist(watchlistId: string, videoId: string): Promise<void>;
+  getWatchlistVideos(watchlistId: string): Promise<(WatchlistVideo & { video: Video })[]>;
+  isVideoInWatchlist(watchlistId: string, videoId: string): Promise<boolean>;
+  
+  // Favorites methods
+  createFavorite(userId: string, videoId: string): Promise<Favorite>;
+  removeFavorite(userId: string, videoId: string): Promise<void>;
+  getUserFavorites(userId: string): Promise<(Favorite & { video: Video })[]>;
+  isVideoFavorited(userId: string, videoId: string): Promise<boolean>;
+  
+  // Scheduled video methods
+  createScheduledVideo(scheduled: InsertScheduledVideo): Promise<ScheduledVideo>;
+  getScheduledVideo(id: string): Promise<ScheduledVideo | undefined>;
+  getUserScheduledVideos(userId: string): Promise<ScheduledVideo[]>;
+  getPendingScheduledVideos(): Promise<ScheduledVideo[]>;
+  updateScheduledVideo(id: string, updates: Partial<InsertScheduledVideo>): Promise<ScheduledVideo | undefined>;
+  deleteScheduledVideo(id: string): Promise<void>;
+  
+  // Recommendation methods
+  createRecommendationEvent(event: InsertRecommendationEvent): Promise<RecommendationEvent>;
+  getUserRecommendations(userId: string, limit?: number): Promise<(UserRecommendation & { video: Video })[]>;
+  createUserRecommendation(rec: InsertUserRecommendation): Promise<UserRecommendation>;
+  markRecommendationShown(id: string): Promise<void>;
+  markRecommendationClicked(id: string): Promise<void>;
+  dismissRecommendation(id: string): Promise<void>;
+  
+  // User preferences for recommendations
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  createUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences>;
+  updateUserPreferences(userId: string, updates: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -2753,6 +2807,238 @@ export class DbStorage implements IStorage {
 
   async getFailedSmsMessages(limit: number = 50): Promise<schema.SmsMessage[]> {
     return await db.select().from(schema.smsMessages).where(eq(schema.smsMessages.status, 'failed')).orderBy(desc(schema.smsMessages.createdAt)).limit(limit);
+  }
+
+  // ============= ENHANCED NOTIFICATION METHODS =============
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [created] = await db.insert(schema.notifications).values(notification).returning();
+    return created;
+  }
+
+  // ============= NOTIFICATION PREFERENCES =============
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+    const [prefs] = await db.select().from(schema.notificationPreferences).where(eq(schema.notificationPreferences.userId, userId));
+    return prefs;
+  }
+
+  async createNotificationPreferences(prefs: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const [created] = await db.insert(schema.notificationPreferences).values(prefs).returning();
+    return created;
+  }
+
+  async updateNotificationPreferences(userId: string, updates: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined> {
+    const [updated] = await db.update(schema.notificationPreferences)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.notificationPreferences.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  // ============= WATCHLIST METHODS =============
+  async createWatchlist(watchlist: InsertWatchlist): Promise<Watchlist> {
+    const [created] = await db.insert(schema.watchlists).values(watchlist).returning();
+    return created;
+  }
+
+  async getUserWatchlists(userId: string): Promise<Watchlist[]> {
+    return await db.select().from(schema.watchlists)
+      .where(eq(schema.watchlists.userId, userId))
+      .orderBy(desc(schema.watchlists.createdAt));
+  }
+
+  async getWatchlist(id: string): Promise<Watchlist | undefined> {
+    const [watchlist] = await db.select().from(schema.watchlists).where(eq(schema.watchlists.id, id));
+    return watchlist;
+  }
+
+  async updateWatchlist(id: string, updates: Partial<InsertWatchlist>): Promise<Watchlist | undefined> {
+    const [updated] = await db.update(schema.watchlists)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.watchlists.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteWatchlist(id: string): Promise<void> {
+    await db.delete(schema.watchlists).where(eq(schema.watchlists.id, id));
+  }
+
+  async addVideoToWatchlist(watchlistId: string, videoId: string): Promise<WatchlistVideo> {
+    const [created] = await db.insert(schema.watchlistVideos).values({ watchlistId, videoId }).returning();
+    return created;
+  }
+
+  async removeVideoFromWatchlist(watchlistId: string, videoId: string): Promise<void> {
+    await db.delete(schema.watchlistVideos).where(
+      and(
+        eq(schema.watchlistVideos.watchlistId, watchlistId),
+        eq(schema.watchlistVideos.videoId, videoId)
+      )
+    );
+  }
+
+  async getWatchlistVideos(watchlistId: string): Promise<(WatchlistVideo & { video: Video })[]> {
+    const results = await db.select({
+      watchlistVideo: schema.watchlistVideos,
+      video: schema.videos
+    })
+    .from(schema.watchlistVideos)
+    .innerJoin(schema.videos, eq(schema.watchlistVideos.videoId, schema.videos.id))
+    .where(eq(schema.watchlistVideos.watchlistId, watchlistId))
+    .orderBy(desc(schema.watchlistVideos.addedAt));
+    
+    return results.map(r => ({ ...r.watchlistVideo, video: r.video }));
+  }
+
+  async isVideoInWatchlist(watchlistId: string, videoId: string): Promise<boolean> {
+    const [result] = await db.select().from(schema.watchlistVideos).where(
+      and(
+        eq(schema.watchlistVideos.watchlistId, watchlistId),
+        eq(schema.watchlistVideos.videoId, videoId)
+      )
+    );
+    return !!result;
+  }
+
+  // ============= FAVORITES METHODS =============
+  async createFavorite(userId: string, videoId: string): Promise<Favorite> {
+    const [created] = await db.insert(schema.favorites).values({ userId, videoId }).returning();
+    return created;
+  }
+
+  async removeFavorite(userId: string, videoId: string): Promise<void> {
+    await db.delete(schema.favorites).where(
+      and(
+        eq(schema.favorites.userId, userId),
+        eq(schema.favorites.videoId, videoId)
+      )
+    );
+  }
+
+  async getUserFavorites(userId: string): Promise<(Favorite & { video: Video })[]> {
+    const results = await db.select({
+      favorite: schema.favorites,
+      video: schema.videos
+    })
+    .from(schema.favorites)
+    .innerJoin(schema.videos, eq(schema.favorites.videoId, schema.videos.id))
+    .where(eq(schema.favorites.userId, userId))
+    .orderBy(desc(schema.favorites.createdAt));
+    
+    return results.map(r => ({ ...r.favorite, video: r.video }));
+  }
+
+  async isVideoFavorited(userId: string, videoId: string): Promise<boolean> {
+    const [result] = await db.select().from(schema.favorites).where(
+      and(
+        eq(schema.favorites.userId, userId),
+        eq(schema.favorites.videoId, videoId)
+      )
+    );
+    return !!result;
+  }
+
+  // ============= SCHEDULED VIDEO METHODS =============
+  async createScheduledVideo(scheduled: InsertScheduledVideo): Promise<ScheduledVideo> {
+    const [created] = await db.insert(schema.scheduledVideos).values(scheduled).returning();
+    return created;
+  }
+
+  async getScheduledVideo(id: string): Promise<ScheduledVideo | undefined> {
+    const [scheduled] = await db.select().from(schema.scheduledVideos).where(eq(schema.scheduledVideos.id, id));
+    return scheduled;
+  }
+
+  async getUserScheduledVideos(userId: string): Promise<ScheduledVideo[]> {
+    return await db.select().from(schema.scheduledVideos)
+      .where(eq(schema.scheduledVideos.userId, userId))
+      .orderBy(desc(schema.scheduledVideos.scheduledAt));
+  }
+
+  async getPendingScheduledVideos(): Promise<ScheduledVideo[]> {
+    return await db.select().from(schema.scheduledVideos)
+      .where(and(
+        eq(schema.scheduledVideos.status, 'scheduled'),
+        sql`${schema.scheduledVideos.scheduledAt} <= NOW()`
+      ))
+      .orderBy(schema.scheduledVideos.scheduledAt);
+  }
+
+  async updateScheduledVideo(id: string, updates: Partial<InsertScheduledVideo>): Promise<ScheduledVideo | undefined> {
+    const [updated] = await db.update(schema.scheduledVideos)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.scheduledVideos.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteScheduledVideo(id: string): Promise<void> {
+    await db.delete(schema.scheduledVideos).where(eq(schema.scheduledVideos.id, id));
+  }
+
+  // ============= RECOMMENDATION METHODS =============
+  async createRecommendationEvent(event: InsertRecommendationEvent): Promise<RecommendationEvent> {
+    const [created] = await db.insert(schema.recommendationEvents).values(event).returning();
+    return created;
+  }
+
+  async getUserRecommendations(userId: string, limit: number = 20): Promise<(UserRecommendation & { video: Video })[]> {
+    const results = await db.select({
+      recommendation: schema.userRecommendations,
+      video: schema.videos
+    })
+    .from(schema.userRecommendations)
+    .innerJoin(schema.videos, eq(schema.userRecommendations.videoId, schema.videos.id))
+    .where(and(
+      eq(schema.userRecommendations.userId, userId),
+      eq(schema.userRecommendations.dismissed, false)
+    ))
+    .orderBy(desc(schema.userRecommendations.score))
+    .limit(limit);
+    
+    return results.map(r => ({ ...r.recommendation, video: r.video }));
+  }
+
+  async createUserRecommendation(rec: InsertUserRecommendation): Promise<UserRecommendation> {
+    const [created] = await db.insert(schema.userRecommendations).values(rec).returning();
+    return created;
+  }
+
+  async markRecommendationShown(id: string): Promise<void> {
+    await db.update(schema.userRecommendations)
+      .set({ shown: true })
+      .where(eq(schema.userRecommendations.id, id));
+  }
+
+  async markRecommendationClicked(id: string): Promise<void> {
+    await db.update(schema.userRecommendations)
+      .set({ clicked: true })
+      .where(eq(schema.userRecommendations.id, id));
+  }
+
+  async dismissRecommendation(id: string): Promise<void> {
+    await db.update(schema.userRecommendations)
+      .set({ dismissed: true })
+      .where(eq(schema.userRecommendations.id, id));
+  }
+
+  // ============= USER PREFERENCES =============
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const [prefs] = await db.select().from(schema.userPreferences).where(eq(schema.userPreferences.userId, userId));
+    return prefs;
+  }
+
+  async createUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences> {
+    const [created] = await db.insert(schema.userPreferences).values(prefs).returning();
+    return created;
+  }
+
+  async updateUserPreferences(userId: string, updates: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined> {
+    const [updated] = await db.update(schema.userPreferences)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.userPreferences.userId, userId))
+      .returning();
+    return updated;
   }
 }
 

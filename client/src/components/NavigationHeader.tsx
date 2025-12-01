@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -235,6 +236,7 @@ export default function NavigationHeader({
               </>
             ) : (
               <>
+                <NotificationBell />
                 <Button
                   className="min-h-11"
                   onClick={() => setLocation("/register")}

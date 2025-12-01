@@ -6571,6 +6571,375 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= NOTIFICATION PREFERENCES ENDPOINTS =============
+  app.get('/api/notifications/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      let prefs = await storage.getNotificationPreferences(userId);
+      if (!prefs) {
+        prefs = await storage.createNotificationPreferences({ userId });
+      }
+      res.json(prefs);
+    } catch (error) {
+      console.error('Error fetching notification preferences:', error);
+      res.status(500).json({ message: 'Failed to fetch notification preferences' });
+    }
+  });
+
+  app.patch('/api/notifications/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      let prefs = await storage.getNotificationPreferences(userId);
+      if (!prefs) {
+        prefs = await storage.createNotificationPreferences({ userId, ...req.body });
+      } else {
+        prefs = await storage.updateNotificationPreferences(userId, req.body);
+      }
+      res.json(prefs);
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      res.status(500).json({ message: 'Failed to update notification preferences' });
+    }
+  });
+
+  // ============= WATCHLIST ENDPOINTS =============
+  app.get('/api/watchlists', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlists = await storage.getUserWatchlists(req.user.id);
+      res.json(watchlists);
+    } catch (error) {
+      console.error('Error fetching watchlists:', error);
+      res.status(500).json({ message: 'Failed to fetch watchlists' });
+    }
+  });
+
+  app.post('/api/watchlists', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlistSchema = z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().max(500).optional(),
+        isPublic: z.boolean().optional().default(false),
+      });
+      const data = watchlistSchema.parse(req.body);
+      const watchlist = await storage.createWatchlist({
+        userId: req.user.id,
+        name: data.name,
+        description: data.description || null,
+        isPublic: data.isPublic,
+      });
+      res.status(201).json(watchlist);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation failed', errors: error.flatten() });
+      }
+      console.error('Error creating watchlist:', error);
+      res.status(500).json({ message: 'Failed to create watchlist' });
+    }
+  });
+
+  app.get('/api/watchlists/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlist = await storage.getWatchlist(req.params.id);
+      if (!watchlist) {
+        return res.status(404).json({ message: 'Watchlist not found' });
+      }
+      if (watchlist.userId !== req.user.id && !watchlist.isPublic) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      const videos = await storage.getWatchlistVideos(req.params.id);
+      res.json({ ...watchlist, videos });
+    } catch (error) {
+      console.error('Error fetching watchlist:', error);
+      res.status(500).json({ message: 'Failed to fetch watchlist' });
+    }
+  });
+
+  app.patch('/api/watchlists/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlist = await storage.getWatchlist(req.params.id);
+      if (!watchlist || watchlist.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Watchlist not found' });
+      }
+      const updated = await storage.updateWatchlist(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating watchlist:', error);
+      res.status(500).json({ message: 'Failed to update watchlist' });
+    }
+  });
+
+  app.delete('/api/watchlists/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlist = await storage.getWatchlist(req.params.id);
+      if (!watchlist || watchlist.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Watchlist not found' });
+      }
+      if (watchlist.isDefault) {
+        return res.status(400).json({ message: 'Cannot delete default watchlist' });
+      }
+      await storage.deleteWatchlist(req.params.id);
+      res.json({ message: 'Watchlist deleted' });
+    } catch (error) {
+      console.error('Error deleting watchlist:', error);
+      res.status(500).json({ message: 'Failed to delete watchlist' });
+    }
+  });
+
+  app.post('/api/watchlists/:id/videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlist = await storage.getWatchlist(req.params.id);
+      if (!watchlist || watchlist.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Watchlist not found' });
+      }
+      const { videoId } = req.body;
+      if (!videoId) {
+        return res.status(400).json({ message: 'Video ID required' });
+      }
+      const isInList = await storage.isVideoInWatchlist(req.params.id, videoId);
+      if (isInList) {
+        return res.status(400).json({ message: 'Video already in watchlist' });
+      }
+      const entry = await storage.addVideoToWatchlist(req.params.id, videoId);
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error('Error adding video to watchlist:', error);
+      res.status(500).json({ message: 'Failed to add video to watchlist' });
+    }
+  });
+
+  app.delete('/api/watchlists/:id/videos/:videoId', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlist = await storage.getWatchlist(req.params.id);
+      if (!watchlist || watchlist.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Watchlist not found' });
+      }
+      await storage.removeVideoFromWatchlist(req.params.id, req.params.videoId);
+      res.json({ message: 'Video removed from watchlist' });
+    } catch (error) {
+      console.error('Error removing video from watchlist:', error);
+      res.status(500).json({ message: 'Failed to remove video from watchlist' });
+    }
+  });
+
+  // ============= FAVORITES ENDPOINTS =============
+  app.get('/api/favorites', isAuthenticated, async (req: any, res) => {
+    try {
+      const favorites = await storage.getUserFavorites(req.user.id);
+      res.json(favorites);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      res.status(500).json({ message: 'Failed to fetch favorites' });
+    }
+  });
+
+  app.post('/api/favorites', isAuthenticated, async (req: any, res) => {
+    try {
+      const { videoId } = req.body;
+      if (!videoId) {
+        return res.status(400).json({ message: 'Video ID required' });
+      }
+      const isFavorited = await storage.isVideoFavorited(req.user.id, videoId);
+      if (isFavorited) {
+        return res.status(400).json({ message: 'Video already favorited' });
+      }
+      const favorite = await storage.createFavorite(req.user.id, videoId);
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error('Error adding favorite:', error);
+      res.status(500).json({ message: 'Failed to add favorite' });
+    }
+  });
+
+  app.delete('/api/favorites/:videoId', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.removeFavorite(req.user.id, req.params.videoId);
+      res.json({ message: 'Favorite removed' });
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      res.status(500).json({ message: 'Failed to remove favorite' });
+    }
+  });
+
+  app.get('/api/favorites/:videoId/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const isFavorited = await storage.isVideoFavorited(req.user.id, req.params.videoId);
+      res.json({ isFavorited });
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+      res.status(500).json({ message: 'Failed to check favorite status' });
+    }
+  });
+
+  // ============= SCHEDULED VIDEO ENDPOINTS =============
+  app.get('/api/creator/scheduled-videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const scheduledVideos = await storage.getUserScheduledVideos(req.user.id);
+      res.json(scheduledVideos);
+    } catch (error) {
+      console.error('Error fetching scheduled videos:', error);
+      res.status(500).json({ message: 'Failed to fetch scheduled videos' });
+    }
+  });
+
+  app.post('/api/creator/scheduled-videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const scheduleSchema = z.object({
+        videoId: z.string(),
+        scheduledAt: z.string().transform(s => new Date(s)),
+      });
+      const data = scheduleSchema.parse(req.body);
+      
+      // Verify video exists and belongs to user
+      const video = await storage.getVideoById(data.videoId);
+      if (!video || video.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Video not found' });
+      }
+      
+      const scheduled = await storage.createScheduledVideo({
+        videoId: data.videoId,
+        userId: req.user.id,
+        scheduledAt: data.scheduledAt,
+        status: 'scheduled',
+      });
+      res.status(201).json(scheduled);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation failed', errors: error.flatten() });
+      }
+      console.error('Error scheduling video:', error);
+      res.status(500).json({ message: 'Failed to schedule video' });
+    }
+  });
+
+  app.patch('/api/creator/scheduled-videos/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const scheduled = await storage.getScheduledVideo(req.params.id);
+      if (!scheduled || scheduled.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Scheduled video not found' });
+      }
+      if (scheduled.status !== 'scheduled') {
+        return res.status(400).json({ message: 'Cannot modify published or failed schedule' });
+      }
+      const updated = await storage.updateScheduledVideo(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating scheduled video:', error);
+      res.status(500).json({ message: 'Failed to update scheduled video' });
+    }
+  });
+
+  app.delete('/api/creator/scheduled-videos/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const scheduled = await storage.getScheduledVideo(req.params.id);
+      if (!scheduled || scheduled.userId !== req.user.id) {
+        return res.status(404).json({ message: 'Scheduled video not found' });
+      }
+      await storage.deleteScheduledVideo(req.params.id);
+      res.json({ message: 'Schedule cancelled' });
+    } catch (error) {
+      console.error('Error deleting scheduled video:', error);
+      res.status(500).json({ message: 'Failed to delete scheduled video' });
+    }
+  });
+
+  // ============= RECOMMENDATION ENDPOINTS =============
+  app.get('/api/recommendations', isAuthenticated, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const recommendations = await storage.getUserRecommendations(req.user.id, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      res.status(500).json({ message: 'Failed to fetch recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/:id/shown', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.markRecommendationShown(req.params.id);
+      res.json({ message: 'Marked as shown' });
+    } catch (error) {
+      console.error('Error marking recommendation shown:', error);
+      res.status(500).json({ message: 'Failed to mark recommendation' });
+    }
+  });
+
+  app.post('/api/recommendations/:id/click', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.markRecommendationClicked(req.params.id);
+      res.json({ message: 'Marked as clicked' });
+    } catch (error) {
+      console.error('Error marking recommendation clicked:', error);
+      res.status(500).json({ message: 'Failed to mark recommendation' });
+    }
+  });
+
+  app.post('/api/recommendations/:id/dismiss', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.dismissRecommendation(req.params.id);
+      res.json({ message: 'Recommendation dismissed' });
+    } catch (error) {
+      console.error('Error dismissing recommendation:', error);
+      res.status(500).json({ message: 'Failed to dismiss recommendation' });
+    }
+  });
+
+  // Track recommendation events (views, watch time)
+  app.post('/api/recommendations/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const eventSchema = z.object({
+        videoId: z.string(),
+        eventType: z.enum(['view', 'like', 'share', 'watch', 'skip']),
+        watchDuration: z.number().optional(),
+        completionRate: z.number().optional(),
+      });
+      const data = eventSchema.parse(req.body);
+      await storage.createRecommendationEvent({
+        userId: req.user.id,
+        videoId: data.videoId,
+        eventType: data.eventType,
+        watchDuration: data.watchDuration || null,
+        completionRate: data.completionRate || null,
+      });
+      res.json({ message: 'Event tracked' });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation failed', errors: error.flatten() });
+      }
+      console.error('Error tracking recommendation event:', error);
+      res.status(500).json({ message: 'Failed to track event' });
+    }
+  });
+
+  // ============= USER PREFERENCES ENDPOINTS =============
+  app.get('/api/user/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      let prefs = await storage.getUserPreferences(req.user.id);
+      if (!prefs) {
+        prefs = await storage.createUserPreferences({ userId: req.user.id });
+      }
+      res.json(prefs);
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+      res.status(500).json({ message: 'Failed to fetch preferences' });
+    }
+  });
+
+  app.patch('/api/user/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      let prefs = await storage.getUserPreferences(req.user.id);
+      if (!prefs) {
+        prefs = await storage.createUserPreferences({ userId: req.user.id, ...req.body });
+      } else {
+        prefs = await storage.updateUserPreferences(req.user.id, req.body);
+      }
+      res.json(prefs);
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
+      res.status(500).json({ message: 'Failed to update preferences' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
