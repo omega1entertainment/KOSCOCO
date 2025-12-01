@@ -4577,9 +4577,9 @@ function AdminDashboardContent() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Send className="w-5 h-5" />
-                    SMS Testing
+                    SMS Management
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">Send test SMS messages using Twilio</p>
+                  <p className="text-sm text-muted-foreground">Manage SMS messages and campaigns using Twilio</p>
                 </CardHeader>
                 <CardContent>
                   <SmsTestingForm />
