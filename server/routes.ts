@@ -6654,6 +6654,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/watchlists/:id/videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlist = await storage.getWatchlist(req.params.id);
+      if (!watchlist) {
+        return res.status(404).json({ message: 'Watchlist not found' });
+      }
+      if (watchlist.userId !== req.user.id && !watchlist.isPublic) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      const videos = await storage.getWatchlistVideos(req.params.id);
+      res.json({ videos });
+    } catch (error) {
+      console.error('Error fetching watchlist videos:', error);
+      res.status(500).json({ message: 'Failed to fetch watchlist videos' });
+    }
+  });
+
   app.patch('/api/watchlists/:id', isAuthenticated, async (req: any, res) => {
     try {
       const watchlist = await storage.getWatchlist(req.params.id);
@@ -6718,6 +6735,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error removing video from watchlist:', error);
       res.status(500).json({ message: 'Failed to remove video from watchlist' });
+    }
+  });
+
+  app.get('/api/watchlists/video/:videoId', isAuthenticated, async (req: any, res) => {
+    try {
+      const watchlistIds = await storage.getWatchlistIdsForVideo(req.user.id, req.params.videoId);
+      res.json({ watchlistIds });
+    } catch (error) {
+      console.error('Error fetching watchlists for video:', error);
+      res.status(500).json({ message: 'Failed to fetch watchlists for video' });
     }
   });
 

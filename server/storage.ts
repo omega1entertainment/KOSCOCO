@@ -329,6 +329,7 @@ export interface IStorage {
   removeVideoFromWatchlist(watchlistId: string, videoId: string): Promise<void>;
   getWatchlistVideos(watchlistId: string): Promise<(WatchlistVideo & { video: Video })[]>;
   isVideoInWatchlist(watchlistId: string, videoId: string): Promise<boolean>;
+  getWatchlistIdsForVideo(userId: string, videoId: string): Promise<number[]>;
   
   // Favorites methods
   createFavorite(userId: string, videoId: string): Promise<Favorite>;
@@ -2898,6 +2899,21 @@ export class DbStorage implements IStorage {
       )
     );
     return !!result;
+  }
+
+  async getWatchlistIdsForVideo(userId: string, videoId: string): Promise<number[]> {
+    const results = await db.select({
+      watchlistId: schema.watchlistVideos.watchlistId
+    })
+    .from(schema.watchlistVideos)
+    .innerJoin(schema.watchlists, eq(schema.watchlistVideos.watchlistId, schema.watchlists.id))
+    .where(
+      and(
+        eq(schema.watchlists.userId, userId),
+        eq(schema.watchlistVideos.videoId, videoId)
+      )
+    );
+    return results.map(r => parseInt(r.watchlistId));
   }
 
   // ============= FAVORITES METHODS =============

@@ -31,6 +31,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { PollManager } from "@/components/PollManager";
+import { ScheduledVideoManager } from "@/components/ScheduledVideoManager";
 import { createPermalink } from "@/lib/slugUtils";
 import {
   Dialog,
@@ -371,7 +372,7 @@ export default function CreatorDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 max-w-3xl">
+        <TabsList className="grid w-full grid-cols-8 max-w-4xl">
           <TabsTrigger value="overview" data-testid="tab-overview">
             <BarChart3 className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">{t('creator.tabs.overview')}</span>
@@ -379,6 +380,10 @@ export default function CreatorDashboard() {
           <TabsTrigger value="videos" data-testid="tab-videos">
             <PlayCircle className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">{t('creator.tabs.myVideos')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="scheduled" data-testid="tab-scheduled">
+            <Calendar className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Scheduled</span>
           </TabsTrigger>
           <TabsTrigger value="profile" data-testid="tab-profile">
             <User className="h-4 w-4 mr-1" />
@@ -570,6 +575,11 @@ export default function CreatorDashboard() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Scheduled Publishing Tab */}
+        <TabsContent value="scheduled" className="space-y-6">
+          <ScheduledVideoManager />
         </TabsContent>
 
         {/* Profile Tab */}

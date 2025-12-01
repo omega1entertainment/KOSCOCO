@@ -10,6 +10,7 @@ import VideoCard from "@/components/VideoCard";
 import StatsCard from "@/components/StatsCard";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import VideoOfTheDay from "@/components/home/VideoOfTheDay";
+import { RecommendedVideos } from "@/components/RecommendedVideos";
 import { Users, Video, Trophy, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/queryKeys";
@@ -321,6 +322,14 @@ export default function Home() {
       </section>
 
       <VideoOfTheDay />
+      
+      {isAuthenticated && (
+        <section className="py-12 md:py-20">
+          <div className="max-w-7xl mx-auto px-4">
+            <RecommendedVideos />
+          </div>
+        </section>
+      )}
       
       <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">

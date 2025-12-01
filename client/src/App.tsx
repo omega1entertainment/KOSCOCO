@@ -52,6 +52,7 @@ import CompetitionRules from "@/pages/CompetitionRules";
 import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
+import WatchlistPage from "@/pages/WatchlistPage";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -136,6 +137,7 @@ function Router() {
           <Route path="/advertiser/campaign/:id/create-ad" component={CreateAd} />
           <Route path="/creator" component={CreatorDashboard} />
           <Route path="/edit-profile" component={EditProfile} />
+          <Route path="/my-collections" component={WatchlistPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
