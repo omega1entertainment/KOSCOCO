@@ -16,8 +16,10 @@ import {
   Clock,
   XCircle,
   Eye,
-  History
+  History,
+  Shield
 } from "lucide-react";
+import TwoFactorSettings from "@/components/TwoFactorSettings";
 import type { Registration, Video, Vote, Category, WatchHistory } from "@shared/schema";
 import { createPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
@@ -363,6 +365,15 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Security Settings - 2FA */}
+            <div className="mt-8" data-testid="section-security">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <Shield className="w-6 h-6" />
+                Account Security
+              </h2>
+              <TwoFactorSettings userType="user" />
+            </div>
           </div>
         )}
       </main>

@@ -20,9 +20,11 @@ import {
   CheckCircle,
   Wallet,
   Clock,
-  XCircle
+  XCircle,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
+import TwoFactorSettings from "@/components/TwoFactorSettings";
 import type { Affiliate, Referral, PayoutRequest } from "@shared/schema";
 
 export default function AffiliateDashboard() {
@@ -477,6 +479,15 @@ export default function AffiliateDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Security Settings - 2FA */}
+          <div className="mt-8" data-testid="section-security">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Shield className="w-6 h-6" />
+              Account Security
+            </h2>
+            <TwoFactorSettings userType="affiliate" />
+          </div>
         </div>
       </main>
     </div>

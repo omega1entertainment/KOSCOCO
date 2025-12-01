@@ -55,6 +55,28 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 - **Fonts**: Bebas Neue, Play, Inter
 
 ## Recent Changes (December 1, 2025)
+
+**Two-Factor Authentication (2FA) Implementation (Completed)**
+- Implemented TOTP-based 2FA using otplib, compatible with Google Authenticator, Authy, etc.
+- Database fields added to users table: twoFactorEnabled, twoFactorSecret, twoFactorTempSecret, twoFactorBackupCodes, twoFactorEnabledAt
+- Backend service (server/twoFactorService.ts) for TOTP generation, verification, and backup code management
+- API Endpoints:
+  - `/api/2fa/setup` - Generate QR code and secret for setup
+  - `/api/2fa/enable` - Verify code and activate 2FA
+  - `/api/2fa/disable` - Disable 2FA with password and code verification
+  - `/api/2fa/backup/regenerate` - Generate new backup codes
+  - `/api/2fa/status` - Check if 2FA is enabled
+  - `/api/login/2fa` - Verify 2FA code during login (session-based)
+- Login flow updated to show 2FA dialog when required
+- Reusable TwoFactorSettings component added to User Dashboard, Affiliate Dashboard, and Admin Dashboard (Security tab)
+- Backup codes safeguards:
+  - Codes persisted to localStorage until explicitly acknowledged
+  - Dialog prevents closure via ESC key, click outside, or interactions
+  - beforeunload warning prevents page refresh/close without saving
+  - Codes automatically restored if user navigates away and returns
+  - "I've Saved My Codes" button disabled until copy/download action taken
+- Input validation: 6-digit numeric codes for TOTP, 8+ char alphanumeric for backup codes
+
 **Phase 1 - SMS Foundation (Completed)**
 - Implemented complete SMS messaging system with Twilio integration
 - Added `sms_messages` database table with full schema and indexes

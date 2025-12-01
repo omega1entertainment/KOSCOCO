@@ -8,11 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { SiFacebook, SiGoogle } from "react-icons/si";
+import { Shield } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Country phone format mapping
@@ -47,6 +49,11 @@ export default function Login() {
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  
+  // 2FA state
+  const [show2FADialog, setShow2FADialog] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [useBackupCode, setUseBackupCode] = useState(false);
 
   // Signup form state
   const [signupEmail, setSignupEmail] = useState("");
@@ -71,7 +78,11 @@ export default function Login() {
       });
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.requires2FA) {
+        setShow2FADialog(true);
+        return;
+      }
       toast({
         title: t("auth.welcomeBack"),
         description: t("auth.loginSuccess"),
@@ -82,6 +93,33 @@ export default function Login() {
     onError: (error: Error) => {
       toast({
         title: t("auth.loginFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const twoFactorMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/login/2fa", "POST", {
+        code: twoFactorCode,
+        useBackupCode,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      setShow2FADialog(false);
+      setTwoFactorCode("");
+      toast({
+        title: t("auth.welcomeBack"),
+        description: t("auth.loginSuccess"),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -528,6 +566,113 @@ export default function Login() {
           </Tabs>
         </div>
       </div>
+
+      {/* 2FA Verification Dialog */}
+      <Dialog open={show2FADialog} onOpenChange={setShow2FADialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Two-Factor Authentication
+            </DialogTitle>
+            <DialogDescription>
+              {useBackupCode 
+                ? "Enter one of your backup codes to complete login."
+                : "Enter the 6-digit code from your authenticator app."
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="2fa-code">
+                {useBackupCode ? "Backup Code" : "Verification Code"}
+              </Label>
+              <Input
+                id="2fa-code"
+                type="text"
+                placeholder={useBackupCode ? "XXXX-XXXX" : "000000"}
+                value={twoFactorCode}
+                onChange={(e) => {
+                  if (useBackupCode) {
+                    const formatted = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                    setTwoFactorCode(formatted);
+                  } else {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setTwoFactorCode(digits);
+                  }
+                }}
+                maxLength={useBackupCode ? 9 : 6}
+                className="text-center text-lg tracking-widest"
+                data-testid="input-2fa-code"
+              />
+              {!useBackupCode && twoFactorCode.length > 0 && twoFactorCode.length < 6 && (
+                <p className="text-xs text-muted-foreground">Enter 6 digits from your authenticator app</p>
+              )}
+              {useBackupCode && twoFactorCode.length > 0 && twoFactorCode.length < 8 && (
+                <p className="text-xs text-muted-foreground">Enter your backup code (e.g., XXXX-XXXX)</p>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="use-backup"
+                checked={useBackupCode}
+                onCheckedChange={(checked) => {
+                  setUseBackupCode(checked as boolean);
+                  setTwoFactorCode("");
+                }}
+                data-testid="checkbox-use-backup"
+              />
+              <Label htmlFor="use-backup" className="text-sm cursor-pointer">
+                Use backup code instead
+              </Label>
+            </div>
+
+            <Button
+              onClick={() => {
+                const isValidCode = useBackupCode 
+                  ? twoFactorCode.length >= 8 
+                  : twoFactorCode.length === 6;
+                if (!isValidCode) {
+                  toast({
+                    title: "Invalid Code",
+                    description: useBackupCode 
+                      ? "Please enter a valid backup code" 
+                      : "Please enter a 6-digit code",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                twoFactorMutation.mutate();
+              }}
+              className="w-full"
+              disabled={
+                twoFactorMutation.isPending || 
+                !twoFactorCode.trim() || 
+                (!useBackupCode && twoFactorCode.length !== 6) ||
+                (useBackupCode && twoFactorCode.length < 8)
+              }
+              data-testid="button-verify-2fa"
+            >
+              {twoFactorMutation.isPending ? "Verifying..." : "Verify & Login"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                setShow2FADialog(false);
+                setTwoFactorCode("");
+                setUseBackupCode(false);
+              }}
+              data-testid="button-cancel-2fa"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

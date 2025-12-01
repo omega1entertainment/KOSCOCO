@@ -56,7 +56,9 @@ import {
   AlertTriangle,
   Film,
   BarChart3,
+  Shield,
 } from "lucide-react";
+import TwoFactorSettings from "@/components/TwoFactorSettings";
 import { createPermalink } from "@/lib/slugUtils";
 import {
   AlertDialog,
@@ -2255,6 +2257,14 @@ function AdminDashboardContent() {
             >
               <Send className="w-4 h-4 mr-2" />
               SMS Management
+            </TabsTrigger>
+            <TabsTrigger
+              value="security"
+              className="w-full justify-start"
+              data-testid="tab-security"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Security
             </TabsTrigger>
           </TabsList>
 
@@ -5662,6 +5672,24 @@ function AdminDashboardContent() {
 
             <TabsContent value="cms" className="mt-0">
               <CMSManagementTab />
+            </TabsContent>
+
+            <TabsContent value="security" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Admin Security Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-6">
+                    Secure your admin account with two-factor authentication to protect 
+                    against unauthorized access to the dashboard.
+                  </p>
+                  <TwoFactorSettings userType="admin" />
+                </CardContent>
+              </Card>
             </TabsContent>
           </div>
         </div>
