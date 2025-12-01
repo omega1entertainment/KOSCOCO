@@ -271,6 +271,64 @@ function CMSManagementTab() {
   );
 }
 
+function SmsTestingForm() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      to: z.string().min(8, "Valid phone number required"),
+      body: z.string().min(1, "Message required").max(1600),
+    })),
+    defaultValues: { to: "", body: "" },
+  });
+
+  async function onSubmit(data: any) {
+    setLoading(true);
+    try {
+      const res = await apiRequest("/api/admin/sms/send", "POST", data);
+      const result = await res.json();
+      if (res.ok) {
+        toast({ title: "Success", description: "SMS sent successfully!" });
+        form.reset();
+      } else {
+        toast({ title: "Error", description: result.message || "Failed to send SMS", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to send SMS", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField control={form.control} name="to" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Phone Number</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="+237123456789" data-testid="input-sms-phone" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="body" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Message</FormLabel>
+            <FormControl>
+              <Textarea {...field} placeholder="Enter your SMS message..." className="min-h-24" data-testid="textarea-sms-body" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <Button type="submit" disabled={loading} data-testid="button-send-sms">
+          {loading ? "Sending..." : "Send SMS"}
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
 function AdminDashboardContent() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -2033,6 +2091,14 @@ function AdminDashboardContent() {
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               API Tracking
+            </TabsTrigger>
+            <TabsTrigger
+              value="sms"
+              className="w-full justify-start"
+              data-testid="tab-sms"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              SMS Testing
             </TabsTrigger>
           </TabsList>
 
@@ -4416,6 +4482,21 @@ function AdminDashboardContent() {
                     <p className="text-sm font-medium text-muted-foreground mb-2">No Logs Yet</p>
                     <p className="text-xs text-muted-foreground">API tracking system is active. Logs will appear here once affiliates start making API calls and using postback URLs for click tracking.</p>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="sms" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Send className="w-5 h-5" />
+                    SMS Testing
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">Send test SMS messages using Twilio</p>
+                </CardHeader>
+                <CardContent>
+                  <SmsTestingForm />
                 </CardContent>
               </Card>
             </TabsContent>

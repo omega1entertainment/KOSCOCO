@@ -1,7 +1,7 @@
 # KOSCOCO Short Content Competition Platform
 
 ## Overview
-KOSCOCO is a video competition platform for Cameroonian creators. It enables multi-category video competitions with features like user registration, moderated video uploads, public voting, phased progression, and an affiliate program. The platform aims to be the leading destination for short-form content creators in Cameroon, fostering talent and offering significant cash prizes.
+KOSCOCO is a video competition platform for Cameroonian creators. It enables multi-category video competitions with features like user registration, moderated video uploads, public voting, phased progression, affiliate programs, and SMS messaging. The platform aims to be the leading destination for short-form content creators in Cameroon, fostering talent and offering significant cash prizes.
 
 ## User Preferences
 I prefer simple language and clear, concise explanations. I want iterative development with frequent, small updates rather than large, infrequent ones. Please ask for my approval before making any major architectural changes or introducing new dependencies. I value a clean, readable codebase and prefer modern best practices.
@@ -34,6 +34,7 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
     - **Newsletter System**: WYSIWYG email campaign creation, subscriber management, and automated welcome emails.
     - **FAQ System**: Bilingual (English/French) FAQ page with categorized questions.
     - **Interactive Polls and Quizzes**: Embedded within videos for engagement, with timing control, duration settings, and creator management tools. Supports anonymous or authenticated responses.
+    - **SMS Messaging System**: Admin-only SMS messaging via Twilio with template system (registration, payment, video status, phase updates, winner announcements). Supports individual user targeting, custom messages, and broadcast messaging. Full message delivery tracking and logging in database.
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon) with Drizzle ORM
@@ -41,6 +42,19 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 - **Authentication**: Passport.js, bcrypt
 - **Payment Gateway**: Flutterwave
 - **Email Service**: Resend
+- **SMS Service**: Twilio
 - **Frontend Libraries**: React, Tailwind CSS, Shadcn UI, Wouter, react-hook-form, Zod
 - **Backend Libraries**: Express.js, Node.js
 - **Fonts**: Bebas Neue, Play, Inter
+
+## Recent Changes (December 1, 2025)
+- Implemented complete SMS messaging system with Twilio integration
+- Added `sms_messages` database table with full schema and indexes
+- Created `smsService.ts` with Twilio client, template system, E.164 phone formatting, and validation
+- Added admin-only SMS API endpoints (/api/admin/sms/*) with full Zod validation for:
+  - Sending individual SMS messages
+  - Sending SMS to specific users with templates (welcome, reminder, thankYou, phaseUpdate)
+  - Broadcasting SMS to multiple recipients
+  - Checking SMS service status and retrieving message history
+- Added SMS Testing tab to Admin Dashboard for quick testing
+- SMS functionality requires Twilio credentials: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
