@@ -138,6 +138,7 @@ export async function setupAuth(app: Express) {
                 googleId: profile.id,
                 firstName,
                 lastName,
+                phone: '+237000000000',
                 profileImageUrl,
               });
             }
@@ -196,6 +197,7 @@ export async function setupAuth(app: Express) {
                 facebookId: profile.id,
                 firstName,
                 lastName,
+                phone: '+237000000000',
                 profileImageUrl,
               });
             }
@@ -264,11 +266,11 @@ export async function setupAuth(app: Express) {
   // Signup route
   app.post("/api/signup", async (req, res) => {
     try {
-      const { email, password, firstName, lastName, age, parentalConsent } = req.body;
+      const { email, password, firstName, lastName, phone, username, age, parentalConsent } = req.body;
 
       // Validation
-      if (!email || !password || !firstName || !lastName) {
-        return res.status(400).json({ message: "All fields are required" });
+      if (!email || !password || !firstName || !lastName || !phone) {
+        return res.status(400).json({ message: "All fields including phone number are required" });
       }
 
       if (password.length < 8) {
@@ -298,6 +300,8 @@ export async function setupAuth(app: Express) {
         password: hashedPassword,
         firstName,
         lastName,
+        phone,
+        username: username || email.split('@')[0],
         age: age || null,
         parentalConsent: parentalConsent || false,
         emailVerified: true,

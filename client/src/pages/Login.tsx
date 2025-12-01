@@ -28,6 +28,7 @@ export default function Login() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupFirstName, setSignupFirstName] = useState("");
   const [signupLastName, setSignupLastName] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
   const [signupAge, setSignupAge] = useState("");
   const [signupParentalConsent, setSignupParentalConsent] = useState(false);
@@ -68,6 +69,7 @@ export default function Login() {
         password: signupPassword,
         firstName: signupFirstName,
         lastName: signupLastName,
+        phone: signupPhone,
         username: signupUsername,
         age: signupAge ? parseInt(signupAge) : null,
         parentalConsent: signupParentalConsent,
@@ -113,6 +115,7 @@ export default function Login() {
 
     if (!signupFirstName) errors.push("First Name");
     if (!signupLastName) errors.push("Last Name");
+    if (!signupPhone) errors.push("Mobile Number");
     if (!signupUsername) errors.push("Username");
     if (!signupEmail) errors.push("Email");
     if (!signupPassword) errors.push("Password");
@@ -321,6 +324,19 @@ export default function Login() {
                       <p className="text-xs text-muted-foreground">
                         3-20 characters, letters and numbers only
                       </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-phone">Mobile Number *</Label>
+                      <Input
+                        id="signup-phone"
+                        type="tel"
+                        placeholder="+237 6XX XXX XXX"
+                        value={signupPhone}
+                        onChange={(e) => setSignupPhone(e.target.value)}
+                        data-testid="input-signup-phone"
+                        className={signupErrors.includes("Mobile Number") ? "border-red-500" : ""}
+                      />
                     </div>
 
                     <div className="space-y-2">

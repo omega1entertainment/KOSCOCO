@@ -2574,11 +2574,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // User is not authenticated - create a new account
-        const { firstName, lastName, email, username, password } = req.body;
+        const { firstName, lastName, email, username, password, phone } = req.body;
 
         // Validate required fields for new users
-        if (!firstName || !lastName || !email || !username || !password) {
-          return res.status(400).json({ message: "All user fields are required for registration" });
+        if (!firstName || !lastName || !email || !username || !password || !phone) {
+          return res.status(400).json({ message: "All fields including phone number are required for registration" });
         }
 
         // Check if email already exists
@@ -2597,6 +2597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email,
           username,
           password: hashedPassword,
+          phone,
           isAdmin: false,
         });
 
@@ -3430,6 +3431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         username,
         password: hashedPassword,
+        phone: '+237000000000', // Default phone for admin-created judges
         isAdmin: false,
         isJudge: true,
         emailVerified: true, // Auto-verify admin-created judges
