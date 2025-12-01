@@ -15,6 +15,30 @@ import { Separator } from "@/components/ui/separator";
 import { SiFacebook, SiGoogle } from "react-icons/si";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+// Country phone format mapping
+const PHONE_FORMATS: Record<string, string> = {
+  "+237": "6XX XXX XXX", // Cameroon
+  "+1": "(XXX) XXX-XXXX", // USA/Canada
+  "+44": "XXXX XXX XXXX", // UK
+  "+33": "XX XX XX XX XX", // France
+  "+49": "XXXX XXXXXXX", // Germany
+  "+91": "XXXXX XXXXX", // India
+  "+234": "XXX XXXXXXX", // Nigeria
+  "+27": "XX XXXX XXXX", // South Africa
+  "+255": "XXX XXX XXXX", // Tanzania
+  "+256": "XXX XXXXXX", // Uganda
+  "+254": "XXX XXXXXX", // Kenya
+  "+212": "6XX XXX XXX", // Morocco
+  "+213": "5XX XXX XXX", // Algeria
+  "+225": "XX XXXX XXX", // Ivory Coast
+  "+228": "9X XXX XXX", // Togo
+  "+229": "XX XXX XXX", // Benin
+  "+230": "XXXX XXXX", // Mauritius
+  "+243": "XXXXXXXXX", // DR Congo
+  "+251": "9XX XXX XXX", // Ethiopia
+  "+260": "XXXXXXXXX", // Zambia
+};
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -362,7 +386,7 @@ export default function Login() {
                         <Input
                           id="signup-phone"
                           type="tel"
-                          placeholder="6XX XXX XXX"
+                          placeholder={PHONE_FORMATS[signupCountryCode] || "6XX XXX XXX"}
                           value={signupPhone}
                           onChange={(e) => setSignupPhone(e.target.value)}
                           data-testid="input-signup-phone"
