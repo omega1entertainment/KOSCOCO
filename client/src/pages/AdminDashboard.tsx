@@ -2184,7 +2184,7 @@ function AdminDashboardContent() {
               data-testid="tab-sms"
             >
               <Send className="w-4 h-4 mr-2" />
-              SMS Testing
+              SMS Management
             </TabsTrigger>
           </TabsList>
 
