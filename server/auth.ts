@@ -245,6 +245,7 @@ export async function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", async (err: any, user: User | false, info: any) => {
       if (err) {
+        console.error("Login authentication error:", err);
         return res.status(500).json({ message: "An error occurred during login" });
       }
       
