@@ -146,6 +146,7 @@ export default function Login() {
     if (!signupUsername) errors.push("Username");
     if (!signupEmail) errors.push("Email");
     if (!signupPassword) errors.push("Password");
+    if (!signupAge) errors.push("Age");
 
     if (errors.length > 0) {
       setSignupErrors(errors);
@@ -177,8 +178,8 @@ export default function Login() {
       return;
     }
 
-    const age = signupAge ? parseInt(signupAge) : null;
-    if (age && age < 18 && !signupParentalConsent) {
+    const age = parseInt(signupAge);
+    if (age < 18 && !signupParentalConsent) {
       toast({
         title: t("auth.parentalConsentRequired"),
         description: t("auth.parentalConsentMessage"),
@@ -425,7 +426,7 @@ export default function Login() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-age">{t("auth.ageOptional")}</Label>
+                      <Label htmlFor="signup-age">Age *</Label>
                       <Input
                         id="signup-age"
                         type="number"
@@ -433,6 +434,7 @@ export default function Login() {
                         value={signupAge}
                         onChange={(e) => setSignupAge(e.target.value)}
                         data-testid="input-signup-age"
+                        className={signupErrors.includes("Age") ? "border-red-500" : ""}
                       />
                     </div>
 
