@@ -5818,11 +5818,11 @@ function AdminDashboardContent() {
 
       {/* Create Campaign Dialog - Hoisted to root level for visibility */}
       <Dialog open={affiliateCampaignDialogOpen} onOpenChange={setAffiliateCampaignDialogOpen}>
-        <DialogContent data-testid="dialog-create-campaign">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" data-testid="dialog-create-campaign">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create Campaign</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto pr-4 space-y-3">
             <div>
               <Label htmlFor="campaign-name">Campaign Name</Label>
               <Input id="campaign-name" value={affiliateCampaignForm.name} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, name: e.target.value})} placeholder="Campaign name" data-testid="input-campaign-name" />
@@ -5844,8 +5844,8 @@ function AdminDashboardContent() {
               <Input id="campaign-budget" type="number" value={affiliateCampaignForm.budget} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, budget: e.target.value})} placeholder="Budget" data-testid="input-campaign-budget" />
             </div>
 
-            <div className="border-t pt-4">
-              <h3 className="text-sm font-semibold mb-4">Promotional Assets</h3>
+            <div className="border-t pt-3">
+              <h3 className="text-sm font-semibold mb-2">Promotional Assets</h3>
               <p className="text-xs text-muted-foreground mb-3">Add promotional assets to your campaign. You can add more assets after creating the campaign.</p>
               
               <div>
@@ -5859,7 +5859,7 @@ function AdminDashboardContent() {
                 />
               </div>
 
-              <div className="mt-3">
+              <div className="mt-2">
                 <Label htmlFor="promo-asset-type">Asset Type (Optional)</Label>
                 <Select value={affiliateCampaignForm.promoAssetType || 'banner'} onValueChange={(value) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetType: value})}>
                   <SelectTrigger id="promo-asset-type" data-testid="select-promo-asset-type">
@@ -5874,7 +5874,7 @@ function AdminDashboardContent() {
                 </Select>
               </div>
 
-              <div className="mt-3">
+              <div className="mt-2">
                 <Label htmlFor="promo-asset-preview">Preview URL (Optional)</Label>
                 <Input 
                   id="promo-asset-preview" 
@@ -5885,7 +5885,7 @@ function AdminDashboardContent() {
                 />
               </div>
 
-              <div className="mt-3">
+              <div className="mt-2">
                 <Label htmlFor="promo-asset-download">Download URL (Optional)</Label>
                 <Input 
                   id="promo-asset-download" 
@@ -5896,7 +5896,7 @@ function AdminDashboardContent() {
                 />
               </div>
 
-              <div className="mt-3">
+              <div className="mt-2">
                 <Label htmlFor="promo-asset-dimensions">Dimensions (Optional)</Label>
                 <Input 
                   id="promo-asset-dimensions" 
@@ -5908,7 +5908,7 @@ function AdminDashboardContent() {
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setAffiliateCampaignDialogOpen(false)} data-testid="button-cancel-campaign">Cancel</Button>
             <Button onClick={() => createAffiliateCampaignMutation.mutate(affiliateCampaignForm)} disabled={!affiliateCampaignForm.name || createAffiliateCampaignMutation.isPending} data-testid="button-confirm-campaign">{createAffiliateCampaignMutation.isPending ? "Creating..." : "Create Campaign"}</Button>
           </div>
