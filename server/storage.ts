@@ -2666,6 +2666,47 @@ export class DbStorage implements IStorage {
   async deletePostbackUrl(id: string): Promise<void> {
     await db.delete(schema.postbackUrls).where(eq(schema.postbackUrls.id, id));
   }
+
+  async createSmsMessage(message: schema.InsertSmsMessage): Promise<schema.SmsMessage> {
+    const [created] = await db.insert(schema.smsMessages).values(message).returning();
+    return created;
+  }
+
+  async getSmsMessage(id: string): Promise<schema.SmsMessage | undefined> {
+    const [message] = await db.select().from(schema.smsMessages).where(eq(schema.smsMessages.id, id));
+    return message;
+  }
+
+  async updateSmsMessage(id: string, updates: Partial<schema.SmsMessage>): Promise<schema.SmsMessage | undefined> {
+    const [updated] = await db.update(schema.smsMessages).set(updates).where(eq(schema.smsMessages.id, id)).returning();
+    return updated;
+  }
+
+  async getAllSmsMessages(limit: number = 100): Promise<schema.SmsMessage[]> {
+    return await db.select().from(schema.smsMessages).orderBy(desc(schema.smsMessages.createdAt)).limit(limit);
+  }
+
+  async getSmsMessagesByUser(userId: string): Promise<schema.SmsMessage[]> {
+    return await db.select().from(schema.smsMessages).where(eq(schema.smsMessages.userId, userId)).orderBy(desc(schema.smsMessages.createdAt));
+  }
+
+  async getSmsStats(): Promise<{ total: number; sent: number; delivered: number; failed: number }> {
+    const result = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = 'sent' OR status = 'delivered' THEN 1 END) as sent,
+        COUNT(CASE WHEN status = 'delivered' THEN 1 END) as delivered,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed
+      FROM sms_messages
+    `);
+    const row = result.rows[0] as any;
+    return {
+      total: Number(row?.total || 0),
+      sent: Number(row?.sent || 0),
+      delivered: Number(row?.delivered || 0),
+      failed: Number(row?.failed || 0),
+    };
+  }
 }
 
 export const storage = new DbStorage();

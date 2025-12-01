@@ -6126,6 +6126,280 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SMS Routes
+  const { sendSms, sendBulkSms, isTwilioConfigured, smsTemplates } = await import('./smsService');
+
+  // SMS validation schemas
+  const sendSmsSchema = z.object({
+    to: z.string().min(8, "Phone number must be at least 8 characters").max(20, "Phone number too long"),
+    body: z.string().min(1, "Message body is required").max(1600, "Message body too long"),
+    userId: z.string().uuid().optional().nullable(),
+    messageType: z.enum(['notification', 'broadcast', 'verification', 'marketing']).optional().default('notification'),
+  });
+
+  const sendToUserSchema = z.object({
+    templateName: z.string().optional(),
+    customMessage: z.string().min(1).max(1600).optional(),
+    messageType: z.enum(['notification', 'broadcast', 'verification', 'marketing']).optional().default('notification'),
+  }).refine(data => data.templateName || data.customMessage, {
+    message: "Either templateName or customMessage is required",
+  });
+
+  const broadcastSmsSchema = z.object({
+    recipients: z.array(
+      z.union([
+        z.string().min(8),
+        z.object({
+          phone: z.string().min(8),
+          userId: z.string().uuid().optional(),
+        })
+      ])
+    ).min(1, "At least one recipient is required").max(500, "Maximum 500 recipients per broadcast"),
+    body: z.string().min(1, "Message body is required").max(1600, "Message body too long"),
+    messageType: z.enum(['notification', 'broadcast', 'verification', 'marketing']).optional().default('broadcast'),
+  });
+
+  // Check if SMS is configured
+  app.get('/api/admin/sms/status', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const configured = isTwilioConfigured();
+      const stats = await storage.getSmsStats();
+      res.json({ configured, stats });
+    } catch (error) {
+      console.error("SMS status error:", error);
+      res.status(500).json({ message: "Failed to get SMS status" });
+    }
+  });
+
+  // Get SMS history
+  app.get('/api/admin/sms/messages', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const messages = await storage.getAllSmsMessages(limit);
+      res.json(messages);
+    } catch (error) {
+      console.error("Get SMS messages error:", error);
+      res.status(500).json({ message: "Failed to fetch SMS messages" });
+    }
+  });
+
+  // Send SMS to a single user
+  app.post('/api/admin/sms/send', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const validationResult = sendSmsSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+
+      const { to, body, userId, messageType } = validationResult.data;
+      const adminUser = req.user as SelectUser;
+
+      if (!isTwilioConfigured()) {
+        return res.status(503).json({ message: "SMS service is not configured. Please set up Twilio credentials." });
+      }
+
+      // Create SMS record first
+      const smsRecord = await storage.createSmsMessage({
+        to,
+        body,
+        status: 'pending',
+        userId: userId || null,
+        sentBy: adminUser.id,
+        messageType: messageType || 'notification',
+      });
+
+      // Send the SMS
+      const result = await sendSms({ to, body });
+
+      // Update SMS record with result
+      await storage.updateSmsMessage(smsRecord.id, {
+        status: result.success ? 'sent' : 'failed',
+        providerMessageSid: result.messageSid || null,
+        error: result.error || null,
+        sentAt: result.success ? new Date() : null,
+      });
+
+      if (result.success) {
+        res.json({ success: true, messageSid: result.messageSid, id: smsRecord.id });
+      } else {
+        res.status(400).json({ success: false, error: result.error });
+      }
+    } catch (error) {
+      console.error("Send SMS error:", error);
+      res.status(500).json({ message: "Failed to send SMS" });
+    }
+  });
+
+  // Send SMS to a specific user by ID
+  app.post('/api/admin/sms/send-to-user/:userId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Validate user ID format
+      if (!userId || typeof userId !== 'string') {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const validationResult = sendToUserSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+
+      const { templateName, customMessage, messageType } = validationResult.data;
+      const adminUser = req.user as SelectUser;
+
+      // Get user details
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get user's phone number from newsletter subscribers
+      const subscribers = await storage.getAllNewsletterSubscribers();
+      const subscriber = subscribers.find(s => s.email === user.email);
+      
+      if (!subscriber?.phone) {
+        return res.status(400).json({ message: "User does not have a phone number on file" });
+      }
+
+      if (!isTwilioConfigured()) {
+        return res.status(503).json({ message: "SMS service is not configured" });
+      }
+
+      // Determine message body
+      let body: string;
+      if (customMessage) {
+        body = customMessage;
+      } else if (templateName) {
+        const validTemplates = Object.keys(smsTemplates);
+        if (!validTemplates.includes(templateName)) {
+          return res.status(400).json({ 
+            message: "Invalid template name", 
+            validTemplates 
+          });
+        }
+        const templateFn = smsTemplates[templateName as keyof typeof smsTemplates];
+        if (typeof templateFn === 'function') {
+          body = templateFn(user.firstName || 'User');
+        } else {
+          return res.status(400).json({ message: "Template requires additional parameters" });
+        }
+      } else {
+        return res.status(400).json({ message: "Either customMessage or valid templateName is required" });
+      }
+
+      // Create SMS record
+      const smsRecord = await storage.createSmsMessage({
+        to: subscriber.phone,
+        body,
+        status: 'pending',
+        userId: user.id,
+        sentBy: adminUser.id,
+        messageType: messageType || 'notification',
+      });
+
+      // Send SMS
+      const result = await sendSms({ to: subscriber.phone, body });
+
+      // Update record
+      await storage.updateSmsMessage(smsRecord.id, {
+        status: result.success ? 'sent' : 'failed',
+        providerMessageSid: result.messageSid || null,
+        error: result.error || null,
+        sentAt: result.success ? new Date() : null,
+      });
+
+      if (result.success) {
+        res.json({ success: true, messageSid: result.messageSid, id: smsRecord.id });
+      } else {
+        res.status(400).json({ success: false, error: result.error });
+      }
+    } catch (error) {
+      console.error("Send SMS to user error:", error);
+      res.status(500).json({ message: "Failed to send SMS" });
+    }
+  });
+
+  // Send broadcast SMS to multiple recipients
+  app.post('/api/admin/sms/broadcast', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const validationResult = broadcastSmsSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+
+      const { recipients, body, messageType } = validationResult.data;
+      const adminUser = req.user as SelectUser;
+
+      if (!isTwilioConfigured()) {
+        return res.status(503).json({ message: "SMS service is not configured" });
+      }
+
+      // Create SMS records for all recipients
+      const results = [];
+      for (const recipient of recipients) {
+        const phone = typeof recipient === 'string' ? recipient : recipient.phone;
+        const userId = typeof recipient === 'object' ? recipient.userId : null;
+
+        const smsRecord = await storage.createSmsMessage({
+          to: phone,
+          body,
+          status: 'pending',
+          userId,
+          sentBy: adminUser.id,
+          messageType: messageType || 'broadcast',
+        });
+
+        const result = await sendSms({ to: phone, body });
+
+        await storage.updateSmsMessage(smsRecord.id, {
+          status: result.success ? 'sent' : 'failed',
+          providerMessageSid: result.messageSid || null,
+          error: result.error || null,
+          sentAt: result.success ? new Date() : null,
+        });
+
+        results.push({
+          phone,
+          success: result.success,
+          messageSid: result.messageSid,
+          error: result.error,
+        });
+      }
+
+      const sent = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      res.json({ sent, failed, total: recipients.length, results });
+    } catch (error) {
+      console.error("Broadcast SMS error:", error);
+      res.status(500).json({ message: "Failed to send broadcast SMS" });
+    }
+  });
+
+  // Get available SMS templates
+  app.get('/api/admin/sms/templates', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const templates = Object.keys(smsTemplates).map(key => ({
+        name: key,
+        description: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+      }));
+      res.json(templates);
+    } catch (error) {
+      console.error("Get SMS templates error:", error);
+      res.status(500).json({ message: "Failed to fetch SMS templates" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

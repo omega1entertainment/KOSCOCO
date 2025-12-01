@@ -983,3 +983,34 @@ export type PollWithStats = Poll & {
   options: (PollOption & { responseCount: number; percentage: number })[];
   totalResponses: number;
 };
+
+// SMS Messages table for tracking sent SMS
+export const smsMessages = pgTable("sms_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  to: text("to").notNull(),
+  body: text("body").notNull(),
+  status: text("status").notNull().default('pending'),
+  error: text("error"),
+  providerMessageSid: text("provider_message_sid"),
+  userId: varchar("user_id").references(() => users.id),
+  sentBy: varchar("sent_by").references(() => users.id),
+  messageType: text("message_type").notNull().default('notification'),
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_sms_messages_user").on(table.userId),
+  index("idx_sms_messages_status").on(table.status),
+  index("idx_sms_messages_created").on(table.createdAt),
+]);
+
+export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({ 
+  id: true, 
+  createdAt: true,
+  sentAt: true,
+  deliveredAt: true,
+  providerMessageSid: true,
+});
+
+export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
+export type SmsMessage = typeof smsMessages.$inferSelect;
