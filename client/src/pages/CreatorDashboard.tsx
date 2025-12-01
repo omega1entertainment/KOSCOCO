@@ -28,7 +28,8 @@ import {
   Settings,
   Copy,
   DollarSign,
-  MessageCircle
+  MessageCircle,
+  Lock
 } from "lucide-react";
 import { PollManager } from "@/components/PollManager";
 import { ScheduledVideoManager } from "@/components/ScheduledVideoManager";
@@ -373,7 +374,7 @@ export default function CreatorDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 max-w-4xl">
+        <TabsList className="grid w-full grid-cols-9 max-w-5xl">
           <TabsTrigger value="overview" data-testid="tab-overview">
             <BarChart3 className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">{t('creator.tabs.overview')}</span>
@@ -389,6 +390,10 @@ export default function CreatorDashboard() {
           <TabsTrigger value="profile" data-testid="tab-profile">
             <User className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">Profile</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" data-testid="tab-security">
+            <Lock className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
           <TabsTrigger value="competitions" data-testid="tab-competitions">
             <Trophy className="h-4 w-4 mr-1" />
@@ -636,12 +641,14 @@ export default function CreatorDashboard() {
               ) : null}
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Security Settings - 2FA */}
+        {/* Security Tab */}
+        <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Account Security</CardTitle>
-              <CardDescription>Two-Factor Authentication</CardDescription>
+              <CardDescription>Manage your account security settings</CardDescription>
             </CardHeader>
             <CardContent>
               <TwoFactorSettings userType="user" />
