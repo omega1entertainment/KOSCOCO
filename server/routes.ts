@@ -5984,6 +5984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         start_date: startDate ? new Date(startDate) : new Date(),
         end_date: endDate ? new Date(endDate) : null,
         budget: budget || null,
+        created_by: req.user.id,
         created_at: new Date(),
       });
       res.status(201).json(campaign);
