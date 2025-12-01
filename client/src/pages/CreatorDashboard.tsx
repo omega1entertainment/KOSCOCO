@@ -858,8 +858,8 @@ export default function CreatorDashboard() {
                 <div>
                   <h4 className="font-semibold mb-2">Account</h4>
                   <Button 
+                    size="sm"
                     variant="destructive" 
-                    className="w-full justify-start" 
                     onClick={handleDeleteAccount}
                     data-testid="button-delete-account"
                   >
