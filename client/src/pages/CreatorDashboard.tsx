@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { PollManager } from "@/components/PollManager";
 import { ScheduledVideoManager } from "@/components/ScheduledVideoManager";
+import TwoFactorSettings from "@/components/TwoFactorSettings";
 import { createPermalink } from "@/lib/slugUtils";
 import {
   Dialog,
@@ -633,6 +634,17 @@ export default function CreatorDashboard() {
                   </Button>
                 </div>
               ) : null}
+            </CardContent>
+          </Card>
+
+          {/* Security Settings - 2FA */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Security</CardTitle>
+              <CardDescription>Two-Factor Authentication</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TwoFactorSettings userType="user" />
             </CardContent>
           </Card>
         </TabsContent>
