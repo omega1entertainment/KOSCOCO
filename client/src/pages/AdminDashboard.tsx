@@ -5861,12 +5861,11 @@ function AdminDashboardContent() {
 
               <div className="mt-3">
                 <Label htmlFor="promo-asset-type">Asset Type (Optional)</Label>
-                <Select value={affiliateCampaignForm.promoAssetType || ''} onValueChange={(value) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetType: value})}>
+                <Select value={affiliateCampaignForm.promoAssetType || 'banner'} onValueChange={(value) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetType: value})}>
                   <SelectTrigger id="promo-asset-type" data-testid="select-promo-asset-type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
                     <SelectItem value="banner">Banner</SelectItem>
                     <SelectItem value="creative">Creative</SelectItem>
                     <SelectItem value="tracking_link">Tracking Link</SelectItem>
