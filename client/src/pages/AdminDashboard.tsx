@@ -277,6 +277,8 @@ function SmsTestingForm() {
   const [tab, setTab] = useState("send");
   const { data: analytics } = useQuery({ queryKey: ["/api/admin/sms/analytics"] });
   const { data: history = [] } = useQuery({ queryKey: ["/api/admin/sms/history"] });
+  const { data: usersCount } = useQuery({ queryKey: ["/api/admin/sms/bulk-recipients/users"] });
+  const { data: subscribersCount } = useQuery({ queryKey: ["/api/admin/sms/bulk-recipients/subscribers"] });
   
   const form = useForm({
     resolver: zodResolver(z.object({
@@ -284,6 +286,14 @@ function SmsTestingForm() {
       body: z.string().min(1, "Message required").max(1600),
     })),
     defaultValues: { to: "", body: "" },
+  });
+
+  const bulkForm = useForm({
+    resolver: zodResolver(z.object({
+      recipientType: z.enum(['users', 'subscribers']),
+      body: z.string().min(1, "Message required").max(1600),
+    })),
+    defaultValues: { recipientType: 'subscribers', body: "" },
   });
 
   async function onSubmit(data: any) {
@@ -305,6 +315,25 @@ function SmsTestingForm() {
     }
   }
 
+  async function onBulkSubmit(data: any) {
+    setLoading(true);
+    try {
+      const res = await apiRequest("/api/admin/sms/bulk", "POST", data);
+      const result = await res.json();
+      if (res.ok) {
+        toast({ title: "Success", description: result.message });
+        bulkForm.reset();
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/sms/history", "/api/admin/sms/analytics"] });
+      } else {
+        toast({ title: "Error", description: result.message || "Failed to send bulk SMS", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to send bulk SMS", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function retryFailed() {
     try {
       const res = await apiRequest("/api/admin/sms/retry-failed", "POST");
@@ -318,8 +347,9 @@ function SmsTestingForm() {
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="send">Send SMS</TabsTrigger>
+        <TabsTrigger value="bulk">Bulk SMS</TabsTrigger>
         <TabsTrigger value="analytics">Analytics</TabsTrigger>
         <TabsTrigger value="history">History</TabsTrigger>
       </TabsList>
@@ -347,6 +377,46 @@ function SmsTestingForm() {
             )} />
             <Button type="submit" disabled={loading} data-testid="button-send-sms">
               {loading ? "Sending..." : "Send SMS"}
+            </Button>
+          </form>
+        </Form>
+      </TabsContent>
+
+      <TabsContent value="bulk" className="space-y-4">
+        <Form {...bulkForm}>
+          <form onSubmit={bulkForm.handleSubmit(onBulkSubmit)} className="space-y-4">
+            <FormField control={bulkForm.control} name="recipientType" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Recipients</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger data-testid="select-bulk-recipients">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="users">
+                        All Users with Phone ({usersCount?.count || 0})
+                      </SelectItem>
+                      <SelectItem value="subscribers">
+                        Newsletter Subscribers ({subscribersCount?.count || 0})
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={bulkForm.control} name="body" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Message</FormLabel>
+                <FormControl>
+                  <Textarea {...field} placeholder="Enter SMS message for all recipients..." className="min-h-24" data-testid="textarea-bulk-sms-body" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <Button type="submit" disabled={loading} data-testid="button-send-bulk-sms">
+              {loading ? "Sending to all recipients..." : "Send Bulk SMS"}
             </Button>
           </form>
         </Form>

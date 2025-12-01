@@ -6471,6 +6471,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk SMS to recipients
+  app.post('/api/admin/sms/bulk', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const bulkSchema = z.object({
+        recipientType: z.enum(['users', 'subscribers', 'custom']),
+        recipients: z.array(z.string()).optional(),
+        body: z.string().min(1, "Message required").max(1600),
+        messageType: z.enum(['notification', 'broadcast', 'verification', 'marketing']).optional().default('broadcast'),
+      });
+
+      const validationResult = bulkSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+
+      const { recipientType, recipients, body, messageType } = validationResult.data;
+      const adminUser = req.user as SelectUser;
+
+      if (!isTwilioConfigured()) {
+        return res.status(503).json({ message: "SMS service is not configured" });
+      }
+
+      let phoneNumbers: string[] = [];
+
+      if (recipientType === 'users') {
+        const users = await storage.getAllUsers();
+        const subscribers = await storage.getAllNewsletterSubscribers();
+        const phoneMap = new Map(subscribers.map(s => [s.email, s.phone]));
+        phoneNumbers = users
+          .map(u => phoneMap.get(u.email))
+          .filter((p): p is string => p !== undefined && p !== null);
+      } else if (recipientType === 'subscribers') {
+        const subscribers = await storage.getAllNewsletterSubscribers();
+        phoneNumbers = subscribers.map(s => s.phone).filter(p => p !== null) as string[];
+      } else if (recipientType === 'custom' && recipients) {
+        phoneNumbers = recipients;
+      }
+
+      if (phoneNumbers.length === 0) {
+        return res.status(400).json({ message: "No recipients found" });
+      }
+
+      const results = await sendBulkSms(phoneNumbers.map(phone => ({ to: phone, body })));
+
+      // Log each message
+      for (let i = 0; i < phoneNumbers.length; i++) {
+        const result = results.results[i];
+        await storage.createSmsMessage({
+          to: phoneNumbers[i],
+          body,
+          status: result.success ? 'sent' : 'failed',
+          userId: null,
+          sentBy: adminUser.id,
+          messageType: messageType || 'broadcast',
+          error: result.error || null,
+          providerMessageSid: result.messageSid || null,
+        });
+      }
+
+      res.json({ 
+        message: `Sent ${results.sent}/${phoneNumbers.length} bulk SMS messages`,
+        sent: results.sent,
+        failed: results.failed,
+        total: phoneNumbers.length
+      });
+    } catch (error) {
+      console.error("Bulk SMS error:", error);
+      res.status(500).json({ message: "Failed to send bulk SMS" });
+    }
+  });
+
+  // Get recipients count for bulk SMS
+  app.get('/api/admin/sms/bulk-recipients/:type', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { type } = req.params;
+      let count = 0;
+
+      if (type === 'users') {
+        const users = await storage.getAllUsers();
+        const subscribers = await storage.getAllNewsletterSubscribers();
+        const phoneMap = new Map(subscribers.map(s => [s.email, s.phone]));
+        count = users.filter(u => phoneMap.has(u.email)).length;
+      } else if (type === 'subscribers') {
+        const subscribers = await storage.getAllNewsletterSubscribers();
+        count = subscribers.filter(s => s.phone).length;
+      }
+
+      res.json({ count, type });
+    } catch (error) {
+      console.error("Get bulk recipients error:", error);
+      res.status(500).json({ message: "Failed to get recipients count" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
