@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +29,7 @@ export default function Login() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupFirstName, setSignupFirstName] = useState("");
   const [signupLastName, setSignupLastName] = useState("");
+  const [signupCountryCode, setSignupCountryCode] = useState("+237");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
   const [signupAge, setSignupAge] = useState("");
@@ -64,12 +66,13 @@ export default function Login() {
 
   const signupMutation = useMutation({
     mutationFn: async () => {
+      const fullPhone = `${signupCountryCode}${signupPhone.replace(/\D/g, '')}`;
       const response = await apiRequest("/api/signup", "POST", {
         email: signupEmail,
         password: signupPassword,
         firstName: signupFirstName,
         lastName: signupLastName,
-        phone: signupPhone,
+        phone: fullPhone,
         username: signupUsername,
         age: signupAge ? parseInt(signupAge) : null,
         parentalConsent: signupParentalConsent,
@@ -327,16 +330,45 @@ export default function Login() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-phone">Mobile Number *</Label>
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        placeholder="+237 6XX XXX XXX"
-                        value={signupPhone}
-                        onChange={(e) => setSignupPhone(e.target.value)}
-                        data-testid="input-signup-phone"
-                        className={signupErrors.includes("Mobile Number") ? "border-red-500" : ""}
-                      />
+                      <Label>Mobile Number *</Label>
+                      <div className="flex gap-2">
+                        <Select value={signupCountryCode} onValueChange={setSignupCountryCode}>
+                          <SelectTrigger className="w-32" data-testid="select-country-code">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="+237">Cameroon (+237)</SelectItem>
+                            <SelectItem value="+1">USA/Canada (+1)</SelectItem>
+                            <SelectItem value="+44">UK (+44)</SelectItem>
+                            <SelectItem value="+33">France (+33)</SelectItem>
+                            <SelectItem value="+49">Germany (+49)</SelectItem>
+                            <SelectItem value="+91">India (+91)</SelectItem>
+                            <SelectItem value="+234">Nigeria (+234)</SelectItem>
+                            <SelectItem value="+27">South Africa (+27)</SelectItem>
+                            <SelectItem value="+255">Tanzania (+255)</SelectItem>
+                            <SelectItem value="+256">Uganda (+256)</SelectItem>
+                            <SelectItem value="+254">Kenya (+254)</SelectItem>
+                            <SelectItem value="+212">Morocco (+212)</SelectItem>
+                            <SelectItem value="+213">Algeria (+213)</SelectItem>
+                            <SelectItem value="+225">Ivory Coast (+225)</SelectItem>
+                            <SelectItem value="+228">Togo (+228)</SelectItem>
+                            <SelectItem value="+229">Benin (+229)</SelectItem>
+                            <SelectItem value="+230">Mauritius (+230)</SelectItem>
+                            <SelectItem value="+243">DR Congo (+243)</SelectItem>
+                            <SelectItem value="+251">Ethiopia (+251)</SelectItem>
+                            <SelectItem value="+260">Zambia (+260)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          id="signup-phone"
+                          type="tel"
+                          placeholder="6XX XXX XXX"
+                          value={signupPhone}
+                          onChange={(e) => setSignupPhone(e.target.value)}
+                          data-testid="input-signup-phone"
+                          className={`flex-1 ${signupErrors.includes("Mobile Number") ? "border-red-500" : ""}`}
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
