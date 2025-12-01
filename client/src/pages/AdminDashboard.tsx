@@ -5539,90 +5539,6 @@ function AdminDashboardContent() {
                 </DialogContent>
               </Dialog>
 
-              {/* Create Campaign Dialog */}
-              <Dialog open={affiliateCampaignDialogOpen} onOpenChange={setAffiliateCampaignDialogOpen}>
-                <DialogContent data-testid="dialog-create-campaign">
-                  <DialogHeader>
-                    <DialogTitle>Create Campaign</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="campaign-name">Campaign Name</Label>
-                      <Input id="campaign-name" value={affiliateCampaignForm.name} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, name: e.target.value})} placeholder="Campaign name" data-testid="input-campaign-name" />
-                    </div>
-                    <div>
-                      <Label htmlFor="campaign-description">Description</Label>
-                      <Input id="campaign-description" value={affiliateCampaignForm.description} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, description: e.target.value})} placeholder="Campaign description" data-testid="input-campaign-description" />
-                    </div>
-                    <div>
-                      <Label htmlFor="campaign-objective">Objective</Label>
-                      <Input id="campaign-objective" value={affiliateCampaignForm.objective} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, objective: e.target.value})} placeholder="Campaign objective" data-testid="input-campaign-objective" />
-                    </div>
-                    <div>
-                      <Label htmlFor="campaign-audience">Target Audience</Label>
-                      <Input id="campaign-audience" value={affiliateCampaignForm.targetAudience} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, targetAudience: e.target.value})} placeholder="Target audience" data-testid="input-campaign-audience" />
-                    </div>
-                    <div>
-                      <Label htmlFor="campaign-budget">Budget (FCFA)</Label>
-                      <Input id="campaign-budget" type="number" value={affiliateCampaignForm.budget} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, budget: e.target.value})} placeholder="Budget" data-testid="input-campaign-budget" />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setAffiliateCampaignDialogOpen(false)} data-testid="button-cancel-campaign">Cancel</Button>
-                    <Button onClick={() => createAffiliateCampaignMutation.mutate(affiliateCampaignForm)} disabled={!affiliateCampaignForm.name || createAffiliateCampaignMutation.isPending} data-testid="button-confirm-campaign">{createAffiliateCampaignMutation.isPending ? "Creating..." : "Create Campaign"}</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Add Asset Dialog */}
-              <Dialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen}>
-                <DialogContent data-testid="dialog-add-asset">
-                  <DialogHeader>
-                    <DialogTitle>Add Marketing Asset</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="asset-type">Asset Type</Label>
-                      <Select value={assetForm.type} onValueChange={(value) => setAssetForm({...assetForm, type: value})}>
-                        <SelectTrigger id="asset-type" data-testid="select-asset-type">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="banner">Banner</SelectItem>
-                          <SelectItem value="creative">Creative</SelectItem>
-                          <SelectItem value="tracking_link">Tracking Link</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="asset-title">Title</Label>
-                      <Input id="asset-title" value={assetForm.title} onChange={(e) => setAssetForm({...assetForm, title: e.target.value})} placeholder="Asset title" data-testid="input-asset-title" />
-                    </div>
-                    <div>
-                      <Label htmlFor="asset-description">Description</Label>
-                      <Input id="asset-description" value={assetForm.description} onChange={(e) => setAssetForm({...assetForm, description: e.target.value})} placeholder="Asset description" data-testid="input-asset-description" />
-                    </div>
-                    <div>
-                      <Label htmlFor="asset-download">Download URL</Label>
-                      <Input id="asset-download" value={assetForm.downloadUrl} onChange={(e) => setAssetForm({...assetForm, downloadUrl: e.target.value})} placeholder="https://..." data-testid="input-asset-download" />
-                    </div>
-                    <div>
-                      <Label htmlFor="asset-preview">Preview URL</Label>
-                      <Input id="asset-preview" value={assetForm.previewUrl} onChange={(e) => setAssetForm({...assetForm, previewUrl: e.target.value})} placeholder="https://..." data-testid="input-asset-preview" />
-                    </div>
-                    <div>
-                      <Label htmlFor="asset-dimensions">Dimensions (e.g., 1200x630)</Label>
-                      <Input id="asset-dimensions" value={assetForm.dimensions} onChange={(e) => setAssetForm({...assetForm, dimensions: e.target.value})} placeholder="1200x630" data-testid="input-asset-dimensions" />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setAssetDialogOpen(false)} data-testid="button-cancel-asset">Cancel</Button>
-                    <Button onClick={() => createAssetMutation.mutate(assetForm)} disabled={!assetForm.title || createAssetMutation.isPending} data-testid="button-confirm-asset">{createAssetMutation.isPending ? "Adding..." : "Add Asset"}</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
               {/* Payout Action Dialog */}
               <Dialog open={affiliatePayoutActionDialog} onOpenChange={setAffiliatePayoutActionDialog}>
                 <DialogContent data-testid="dialog-payout-action">
@@ -5874,6 +5790,90 @@ function AdminDashboardContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create Campaign Dialog - Hoisted to root level for visibility */}
+      <Dialog open={affiliateCampaignDialogOpen} onOpenChange={setAffiliateCampaignDialogOpen}>
+        <DialogContent data-testid="dialog-create-campaign">
+          <DialogHeader>
+            <DialogTitle>Create Campaign</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="campaign-name">Campaign Name</Label>
+              <Input id="campaign-name" value={affiliateCampaignForm.name} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, name: e.target.value})} placeholder="Campaign name" data-testid="input-campaign-name" />
+            </div>
+            <div>
+              <Label htmlFor="campaign-description">Description</Label>
+              <Input id="campaign-description" value={affiliateCampaignForm.description} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, description: e.target.value})} placeholder="Campaign description" data-testid="input-campaign-description" />
+            </div>
+            <div>
+              <Label htmlFor="campaign-objective">Objective</Label>
+              <Input id="campaign-objective" value={affiliateCampaignForm.objective} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, objective: e.target.value})} placeholder="Campaign objective" data-testid="input-campaign-objective" />
+            </div>
+            <div>
+              <Label htmlFor="campaign-audience">Target Audience</Label>
+              <Input id="campaign-audience" value={affiliateCampaignForm.targetAudience} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, targetAudience: e.target.value})} placeholder="Target audience" data-testid="input-campaign-audience" />
+            </div>
+            <div>
+              <Label htmlFor="campaign-budget">Budget (FCFA)</Label>
+              <Input id="campaign-budget" type="number" value={affiliateCampaignForm.budget} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, budget: e.target.value})} placeholder="Budget" data-testid="input-campaign-budget" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setAffiliateCampaignDialogOpen(false)} data-testid="button-cancel-campaign">Cancel</Button>
+            <Button onClick={() => createAffiliateCampaignMutation.mutate(affiliateCampaignForm)} disabled={!affiliateCampaignForm.name || createAffiliateCampaignMutation.isPending} data-testid="button-confirm-campaign">{createAffiliateCampaignMutation.isPending ? "Creating..." : "Create Campaign"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Asset Dialog - Hoisted to root level for visibility */}
+      <Dialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen}>
+        <DialogContent data-testid="dialog-add-asset">
+          <DialogHeader>
+            <DialogTitle>Add Marketing Asset</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="asset-type">Asset Type</Label>
+              <Select value={assetForm.type} onValueChange={(value) => setAssetForm({...assetForm, type: value})}>
+                <SelectTrigger id="asset-type" data-testid="select-asset-type">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="banner">Banner</SelectItem>
+                  <SelectItem value="creative">Creative</SelectItem>
+                  <SelectItem value="tracking_link">Tracking Link</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="asset-title">Title</Label>
+              <Input id="asset-title" value={assetForm.title} onChange={(e) => setAssetForm({...assetForm, title: e.target.value})} placeholder="Asset title" data-testid="input-asset-title" />
+            </div>
+            <div>
+              <Label htmlFor="asset-description">Description</Label>
+              <Input id="asset-description" value={assetForm.description} onChange={(e) => setAssetForm({...assetForm, description: e.target.value})} placeholder="Asset description" data-testid="input-asset-description" />
+            </div>
+            <div>
+              <Label htmlFor="asset-download">Download URL</Label>
+              <Input id="asset-download" value={assetForm.downloadUrl} onChange={(e) => setAssetForm({...assetForm, downloadUrl: e.target.value})} placeholder="https://..." data-testid="input-asset-download" />
+            </div>
+            <div>
+              <Label htmlFor="asset-preview">Preview URL</Label>
+              <Input id="asset-preview" value={assetForm.previewUrl} onChange={(e) => setAssetForm({...assetForm, previewUrl: e.target.value})} placeholder="https://..." data-testid="input-asset-preview" />
+            </div>
+            <div>
+              <Label htmlFor="asset-dimensions">Dimensions (e.g., 1200x630)</Label>
+              <Input id="asset-dimensions" value={assetForm.dimensions} onChange={(e) => setAssetForm({...assetForm, dimensions: e.target.value})} placeholder="1200x630" data-testid="input-asset-dimensions" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setAssetDialogOpen(false)} data-testid="button-cancel-asset">Cancel</Button>
+            <Button onClick={() => createAssetMutation.mutate(assetForm)} disabled={!assetForm.title || createAssetMutation.isPending} data-testid="button-confirm-asset">{createAssetMutation.isPending ? "Adding..." : "Add Asset"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
