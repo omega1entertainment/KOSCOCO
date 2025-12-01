@@ -6127,7 +6127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SMS Routes
-  const { sendSms, sendBulkSms, isTwilioConfigured, smsTemplates } = await import('./smsService');
+  const { sendSms, sendBulkSms, isTwilioConfigured, smsTemplates, simpleTemplates } = await import('./smsService');
 
   // SMS validation schemas
   const sendSmsSchema = z.object({
@@ -6277,19 +6277,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (customMessage) {
         body = customMessage;
       } else if (templateName) {
-        const validTemplates = Object.keys(smsTemplates);
+        const validTemplates = Object.keys(simpleTemplates);
         if (!validTemplates.includes(templateName)) {
           return res.status(400).json({ 
-            message: "Invalid template name", 
+            message: "Invalid template name. Use simple templates for send-to-user.", 
             validTemplates 
           });
         }
-        const templateFn = smsTemplates[templateName as keyof typeof smsTemplates];
-        if (typeof templateFn === 'function') {
-          body = templateFn(user.firstName || 'User');
-        } else {
-          return res.status(400).json({ message: "Template requires additional parameters" });
-        }
+        const templateFn = simpleTemplates[templateName as keyof typeof simpleTemplates];
+        body = templateFn(user.firstName || 'User');
       } else {
         return res.status(400).json({ message: "Either customMessage or valid templateName is required" });
       }

@@ -139,6 +139,22 @@ export function isTwilioConfigured(): boolean {
   return validateTwilioConfig().valid;
 }
 
+// Simple templates requiring only firstName (for send-to-user route)
+export const simpleTemplates = {
+  welcome: (firstName: string) => 
+    `Welcome to KOSCOCO, ${firstName}! Thank you for joining our video competition platform.`,
+  
+  reminder: (firstName: string) =>
+    `Hi ${firstName}! Don't forget to check your KOSCOCO dashboard for updates and new opportunities.`,
+  
+  thankYou: (firstName: string) =>
+    `Thank you for participating in KOSCOCO, ${firstName}! We appreciate your support.`,
+  
+  phaseUpdate: (firstName: string) =>
+    `Hi ${firstName}! A new competition phase has started on KOSCOCO. Check your dashboard for details!`,
+};
+
+// Full templates requiring multiple parameters (for programmatic use)
 export const smsTemplates = {
   registrationConfirmation: (firstName: string, categoryCount: number) => 
     `Hi ${firstName}! Your KOSCOCO registration for ${categoryCount} ${categoryCount === 1 ? 'category' : 'categories'} has been confirmed. Good luck in the competition!`,
@@ -151,9 +167,6 @@ export const smsTemplates = {
   
   videoRejected: (firstName: string, reason: string) =>
     `Hi ${firstName}, your KOSCOCO video submission was not approved. Reason: ${reason}. Please try again.`,
-  
-  phaseUpdate: (phaseName: string) =>
-    `KOSCOCO Update: ${phaseName} has started! Check your dashboard for details.`,
   
   winnerAnnouncement: (firstName: string, position: string, category: string) =>
     `Congratulations ${firstName}! You've won ${position} place in ${category} at KOSCOCO! Check your email for details.`,
