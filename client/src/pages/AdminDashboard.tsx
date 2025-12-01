@@ -651,7 +651,7 @@ function AdminDashboardContent() {
   // Affiliate Campaign state
   const [affiliateCampaignDialogOpen, setAffiliateCampaignDialogOpen] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const [affiliateCampaignForm, setAffiliateCampaignForm] = useState({ name: "", description: "", objective: "", targetAudience: "", startDate: "", endDate: "", budget: "" });
+  const [affiliateCampaignForm, setAffiliateCampaignForm] = useState({ name: "", description: "", objective: "", targetAudience: "", startDate: "", endDate: "", budget: "", promoAssetTitle: "", promoAssetType: "", promoAssetPreviewUrl: "", promoAssetDownloadUrl: "", promoAssetDimensions: "" });
   const [assetDialogOpen, setAssetDialogOpen] = useState(false);
   const [assetForm, setAssetForm] = useState({ type: "banner", title: "", description: "", downloadUrl: "", previewUrl: "", dimensions: "", fileSize: "" });
   const [campaignAssets, setCampaignAssets] = useState<any[]>([]);
@@ -892,12 +892,37 @@ function AdminDashboardContent() {
 
   const createAffiliateCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/admin/campaigns", "POST", { ...data, budget: data.budget ? parseInt(data.budget) : null });
+      const campaignData = {
+        name: data.name,
+        description: data.description,
+        objective: data.objective,
+        target_audience: data.targetAudience,
+        budget: data.budget ? parseInt(data.budget) : null,
+        startDate: data.startDate,
+        endDate: data.endDate,
+      };
+      const res = await apiRequest("/api/admin/campaigns", "POST", campaignData);
+      const campaign = await res.json();
+      
+      // Create promotional asset if provided
+      if (data.promoAssetTitle && campaign.id) {
+        const assetData = {
+          type: data.promoAssetType || "banner",
+          title: data.promoAssetTitle,
+          description: "",
+          download_url: data.promoAssetDownloadUrl || "",
+          preview_url: data.promoAssetPreviewUrl || "",
+          dimensions: data.promoAssetDimensions || "",
+        };
+        await apiRequest(`/api/admin/campaigns/${campaign.id}/assets`, "POST", assetData);
+      }
+      
+      return campaign;
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Campaign created" });
       setAffiliateCampaignDialogOpen(false);
-      setAffiliateCampaignForm({ name: "", description: "", objective: "", targetAudience: "", startDate: "", endDate: "", budget: "" });
+      setAffiliateCampaignForm({ name: "", description: "", objective: "", targetAudience: "", startDate: "", endDate: "", budget: "", promoAssetTitle: "", promoAssetType: "", promoAssetPreviewUrl: "", promoAssetDownloadUrl: "", promoAssetDimensions: "" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/campaigns"] });
     },
     onError: (error: Error) => {
@@ -5817,6 +5842,71 @@ function AdminDashboardContent() {
             <div>
               <Label htmlFor="campaign-budget">Budget (FCFA)</Label>
               <Input id="campaign-budget" type="number" value={affiliateCampaignForm.budget} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, budget: e.target.value})} placeholder="Budget" data-testid="input-campaign-budget" />
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-semibold mb-4">Promotional Assets</h3>
+              <p className="text-xs text-muted-foreground mb-3">Add promotional assets to your campaign. You can add more assets after creating the campaign.</p>
+              
+              <div>
+                <Label htmlFor="promo-asset-title">Asset Title (Optional)</Label>
+                <Input 
+                  id="promo-asset-title" 
+                  value={affiliateCampaignForm.promoAssetTitle || ''} 
+                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetTitle: e.target.value})} 
+                  placeholder="e.g., Hero Banner 1200x630" 
+                  data-testid="input-promo-asset-title" 
+                />
+              </div>
+
+              <div className="mt-3">
+                <Label htmlFor="promo-asset-type">Asset Type (Optional)</Label>
+                <Select value={affiliateCampaignForm.promoAssetType || ''} onValueChange={(value) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetType: value})}>
+                  <SelectTrigger id="promo-asset-type" data-testid="select-promo-asset-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="banner">Banner</SelectItem>
+                    <SelectItem value="creative">Creative</SelectItem>
+                    <SelectItem value="tracking_link">Tracking Link</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="mt-3">
+                <Label htmlFor="promo-asset-preview">Preview URL (Optional)</Label>
+                <Input 
+                  id="promo-asset-preview" 
+                  value={affiliateCampaignForm.promoAssetPreviewUrl || ''} 
+                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetPreviewUrl: e.target.value})} 
+                  placeholder="https://..." 
+                  data-testid="input-promo-asset-preview" 
+                />
+              </div>
+
+              <div className="mt-3">
+                <Label htmlFor="promo-asset-download">Download URL (Optional)</Label>
+                <Input 
+                  id="promo-asset-download" 
+                  value={affiliateCampaignForm.promoAssetDownloadUrl || ''} 
+                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetDownloadUrl: e.target.value})} 
+                  placeholder="https://..." 
+                  data-testid="input-promo-asset-download" 
+                />
+              </div>
+
+              <div className="mt-3">
+                <Label htmlFor="promo-asset-dimensions">Dimensions (Optional)</Label>
+                <Input 
+                  id="promo-asset-dimensions" 
+                  value={affiliateCampaignForm.promoAssetDimensions || ''} 
+                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetDimensions: e.target.value})} 
+                  placeholder="e.g., 1200x630" 
+                  data-testid="input-promo-asset-dimensions" 
+                />
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2">
