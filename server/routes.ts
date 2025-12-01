@@ -6385,7 +6385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get available SMS templates
   app.get('/api/admin/sms/templates', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const templates = Object.keys(smsTemplates).map(key => ({
+      const templates = Object.keys(simpleTemplates).map(key => ({
         name: key,
         description: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
       }));
@@ -6393,6 +6393,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get SMS templates error:", error);
       res.status(500).json({ message: "Failed to fetch SMS templates" });
+    }
+  });
+
+  // Get SMS messages with filters
+  app.get('/api/admin/sms/history', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { status, type, days, limit } = req.query;
+      const limitNum = Math.min(parseInt(limit as string) || 100, 500);
+
+      let messages: schema.SmsMessage[] = [];
+      
+      if (days) {
+        const endDate = new Date();
+        const startDate = new Date(endDate.getTime() - parseInt(days as string) * 24 * 60 * 60 * 1000);
+        messages = await storage.getSmsMessagesByDateRange(startDate, endDate, limitNum);
+      } else if (status) {
+        messages = await storage.getSmsMessagesByStatus(status as string, limitNum);
+      } else if (type) {
+        messages = await storage.getSmsMessagesByType(type as string, limitNum);
+      } else {
+        messages = await storage.getAllSmsMessages(limitNum);
+      }
+
+      res.json(messages);
+    } catch (error) {
+      console.error("Get SMS history error:", error);
+      res.status(500).json({ message: "Failed to fetch SMS history" });
+    }
+  });
+
+  // Get SMS analytics
+  app.get('/api/admin/sms/analytics', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { days } = req.query;
+      let analytics;
+
+      if (days) {
+        const endDate = new Date();
+        const startDate = new Date(endDate.getTime() - parseInt(days as string) * 24 * 60 * 60 * 1000);
+        analytics = await storage.getSmsStatsByDateRange(startDate, endDate);
+      } else {
+        analytics = await storage.getSmsStats();
+      }
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Get SMS analytics error:", error);
+      res.status(500).json({ message: "Failed to fetch SMS analytics" });
+    }
+  });
+
+  // Retry failed SMS messages
+  app.post('/api/admin/sms/retry-failed', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const adminUser = req.user as SelectUser;
+      const failedMessages = await storage.getFailedSmsMessages(50);
+      
+      if (failedMessages.length === 0) {
+        return res.json({ message: "No failed messages to retry", retried: 0 });
+      }
+
+      let retried = 0;
+      for (const msg of failedMessages) {
+        const result = await sendSms({ to: msg.to, body: msg.body });
+        await storage.updateSmsMessage(msg.id, {
+          status: result.success ? 'sent' : 'failed',
+          error: result.error || null,
+        });
+        if (result.success) retried++;
+      }
+
+      res.json({ message: `Retried ${retried}/${failedMessages.length} failed messages`, retried });
+    } catch (error) {
+      console.error("Retry failed SMS error:", error);
+      res.status(500).json({ message: "Failed to retry SMS messages" });
     }
   });
 

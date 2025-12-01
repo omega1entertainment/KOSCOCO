@@ -274,6 +274,10 @@ function CMSManagementTab() {
 function SmsTestingForm() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState("send");
+  const { data: analytics } = useQuery({ queryKey: ["/api/admin/sms/analytics"] });
+  const { data: history = [] } = useQuery({ queryKey: ["/api/admin/sms/history"] });
+  
   const form = useForm({
     resolver: zodResolver(z.object({
       to: z.string().min(8, "Valid phone number required"),
@@ -290,6 +294,7 @@ function SmsTestingForm() {
       if (res.ok) {
         toast({ title: "Success", description: "SMS sent successfully!" });
         form.reset();
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/sms/history"] });
       } else {
         toast({ title: "Error", description: result.message || "Failed to send SMS", variant: "destructive" });
       }
@@ -300,32 +305,113 @@ function SmsTestingForm() {
     }
   }
 
+  async function retryFailed() {
+    try {
+      const res = await apiRequest("/api/admin/sms/retry-failed", "POST");
+      const result = await res.json();
+      toast({ title: "Success", description: result.message });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/sms/history", "/api/admin/sms/analytics"] });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to retry messages", variant: "destructive" });
+    }
+  }
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField control={form.control} name="to" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Phone Number</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="+237123456789" data-testid="input-sms-phone" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="body" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Message</FormLabel>
-            <FormControl>
-              <Textarea {...field} placeholder="Enter your SMS message..." className="min-h-24" data-testid="textarea-sms-body" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <Button type="submit" disabled={loading} data-testid="button-send-sms">
-          {loading ? "Sending..." : "Send SMS"}
-        </Button>
-      </form>
-    </Form>
+    <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="send">Send SMS</TabsTrigger>
+        <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <TabsTrigger value="history">History</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="send" className="space-y-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField control={form.control} name="to" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="+237123456789" data-testid="input-sms-phone" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="body" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Message</FormLabel>
+                <FormControl>
+                  <Textarea {...field} placeholder="Enter SMS message..." className="min-h-24" data-testid="textarea-sms-body" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <Button type="submit" disabled={loading} data-testid="button-send-sms">
+              {loading ? "Sending..." : "Send SMS"}
+            </Button>
+          </form>
+        </Form>
+      </TabsContent>
+
+      <TabsContent value="analytics" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>SMS Statistics</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold">{analytics?.total || 0}</p>
+            </div>
+            <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+              <p className="text-sm text-muted-foreground">Sent</p>
+              <p className="text-2xl font-bold text-green-600">{analytics?.sent || 0}</p>
+            </div>
+            <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+              <p className="text-sm text-muted-foreground">Failed</p>
+              <p className="text-2xl font-bold text-red-600">{analytics?.failed || 0}</p>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <p className="text-sm text-muted-foreground">Success Rate</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {analytics?.total ? Math.round((analytics.sent / analytics.total) * 100) : 0}%
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        {analytics?.failed > 0 && (
+          <Button onClick={retryFailed} variant="outline" className="w-full" data-testid="button-retry-failed">
+            Retry {analytics.failed} Failed Messages
+          </Button>
+        )}
+      </TabsContent>
+
+      <TabsContent value="history" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Messages ({history.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {history.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No messages sent yet</p>
+              ) : (
+                history.slice(0, 20).map((msg: any) => (
+                  <div key={msg.id} className="p-3 border rounded-lg text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs">{msg.to}</span>
+                      <Badge variant={msg.status === 'failed' ? 'destructive' : msg.status === 'sent' ? 'default' : 'secondary'}>
+                        {msg.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate mt-1">{msg.body}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }
 

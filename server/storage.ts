@@ -2707,6 +2707,53 @@ export class DbStorage implements IStorage {
       failed: Number(row?.failed || 0),
     };
   }
+
+  async getSmsMessagesByDateRange(startDate: Date, endDate: Date, limit: number = 100): Promise<schema.SmsMessage[]> {
+    return await db.select().from(schema.smsMessages).where(
+      and(
+        sql`${schema.smsMessages.createdAt} >= ${startDate}`,
+        sql`${schema.smsMessages.createdAt} <= ${endDate}`
+      )
+    ).orderBy(desc(schema.smsMessages.createdAt)).limit(limit);
+  }
+
+  async getSmsMessagesByStatus(status: string, limit: number = 100): Promise<schema.SmsMessage[]> {
+    return await db.select().from(schema.smsMessages).where(eq(schema.smsMessages.status, status)).orderBy(desc(schema.smsMessages.createdAt)).limit(limit);
+  }
+
+  async getSmsMessagesByType(messageType: string, limit: number = 100): Promise<schema.SmsMessage[]> {
+    return await db.select().from(schema.smsMessages).where(eq(schema.smsMessages.messageType, messageType)).orderBy(desc(schema.smsMessages.createdAt)).limit(limit);
+  }
+
+  async getSmsStatsByDateRange(startDate: Date, endDate: Date): Promise<{ total: number; sent: number; failed: number; byType: Record<string, number> }> {
+    const result = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = 'sent' OR status = 'delivered' THEN 1 END) as sent,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
+        message_type,
+        COUNT(*) as type_count
+      FROM sms_messages
+      WHERE created_at >= ${startDate} AND created_at <= ${endDate}
+      GROUP BY message_type
+    `);
+    const rows = result.rows as any[];
+    const byType: Record<string, number> = {};
+    rows.forEach(row => {
+      byType[row.message_type] = Number(row.type_count);
+    });
+    const totals = rows[0];
+    return {
+      total: Number(totals?.total || 0),
+      sent: Number(totals?.sent || 0),
+      failed: Number(totals?.failed || 0),
+      byType,
+    };
+  }
+
+  async getFailedSmsMessages(limit: number = 50): Promise<schema.SmsMessage[]> {
+    return await db.select().from(schema.smsMessages).where(eq(schema.smsMessages.status, 'failed')).orderBy(desc(schema.smsMessages.createdAt)).limit(limit);
+  }
 }
 
 export const storage = new DbStorage();
