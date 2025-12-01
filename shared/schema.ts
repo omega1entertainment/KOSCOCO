@@ -765,14 +765,39 @@ export type CampaignWithStats = AdCampaign & {
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // 'vote', 'upload', 'competition', 'system', 'message'
+  type: text("type").notNull(), // 'vote', 'comment', 'milestone', 'phase_achievement', 'subscription', 'system'
   title: text("title").notNull(),
   message: text("message"),
   relatedId: varchar("related_id"), // video id, registration id, etc.
+  data: jsonb("data"), // Additional data like videoId, commentId, etc.
+  actionUrl: text("action_url"), // Link to navigate when clicked
   read: boolean("read").default(false).notNull(),
   readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_notifications_user").on(table.userId),
+  index("idx_notifications_read").on(table.read),
+  index("idx_notifications_created").on(table.createdAt),
+]);
+
+// Notification preferences for push, email, sms
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  emailEnabled: boolean("email_enabled").default(true).notNull(),
+  pushEnabled: boolean("push_enabled").default(true).notNull(),
+  smsEnabled: boolean("sms_enabled").default(false).notNull(),
+  voteNotifications: boolean("vote_notifications").default(true).notNull(),
+  commentNotifications: boolean("comment_notifications").default(true).notNull(),
+  milestoneNotifications: boolean("milestone_notifications").default(true).notNull(),
+  phaseNotifications: boolean("phase_notifications").default(true).notNull(),
+  subscriptionNotifications: boolean("subscription_notifications").default(true).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({ id: true, updatedAt: true });
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
 
 // Activity log table
 export const activityLogs = pgTable("activity_logs", {
@@ -1020,3 +1045,140 @@ export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
 
 export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
 export type SmsMessage = typeof smsMessages.$inferSelect;
+
+// ============= WATCHLISTS & FAVORITES =============
+export const watchlists = pgTable("watchlists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  isPublic: boolean("is_public").default(false).notNull(),
+  isDefault: boolean("is_default").default(false).notNull(), // "Watch Later" default list
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_watchlists_user").on(table.userId),
+]);
+
+export const watchlistVideos = pgTable("watchlist_videos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  watchlistId: varchar("watchlist_id").notNull().references(() => watchlists.id, { onDelete: 'cascade' }),
+  videoId: varchar("video_id").notNull().references(() => videos.id, { onDelete: 'cascade' }),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_watchlist_videos_watchlist").on(table.watchlistId),
+  unique("unique_watchlist_video").on(table.watchlistId, table.videoId),
+]);
+
+export const favorites = pgTable("favorites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  videoId: varchar("video_id").notNull().references(() => videos.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_favorites_user").on(table.userId),
+  unique("unique_user_favorite").on(table.userId, table.videoId),
+]);
+
+export const insertWatchlistSchema = createInsertSchema(watchlists).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertWatchlistVideoSchema = createInsertSchema(watchlistVideos).omit({ id: true, addedAt: true });
+export const insertFavoriteSchema = createInsertSchema(favorites).omit({ id: true, createdAt: true });
+
+export type InsertWatchlist = z.infer<typeof insertWatchlistSchema>;
+export type Watchlist = typeof watchlists.$inferSelect;
+export type InsertWatchlistVideo = z.infer<typeof insertWatchlistVideoSchema>;
+export type WatchlistVideo = typeof watchlistVideos.$inferSelect;
+export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+export type Favorite = typeof favorites.$inferSelect;
+
+// ============= SCHEDULED PUBLISHING =============
+export const scheduledVideos = pgTable("scheduled_videos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => videos.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  status: text("status").notNull().default('scheduled'), // 'scheduled', 'published', 'cancelled', 'failed'
+  publishedAt: timestamp("published_at"),
+  failureReason: text("failure_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_scheduled_videos_user").on(table.userId),
+  index("idx_scheduled_videos_scheduled").on(table.scheduledAt),
+  index("idx_scheduled_videos_status").on(table.status),
+]);
+
+export const publishingAnalytics = pgTable("publishing_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  categoryId: varchar("category_id").references(() => categories.id),
+  dayOfWeek: integer("day_of_week").notNull(), // 0-6 (Sunday-Saturday)
+  hourOfDay: integer("hour_of_day").notNull(), // 0-23
+  avgEngagement: integer("avg_engagement").default(0).notNull(),
+  publishCount: integer("publish_count").default(0).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertScheduledVideoSchema = createInsertSchema(scheduledVideos).omit({ id: true, createdAt: true, updatedAt: true, publishedAt: true, failureReason: true });
+export const insertPublishingAnalyticsSchema = createInsertSchema(publishingAnalytics).omit({ id: true, updatedAt: true });
+
+export type InsertScheduledVideo = z.infer<typeof insertScheduledVideoSchema>;
+export type ScheduledVideo = typeof scheduledVideos.$inferSelect;
+export type InsertPublishingAnalytics = z.infer<typeof insertPublishingAnalyticsSchema>;
+export type PublishingAnalytics = typeof publishingAnalytics.$inferSelect;
+
+// ============= PERSONALIZED RECOMMENDATIONS =============
+export const recommendationEvents = pgTable("recommendation_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  videoId: varchar("video_id").notNull().references(() => videos.id, { onDelete: 'cascade' }),
+  eventType: text("event_type").notNull(), // 'watch', 'like', 'vote', 'share', 'comment', 'skip', 'not_interested'
+  watchDuration: integer("watch_duration"), // in seconds
+  completionRate: integer("completion_rate"), // percentage 0-100
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_recommendation_events_user").on(table.userId),
+  index("idx_recommendation_events_video").on(table.videoId),
+  index("idx_recommendation_events_created").on(table.createdAt),
+]);
+
+export const userRecommendations = pgTable("user_recommendations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  videoId: varchar("video_id").notNull().references(() => videos.id, { onDelete: 'cascade' }),
+  score: integer("score").notNull(), // 0-100 relevance score
+  reason: text("reason").notNull(), // 'similar_category', 'trending', 'watch_history', 'popular'
+  shown: boolean("shown").default(false).notNull(),
+  clicked: boolean("clicked").default(false).notNull(),
+  dismissed: boolean("dismissed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+}, (table) => [
+  index("idx_user_recommendations_user").on(table.userId),
+  index("idx_user_recommendations_score").on(table.score),
+]);
+
+export const userPreferences = pgTable("user_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  preferredCategories: text("preferred_categories").array(),
+  preferredSubcategories: text("preferred_subcategories").array(),
+  excludedCategories: text("excluded_categories").array(),
+  contentLengthPreference: text("content_length_preference"), // 'short', 'medium', 'long', 'any'
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertRecommendationEventSchema = createInsertSchema(recommendationEvents).omit({ id: true, createdAt: true });
+export const insertUserRecommendationSchema = createInsertSchema(userRecommendations).omit({ id: true, createdAt: true });
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({ id: true, updatedAt: true });
+
+export type InsertRecommendationEvent = z.infer<typeof insertRecommendationEventSchema>;
+export type RecommendationEvent = typeof recommendationEvents.$inferSelect;
+export type InsertUserRecommendation = z.infer<typeof insertUserRecommendationSchema>;
+export type UserRecommendation = typeof userRecommendations.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
+
+// Combined types for UI
+export type WatchlistWithVideos = Watchlist & { videos: (WatchlistVideo & { video: Video })[] };
+export type NotificationWithData = Notification & { video?: Video };
+export type ScheduledVideoWithDetails = ScheduledVideo & { video: Video };
