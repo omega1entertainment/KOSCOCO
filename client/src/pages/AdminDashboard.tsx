@@ -570,10 +570,6 @@ function AdminDashboardContent() {
     refetchIntervalInBackground: true,
   });
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<any[]>({
-    queryKey: ["/api/admin/campaigns"],
-  });
-
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
@@ -647,14 +643,6 @@ function AdminDashboardContent() {
   const [affiliatePayoutAction, setAffiliatePayoutAction] = useState<"approve" | "reject">("approve");
   const [affiliateSelectedPayoutId, setAffiliateSelectedPayoutId] = useState<string | null>(null);
   const [affiliatePayoutRejectionReason, setAffiliatePayoutRejectionReason] = useState("");
-
-  // Affiliate Campaign state
-  const [affiliateCampaignDialogOpen, setAffiliateCampaignDialogOpen] = useState(false);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const [affiliateCampaignForm, setAffiliateCampaignForm] = useState({ name: "", description: "", objective: "", targetAudience: "", startDate: "", endDate: "", budget: "", promoAssetTitle: "", promoAssetType: "", promoAssetPreviewUrl: "", promoAssetDownloadUrl: "", promoAssetDimensions: "" });
-  const [assetDialogOpen, setAssetDialogOpen] = useState(false);
-  const [assetForm, setAssetForm] = useState({ type: "banner", title: "", description: "", downloadUrl: "", previewUrl: "", dimensions: "", fileSize: "" });
-  const [campaignAssets, setCampaignAssets] = useState<any[]>([]);
 
   // Newsletter state
   const { data: newsletterSubscribers = [] } = useQuery<any[]>({
@@ -888,103 +876,6 @@ function AdminDashboardContent() {
     setSelectedAffiliateId(affiliateId);
     setAffiliateDetailDialog(true);
     loadAffiliatePerformance(affiliateId);
-  };
-
-  const createAffiliateCampaignMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const campaignData = {
-        name: data.name,
-        description: data.description,
-        objective: data.objective,
-        target_audience: data.targetAudience,
-        budget: data.budget ? parseInt(data.budget) : null,
-        startDate: data.startDate,
-        endDate: data.endDate,
-      };
-      const res = await apiRequest("/api/admin/campaigns", "POST", campaignData);
-      const campaign = await res.json();
-      
-      // Create promotional asset if provided
-      if (data.promoAssetTitle && campaign.id) {
-        const assetData = {
-          type: data.promoAssetType || "banner",
-          title: data.promoAssetTitle,
-          description: "",
-          download_url: data.promoAssetDownloadUrl || "",
-          preview_url: data.promoAssetPreviewUrl || "",
-          dimensions: data.promoAssetDimensions || "",
-        };
-        await apiRequest(`/api/admin/campaigns/${campaign.id}/assets`, "POST", assetData);
-      }
-      
-      return campaign;
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Campaign created" });
-      setAffiliateCampaignDialogOpen(false);
-      setAffiliateCampaignForm({ name: "", description: "", objective: "", targetAudience: "", startDate: "", endDate: "", budget: "", promoAssetTitle: "", promoAssetType: "", promoAssetPreviewUrl: "", promoAssetDownloadUrl: "", promoAssetDimensions: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/campaigns"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const deleteAffiliateCampaignMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest(`/api/admin/campaigns/${id}`, "DELETE");
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Campaign deleted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/campaigns"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const createAssetMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest(`/api/admin/campaigns/${selectedCampaignId}/assets`, "POST", { ...data, fileSize: data.fileSize ? parseInt(data.fileSize) : null });
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Asset created" });
-      setAssetDialogOpen(false);
-      setAssetForm({ type: "banner", title: "", description: "", downloadUrl: "", previewUrl: "", dimensions: "", fileSize: "" });
-      if (selectedCampaignId) loadCampaignAssets(selectedCampaignId);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/campaigns"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const deleteAssetMutation = useMutation({
-    mutationFn: async (assetId: string) => {
-      return await apiRequest(`/api/admin/campaigns/${selectedCampaignId}/assets/${assetId}`, "DELETE");
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Asset deleted" });
-      if (selectedCampaignId) loadCampaignAssets(selectedCampaignId);
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const loadCampaignAssets = async (campaignId: string) => {
-    try {
-      const res = await apiRequest(`/api/admin/campaigns/${campaignId}/assets`, "GET");
-      const data = await res.json();
-      setCampaignAssets(data);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to load assets", variant: "destructive" });
-    }
-  };
-
-  const handleSelectCampaign = (campaign: any) => {
-    setSelectedCampaignId(campaign.id);
-    loadCampaignAssets(campaign.id);
   };
 
   const approveAffiliatePayoutMutation = useMutation({
@@ -2251,13 +2142,6 @@ function AdminDashboardContent() {
                   {affiliates.filter((a: any) => a.status === "pending").length}
                 </Badge>
               )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="campaigns"
-              className="w-full justify-start"
-              data-testid="tab-campaigns"
-            >
-              Campaigns
             </TabsTrigger>
             <TabsTrigger
               value="fraud-alerts"
@@ -4566,79 +4450,6 @@ function AdminDashboardContent() {
               </Tabs>
             </TabsContent>
 
-            <TabsContent value="campaigns" className="mt-0">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Affiliate Campaigns</CardTitle>
-                      <p className="text-sm text-muted-foreground">Create marketing campaigns with promotional assets for affiliates</p>
-                    </div>
-                    <Button onClick={() => setAffiliateCampaignDialogOpen(true)} data-testid="button-create-new-campaign">Create Campaign</Button>
-                  </CardHeader>
-                  <CardContent>
-                    {campaignsLoading ? (
-                      <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
-                    ) : campaigns.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">No campaigns yet. Create one to get started.</p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {campaigns.map((campaign: any) => (
-                          <Card key={campaign.id} className="cursor-pointer hover-elevate" onClick={() => handleSelectCampaign(campaign)} data-testid={`card-campaign-${campaign.id}`}>
-                            <CardHeader>
-                              <CardTitle className="text-base">{campaign.name}</CardTitle>
-                              <p className="text-sm text-muted-foreground">{campaign.description}</p>
-                            </CardHeader>
-                            <CardContent className="space-y-2 text-sm">
-                              <div><span className="text-muted-foreground">Objective:</span> {campaign.objective || "—"}</div>
-                              <div><span className="text-muted-foreground">Target:</span> {campaign.target_audience || "—"}</div>
-                              <div><span className="text-muted-foreground">Budget:</span> {campaign.budget ? `${campaign.budget.toLocaleString()} FCFA` : "—"}</div>
-                              <div className="flex gap-2 pt-2">
-                                <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleSelectCampaign(campaign); }} data-testid={`button-manage-assets-${campaign.id}`}>Assets</Button>
-                                <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); if (confirm("Delete this campaign and all assets?")) deleteAffiliateCampaignMutation.mutate(campaign.id); }} disabled={deleteAffiliateCampaignMutation.isPending} data-testid={`button-delete-campaign-${campaign.id}`}>Delete</Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {selectedCampaignId && (
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle>Marketing Assets</CardTitle>
-                        <p className="text-sm text-muted-foreground">Banners, creatives, and promotional materials</p>
-                      </div>
-                      <Button onClick={() => setAssetDialogOpen(true)} data-testid="button-add-asset">Add Asset</Button>
-                    </CardHeader>
-                    <CardContent>
-                      {campaignAssets.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-8">No assets for this campaign yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {campaignAssets.map((asset: any) => (
-                            <div key={asset.id} className="border rounded p-3 flex items-center justify-between" data-testid={`asset-item-${asset.id}`}>
-                              <div>
-                                <p className="font-medium">{asset.title}</p>
-                                <p className="text-sm text-muted-foreground">{asset.description}</p>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  Type: {asset.type} | Dimensions: {asset.dimensions || "—"} | Size: {asset.file_size ? `${(asset.file_size / 1024).toFixed(2)} KB` : "—"}
-                                </div>
-                              </div>
-                              <Button size="sm" variant="destructive" onClick={() => deleteAssetMutation.mutate(asset.id)} disabled={deleteAssetMutation.isPending} data-testid={`button-delete-asset-${asset.id}`}>Delete</Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
             <TabsContent value="fraud-alerts" className="mt-0">
               <Card>
                 <CardHeader>
@@ -5815,154 +5626,6 @@ function AdminDashboardContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Create Campaign Dialog - Hoisted to root level for visibility */}
-      <Dialog open={affiliateCampaignDialogOpen} onOpenChange={setAffiliateCampaignDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" data-testid="dialog-create-campaign">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Create Campaign</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-4 space-y-3">
-            <div>
-              <Label htmlFor="campaign-name">Campaign Name</Label>
-              <Input id="campaign-name" value={affiliateCampaignForm.name} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, name: e.target.value})} placeholder="Campaign name" data-testid="input-campaign-name" />
-            </div>
-            <div>
-              <Label htmlFor="campaign-description">Description</Label>
-              <Input id="campaign-description" value={affiliateCampaignForm.description} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, description: e.target.value})} placeholder="Campaign description" data-testid="input-campaign-description" />
-            </div>
-            <div>
-              <Label htmlFor="campaign-objective">Objective</Label>
-              <Input id="campaign-objective" value={affiliateCampaignForm.objective} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, objective: e.target.value})} placeholder="Campaign objective" data-testid="input-campaign-objective" />
-            </div>
-            <div>
-              <Label htmlFor="campaign-audience">Target Audience</Label>
-              <Input id="campaign-audience" value={affiliateCampaignForm.targetAudience} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, targetAudience: e.target.value})} placeholder="Target audience" data-testid="input-campaign-audience" />
-            </div>
-            <div>
-              <Label htmlFor="campaign-budget">Budget (FCFA)</Label>
-              <Input id="campaign-budget" type="number" value={affiliateCampaignForm.budget} onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, budget: e.target.value})} placeholder="Budget" data-testid="input-campaign-budget" />
-            </div>
-
-            <div className="border-t pt-3">
-              <h3 className="text-sm font-semibold mb-2">Promotional Assets</h3>
-              <p className="text-xs text-muted-foreground mb-3">Add promotional assets to your campaign. You can add more assets after creating the campaign.</p>
-              
-              <div>
-                <Label htmlFor="promo-asset-title">Asset Title (Optional)</Label>
-                <Input 
-                  id="promo-asset-title" 
-                  value={affiliateCampaignForm.promoAssetTitle || ''} 
-                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetTitle: e.target.value})} 
-                  placeholder="e.g., Hero Banner 1200x630" 
-                  data-testid="input-promo-asset-title" 
-                />
-              </div>
-
-              <div className="mt-2">
-                <Label htmlFor="promo-asset-type">Asset Type (Optional)</Label>
-                <Select value={affiliateCampaignForm.promoAssetType || 'banner'} onValueChange={(value) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetType: value})}>
-                  <SelectTrigger id="promo-asset-type" data-testid="select-promo-asset-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="banner">Banner</SelectItem>
-                    <SelectItem value="creative">Creative</SelectItem>
-                    <SelectItem value="tracking_link">Tracking Link</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="mt-2">
-                <Label htmlFor="promo-asset-preview">Preview URL (Optional)</Label>
-                <Input 
-                  id="promo-asset-preview" 
-                  value={affiliateCampaignForm.promoAssetPreviewUrl || ''} 
-                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetPreviewUrl: e.target.value})} 
-                  placeholder="https://..." 
-                  data-testid="input-promo-asset-preview" 
-                />
-              </div>
-
-              <div className="mt-2">
-                <Label htmlFor="promo-asset-download">Download URL (Optional)</Label>
-                <Input 
-                  id="promo-asset-download" 
-                  value={affiliateCampaignForm.promoAssetDownloadUrl || ''} 
-                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetDownloadUrl: e.target.value})} 
-                  placeholder="https://..." 
-                  data-testid="input-promo-asset-download" 
-                />
-              </div>
-
-              <div className="mt-2">
-                <Label htmlFor="promo-asset-dimensions">Dimensions (Optional)</Label>
-                <Input 
-                  id="promo-asset-dimensions" 
-                  value={affiliateCampaignForm.promoAssetDimensions || ''} 
-                  onChange={(e) => setAffiliateCampaignForm({...affiliateCampaignForm, promoAssetDimensions: e.target.value})} 
-                  placeholder="e.g., 1200x630" 
-                  data-testid="input-promo-asset-dimensions" 
-                />
-              </div>
-            </div>
-          </div>
-          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setAffiliateCampaignDialogOpen(false)} data-testid="button-cancel-campaign">Cancel</Button>
-            <Button onClick={() => createAffiliateCampaignMutation.mutate(affiliateCampaignForm)} disabled={!affiliateCampaignForm.name || createAffiliateCampaignMutation.isPending} data-testid="button-confirm-campaign">{createAffiliateCampaignMutation.isPending ? "Creating..." : "Create Campaign"}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Asset Dialog - Hoisted to root level for visibility */}
-      <Dialog open={assetDialogOpen} onOpenChange={setAssetDialogOpen}>
-        <DialogContent data-testid="dialog-add-asset">
-          <DialogHeader>
-            <DialogTitle>Add Marketing Asset</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="asset-type">Asset Type</Label>
-              <Select value={assetForm.type} onValueChange={(value) => setAssetForm({...assetForm, type: value})}>
-                <SelectTrigger id="asset-type" data-testid="select-asset-type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="banner">Banner</SelectItem>
-                  <SelectItem value="creative">Creative</SelectItem>
-                  <SelectItem value="tracking_link">Tracking Link</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="asset-title">Title</Label>
-              <Input id="asset-title" value={assetForm.title} onChange={(e) => setAssetForm({...assetForm, title: e.target.value})} placeholder="Asset title" data-testid="input-asset-title" />
-            </div>
-            <div>
-              <Label htmlFor="asset-description">Description</Label>
-              <Input id="asset-description" value={assetForm.description} onChange={(e) => setAssetForm({...assetForm, description: e.target.value})} placeholder="Asset description" data-testid="input-asset-description" />
-            </div>
-            <div>
-              <Label htmlFor="asset-download">Download URL</Label>
-              <Input id="asset-download" value={assetForm.downloadUrl} onChange={(e) => setAssetForm({...assetForm, downloadUrl: e.target.value})} placeholder="https://..." data-testid="input-asset-download" />
-            </div>
-            <div>
-              <Label htmlFor="asset-preview">Preview URL</Label>
-              <Input id="asset-preview" value={assetForm.previewUrl} onChange={(e) => setAssetForm({...assetForm, previewUrl: e.target.value})} placeholder="https://..." data-testid="input-asset-preview" />
-            </div>
-            <div>
-              <Label htmlFor="asset-dimensions">Dimensions (e.g., 1200x630)</Label>
-              <Input id="asset-dimensions" value={assetForm.dimensions} onChange={(e) => setAssetForm({...assetForm, dimensions: e.target.value})} placeholder="1200x630" data-testid="input-asset-dimensions" />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setAssetDialogOpen(false)} data-testid="button-cancel-asset">Cancel</Button>
-            <Button onClick={() => createAssetMutation.mutate(assetForm)} disabled={!assetForm.title || createAssetMutation.isPending} data-testid="button-confirm-asset">{createAssetMutation.isPending ? "Adding..." : "Add Asset"}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
