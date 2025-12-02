@@ -138,14 +138,14 @@ export default function Footer() {
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
                         data-testid={`link-footer-${item.key}`}
                       >
-                        {item.key === 'footer.help' ? 'Help' : t(item.key)}
+                        {item.key === 'footer.help' ? 'Help' : item.key === 'footer.howItWorks' ? t('nav.howItWorks') : t(item.key)}
                       </a>
                     ) : (
                       <button 
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        onClick={() => console.log(`Navigate to ${item.key === 'footer.help' ? 'Help' : t(item.key)}`)}
+                        onClick={() => console.log(`Navigate to ${item.key === 'footer.help' ? 'Help' : item.key === 'footer.howItWorks' ? t('nav.howItWorks') : t(item.key)}`)}
                       >
-                        {item.key === 'footer.help' ? 'Help' : t(item.key)}
+                        {item.key === 'footer.help' ? 'Help' : item.key === 'footer.howItWorks' ? t('nav.howItWorks') : t(item.key)}
                       </button>
                     )}
                   </li>
