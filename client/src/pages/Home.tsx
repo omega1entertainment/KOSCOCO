@@ -267,7 +267,7 @@ export default function Home() {
           <div className="relative flex items-center justify-center gap-2 sm:gap-4">
             <button 
               onClick={() => setCameroonianIndex((i) => (i - 1 + cameroonianAmbassadors.length) % cameroonianAmbassadors.length)}
-              className="absolute left-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors hidden sm:flex"
+              className="absolute left-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors"
               data-testid="button-cameroonians-prev"
             >
               <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
@@ -276,11 +276,12 @@ export default function Home() {
             <div className="w-full">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
                 {cameroonianAmbassadors.map((ambassador, idx) => {
-                  const isVisible = (idx === cameroonianIndex || idx === (cameroonianIndex + 1) % cameroonianAmbassadors.length) || 
-                                   cameroonianAmbassadors.length === 4;
+                  const isMobileVisible = idx === cameroonianIndex;
+                  const isDesktopVisible = (idx === cameroonianIndex || idx === (cameroonianIndex + 1) % cameroonianAmbassadors.length) || 
+                                          cameroonianAmbassadors.length === 4;
                   
                   return (
-                    <div key={idx} className={isVisible ? '' : 'hidden sm:hidden lg:block'}>
+                    <div key={idx} className={isMobileVisible ? '' : 'hidden sm:block'} >
                       <div className="bg-white dark:bg-muted rounded-xl overflow-hidden shadow-md hover-elevate transition-all">
                         <img 
                           src={ambassador.image} 
@@ -300,7 +301,7 @@ export default function Home() {
 
             <button 
               onClick={() => setCameroonianIndex((i) => (i + 1) % cameroonianAmbassadors.length)}
-              className="absolute right-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors hidden sm:flex"
+              className="absolute right-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors"
               data-testid="button-cameroonians-next"
             >
               <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
