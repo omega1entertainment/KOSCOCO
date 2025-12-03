@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
@@ -50,6 +50,22 @@ export default function Home() {
   const [ambassadorIndex, setAmbassadorIndex] = useState(0);
   const [cameroonianIndex, setCameroonianIndex] = useState(0);
   const { isAuthenticated } = useAuth();
+
+  // Auto-rotate ambassador carousel every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAmbassadorIndex((prev) => (prev + 1) % ambassadors.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-rotate cameronian ambassador carousel every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCameroonianIndex((prev) => (prev + 1) % cameroonianAmbassadors.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch real categories from API
   const { data: apiCategories = [] } = useQuery<Category[]>({
@@ -211,7 +227,7 @@ export default function Home() {
                   return (
                     <div
                       key={idx}
-                      className={`flex-shrink-0 transition-all duration-300 ${
+                      className={`flex-shrink-0 carousel-transition ${
                         isCenter ? 'scale-100 opacity-100 w-64 sm:w-96' : 
                         isAdjacent ? 'scale-75 opacity-40 w-64 sm:w-96' : 
                         'scale-50 opacity-0 w-64 sm:w-96'
@@ -282,7 +298,7 @@ export default function Home() {
                   
                   return (
                     <div key={idx} className={isMobileVisible ? '' : 'hidden sm:block'} >
-                      <div className="bg-white dark:bg-muted rounded-xl overflow-hidden shadow-md hover-elevate transition-all">
+                      <div className="bg-white dark:bg-muted rounded-xl overflow-hidden shadow-md hover-elevate carousel-transition">
                         <img 
                           src={ambassador.image} 
                           alt={ambassador.name}
