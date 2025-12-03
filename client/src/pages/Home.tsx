@@ -191,17 +191,17 @@ export default function Home() {
             Meet Our Amazing Guest Ambassadors
           </h2>
           
-          <div className="relative flex items-center justify-center gap-4">
+          <div className="relative flex items-center justify-center gap-2 sm:gap-4">
             <button 
               onClick={() => setAmbassadorIndex((i) => (i - 1 + ambassadors.length) % ambassadors.length)}
-              className="absolute left-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              className="absolute left-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors"
               data-testid="button-ambassador-prev"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
 
             <div className="w-full max-w-2xl">
-              <div className="flex gap-4 justify-center overflow-hidden px-12">
+              <div className="flex gap-3 sm:gap-4 justify-center overflow-hidden px-3 sm:px-12">
                 {ambassadors.map((ambassador, idx) => {
                   const offset = (idx - ambassadorIndex + ambassadors.length) % ambassadors.length;
                   const isCenter = offset === 0;
@@ -211,9 +211,9 @@ export default function Home() {
                     <div
                       key={idx}
                       className={`flex-shrink-0 transition-all duration-300 ${
-                        isCenter ? 'scale-100 opacity-100 w-96' : 
-                        isAdjacent ? 'scale-75 opacity-40 w-96' : 
-                        'scale-50 opacity-0 w-96'
+                        isCenter ? 'scale-100 opacity-100 w-64 sm:w-96' : 
+                        isAdjacent ? 'scale-75 opacity-40 w-64 sm:w-96' : 
+                        'scale-50 opacity-0 w-64 sm:w-96'
                       }`}
                     >
                       <div className="bg-white dark:bg-muted rounded-2xl overflow-hidden shadow-lg hover-elevate">
@@ -222,8 +222,8 @@ export default function Home() {
                           alt={ambassador.name}
                           className="w-full aspect-square object-cover"
                         />
-                        <div className="p-4 text-center">
-                          <p className="text-red-600 dark:text-red-500 font-bold text-sm">{ambassador.name}</p>
+                        <div className="p-3 sm:p-4 text-center">
+                          <p className="text-red-600 dark:text-red-500 font-bold text-xs sm:text-sm">{ambassador.name}</p>
                           <p className="text-muted-foreground text-xs mt-1">{ambassador.origin}</p>
                         </div>
                       </div>
@@ -235,10 +235,10 @@ export default function Home() {
 
             <button 
               onClick={() => setAmbassadorIndex((i) => (i + 1) % ambassadors.length)}
-              className="absolute right-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              className="absolute right-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors"
               data-testid="button-ambassador-next"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
           </div>
 
@@ -263,32 +263,32 @@ export default function Home() {
             Meet Our Awesome Cameroonians Ambassadors
           </h2>
           
-          <div className="relative flex items-center justify-center gap-4">
+          <div className="relative flex items-center justify-center gap-2 sm:gap-4">
             <button 
               onClick={() => setCameroonianIndex((i) => (i - 1 + cameroonianAmbassadors.length) % cameroonianAmbassadors.length)}
-              className="absolute left-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              className="absolute left-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors hidden sm:flex"
               data-testid="button-cameroonians-prev"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
 
             <div className="w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
                 {cameroonianAmbassadors.map((ambassador, idx) => {
-                  const isVisible = Math.abs((idx - cameroonianIndex + cameroonianAmbassadors.length) % cameroonianAmbassadors.length - 0) < 2 || 
+                  const isVisible = (idx === cameroonianIndex || idx === (cameroonianIndex + 1) % cameroonianAmbassadors.length) || 
                                    cameroonianAmbassadors.length === 4;
                   
                   return (
-                    <div key={idx} className={isVisible ? '' : 'hidden lg:block'}>
+                    <div key={idx} className={isVisible ? '' : 'hidden sm:hidden lg:block'}>
                       <div className="bg-white dark:bg-muted rounded-xl overflow-hidden shadow-md hover-elevate transition-all">
                         <img 
                           src={ambassador.image} 
                           alt={ambassador.name}
                           className="w-full aspect-square object-cover"
                         />
-                        <div className="p-4 text-center">
-                          <p className="text-red-600 dark:text-red-500 font-bold text-sm">{ambassador.name}</p>
-                          <p className="text-muted-foreground text-xs mt-2">{ambassador.role}</p>
+                        <div className="p-3 sm:p-4 text-center">
+                          <p className="text-red-600 dark:text-red-500 font-bold text-xs sm:text-sm">{ambassador.name}</p>
+                          <p className="text-muted-foreground text-xs mt-1 sm:mt-2">{ambassador.role}</p>
                         </div>
                       </div>
                     </div>
@@ -299,10 +299,10 @@ export default function Home() {
 
             <button 
               onClick={() => setCameroonianIndex((i) => (i + 1) % cameroonianAmbassadors.length)}
-              className="absolute right-0 z-10 p-2 rounded-full hover:bg-muted transition-colors"
+              className="absolute right-0 z-10 p-1 sm:p-2 rounded-full hover:bg-muted transition-colors hidden sm:flex"
               data-testid="button-cameroonians-next"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
             </button>
           </div>
 
