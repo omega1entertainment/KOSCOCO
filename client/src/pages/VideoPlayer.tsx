@@ -484,18 +484,19 @@ export default function VideoPlayer() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 bg-background">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <Button
             variant="ghost"
             onClick={() => setLocation(`/category/${video.categoryId}`)}
-            className="mb-6"
+            className="mb-4 sm:mb-6"
             data-testid="button-back-category"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('videoPlayer.backTo')} {category?.name}
+            <span className="hidden sm:inline">{t('videoPlayer.backTo')} {category?.name}</span>
+            <span className="sm:hidden">{t('videoPlayer.back')}</span>
           </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             <div className="lg:col-span-2">
               <Card className="overflow-hidden">
                 <div ref={videoContainerRef} className="aspect-video bg-black relative">
@@ -512,7 +513,9 @@ export default function VideoPlayer() {
                       <video
                         ref={videoRef}
                         controls
-                        className="w-full h-full"
+                        controlsList="nodownload"
+                        playsInline
+                        className="w-full h-full object-contain"
                         data-testid="video-player"
                       >
                         <source src={videoUrl} type="video/mp4" />
@@ -529,14 +532,14 @@ export default function VideoPlayer() {
                     </>
                   )}
                 </div>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4 mb-4">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-4">
                     <div className="flex-1">
-                      <h1 className="text-2xl font-bold mb-2" data-testid="text-video-title">
+                      <h1 className="text-xl sm:text-2xl font-bold mb-2" data-testid="text-video-title">
                         {video.title}
                       </h1>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <Badge variant="outline">{video.subcategory}</Badge>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
+                        <Badge variant="outline" className="text-xs">{video.subcategory}</Badge>
                         <div className="flex items-center gap-1" title={t('videoPlayer.competitionVotesTooltip')}>
                           <Check className="w-4 h-4" />
                           {voteData?.voteCount || 0} {t('video.votes')}
@@ -623,7 +626,7 @@ export default function VideoPlayer() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     <Button
                       onClick={() => {
                         if (!user) {
@@ -637,11 +640,12 @@ export default function VideoPlayer() {
                         setVoteModalOpen(true);
                       }}
                       className="flex-1"
+                      size="sm"
                       data-testid="button-vote"
                       title={t('videoPlayer.voteTooltip')}
                     >
                       <Check className="w-4 h-4 mr-2" />
-                      {t('videoPlayer.vote')}
+                      <span className="hidden sm:inline">{t('videoPlayer.vote')}</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -656,15 +660,17 @@ export default function VideoPlayer() {
                         }
                         likeMutation.mutate();
                       }}
+                      size="sm"
                       data-testid="button-like"
                       title={t('videoPlayer.likeTooltip')}
                       disabled={likeMutation.isPending}
                     >
                       <ThumbsUp className="w-4 h-4 mr-2" />
-                      {t('videoPlayer.like')}
+                      <span className="hidden sm:inline">{t('videoPlayer.like')}</span>
                     </Button>
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={() => {
                         navigator.share?.({
                           title: video.title,
@@ -679,12 +685,14 @@ export default function VideoPlayer() {
                         });
                       }}
                       data-testid="button-share"
+                      title={t('videoPlayer.share')}
                     >
                       <Share2 className="w-4 h-4" />
                     </Button>
                     {isPiPSupported && (
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={handlePictureInPicture}
                         data-testid="button-pip"
                         title={t('videoPlayer.pictureInPicture')}
@@ -694,8 +702,10 @@ export default function VideoPlayer() {
                     )}
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={() => setReportDialogOpen(true)}
                       data-testid="button-report"
+                      title={t('videoPlayer.report')}
                     >
                       <Flag className="w-4 h-4" />
                     </Button>
@@ -705,8 +715,8 @@ export default function VideoPlayer() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">{t('videoPlayer.relatedVideos')}</h3>
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-semibold text-base sm:text-lg">{t('videoPlayer.relatedVideos')}</h3>
                 
                 {otherVideos.length === 0 ? (
                   <Card>
