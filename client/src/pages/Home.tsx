@@ -206,6 +206,7 @@ export default function Home() {
                   const offset = (idx - ambassadorIndex + ambassadors.length) % ambassadors.length;
                   const isCenter = offset === 0;
                   const isAdjacent = offset === 1 || offset === ambassadors.length - 1;
+                  const isMobileVisible = idx === ambassadorIndex;
                   
                   return (
                     <div
@@ -214,7 +215,7 @@ export default function Home() {
                         isCenter ? 'scale-100 opacity-100 w-64 sm:w-96' : 
                         isAdjacent ? 'scale-75 opacity-40 w-64 sm:w-96' : 
                         'scale-50 opacity-0 w-64 sm:w-96'
-                      }`}
+                      } ${isMobileVisible ? '' : 'hidden sm:flex'}`}
                     >
                       <div className="bg-white dark:bg-muted rounded-2xl overflow-hidden shadow-lg hover-elevate">
                         <img 
