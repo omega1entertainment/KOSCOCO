@@ -1,9 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiX } from "react-icons/si";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useQuery } from "@tanstack/react-query";
 
 interface TopBarProps {
   currentPhase?: string;
@@ -11,12 +9,6 @@ interface TopBarProps {
 
 export default function TopBar({ currentPhase: propPhase }: TopBarProps) {
   const { language, setLanguage } = useLanguage();
-  
-  const { data: activePhase } = useQuery({
-    queryKey: ['/api/phases/active'],
-  });
-  
-  const displayPhase = propPhase || (activePhase?.name ? `${activePhase.name} ACTIVE` : "COMPETITION ACTIVE");
   
   const socialLinks = [
     { name: "Facebook", icon: SiFacebook, url: "https://web.facebook.com/kozziientertainment", testId: "link-social-facebook" },
@@ -42,16 +34,6 @@ export default function TopBar({ currentPhase: propPhase }: TopBarProps) {
             >
               support@kozzii.africa
             </a>
-          </div>
-          
-          <div className="flex items-center">
-            <Badge 
-              variant="destructive" 
-              className="font-bold text-xs tracking-wide"
-              data-testid="badge-phase"
-            >
-              {displayPhase}
-            </Badge>
           </div>
           
           <div className="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end">
