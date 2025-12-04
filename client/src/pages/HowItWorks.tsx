@@ -117,6 +117,9 @@ export default function HowItWorks() {
             <p className="text-base md:text-xl text-muted-foreground mb-8">
               {t('howItWorks.hero.subtitle')}
             </p>
+            <h2 className="text-2xl md:text-3xl font-bold mb-8 text-primary">
+              REGISTER, UPLOAD, SHARE AND WIN
+            </h2>
             <div>
               <Button 
                 size="lg" 
@@ -165,9 +168,6 @@ export default function HowItWorks() {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               {t('howItWorks.steps.description')}
             </p>
-            <h3 className="text-2xl md:text-3xl font-bold mt-6 text-primary">
-              REGISTER, UPLOAD, SHARE AND WIN
-            </h3>
           </div>
 
           <div className="max-w-6xl mx-auto space-y-12">
