@@ -33,11 +33,11 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           <img src={seasonLogo} alt="KOSCOCO Season 1" className="h-16 md:h-20" />
         </div>
         
-        <p className="mb-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl" style={{ fontFamily: 'Play, sans-serif', fontWeight: 600, color: '#FBBF24' }}>
+        <p className="mb-3 text-lg sm:text-xl md:text-2xl lg:text-3xl" style={{ fontFamily: 'Play, sans-serif', fontWeight: 600, color: '#FBBF24' }}>
           {t('hero.subtitle')}
         </p>
         
-        <p className="text-white mb-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">
+        <p className="text-white mb-4 text-sm sm:text-base md:text-lg lg:text-xl font-bold">
           {t('hero.tagline')}
         </p>
         
