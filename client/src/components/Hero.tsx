@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Play } from "lucide-react";
 import heroBackground from "@assets/hero-gold-coins-background.jpeg";
 import seasonLogo from "@assets/kOSCOCO-SEASON 1_1762052498157.png";
+import prizeImage from "@assets/Gemini_Generated_Image_3715eq3715eq3715-removebg-preview_1764884094446.png";
 
 interface HeroProps {
   currentPhase?: string;
@@ -41,11 +42,7 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
         </p>
         
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg px-6 py-3 shadow-lg inline-block" data-testid="banner-cash-prize">
-            <p className="text-black text-2xl sm:text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Play, sans-serif' }}>
-              {t('hero.prize')} <span className="text-primary animate-bounce inline-block">{t('hero.prizeAmount')}</span> {t('hero.prizeCurrency')}
-            </p>
-          </div>
+          <img src={prizeImage} alt="5 Million Francs CFA Prize" className="h-40 md:h-48 lg:h-56 object-contain" data-testid="banner-cash-prize" />
         </div>
         
         <div className="flex items-center justify-center gap-6 text-white/80 text-sm md:text-base mb-12 flex-wrap">
