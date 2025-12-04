@@ -41,8 +41,13 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           {t('hero.tagline')}
         </p>
         
-        <div className="flex justify-center mb-8 prize-container">
-          <img src={prizeImage} alt="5 Million Francs CFA Prize" className="h-64 md:h-80 lg:h-96 object-contain dance-animation" data-testid="banner-cash-prize" />
+        <div className="flex justify-center mb-8 prize-container relative">
+          <div className="prize-coin"></div>
+          <div className="prize-coin"></div>
+          <div className="prize-coin"></div>
+          <div className="prize-coin"></div>
+          <div className="prize-coin"></div>
+          <img src={prizeImage} alt="5 Million Francs CFA Prize" className="h-64 md:h-80 lg:h-96 object-contain dance-animation relative z-10" data-testid="banner-cash-prize" />
         </div>
         
         <div className="flex items-center justify-center gap-6 text-white/80 text-sm md:text-base mb-12 flex-wrap">
