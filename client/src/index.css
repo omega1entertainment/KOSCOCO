@@ -530,31 +530,31 @@
 
   .prize-coin:nth-child(1) {
     left: 10%;
-    animation: coin-fall-1 2s ease-in forwards;
+    animation: coin-fall-1 2s ease-in infinite;
     animation-delay: 0.1s;
   }
 
   .prize-coin:nth-child(2) {
     left: 25%;
-    animation: coin-fall-2 2.2s ease-in forwards;
+    animation: coin-fall-2 2.2s ease-in infinite;
     animation-delay: 0.2s;
   }
 
   .prize-coin:nth-child(3) {
     left: 50%;
-    animation: coin-fall-3 2s ease-in forwards;
+    animation: coin-fall-3 2s ease-in infinite;
     animation-delay: 0.15s;
   }
 
   .prize-coin:nth-child(4) {
     left: 65%;
-    animation: coin-fall-4 2.3s ease-in forwards;
+    animation: coin-fall-4 2.3s ease-in infinite;
     animation-delay: 0.25s;
   }
 
   .prize-coin:nth-child(5) {
     right: 10%;
-    animation: coin-fall-5 2.1s ease-in forwards;
+    animation: coin-fall-5 2.1s ease-in infinite;
     animation-delay: 0.3s;
   }
 }
