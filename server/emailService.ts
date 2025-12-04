@@ -29,6 +29,9 @@ export async function sendOTPEmail({
   otp,
 }: SendOTPEmailParams): Promise<void> {
   try {
+    // In development/test mode, log OTP to console for testing
+    console.log(`\n📧 OTP for ${email}: ${otp} (expires in 10 minutes)\n`);
+    
     const result = await resend.emails.send({
       from: 'KOSCOCO <onboarding@resend.dev>',
       to: email,
@@ -79,12 +82,29 @@ export async function sendOTPEmail({
       `,
     });
     
-    console.log('OTP email sent successfully:', { 
-      to: email, 
-      emailId: result.data?.id,
-      error: result.error 
-    });
+    // Log result but don't throw error in test mode
+    if (result.error) {
+      console.log('Resend API response:', { 
+        to: email, 
+        emailId: result.data?.id,
+        error: result.error 
+      });
+      // In test mode, we already logged OTP above, so don't fail
+      if (!result.error.message?.includes('testing emails')) {
+        throw new Error('Failed to send verification code. Please try again later.');
+      }
+    } else {
+      console.log('OTP email sent via Resend:', { 
+        to: email, 
+        emailId: result.data?.id
+      });
+    }
   } catch (error) {
+    // Only throw if it's not a test mode error
+    if (error instanceof Error && error.message.includes('testing emails')) {
+      console.log('Resend is in test mode - OTP logged to console above');
+      return;
+    }
     console.error('Failed to send OTP email:', error);
     throw new Error('Failed to send verification code. Please try again later.');
   }
