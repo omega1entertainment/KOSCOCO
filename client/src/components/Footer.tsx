@@ -3,17 +3,25 @@ import { Input } from "@/components/ui/input";
 import { Facebook, Instagram } from "lucide-react";
 import { SiTiktok, SiX } from "react-icons/si";
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import logo from "@assets/kOSCOCO_1762050897989.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryKeys } from "@/lib/queryKeys";
+import type { Category } from "@shared/schema";
 
 export default function Footer() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [email, setEmail] = useState('');
+  
+  // Fetch categories from API
+  const { data: apiCategories = [] } = useQuery<Category[]>({
+    queryKey: queryKeys.categories.all,
+  });
   
   const subscribeMutation = useMutation({
     mutationFn: async (emailAddress: string) => {
@@ -46,13 +54,6 @@ export default function Footer() {
     },
   });
   
-  const categories = [
-    { key: 'prizes.categories.musicDance' },
-    { key: 'prizes.categories.comedyPerforming' },
-    { key: 'prizes.categories.fashionLifestyle' },
-    { key: 'prizes.categories.educationLearning' },
-    { key: 'prizes.categories.gospelChoirs' },
-  ];
   
   const support = [
     { key: 'footer.contact' },
@@ -100,16 +101,21 @@ export default function Footer() {
           <div>
             <h3 className="font-bold mb-4">{t('footer.categoriesHeading')}</h3>
             <ul className="space-y-2">
-              {categories.map((cat) => (
-                <li key={cat.key}>
-                  <button 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => console.log(`Navigate to ${t(cat.key)}`)}
-                  >
-                    {t(cat.key)}
-                  </button>
-                </li>
-              ))}
+              {apiCategories.length > 0 ? (
+                apiCategories.map((category) => (
+                  <li key={category.id}>
+                    <button 
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors block text-left"
+                      onClick={() => setLocation(`/category/${category.id}`)}
+                      data-testid={`link-footer-category-${category.id}`}
+                    >
+                      {category.name}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <li className="text-sm text-muted-foreground">Loading categories...</li>
+              )}
             </ul>
           </div>
           
