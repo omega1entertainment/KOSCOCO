@@ -114,6 +114,9 @@ export default function HowItWorks() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6" data-testid="heading-how-it-works">
               {t('howItWorks.hero.title')}
             </h1>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-primary">
+              REGISTER, UPLOAD, SHARE AND WIN
+            </h2>
             <p className="text-base md:text-xl text-muted-foreground mb-8">
               {t('howItWorks.hero.subtitle')}
             </p>
