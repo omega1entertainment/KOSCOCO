@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useLocation } from "wouter";
+import { Play } from "lucide-react";
 import heroBackground from "@assets/hero-gold-coins-background.jpeg";
 import seasonLogo from "@assets/kOSCOCO-SEASON 1_1762052498157.png";
 
@@ -13,6 +14,7 @@ interface HeroProps {
 
 export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onRegisterClick, onWatchClick, isAuthenticated = false }: HeroProps) {
   const { t } = useLanguage();
+  const [, setLocation] = useLocation();
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ paddingTop: '50px', paddingBottom: '50px' }}>
       <div 
@@ -55,34 +57,25 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
         </div>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-          {isAuthenticated && (
-            <Button 
-              size="lg"
-              variant="default"
-              onClick={onRegisterClick}
-              data-testid="button-register"
-            >
-              {t('hero.enterCompetition')}
-            </Button>
-          )}
           <Button 
             size="lg"
-            variant="outline"
-            className="bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20"
-            onClick={onWatchClick}
-            data-testid="button-watch"
+            variant="default"
+            onClick={() => setLocation("/register")}
+            data-testid="button-register"
           >
-            {t('hero.watchEntries')}
+            REGISTER NOW
+          </Button>
+          <Button 
+            size="lg"
+            variant="destructive"
+            onClick={onWatchClick}
+            data-testid="button-watch-entries"
+            className="gap-2"
+          >
+            <Play className="w-4 h-4" />
+            Watch Entries
           </Button>
         </div>
-        
-        <Badge 
-          className="px-6 py-2 text-sm font-bold tracking-widest"
-          variant="destructive"
-          data-testid="badge-phase"
-        >
-          {currentPhase}
-        </Badge>
       </div>
     </div>
   );
