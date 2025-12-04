@@ -41,7 +41,7 @@ export default function PhaseTimeline({ phases }: PhaseTimelineProps) {
         <div className="relative">
           <div className="hidden xl:block absolute top-12 left-0 right-0 h-0.5 bg-border" />
           
-          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible gap-6 md:gap-4 lg:gap-5 xl:gap-3 relative sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 pb-4 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+          <div className="flex sm:grid overflow-x-auto sm:overflow-x-visible gap-6 md:gap-4 lg:gap-5 xl:gap-3 relative sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 pb-4 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth hide-scrollbar">
             {displayPhases.map((phase, idx) => (
               <div key={phase.number} className="relative flex-shrink-0 w-32 sm:w-auto sm:flex-shrink">
                 <div className="flex flex-col items-center text-center">
