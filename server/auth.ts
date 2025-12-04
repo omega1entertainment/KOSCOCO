@@ -10,12 +10,11 @@ import ConnectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
 import { twoFactorService } from "./twoFactorService";
-// Email verification disabled - accounts are auto-verified
-// import {
-//   generateVerificationToken,
-//   getVerificationTokenExpiry,
-//   sendVerificationEmail,
-// } from "./emailService";
+import {
+  generateOTP,
+  getOTPExpiry,
+  sendOTPEmail,
+} from "./emailService";
 
 const MemoryStore = createMemoryStore(session);
 const PgSession = ConnectPgSimple(session);
@@ -544,7 +543,7 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Signup route
+  // Signup route - Step 1: Validate and send OTP
   app.post("/api/signup", async (req, res) => {
     try {
       const { email, password, firstName, lastName, phone, username, age, parentalConsent } = req.body;
@@ -575,8 +574,12 @@ export async function setupAuth(app: Express) {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create user with auto-verified email
-      const user = await storage.createUser({
+      // Generate OTP
+      const otp = generateOTP();
+      const otpExpiry = getOTPExpiry();
+
+      // Store pending signup data in session
+      (req.session as any).pendingSignup = {
         email: normalizedEmail,
         password: hashedPassword,
         firstName,
@@ -585,8 +588,73 @@ export async function setupAuth(app: Express) {
         username: username || email.split('@')[0],
         age: age || null,
         parentalConsent: parentalConsent || false,
+        otp,
+        otpExpiry: otpExpiry.toISOString(),
+      };
+
+      // Send OTP email
+      try {
+        await sendOTPEmail({
+          email: normalizedEmail,
+          firstName,
+          otp,
+        });
+      } catch (emailError) {
+        console.error("Failed to send OTP email:", emailError);
+        return res.status(500).json({ message: "Failed to send verification code. Please try again." });
+      }
+
+      res.json({
+        requiresOTP: true,
+        message: "A verification code has been sent to your email address.",
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
+  });
+
+  // Signup route - Step 2: Verify OTP and create account
+  app.post("/api/signup/verify-otp", async (req, res) => {
+    try {
+      const { otp } = req.body;
+      const pendingSignup = (req.session as any).pendingSignup;
+
+      if (!pendingSignup) {
+        return res.status(400).json({ message: "No pending signup. Please start the registration process again." });
+      }
+
+      if (!otp) {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+
+      // Check OTP expiry
+      const otpExpiry = new Date(pendingSignup.otpExpiry);
+      if (new Date() > otpExpiry) {
+        delete (req.session as any).pendingSignup;
+        return res.status(400).json({ message: "Verification code has expired. Please register again." });
+      }
+
+      // Verify OTP
+      if (otp !== pendingSignup.otp) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Create user with verified email
+      const user = await storage.createUser({
+        email: pendingSignup.email,
+        password: pendingSignup.password,
+        firstName: pendingSignup.firstName,
+        lastName: pendingSignup.lastName,
+        phone: pendingSignup.phone,
+        username: pendingSignup.username,
+        age: pendingSignup.age,
+        parentalConsent: pendingSignup.parentalConsent,
         emailVerified: true,
       });
+
+      // Clear pending signup data
+      delete (req.session as any).pendingSignup;
 
       // Log in the user automatically
       req.logIn(user, (err) => {
@@ -602,8 +670,47 @@ export async function setupAuth(app: Express) {
         });
       });
     } catch (error) {
-      console.error("Signup error:", error);
-      res.status(500).json({ message: "Failed to create account" });
+      console.error("OTP verification error:", error);
+      res.status(500).json({ message: "Failed to verify code" });
+    }
+  });
+
+  // Resend OTP for signup
+  app.post("/api/signup/resend-otp", async (req, res) => {
+    try {
+      const pendingSignup = (req.session as any).pendingSignup;
+
+      if (!pendingSignup) {
+        return res.status(400).json({ message: "No pending signup. Please start the registration process again." });
+      }
+
+      // Generate new OTP
+      const otp = generateOTP();
+      const otpExpiry = getOTPExpiry();
+
+      // Update session with new OTP
+      pendingSignup.otp = otp;
+      pendingSignup.otpExpiry = otpExpiry.toISOString();
+      (req.session as any).pendingSignup = pendingSignup;
+
+      // Send OTP email
+      try {
+        await sendOTPEmail({
+          email: pendingSignup.email,
+          firstName: pendingSignup.firstName,
+          otp,
+        });
+      } catch (emailError) {
+        console.error("Failed to resend OTP email:", emailError);
+        return res.status(500).json({ message: "Failed to resend verification code. Please try again." });
+      }
+
+      res.json({
+        message: "A new verification code has been sent to your email address.",
+      });
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      res.status(500).json({ message: "Failed to resend verification code" });
     }
   });
 

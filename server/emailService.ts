@@ -7,6 +7,89 @@ export function generateVerificationToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+export function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export function getOTPExpiry(): Date {
+  const expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + 10); // OTP valid for 10 minutes
+  return expiry;
+}
+
+interface SendOTPEmailParams {
+  email: string;
+  firstName: string;
+  otp: string;
+}
+
+export async function sendOTPEmail({
+  email,
+  firstName,
+  otp,
+}: SendOTPEmailParams): Promise<void> {
+  try {
+    const result = await resend.emails.send({
+      from: 'KOSCOCO <onboarding@resend.dev>',
+      to: email,
+      subject: `${otp} - Your KOSCOCO Verification Code`,
+      replyTo: 'support@kozzii.africa',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Email Verification Code</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #DC2626; padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">KOSCOCO</h1>
+              <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">Kozzii Short Content Competition</p>
+            </div>
+            
+            <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd;">
+              <h2 style="color: #DC2626; margin-top: 0;">Hi ${firstName}!</h2>
+              
+              <p>Your verification code for KOSCOCO registration is:</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <div style="background-color: #fff; border: 2px solid #DC2626; border-radius: 8px; padding: 20px; display: inline-block;">
+                  <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #DC2626;">
+                    ${otp}
+                  </span>
+                </div>
+              </div>
+              
+              <p style="text-align: center; font-size: 14px; color: #666;">
+                This code will expire in <strong>10 minutes</strong>.
+              </p>
+              
+              <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If you didn't request this code, you can safely ignore this email. Someone may have entered your email address by mistake.
+              </p>
+            </div>
+            
+            <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
+              <p>© 2024 KOSCOCO - Kozzii Short Content Competition</p>
+              <p>Cameroon</p>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+    
+    console.log('OTP email sent successfully:', { 
+      to: email, 
+      emailId: result.data?.id,
+      error: result.error 
+    });
+  } catch (error) {
+    console.error('Failed to send OTP email:', error);
+    throw new Error('Failed to send verification code. Please try again later.');
+  }
+}
+
 export function getVerificationTokenExpiry(): Date {
   const expiry = new Date();
   expiry.setHours(expiry.getHours() + 24); // Token valid for 24 hours

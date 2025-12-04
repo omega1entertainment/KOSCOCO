@@ -55,6 +55,10 @@ export default function Login() {
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [useBackupCode, setUseBackupCode] = useState(false);
 
+  // OTP verification state
+  const [showOTPDialog, setShowOTPDialog] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+
   // Signup form state
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -141,7 +145,15 @@ export default function Login() {
       });
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.requiresOTP) {
+        setShowOTPDialog(true);
+        toast({
+          title: "Verification Code Sent",
+          description: "Please check your email for the 6-digit code.",
+        });
+        return;
+      }
       toast({
         title: t("auth.accountCreated"),
         description: t("auth.signupSuccess"),
@@ -152,6 +164,52 @@ export default function Login() {
     onError: (error: Error) => {
       toast({
         title: t("auth.signupFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const otpVerifyMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/signup/verify-otp", "POST", {
+        otp: otpCode,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      setShowOTPDialog(false);
+      setOtpCode("");
+      toast({
+        title: t("auth.accountCreated"),
+        description: t("auth.signupSuccess"),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setLocation("/thank-you");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resendOtpMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("/api/signup/resend-otp", "POST", {});
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Code Resent",
+        description: "A new verification code has been sent to your email.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Resend",
         description: error.message,
         variant: "destructive",
       });
@@ -670,6 +728,84 @@ export default function Login() {
             >
               Cancel
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email OTP Verification Dialog */}
+      <Dialog open={showOTPDialog} onOpenChange={(open) => {
+        if (!open && !otpVerifyMutation.isPending) {
+          setShowOTPDialog(false);
+          setOtpCode("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Verify Your Email
+            </DialogTitle>
+            <DialogDescription>
+              We've sent a 6-digit verification code to <span className="font-semibold">{signupEmail}</span>. Please enter the code below to complete your registration.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="otp-code">Verification Code</Label>
+              <Input
+                id="otp-code"
+                type="text"
+                placeholder="000000"
+                value={otpCode}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setOtpCode(digits);
+                }}
+                maxLength={6}
+                className="text-center text-2xl tracking-[0.5em] font-mono"
+                data-testid="input-otp-code"
+              />
+              {otpCode.length > 0 && otpCode.length < 6 && (
+                <p className="text-xs text-muted-foreground text-center">Enter all 6 digits from your email</p>
+              )}
+            </div>
+            
+            <Button
+              onClick={() => {
+                if (otpCode.length !== 6) {
+                  toast({
+                    title: "Invalid Code",
+                    description: "Please enter the 6-digit code from your email",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                otpVerifyMutation.mutate();
+              }}
+              className="w-full"
+              disabled={otpVerifyMutation.isPending || otpCode.length !== 6}
+              data-testid="button-verify-otp"
+            >
+              {otpVerifyMutation.isPending ? "Verifying..." : "Verify & Create Account"}
+            </Button>
+
+            <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+              <span>Didn't receive the code?</span>
+              <Button
+                type="button"
+                variant="link"
+                className="p-0 h-auto"
+                onClick={() => resendOtpMutation.mutate()}
+                disabled={resendOtpMutation.isPending}
+                data-testid="button-resend-otp"
+              >
+                {resendOtpMutation.isPending ? "Sending..." : "Resend"}
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              The code will expire in 10 minutes. Check your spam folder if you don't see the email.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
