@@ -54,6 +54,25 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 - **Backend Libraries**: Express.js, Node.js
 - **Fonts**: Bebas Neue, Play, Inter
 
+## Recent Changes (December 4, 2025)
+
+**Email OTP Verification for Signup (Completed)**
+- Implemented mandatory email OTP verification during signup flow
+- Added OTP generation and email sending functions to emailService.ts:
+  - `generateOTP()` - Generates 6-digit numeric codes
+  - `getOTPExpiry()` - Sets 10-minute expiry for codes
+  - `sendOTPEmail()` - Sends branded verification email via Resend
+- Modified signup flow in auth.ts:
+  - `/api/signup` - Validates form, stores pending signup in session, sends OTP email, returns `{requiresOTP: true}`
+  - `/api/signup/verify-otp` - Validates OTP code, creates user account on success, auto-logs in user
+  - `/api/signup/resend-otp` - Generates and sends new OTP code
+- Frontend OTP verification dialog in Login.tsx:
+  - Shows after initial signup form submission
+  - 6-digit code input with monospace styling
+  - Resend code functionality
+  - 10-minute expiry notice
+- Security: User accounts are only created after successful email verification
+
 ## Recent Changes (December 1, 2025)
 
 **Two-Factor Authentication (2FA) Implementation (Completed)**
