@@ -68,12 +68,12 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           <Button 
             size="lg"
             variant="destructive"
-            onClick={onWatchClick}
-            data-testid="button-watch-entries"
+            onClick={() => setLocation("/categories")}
+            data-testid="button-watch-videos"
             className="gap-2"
           >
             <Play className="w-4 h-4" />
-            Watch Entries
+            Watch Videos
           </Button>
         </div>
       </div>
