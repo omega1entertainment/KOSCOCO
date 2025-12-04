@@ -198,6 +198,15 @@ export default function Home() {
               Your browser does not support the video tag.
             </video>
           </div>
+          <div className="flex justify-center mt-8">
+            <Button 
+              size="lg"
+              onClick={() => setLocation("/register")}
+              data-testid="button-register-promo"
+            >
+              REGISTER NOW
+            </Button>
+          </div>
         </div>
       </section>
 
