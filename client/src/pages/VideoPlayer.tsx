@@ -302,7 +302,7 @@ function TikTokVideoCard({
         </>
       )}
 
-      <div className="absolute right-2 md:right-3 bottom-24 md:bottom-32 flex flex-col items-center gap-3 md:gap-5 z-20">
+      <div className="absolute right-2 md:right-3 bottom-2 md:bottom-4 flex flex-col items-center gap-3 md:gap-5 z-20">
         <button
           onClick={() => {
             if (!user) {
