@@ -761,16 +761,6 @@ export default function VideoPlayer() {
 
   return (
     <div className="fixed inset-0 bg-black z-50">
-      <Button
-        variant="ghost"
-        onClick={() => category ? setLocation(`/category/${category.id}`) : setLocation('/')}
-        className="absolute top-4 left-4 z-50 gap-2 bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:text-white"
-        data-testid="button-back"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
-
       <div 
         ref={containerRef}
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
