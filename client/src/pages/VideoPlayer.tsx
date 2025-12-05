@@ -249,7 +249,7 @@ function TikTokVideoCard({
   };
 
   return (
-    <div className="flex h-full w-1/2 bg-black snap-start snap-always items-center justify-center mx-auto">
+    <div className="flex h-screen w-1/2 bg-black items-center justify-center mx-auto">
       {isActive && showPreRollAd && preRollAd && !preRollCompleted ? (
         <SkippableInStreamAd
           ad={preRollAd}
@@ -861,8 +861,7 @@ export default function VideoPlayer() {
 
       <div
         ref={containerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollSnapType: 'y mandatory' }}
+        className="h-full w-full overflow-y-auto scrollbar-hide"
       >
         {videoFeed.map((feedVideo) => {
           const stats = getVideoStats(feedVideo.id);
@@ -874,7 +873,6 @@ export default function VideoPlayer() {
               }}
               data-video-id={feedVideo.id}
               className="h-screen w-full"
-              style={{ scrollSnapAlign: 'start' }}
             >
               <TikTokVideoCard
                 video={feedVideo}
