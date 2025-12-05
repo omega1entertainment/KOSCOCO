@@ -26,7 +26,9 @@ import {
   Volume2,
   VolumeX,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  MessageCircle,
+  UserPlus
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -41,6 +43,8 @@ interface TikTokVideoCardProps {
   onLike: () => void;
   onShare: () => void;
   onReport: () => void;
+  onComment: () => void;
+  onFollow: () => void;
   voteCount: number;
   likeCount: number;
   user: any;
@@ -66,6 +70,8 @@ function TikTokVideoCard({
   onLike, 
   onShare,
   onReport,
+  onComment,
+  onFollow,
   voteCount,
   likeCount,
   user,
@@ -231,7 +237,7 @@ function TikTokVideoCard({
   };
 
   return (
-    <div className="relative h-full w-full bg-black snap-start snap-always">
+    <div className="flex h-full w-full bg-black snap-start snap-always items-center justify-center">
       {isActive && showPreRollAd && preRollAd && !preRollCompleted ? (
         <SkippableInStreamAd
           ad={preRollAd}
@@ -247,7 +253,7 @@ function TikTokVideoCard({
             loop
             muted={isMuted}
             playsInline
-            className="absolute inset-0 w-full h-full object-cover md:object-contain"
+            className="h-full w-full object-contain"
             data-testid={`video-player-${video.id}`}
             onClick={togglePlay}
           >
@@ -342,6 +348,48 @@ function TikTokVideoCard({
             <Bookmark className="w-5 md:w-7 h-5 md:h-7 text-white" />
           </div>
           <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">Save</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (!user) {
+              toast({
+                title: t('videoPlayer.signInRequired'),
+                description: 'Sign in to comment on videos',
+                variant: "destructive",
+              });
+              return;
+            }
+            onComment();
+          }}
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
+          data-testid={`button-comment-${video.id}`}
+        >
+          <div className="w-9 md:w-12 h-9 md:h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <MessageCircle className="w-5 md:w-7 h-5 md:h-7 text-white" />
+          </div>
+          <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">Comment</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (!user) {
+              toast({
+                title: t('videoPlayer.signInRequired'),
+                description: 'Sign in to follow creators',
+                variant: "destructive",
+              });
+              return;
+            }
+            onFollow();
+          }}
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
+          data-testid={`button-follow-${video.id}`}
+        >
+          <div className="w-9 md:w-12 h-9 md:h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <UserPlus className="w-5 md:w-7 h-5 md:h-7 text-white" />
+          </div>
+          <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">Follow</span>
         </button>
 
         <button
@@ -623,6 +671,20 @@ export default function VideoPlayer() {
     setReportDialogOpen(true);
   };
 
+  const handleComment = () => {
+    toast({
+      title: "Comments",
+      description: "Comments feature coming soon!",
+    });
+  };
+
+  const handleFollow = () => {
+    toast({
+      title: "Follow",
+      description: "Follow feature coming soon!",
+    });
+  };
+
   const handleBack = () => {
     if (video?.categoryId) {
       setLocation(`/category/${video.categoryId}`);
@@ -719,6 +781,10 @@ export default function VideoPlayer() {
 
   return (
     <div className="h-screen w-full bg-black overflow-hidden">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {/* This container enables centering of video content */}
+      </div>
+
       <div className="absolute top-4 left-4 z-30 hidden md:block">
         <Button
           variant="ghost"
@@ -786,6 +852,8 @@ export default function VideoPlayer() {
                 onLike={() => likeMutation.mutate(feedVideo.id)}
                 onShare={() => handleShare(feedVideo)}
                 onReport={() => handleReport(feedVideo)}
+                onComment={handleComment}
+                onFollow={handleFollow}
                 voteCount={stats.voteCount}
                 likeCount={stats.likeCount}
                 user={user}
