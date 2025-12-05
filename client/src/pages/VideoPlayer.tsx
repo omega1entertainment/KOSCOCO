@@ -86,7 +86,7 @@ function TikTokVideoCard({
 }: TikTokVideoCardProps & { isPreRollAdLoading: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [preRollCompleted, setPreRollCompleted] = useState(!preRollAd && !isPreRollAdLoading);
   const [isPiPSupported, setIsPiPSupported] = useState(false);
   const watchStartTimeRef = useRef(0);
@@ -247,7 +247,7 @@ function TikTokVideoCard({
             loop
             muted={isMuted}
             playsInline
-            className="absolute inset-0 w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-cover md:object-contain"
             data-testid={`video-player-${video.id}`}
             onClick={togglePlay}
           >
