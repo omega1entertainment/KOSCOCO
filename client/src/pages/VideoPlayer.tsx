@@ -423,7 +423,7 @@ function TikTokVideoCard({
         </button>
       </div>
 
-      <div className="absolute left-0 right-12 md:right-16 bottom-2 md:bottom-4 p-2 md:p-4 z-10">
+      <div className="absolute left-0 right-12 md:right-16 bottom-24 md:bottom-32 p-2 md:p-4 z-10 pointer-events-none">
         <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
           <Avatar className="w-8 md:w-10 h-8 md:h-10 border-2 border-white flex-shrink-0 mt-0.5">
             <AvatarFallback className="bg-primary text-primary-foreground text-xs md:text-sm">
