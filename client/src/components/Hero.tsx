@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Play } from "lucide-react";
 import heroBackground from "@assets/hero-gold-coins-background.jpeg";
 import seasonLogo from "@assets/kOSCOCO-SEASON 1_1762052498157.png";
-import prizeImage from "@assets/Gemini_Generated_Image_3715eq3715eq3715-removebg-preview_1764884094446.png";
+import prizeImage from "@assets/Gemini_Generated_Image_ooeq4tooeq4tooeq-removebg-preview_1764927956510.png";
 
 interface HeroProps {
   currentPhase?: string;
