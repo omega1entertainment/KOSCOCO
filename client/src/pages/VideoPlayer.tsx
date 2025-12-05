@@ -395,7 +395,7 @@ function TikTokVideoCard({
         </div>
       </div>
 
-      <div className="absolute top-4 left-4 z-20 flex gap-2">
+      <div className="absolute top-4 left-4 z-20 hidden md:flex gap-2">
         <button
           onClick={toggleMute}
           className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
