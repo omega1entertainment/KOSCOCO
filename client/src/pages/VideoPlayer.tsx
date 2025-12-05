@@ -253,6 +253,8 @@ function TikTokVideoCard({
             loop
             muted={isMuted}
             playsInline
+            preload="metadata"
+            crossOrigin="anonymous"
             className="h-full w-full object-contain"
             data-testid={`video-player-${video.id}`}
             onClick={togglePlay}
@@ -490,6 +492,7 @@ export default function VideoPlayer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const videoDataCache = useRef<Map<string, { voteCount: number; likeCount: number }>>(new Map());
+  const adFrequencyRef = useRef<{ [key: string]: boolean }>({});
 
   const { data: video, isLoading: videoLoading } = useQuery<Video>({
     queryKey: queryKeys.videos.byId(videoId),
@@ -582,9 +585,19 @@ export default function VideoPlayer() {
   ] : [];
 
   useEffect(() => {
-    setShowPreRollAd(true);
-    setShowOverlayAd(true);
-  }, [activeVideoId]);
+    // Show ads only every 3rd video to regulate frequency
+    const currentIndex = videoFeed.findIndex(v => v.id === activeVideoId);
+    const shouldShowAd = currentIndex > 0 && currentIndex % 3 === 0;
+    
+    if (!adFrequencyRef.current[activeVideoId]) {
+      setShowPreRollAd(shouldShowAd);
+      setShowOverlayAd(shouldShowAd);
+      adFrequencyRef.current[activeVideoId] = true;
+    } else {
+      setShowPreRollAd(false);
+      setShowOverlayAd(false);
+    }
+  }, [activeVideoId, videoFeed]);
 
   useEffect(() => {
     if (!containerRef.current || videoFeed.length === 0) return;
