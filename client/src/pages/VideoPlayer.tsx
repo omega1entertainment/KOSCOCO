@@ -731,7 +731,7 @@ export default function VideoPlayer() {
         </Button>
       </div>
 
-      <div className="absolute top-1/2 right-3 -translate-y-1/2 z-30 flex flex-col gap-2">
+      <div className="absolute top-1/2 right-3 -translate-y-1/2 z-30 hidden md:flex flex-col gap-2">
         <button
           className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white"
           onClick={() => {
