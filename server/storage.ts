@@ -44,7 +44,8 @@ import type {
   RecommendationEvent, InsertRecommendationEvent,
   UserRecommendation, InsertUserRecommendation,
   UserPreferences, InsertUserPreferences,
-  Comment, InsertComment, CommentWithUser
+  Comment, InsertComment, CommentWithUser,
+  Follow, InsertFollow
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -364,6 +365,13 @@ export interface IStorage {
   getVideoComments(videoId: string, limit?: number, offset?: number): Promise<CommentWithUser[]>;
   getCommentCount(videoId: string): Promise<number>;
   deleteComment(id: string): Promise<void>;
+  
+  // Follow methods
+  followUser(followerId: string, followingId: string): Promise<Follow>;
+  unfollowUser(followerId: string, followingId: string): Promise<void>;
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  getFollowersCount(userId: string): Promise<number>;
+  getFollowingCount(userId: string): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -3100,6 +3108,46 @@ export class DbStorage implements IStorage {
 
   async deleteComment(id: string): Promise<void> {
     await db.delete(schema.comments).where(eq(schema.comments.id, id));
+  }
+
+  // ============= FOLLOW METHODS =============
+  async followUser(followerId: string, followingId: string): Promise<Follow> {
+    const [follow] = await db.insert(schema.follows)
+      .values({ followerId, followingId })
+      .returning();
+    return follow;
+  }
+
+  async unfollowUser(followerId: string, followingId: string): Promise<void> {
+    await db.delete(schema.follows)
+      .where(and(
+        eq(schema.follows.followerId, followerId),
+        eq(schema.follows.followingId, followingId)
+      ));
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const [result] = await db.select()
+      .from(schema.follows)
+      .where(and(
+        eq(schema.follows.followerId, followerId),
+        eq(schema.follows.followingId, followingId)
+      ));
+    return !!result;
+  }
+
+  async getFollowersCount(userId: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.follows)
+      .where(eq(schema.follows.followingId, userId));
+    return Number(result?.count || 0);
+  }
+
+  async getFollowingCount(userId: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.follows)
+      .where(eq(schema.follows.followerId, userId));
+    return Number(result?.count || 0);
   }
 }
 
