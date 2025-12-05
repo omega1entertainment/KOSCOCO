@@ -22,11 +22,18 @@ import {
   Volume2,
   VolumeX,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  MessageCircle,
+  Send,
+  X
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Video, Category } from "@shared/schema";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Video, Category, CommentWithUser } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { formatDistanceToNow } from "date-fns";
 import { extractIdFromPermalink, createPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -39,10 +46,12 @@ interface VideoItemProps {
   category?: Category;
   voteCount: number;
   likeCount: number;
+  commentCount: number;
   onVote: () => void;
   onLike: () => void;
   onShare: () => void;
   onReport: () => void;
+  onOpenComments: () => void;
   onWatchProgress: (duration: number, completed: boolean) => void;
 }
 
@@ -55,10 +64,12 @@ function VideoItem({
   category,
   voteCount,
   likeCount,
+  commentCount,
   onVote,
   onLike,
   onShare,
   onReport,
+  onOpenComments,
   onWatchProgress,
 }: VideoItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -191,6 +202,17 @@ function VideoItem({
           <span className="text-white text-xs font-semibold">{likeCount}</span>
         </div>
 
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={onOpenComments}
+            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            data-testid="button-comments"
+          >
+            <MessageCircle className="w-6 h-6 text-white" />
+          </button>
+          <span className="text-white text-xs font-semibold">{commentCount}</span>
+        </div>
+
         <button
           onClick={onShare}
           className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
@@ -237,6 +259,151 @@ function VideoItem({
   );
 }
 
+interface CommentsPanelProps {
+  videoId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  user: any;
+}
+
+function CommentsPanel({ videoId, isOpen, onClose, user }: CommentsPanelProps) {
+  const [newComment, setNewComment] = useState("");
+  const { toast } = useToast();
+  const { t } = useLanguage();
+
+  const { data: commentsData, isLoading } = useQuery<{ comments: CommentWithUser[], count: number }>({
+    queryKey: ['/api/videos', videoId, 'comments'],
+    enabled: isOpen && !!videoId,
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return await apiRequest(`/api/videos/${videoId}/comments`, "POST", { content });
+    },
+    onSuccess: () => {
+      setNewComment("");
+      queryClient.invalidateQueries({ queryKey: ['/api/videos', videoId, 'comments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to post comment",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to comment",
+        variant: "destructive",
+      });
+      return;
+    }
+    commentMutation.mutate(newComment.trim());
+  };
+
+  const getInitials = (comment: CommentWithUser) => {
+    if (comment.user.firstName && comment.user.lastName) {
+      return `${comment.user.firstName[0]}${comment.user.lastName[0]}`.toUpperCase();
+    }
+    return comment.user.username?.[0]?.toUpperCase() || "U";
+  };
+
+  const getDisplayName = (comment: CommentWithUser) => {
+    if (comment.user.firstName && comment.user.lastName) {
+      return `${comment.user.firstName} ${comment.user.lastName}`;
+    }
+    return comment.user.username || "User";
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/50" />
+      <div 
+        className="relative w-full max-w-lg bg-background rounded-t-2xl max-h-[70vh] flex flex-col animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h3 className="font-semibold text-lg">
+            Comments {commentsData?.count ? `(${commentsData.count})` : ""}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-muted rounded-full"
+            data-testid="button-close-comments"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <ScrollArea className="flex-1 p-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : !commentsData?.comments?.length ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No comments yet</p>
+              <p className="text-sm">Be the first to comment!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {commentsData.comments.map((comment) => (
+                <div key={comment.id} className="flex gap-3" data-testid={`comment-${comment.id}`}>
+                  <Avatar className="w-9 h-9 flex-shrink-0">
+                    <AvatarImage src={comment.user.profileImageUrl || undefined} />
+                    <AvatarFallback className="text-xs">{getInitials(comment)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{getDisplayName(comment)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-sm mt-1 break-words">{comment.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        <form onSubmit={handleSubmit} className="p-4 border-t flex gap-2">
+          <Input
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder={user ? "Add a comment..." : "Sign in to comment"}
+            disabled={!user || commentMutation.isPending}
+            className="flex-1"
+            maxLength={1000}
+            data-testid="input-comment"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!user || !newComment.trim() || commentMutation.isPending}
+            data-testid="button-submit-comment"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/video/:permalink");
@@ -248,6 +415,7 @@ export default function VideoPlayer() {
   
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState<string>(videoId);
   const [selectedVideoForAction, setSelectedVideoForAction] = useState<Video | null>(null);
@@ -287,6 +455,17 @@ export default function VideoPlayer() {
       if (!response.ok) return {};
       const data = await response.json();
       return { [activeVideoId]: data.likeCount || 0 };
+    },
+    enabled: !!activeVideoId,
+  });
+
+  const { data: commentCountMap } = useQuery<Record<string, number>>({
+    queryKey: ['/api/comments/count', activeVideoId],
+    queryFn: async () => {
+      const response = await fetch(`/api/videos/${activeVideoId}/comments?limit=0`);
+      if (!response.ok) return {};
+      const data = await response.json();
+      return { [activeVideoId]: data.count || 0 };
     },
     enabled: !!activeVideoId,
   });
@@ -406,6 +585,11 @@ export default function VideoPlayer() {
     setReportDialogOpen(true);
   }, []);
 
+  const handleOpenComments = useCallback((targetVideo: Video) => {
+    setSelectedVideoForAction(targetVideo);
+    setCommentsOpen(true);
+  }, []);
+
   const handleWatchProgress = useCallback((targetVideoId: string, duration: number, completed: boolean) => {
     if (!user) return;
     watchHistoryMutation.mutate({ targetVideoId, watchDuration: duration, completed });
@@ -519,10 +703,12 @@ export default function VideoPlayer() {
                 category={videoCategory}
                 voteCount={voteDataMap?.[v.id] || 0}
                 likeCount={likeDataMap?.[v.id] || 0}
+                commentCount={commentCountMap?.[v.id] || 0}
                 onVote={() => handleVote(v)}
                 onLike={() => handleLike(v)}
                 onShare={() => handleShare(v)}
                 onReport={() => handleReport(v)}
+                onOpenComments={() => handleOpenComments(v)}
                 onWatchProgress={(duration, completed) => handleWatchProgress(v.id, duration, completed)}
               />
             </div>
@@ -542,6 +728,13 @@ export default function VideoPlayer() {
         onOpenChange={setReportDialogOpen}
         videoId={selectedVideoForAction?.id || ""}
         videoTitle={selectedVideoForAction?.title || ""}
+      />
+
+      <CommentsPanel
+        videoId={selectedVideoForAction?.id || ""}
+        isOpen={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        user={user}
       />
     </div>
   );
