@@ -1182,3 +1182,33 @@ export type UserPreferences = typeof userPreferences.$inferSelect;
 export type WatchlistWithVideos = Watchlist & { videos: (WatchlistVideo & { video: Video })[] };
 export type NotificationWithData = Notification & { video?: Video };
 export type ScheduledVideoWithDetails = ScheduledVideo & { video: Video };
+
+// ============= VIDEO COMMENTS =============
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => videos.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_comments_video").on(table.videoId),
+  index("idx_comments_user").on(table.userId),
+  index("idx_comments_created").on(table.createdAt),
+]);
+
+export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true }).extend({
+  content: z.string().min(1, "Comment cannot be empty").max(500, "Comment is too long"),
+});
+
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Comment = typeof comments.$inferSelect;
+
+export type CommentWithUser = Comment & {
+  user: {
+    id: string;
+    username: string | null;
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string | null;
+  };
+};
