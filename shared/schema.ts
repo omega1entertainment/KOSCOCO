@@ -1212,3 +1212,20 @@ export type CommentWithUser = Comment & {
     profileImageUrl: string | null;
   };
 };
+
+// ============= USER FOLLOWS =============
+export const follows = pgTable("follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  followerId: varchar("follower_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  followingId: varchar("following_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_follows_follower").on(table.followerId),
+  index("idx_follows_following").on(table.followingId),
+  unique("unique_follow").on(table.followerId, table.followingId),
+]);
+
+export const insertFollowSchema = createInsertSchema(follows).omit({ id: true, createdAt: true });
+
+export type InsertFollow = z.infer<typeof insertFollowSchema>;
+export type Follow = typeof follows.$inferSelect;
