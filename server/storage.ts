@@ -611,6 +611,9 @@ export class DbStorage implements IStorage {
         views: schema.videos.views,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
+        creatorUsername: schema.users.username,
+        creatorFirstName: schema.users.firstName,
+        creatorLastName: schema.users.lastName,
         likeCount: sql<string>`CAST((
           SELECT COALESCE(COUNT(*), 0)
           FROM likes
@@ -627,6 +630,7 @@ export class DbStorage implements IStorage {
         ) AS text)`,
       })
       .from(schema.videos)
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
       .where(and(eq(schema.videos.categoryId, categoryId), eq(schema.videos.status, 'approved')))
       .orderBy(desc(schema.videos.createdAt));
     

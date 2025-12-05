@@ -650,6 +650,9 @@ export type Video = typeof videos.$inferSelect;
 export type VideoWithStats = Video & {
   likeCount: number;
   voteCount: number;
+  creatorUsername?: string | null;
+  creatorFirstName?: string | null;
+  creatorLastName?: string | null;
 };
 
 // Leaderboard entry with scoring formula

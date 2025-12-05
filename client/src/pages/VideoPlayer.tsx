@@ -33,7 +33,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Video, Category, CommentWithUser } from "@shared/schema";
+import type { Video, Category, CommentWithUser, VideoWithStats } from "@shared/schema";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDistanceToNow } from "date-fns";
 import { extractIdFromPermalink, createPermalink } from "@/lib/slugUtils";
@@ -469,7 +469,7 @@ export default function VideoPlayer() {
     queryKey: queryKeys.categories.all,
   });
 
-  const { data: relatedVideos = [] } = useQuery<Video[]>({
+  const { data: relatedVideos = [] } = useQuery<VideoWithStats[]>({
     queryKey: queryKeys.videos.byCategory(video?.categoryId || ""),
     enabled: !!video?.categoryId,
   });
@@ -789,7 +789,7 @@ export default function VideoPlayer() {
                 commentCount={commentCountMap?.[v.id] || 0}
                 isFollowing={v.id === activeVideoId ? (followData?.isFollowing || false) : false}
                 followersCount={v.id === activeVideoId ? (followData?.followersCount || 0) : 0}
-                creatorName={v.id === activeVideoId ? (creatorData?.username || `${creatorData?.firstName || ''} ${creatorData?.lastName || ''}`.trim() || 'Creator') : 'Creator'}
+                creatorName={(v as VideoWithStats).creatorUsername || `${(v as VideoWithStats).creatorFirstName || ''} ${(v as VideoWithStats).creatorLastName || ''}`.trim() || 'Creator'}
                 onVote={() => handleVote(v)}
                 onLike={() => handleLike(v)}
                 onShare={() => handleShare(v)}
