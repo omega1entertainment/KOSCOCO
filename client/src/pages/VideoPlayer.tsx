@@ -42,6 +42,7 @@ import { queryKeys } from "@/lib/queryKeys";
 interface VideoItemProps {
   video: Video;
   isActive: boolean;
+  isNeighbor: boolean;
   isMuted: boolean;
   onToggleMute: () => void;
   user: any;
@@ -64,6 +65,7 @@ interface VideoItemProps {
 function VideoItem({
   video,
   isActive,
+  isNeighbor,
   isMuted,
   onToggleMute,
   user,
@@ -84,7 +86,10 @@ function VideoItem({
 }: VideoItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const hasRecordedWatchRef = useRef(false);
+
+  const preloadValue = isActive ? "auto" : isNeighbor ? "metadata" : "none";
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -153,20 +158,38 @@ function VideoItem({
 
   return (
     <div className="h-full w-full relative bg-black flex items-center justify-center">
+      {video.thumbnailUrl && (
+        <img 
+          src={video.thumbnailUrl} 
+          alt=""
+          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}
+        />
+      )}
+      
       <video
         ref={videoRef}
         className="h-full w-full object-contain"
         loop
         muted={isMuted}
         playsInline
-        preload="auto"
+        preload={preloadValue}
+        poster={video.thumbnailUrl || undefined}
         onClick={togglePlay}
+        onCanPlay={() => setIsLoading(false)}
+        onWaiting={() => setIsLoading(true)}
+        onPlaying={() => setIsLoading(false)}
         data-testid={`video-player-${video.id}`}
       >
         <source src={video.videoUrl} type="video/mp4" />
       </video>
 
-      {!isPlaying && isActive && (
+      {isLoading && isActive && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
+
+      {!isPlaying && isActive && !isLoading && (
         <div 
           className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
           onClick={togglePlay}
@@ -531,6 +554,7 @@ export default function VideoPlayer() {
   });
 
   const allVideos = video ? [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)] : [];
+  const activeVideoIndex = allVideos.findIndex(v => v.id === activeVideoId);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -765,8 +789,9 @@ export default function VideoPlayer() {
         ref={containerRef}
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide video-scroll-container"
       >
-        {allVideos.map((v) => {
+        {allVideos.map((v, index) => {
           const videoCategory = categories?.find(c => c.id === v.categoryId);
+          const isNeighbor = Math.abs(index - activeVideoIndex) === 1;
           return (
             <div
               key={v.id}
@@ -780,6 +805,7 @@ export default function VideoPlayer() {
               <VideoItem
                 video={v}
                 isActive={activeVideoId === v.id}
+                isNeighbor={isNeighbor}
                 isMuted={isMuted}
                 onToggleMute={toggleMute}
                 user={user}
