@@ -49,11 +49,15 @@ interface VideoItemProps {
   voteCount: number;
   likeCount: number;
   commentCount: number;
+  isFollowing: boolean;
+  followersCount: number;
+  creatorName: string;
   onVote: () => void;
   onLike: () => void;
   onShare: () => void;
   onReport: () => void;
   onOpenComments: () => void;
+  onFollow: () => void;
   onWatchProgress: (duration: number, completed: boolean) => void;
 }
 
@@ -67,11 +71,15 @@ function VideoItem({
   voteCount,
   likeCount,
   commentCount,
+  isFollowing,
+  followersCount,
+  creatorName,
   onVote,
   onLike,
   onShare,
   onReport,
   onOpenComments,
+  onFollow,
   onWatchProgress,
 }: VideoItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -241,6 +249,33 @@ function VideoItem({
             <Eye className="w-4 h-4" />
             {video.views}
           </span>
+        </div>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="font-semibold text-sm" data-testid="text-creator-name">@{creatorName}</span>
+          {user && user.id !== video.userId && (
+            <button
+              onClick={onFollow}
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                isFollowing 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-primary text-white hover:bg-primary/90'
+              }`}
+              data-testid="button-follow"
+            >
+              {isFollowing ? (
+                <>
+                  <UserCheck className="w-3 h-3" />
+                  Following
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-3 h-3" />
+                  Follow
+                </>
+              )}
+            </button>
+          )}
+          <span className="text-xs text-white/70">{followersCount} followers</span>
         </div>
         <h2 className="text-lg font-bold mb-1 line-clamp-2" data-testid="text-video-title">
           {video.title}
@@ -472,6 +507,29 @@ export default function VideoPlayer() {
     enabled: !!activeVideoId,
   });
 
+  const activeVideo = video?.id === activeVideoId ? video : relatedVideos.find(v => v.id === activeVideoId);
+  const activeCreatorId = activeVideo?.userId;
+
+  const { data: followData } = useQuery<{ followersCount: number; isFollowing: boolean }>({
+    queryKey: ['/api/users', activeCreatorId, 'follow-status'],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${activeCreatorId}/follow-status`);
+      if (!response.ok) return { followersCount: 0, isFollowing: false };
+      return response.json();
+    },
+    enabled: !!activeCreatorId,
+  });
+
+  const { data: creatorData } = useQuery<{ firstName: string; lastName: string; username: string | null }>({
+    queryKey: ['/api/users', activeCreatorId, 'info'],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${activeCreatorId}`);
+      if (!response.ok) return { firstName: '', lastName: '', username: null };
+      return response.json();
+    },
+    enabled: !!activeCreatorId,
+  });
+
   const allVideos = video ? [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)] : [];
 
   useEffect(() => {
@@ -592,6 +650,39 @@ export default function VideoPlayer() {
     setCommentsOpen(true);
   }, []);
 
+  const handleFollow = useCallback(async (targetVideo: Video) => {
+    if (!user) {
+      toast({
+        title: t('videoPlayer.signInRequired'),
+        description: "Please sign in to follow creators",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const creatorId = targetVideo.userId;
+    const currentlyFollowing = followData?.isFollowing || false;
+    
+    try {
+      if (currentlyFollowing) {
+        await apiRequest(`/api/users/${creatorId}/follow`, "DELETE");
+      } else {
+        await apiRequest(`/api/users/${creatorId}/follow`, "POST");
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/users', creatorId, 'follow-status'] });
+      toast({
+        title: currentlyFollowing ? "Unfollowed" : "Following",
+        description: currentlyFollowing ? "You unfollowed this creator" : "You are now following this creator",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed",
+        description: error.message || "Could not update follow status",
+        variant: "destructive",
+      });
+    }
+  }, [user, t, toast, followData]);
+
   const handleWatchProgress = useCallback((targetVideoId: string, duration: number, completed: boolean) => {
     if (!user) return;
     watchHistoryMutation.mutate({ targetVideoId, watchDuration: duration, completed });
@@ -706,11 +797,15 @@ export default function VideoPlayer() {
                 voteCount={voteDataMap?.[v.id] || 0}
                 likeCount={likeDataMap?.[v.id] || 0}
                 commentCount={commentCountMap?.[v.id] || 0}
+                isFollowing={v.id === activeVideoId ? (followData?.isFollowing || false) : false}
+                followersCount={v.id === activeVideoId ? (followData?.followersCount || 0) : 0}
+                creatorName={v.id === activeVideoId ? (creatorData?.username || `${creatorData?.firstName || ''} ${creatorData?.lastName || ''}`.trim() || 'Creator') : 'Creator'}
                 onVote={() => handleVote(v)}
                 onLike={() => handleLike(v)}
                 onShare={() => handleShare(v)}
                 onReport={() => handleReport(v)}
                 onOpenComments={() => handleOpenComments(v)}
+                onFollow={() => handleFollow(v)}
                 onWatchProgress={(duration, completed) => handleWatchProgress(v.id, duration, completed)}
               />
             </div>
