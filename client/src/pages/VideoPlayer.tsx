@@ -152,7 +152,7 @@ function VideoItem({
   };
 
   return (
-    <div className="h-screen w-full snap-start snap-always relative bg-black flex items-center justify-center">
+    <div className="h-full w-full relative bg-black flex items-center justify-center">
       <video
         ref={videoRef}
         className="h-full w-full object-contain"
@@ -775,6 +775,7 @@ export default function VideoPlayer() {
                 else videoRefs.current.delete(v.id);
               }}
               data-video-id={v.id}
+              className="h-screen w-full snap-start snap-always flex-shrink-0"
             >
               <VideoItem
                 video={v}
