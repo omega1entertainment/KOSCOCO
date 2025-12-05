@@ -638,13 +638,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (req.path.includes('thumbnails')) {
-        // Thumbnails don't need range support, just fast delivery
-        res.set({
-          'Content-Type': 'image/jpeg',
-          'Cache-Control': 'public, max-age=86400',
+        // Thumbnails with enhanced caching - ETag and conditional request support
+        const [metadata] = await objectFile.getMetadata();
+        const etagSource = metadata.md5Hash || metadata.etag || `${metadata.size}-${metadata.updated}`;
+        const etag = `"${Buffer.from(etagSource as string).toString('base64').replace(/[/+=]/g, '').slice(0, 27)}"`;
+        const lastModified = metadata.updated ? new Date(metadata.updated as string).toUTCString() : undefined;
+
+        // Check If-None-Match (ETag validation)
+        const ifNoneMatch = req.headers['if-none-match'];
+        if (ifNoneMatch && ifNoneMatch === etag) {
+          res.status(304).end();
+          return;
+        }
+
+        // Check If-Modified-Since
+        const ifModifiedSince = req.headers['if-modified-since'];
+        if (ifModifiedSince && lastModified) {
+          const ifModifiedDate = new Date(ifModifiedSince);
+          const lastModifiedDate = new Date(lastModified);
+          if (lastModifiedDate <= ifModifiedDate) {
+            res.status(304).end();
+            return;
+          }
+        }
+
+        // Defensive defaults for metadata
+        const contentType = (metadata.contentType as string) || 'image/jpeg';
+        const contentLength = metadata.size ? parseInt(String(metadata.size), 10) : undefined;
+        
+        const headers: Record<string, string | number> = {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=604800, stale-while-revalidate=86400', // 7 days cache
+          'ETag': etag,
           'Access-Control-Allow-Origin': '*',
+          'Vary': 'Accept-Encoding',
+        };
+        if (contentLength && Number.isFinite(contentLength) && contentLength > 0) {
+          headers['Content-Length'] = contentLength;
+        }
+        if (lastModified) {
+          headers['Last-Modified'] = lastModified;
+        }
+        res.set(headers);
+        
+        // Stream file directly to preserve headers (don't use downloadObject which overwrites them)
+        const stream = objectFile.createReadStream();
+        stream.on('error', (err: Error) => {
+          console.error('Thumbnail stream error:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'Error streaming thumbnail' });
+          }
         });
-        objectStorageService.downloadObject(objectFile, res);
+        stream.pipe(res);
         return;
       }
       

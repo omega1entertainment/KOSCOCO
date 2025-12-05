@@ -127,16 +127,47 @@ export class ObjectStorageService {
         return;
       }
 
-      // Common headers for all responses
-      const commonHeaders = {
+      // Generate ETag from file metadata (md5Hash or etag from GCS, or fallback to size+updated)
+      const etagSource = metadata.md5Hash || metadata.etag || `${fileSize}-${metadata.updated}`;
+      const etag = `"${Buffer.from(etagSource).toString('base64').replace(/[/+=]/g, '').slice(0, 27)}"`;
+      
+      // Parse Last-Modified from metadata
+      const lastModified = metadata.updated ? new Date(metadata.updated as string).toUTCString() : undefined;
+
+      // Check If-None-Match (ETag validation)
+      const ifNoneMatch = req.headers['if-none-match'];
+      if (ifNoneMatch && ifNoneMatch === etag) {
+        res.status(304).end();
+        return;
+      }
+
+      // Check If-Modified-Since (Date validation)
+      const ifModifiedSince = req.headers['if-modified-since'];
+      if (ifModifiedSince && lastModified) {
+        const ifModifiedDate = new Date(ifModifiedSince);
+        const lastModifiedDate = new Date(lastModified);
+        if (lastModifiedDate <= ifModifiedDate) {
+          res.status(304).end();
+          return;
+        }
+      }
+
+      // Common headers for all responses - enhanced caching
+      const commonHeaders: Record<string, string | number> = {
         "Content-Type": contentType,
         "Accept-Ranges": "bytes",
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "public, max-age=604800, stale-while-revalidate=86400", // 7 days cache, 1 day stale
+        "ETag": etag,
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-        "Access-Control-Allow-Headers": "Range, Content-Type",
-        "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
+        "Access-Control-Allow-Headers": "Range, Content-Type, If-None-Match, If-Modified-Since",
+        "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges, ETag, Last-Modified",
+        "Vary": "Accept-Encoding",
       };
+      
+      if (lastModified) {
+        commonHeaders["Last-Modified"] = lastModified;
+      }
 
       // Handle HEAD requests without streaming
       if (req.method === "HEAD") {
