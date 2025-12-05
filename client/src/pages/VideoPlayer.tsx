@@ -460,7 +460,7 @@ export default function VideoPlayer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const { data: video, isLoading: videoLoading } = useQuery<Video>({
+  const { data: video, isLoading: videoLoading } = useQuery<VideoWithStats>({
     queryKey: queryKeys.videos.byId(videoId),
     enabled: !!videoId,
   });

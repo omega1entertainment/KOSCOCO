@@ -95,7 +95,7 @@ export interface IStorage {
   updateRegistrationPaymentStatus(id: string, status: string): Promise<Registration | undefined>;
   
   createVideo(video: InsertVideo): Promise<Video>;
-  getVideoById(id: string): Promise<Video | undefined>;
+  getVideoById(id: string): Promise<VideoWithStats | undefined>;
   getVideosByUser(userId: string): Promise<Video[]>;
   getVideosByCategory(categoryId: string): Promise<VideoWithStats[]>;
   getPendingVideos(): Promise<Video[]>;
@@ -584,9 +584,59 @@ export class DbStorage implements IStorage {
     return video;
   }
 
-  async getVideoById(id: string): Promise<Video | undefined> {
-    const [video] = await db.select().from(schema.videos).where(eq(schema.videos.id, id));
-    return video;
+  async getVideoById(id: string): Promise<VideoWithStats | undefined> {
+    const [result] = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        slug: schema.videos.slug,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        moderationStatus: schema.videos.moderationStatus,
+        moderationCategories: schema.videos.moderationCategories,
+        moderationReason: schema.videos.moderationReason,
+        moderatedAt: schema.videos.moderatedAt,
+        isSelectedForTop500: schema.videos.isSelectedForTop500,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        creatorUsername: schema.users.username,
+        creatorFirstName: schema.users.firstName,
+        creatorLastName: schema.users.lastName,
+        likeCount: sql<string>`CAST((
+          SELECT COALESCE(COUNT(*), 0)
+          FROM likes
+          WHERE likes.video_id = videos.id
+        ) AS text)`,
+        voteCount: sql<string>`CAST((
+          (SELECT COALESCE(COUNT(*), 0)
+           FROM votes
+           WHERE votes.video_id = videos.id)
+          +
+          (SELECT COALESCE(SUM(paid_votes.quantity), 0)
+           FROM paid_votes
+           WHERE paid_votes.video_id = videos.id)
+        ) AS text)`,
+      })
+      .from(schema.videos)
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
+      .where(eq(schema.videos.id, id));
+    
+    if (!result) return undefined;
+    
+    return {
+      ...result,
+      likeCount: parseInt(result.likeCount, 10),
+      voteCount: parseInt(result.voteCount, 10),
+    } as VideoWithStats;
   }
 
   async getVideosByUser(userId: string): Promise<Video[]> {
