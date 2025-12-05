@@ -89,10 +89,39 @@ function VideoItem({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  const [cdnUrl, setCdnUrl] = useState<string | null>(null);
+  const [cdnThumbnailUrl, setCdnThumbnailUrl] = useState<string | null>(null);
   const hasRecordedWatchRef = useRef(false);
+  const cdnUrlFetchedRef = useRef(false);
 
   const preloadValue = isActive ? "auto" : isNeighbor ? "metadata" : "none";
-  const videoUrl = (video as any).compressedVideoUrl || video.videoUrl;
+  const fallbackVideoUrl = (video as any).compressedVideoUrl || video.videoUrl;
+  
+  // Use CDN URL if available, otherwise fall back to proxy URL
+  const videoUrl = cdnUrl || fallbackVideoUrl;
+  const thumbnailUrl = cdnThumbnailUrl || video.thumbnailUrl;
+
+  // Fetch CDN URL when video becomes active or is a neighbor for faster loading
+  useEffect(() => {
+    if ((isActive || isNeighbor) && !cdnUrlFetchedRef.current) {
+      cdnUrlFetchedRef.current = true;
+      
+      fetch(`/api/videos/${video.id}/cdn-url`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.videoUrl) {
+            setCdnUrl(data.videoUrl);
+          }
+          if (data?.thumbnailUrl) {
+            setCdnThumbnailUrl(data.thumbnailUrl);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch CDN URL:', err);
+          // Silently fall back to proxy URL
+        });
+    }
+  }, [isActive, isNeighbor, video.id]);
 
   // Lazy loading: Only load video when it's in or near viewport
   // Also unload videos that are far from viewport to reclaim memory
@@ -199,9 +228,9 @@ function VideoItem({
   return (
     <div ref={containerRef} className="h-full w-full relative bg-black flex items-center justify-center">
       {/* Thumbnail placeholder - shown until video is playing */}
-      {video.thumbnailUrl && (
+      {thumbnailUrl && (
         <img 
-          src={video.thumbnailUrl} 
+          src={thumbnailUrl} 
           alt=""
           loading="lazy"
           className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${isPlaying && shouldLoadVideo ? 'opacity-0' : 'opacity-100'}`}
@@ -217,7 +246,7 @@ function VideoItem({
           muted={isMuted}
           playsInline
           preload={preloadValue}
-          poster={video.thumbnailUrl || undefined}
+          poster={thumbnailUrl || undefined}
           onClick={togglePlay}
           onCanPlay={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
@@ -232,7 +261,7 @@ function VideoItem({
           onClick={() => setShouldLoadVideo(true)}
           data-testid={`video-placeholder-${video.id}`}
         >
-          {!video.thumbnailUrl && (
+          {!thumbnailUrl && (
             <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <Play className="w-8 h-8 text-white ml-1" />
             </div>

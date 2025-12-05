@@ -1141,6 +1141,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get CDN URL for a video - returns a signed URL for direct access from GCS edge network
+  app.get('/api/videos/:id/cdn-url', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const video = await storage.getVideoById(id);
+      
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+
+      if (video.status !== 'approved') {
+        return res.status(403).json({ message: "Video not available" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      
+      // Get the video URL to use (prefer compressed if available)
+      const videoPath = video.compressedVideoUrl || video.videoUrl;
+      
+      // Generate signed URL with 24-hour expiration for caching
+      const cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
+      
+      // Also generate thumbnail CDN URL if available
+      let thumbnailCdnUrl = null;
+      if (video.thumbnailUrl) {
+        try {
+          thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
+        } catch (e) {
+          console.error('Failed to generate thumbnail CDN URL:', e);
+        }
+      }
+
+      res.set({
+        'Cache-Control': 'public, max-age=3600', // Cache the CDN URL response for 1 hour
+      });
+
+      res.json({
+        videoUrl: cdnUrl,
+        thumbnailUrl: thumbnailCdnUrl,
+        expiresIn: 86400, // 24 hours
+      });
+    } catch (error) {
+      console.error("Error generating CDN URL:", error);
+      res.status(500).json({ message: "Failed to generate CDN URL" });
+    }
+  });
+
+  // Batch get CDN URLs for multiple videos
+  app.post('/api/videos/cdn-urls', async (req, res) => {
+    try {
+      const { videoIds } = req.body;
+      
+      if (!Array.isArray(videoIds) || videoIds.length === 0) {
+        return res.status(400).json({ message: "videoIds array required" });
+      }
+
+      // Limit batch size to prevent abuse
+      if (videoIds.length > 50) {
+        return res.status(400).json({ message: "Maximum 50 videos per batch" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const results: Record<string, { videoUrl: string; thumbnailUrl: string | null }> = {};
+
+      await Promise.all(
+        videoIds.map(async (videoId: string) => {
+          try {
+            const video = await storage.getVideoById(videoId);
+            if (video && video.status === 'approved') {
+              const videoPath = video.compressedVideoUrl || video.videoUrl;
+              const cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
+              
+              let thumbnailCdnUrl = null;
+              if (video.thumbnailUrl) {
+                try {
+                  thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
+                } catch (e) {
+                  // Ignore thumbnail errors
+                }
+              }
+
+              results[videoId] = {
+                videoUrl: cdnUrl,
+                thumbnailUrl: thumbnailCdnUrl,
+              };
+            }
+          } catch (error) {
+            console.error(`Error generating CDN URL for video ${videoId}:`, error);
+          }
+        })
+      );
+
+      res.set({
+        'Cache-Control': 'public, max-age=3600',
+      });
+
+      res.json({
+        urls: results,
+        expiresIn: 86400,
+      });
+    } catch (error) {
+      console.error("Error generating batch CDN URLs:", error);
+      res.status(500).json({ message: "Failed to generate CDN URLs" });
+    }
+  });
+
   // Comment routes
   app.get('/api/videos/:videoId/comments', async (req, res) => {
     try {

@@ -251,6 +251,55 @@ export class ObjectStorageService {
     };
   }
 
+  /**
+   * Generate a CDN-style signed URL for video playback.
+   * This URL allows direct access from Google Cloud Storage's edge network,
+   * bypassing the server for faster video loading.
+   * @param objectPath - The storage path of the video
+   * @param ttlSec - Time to live in seconds (default: 24 hours for caching)
+   * @returns Signed URL for direct video access
+   */
+  async getCdnUrl(objectPath: string, ttlSec: number = 86400): Promise<string> {
+    const { bucketName, objectName } = parseObjectPath(objectPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    
+    const [exists] = await file.exists();
+    if (!exists) {
+      throw new ObjectNotFoundError();
+    }
+
+    const signedUrl = await signObjectURL({
+      bucketName,
+      objectName,
+      method: "GET",
+      ttlSec,
+    });
+
+    return signedUrl;
+  }
+
+  /**
+   * Generate CDN URLs for multiple videos in batch.
+   * More efficient than calling getCdnUrl individually.
+   */
+  async getBatchCdnUrls(objectPaths: string[], ttlSec: number = 86400): Promise<Map<string, string>> {
+    const results = new Map<string, string>();
+    
+    await Promise.all(
+      objectPaths.map(async (objectPath) => {
+        try {
+          const url = await this.getCdnUrl(objectPath, ttlSec);
+          results.set(objectPath, url);
+        } catch (error) {
+          console.error(`Failed to generate CDN URL for ${objectPath}:`, error);
+        }
+      })
+    );
+
+    return results;
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
