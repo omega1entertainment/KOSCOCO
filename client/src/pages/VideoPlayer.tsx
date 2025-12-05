@@ -719,7 +719,7 @@ export default function VideoPlayer() {
 
   return (
     <div className="h-screen w-full bg-black overflow-hidden">
-      <div className="absolute top-4 left-4 z-30">
+      <div className="absolute top-4 left-4 z-30 hidden md:block">
         <Button
           variant="ghost"
           size="icon"
