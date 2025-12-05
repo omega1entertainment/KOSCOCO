@@ -13,7 +13,6 @@ import { SkippableInStreamAd } from "@/components/ads/SkippableInStreamAd";
 import { 
   ArrowLeft, 
   Check, 
-  Heart, 
   ThumbsUp,
   Eye, 
   Share2, 
@@ -21,10 +20,7 @@ import {
   AlertTriangle, 
   ExternalLink, 
   Bookmark,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX
+  Play
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -150,24 +146,6 @@ export default function VideoPlayer() {
   const handlePreRollComplete = () => {
     setPreRollCompleted(true);
     setShowPreRollAd(false);
-  };
-
-  const togglePlay = () => {
-    if (!videoRef.current || !preRollCompleted) return;
-    
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      videoRef.current.play().catch(() => {});
-      setIsPlaying(true);
-    }
-  };
-
-  const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
   };
 
   const handleShare = async () => {
@@ -352,14 +330,14 @@ export default function VideoPlayer() {
                     <video
                       ref={videoRef}
                       className="w-full h-full object-contain"
-                      loop
+                      controls
                       muted={isMuted}
                       playsInline
-                      preload="metadata"
-                      crossOrigin="anonymous"
-                      onClick={togglePlay}
+                      preload="auto"
                       data-testid={`video-player-${video.id}`}
-                      onError={() => {
+                      onPlay={() => setIsPlaying(true)}
+                      onPause={() => setIsPlaying(false)}
+                      onError={(e) => {
                         console.error("Video playback error:", {
                           src: video.videoUrl,
                           error: videoRef.current?.error
@@ -367,32 +345,8 @@ export default function VideoPlayer() {
                       }}
                     >
                       <source src={video.videoUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
                     </video>
-
-                    {!isPlaying && (
-                      <div 
-                        className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
-                        onClick={togglePlay}
-                      >
-                        <div className="w-16 h-16 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
-                          <Play className="w-8 h-8 text-white ml-1" />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="absolute top-4 right-4 flex gap-2">
-                      <button
-                        onClick={toggleMute}
-                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
-                        data-testid="button-mute-toggle"
-                      >
-                        {isMuted ? (
-                          <VolumeX className="w-5 h-5 text-white" />
-                        ) : (
-                          <Volume2 className="w-5 h-5 text-white" />
-                        )}
-                      </button>
-                    </div>
                   </>
                 )}
               </div>
