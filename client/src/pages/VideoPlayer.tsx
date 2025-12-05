@@ -249,7 +249,7 @@ function TikTokVideoCard({
   };
 
   return (
-    <div className="flex h-full w-full bg-black snap-start snap-always items-center justify-center">
+    <div className="flex h-full w-1/2 bg-black snap-start snap-always items-center justify-center mx-auto">
       {isActive && showPreRollAd && preRollAd && !preRollCompleted ? (
         <SkippableInStreamAd
           ad={preRollAd}
