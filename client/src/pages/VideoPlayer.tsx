@@ -237,7 +237,7 @@ function TikTokVideoCard({
   };
 
   return (
-    <div className="relative h-full w-full bg-black snap-start snap-always">
+    <div className="flex h-full w-full bg-black snap-start snap-always items-center justify-center">
       {isActive && showPreRollAd && preRollAd && !preRollCompleted ? (
         <SkippableInStreamAd
           ad={preRollAd}
@@ -248,20 +248,19 @@ function TikTokVideoCard({
         />
       ) : (
         <>
-          <div className="absolute inset-0 flex items-center justify-center bg-black">
-            <video
-              ref={videoRef}
-              loop
-              muted={isMuted}
-              playsInline
-              preload="auto"
-              className="h-full w-full object-contain"
-              data-testid={`video-player-${video.id}`}
-              onClick={togglePlay}
-            >
-              <source src={video.videoUrl} type="video/mp4" />
-            </video>
-          </div>
+          <video
+            ref={videoRef}
+            loop
+            muted={isMuted}
+            playsInline
+            preload="metadata"
+            crossOrigin="anonymous"
+            className="h-full w-full object-contain"
+            data-testid={`video-player-${video.id}`}
+            onClick={togglePlay}
+          >
+            <source src={video.videoUrl} type="video/mp4" />
+          </video>
 
           {isActive && overlayAd && showOverlayAd && preRollCompleted && (
             <OverlayAd
