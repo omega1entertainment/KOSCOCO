@@ -119,9 +119,14 @@ function TikTokVideoCard({
     if (!videoRef.current) return;
     
     if (isActive && preRollCompleted) {
-      videoRef.current.play().catch(() => {});
-      setIsPlaying(true);
-      watchStartTimeRef.current = Date.now();
+      // Small delay to ensure video element is ready
+      requestAnimationFrame(() => {
+        if (videoRef.current && isActive) {
+          videoRef.current.play().catch(() => {});
+          setIsPlaying(true);
+          watchStartTimeRef.current = Date.now();
+        }
+      });
     } else {
       if (!isActive && videoRef.current.currentTime > 0 && user && !hasRecordedWatchRef.current) {
         const watchDuration = Math.floor(videoRef.current.currentTime);
@@ -210,6 +215,13 @@ function TikTokVideoCard({
   const handlePreRollComplete = () => {
     setPreRollCompleted(true);
     onPreRollAdComplete();
+    // Force video to play after ad completes
+    setTimeout(() => {
+      if (videoRef.current && isActive) {
+        videoRef.current.play().catch(() => {});
+        setIsPlaying(true);
+      }
+    }, 100);
   };
 
   const togglePlay = () => {
