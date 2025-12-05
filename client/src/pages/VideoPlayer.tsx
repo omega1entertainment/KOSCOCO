@@ -85,14 +85,54 @@ function VideoItem({
   onWatchProgress,
 }: VideoItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const hasRecordedWatchRef = useRef(false);
 
   const preloadValue = isActive ? "auto" : isNeighbor ? "metadata" : "none";
+  const videoUrl = (video as any).compressedVideoUrl || video.videoUrl;
+
+  // Lazy loading: Only load video when it's in or near viewport
+  // Also unload videos that are far from viewport to reclaim memory
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Load immediately if active or neighbor
+    if (isActive || isNeighbor) {
+      setShouldLoadVideo(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadVideo(true);
+          } else if (!isActive && !isNeighbor) {
+            // Unload video when it's far from viewport to reclaim memory
+            setShouldLoadVideo(false);
+            setIsLoading(true); // Reset loading state for when it loads again
+          }
+        });
+      },
+      {
+        rootMargin: '400px 0px', // Load/unload zone - 400px before entering/after leaving viewport
+        threshold: 0,
+      }
+    );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isActive, isNeighbor]);
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !shouldLoadVideo) return;
 
     if (isActive) {
       videoRef.current.play().catch(() => {});
@@ -103,7 +143,7 @@ function VideoItem({
       setIsPlaying(false);
       hasRecordedWatchRef.current = false;
     }
-  }, [isActive]);
+  }, [isActive, shouldLoadVideo]);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -157,39 +197,56 @@ function VideoItem({
   };
 
   return (
-    <div className="h-full w-full relative bg-black flex items-center justify-center">
+    <div ref={containerRef} className="h-full w-full relative bg-black flex items-center justify-center">
+      {/* Thumbnail placeholder - shown until video is playing */}
       {video.thumbnailUrl && (
         <img 
           src={video.thumbnailUrl} 
           alt=""
-          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}
+          loading="lazy"
+          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${isPlaying && shouldLoadVideo ? 'opacity-0' : 'opacity-100'}`}
         />
       )}
       
-      <video
-        ref={videoRef}
-        className="h-full w-full object-contain"
-        loop
-        muted={isMuted}
-        playsInline
-        preload={preloadValue}
-        poster={video.thumbnailUrl || undefined}
-        onClick={togglePlay}
-        onCanPlay={() => setIsLoading(false)}
-        onWaiting={() => setIsLoading(true)}
-        onPlaying={() => setIsLoading(false)}
-        data-testid={`video-player-${video.id}`}
-      >
-        <source src={(video as any).compressedVideoUrl || video.videoUrl} type="video/mp4" />
-      </video>
+      {/* Video element - only loads source when shouldLoadVideo is true */}
+      {shouldLoadVideo ? (
+        <video
+          ref={videoRef}
+          className="h-full w-full object-contain"
+          loop
+          muted={isMuted}
+          playsInline
+          preload={preloadValue}
+          poster={video.thumbnailUrl || undefined}
+          onClick={togglePlay}
+          onCanPlay={() => setIsLoading(false)}
+          onWaiting={() => setIsLoading(true)}
+          onPlaying={() => setIsLoading(false)}
+          data-testid={`video-player-${video.id}`}
+        >
+          <source src={videoUrl} type="video/mp4" />
+        </video>
+      ) : (
+        <div 
+          className="h-full w-full flex items-center justify-center cursor-pointer"
+          onClick={() => setShouldLoadVideo(true)}
+          data-testid={`video-placeholder-${video.id}`}
+        >
+          {!video.thumbnailUrl && (
+            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play className="w-8 h-8 text-white ml-1" />
+            </div>
+          )}
+        </div>
+      )}
 
-      {isLoading && isActive && (
+      {isLoading && isActive && shouldLoadVideo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
       )}
 
-      {!isPlaying && isActive && !isLoading && (
+      {!isPlaying && isActive && !isLoading && shouldLoadVideo && (
         <div 
           className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
           onClick={togglePlay}
