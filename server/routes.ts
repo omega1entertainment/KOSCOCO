@@ -17,6 +17,7 @@ import formidable from "formidable";
 import { promises as fs, createReadStream } from "fs";
 import { generateThumbnail } from "./thumbnailGenerator";
 import { moderateVideo } from "./moderation";
+import { compressVideoInBackground } from "./videoCompression";
 import { generateSlug } from "../client/src/lib/slugUtils";
 import path from "path";
 import { sendNewsletterWelcomeEmail } from "./emailService";
@@ -923,7 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(video);
       
-      // Run moderation in background (don't block response)
+      // Run moderation and compression in background (don't block response)
       setImmediate(async () => {
         try {
           const objectStorageTempDir = path.join(process.cwd(), '.tmp-object-storage');
@@ -966,6 +967,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.error('Error cleaning up temp video:', cleanupError);
             }
           }
+          
+          // Run video compression in background after moderation
+          compressVideoInBackground(
+            video.id,
+            videoPath,
+            userId,
+            async (videoId: string, compressedUrl: string, compressedSize: number) => {
+              await storage.updateVideoCompressedUrl(videoId, compressedUrl, compressedSize);
+            }
+          );
         } catch (bgError) {
           console.error('Background moderation process error:', bgError);
         }

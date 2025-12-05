@@ -180,7 +180,7 @@ function VideoItem({
         onPlaying={() => setIsLoading(false)}
         data-testid={`video-player-${video.id}`}
       >
-        <source src={video.videoUrl} type="video/mp4" />
+        <source src={(video as any).compressedVideoUrl || video.videoUrl} type="video/mp4" />
       </video>
 
       {isLoading && isActive && (

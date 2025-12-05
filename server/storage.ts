@@ -107,6 +107,7 @@ export interface IStorage {
   getApprovedVideos(): Promise<VideoWithStats[]>;
   getRejectedVideos(): Promise<Video[]>;
   updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined>;
+  updateVideoCompressedUrl(id: string, compressedVideoUrl: string, compressedFileSize: number): Promise<Video | undefined>;
   selectTop500VideosPerCategory(): Promise<{ categoryId: string; selectedCount: number }[]>;
   
   createVote(vote: InsertVote): Promise<Vote>;
@@ -862,6 +863,14 @@ export class DbStorage implements IStorage {
   async updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined> {
     const [video] = await db.update(schema.videos)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.videos.id, id))
+      .returning();
+    return video;
+  }
+
+  async updateVideoCompressedUrl(id: string, compressedVideoUrl: string, compressedFileSize: number): Promise<Video | undefined> {
+    const [video] = await db.update(schema.videos)
+      .set({ compressedVideoUrl, compressedFileSize, updatedAt: new Date() })
       .where(eq(schema.videos.id, id))
       .returning();
     return video;
