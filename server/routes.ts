@@ -1200,6 +1200,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= FOLLOW ROUTES =============
+  app.post('/api/users/:userId/follow', isAuthenticated, async (req: any, res) => {
+    try {
+      const followingId = req.params.userId;
+      const followerId = (req.user as SelectUser).id;
+      
+      if (followerId === followingId) {
+        return res.status(400).json({ message: "You cannot follow yourself" });
+      }
+      
+      const targetUser = await storage.getUser(followingId);
+      if (!targetUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const alreadyFollowing = await storage.isFollowing(followerId, followingId);
+      if (alreadyFollowing) {
+        return res.status(400).json({ message: "Already following this user" });
+      }
+      
+      await storage.followUser(followerId, followingId);
+      const followersCount = await storage.getFollowersCount(followingId);
+      
+      res.json({ success: true, followersCount });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Failed to follow user" });
+    }
+  });
+
+  app.delete('/api/users/:userId/follow', isAuthenticated, async (req: any, res) => {
+    try {
+      const followingId = req.params.userId;
+      const followerId = (req.user as SelectUser).id;
+      
+      await storage.unfollowUser(followerId, followingId);
+      const followersCount = await storage.getFollowersCount(followingId);
+      
+      res.json({ success: true, followersCount });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Failed to unfollow user" });
+    }
+  });
+
+  app.get('/api/users/:userId/follow-status', async (req: any, res) => {
+    try {
+      const followingId = req.params.userId;
+      const followerId = req.user?.id;
+      
+      const followersCount = await storage.getFollowersCount(followingId);
+      const isFollowing = followerId ? await storage.isFollowing(followerId, followingId) : false;
+      
+      res.json({ followersCount, isFollowing });
+    } catch (error) {
+      console.error("Error checking follow status:", error);
+      res.status(500).json({ message: "Failed to check follow status" });
+    }
+  });
+
   app.patch('/api/videos/:id/status', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
