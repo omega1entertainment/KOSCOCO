@@ -558,3 +558,13 @@
     animation-delay: 0.3s;
   }
 }
+
+/* Hide scrollbar for TikTok-style video player */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
