@@ -1124,6 +1124,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment routes
+  app.get('/api/videos/:videoId/comments', async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const comments = await storage.getVideoComments(videoId, limit, offset);
+      const count = await storage.getCommentCount(videoId);
+      
+      res.json({ comments, count });
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post('/api/videos/:videoId/comments', isAuthenticated, async (req: any, res) => {
+    try {
+      const { videoId } = req.params;
+      const userId = (req.user as SelectUser).id;
+      const { content } = req.body;
+      
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      
+      if (content.length > 1000) {
+        return res.status(400).json({ message: "Comment must be less than 1000 characters" });
+      }
+      
+      const comment = await storage.createComment({
+        videoId,
+        userId,
+        content: content.trim(),
+      });
+      
+      // Get user info to return with comment
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        ...comment,
+        user: {
+          id: user?.id,
+          username: user?.username,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          profileImageUrl: user?.profileImageUrl,
+        }
+      });
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.delete('/api/comments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req.user as SelectUser).id;
+      const user = await storage.getUser(userId);
+      
+      // For now, only admins can delete any comment
+      // Users could delete their own comments with additional logic
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      await storage.deleteComment(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   app.patch('/api/videos/:id/status', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;
