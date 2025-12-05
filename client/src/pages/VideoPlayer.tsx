@@ -25,7 +25,9 @@ import {
   ChevronDown,
   MessageCircle,
   Send,
-  X
+  X,
+  UserPlus,
+  UserCheck
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
