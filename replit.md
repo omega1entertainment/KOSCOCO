@@ -54,6 +54,23 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 - **Backend Libraries**: Express.js, Node.js
 - **Fonts**: Bebas Neue, Play, Inter
 
+## Recent Changes (December 5, 2025)
+
+**Video Comments Feature (Completed)**
+- Added comments table to database with videoId, userId, content, and createdAt fields
+- Storage methods: createComment, getVideoComments (with pagination), getCommentCount, deleteComment
+- API endpoints:
+  - `GET /api/videos/:videoId/comments` - Fetch comments with pagination (limit, offset)
+  - `POST /api/videos/:videoId/comments` - Create comment (auth required)
+  - `DELETE /api/comments/:id` - Delete comment (admin only)
+- UI integration in TikTok-style video player:
+  - Comment button with count in action bar (right side)
+  - Sliding comments panel from bottom
+  - Real-time comment posting with auth gate
+  - User avatars and display names
+  - Timestamp display with relative formatting
+  - Optimistic updates on comment submission
+
 ## Recent Changes (December 4, 2025)
 
 **Email OTP Verification for Signup (Completed)**
