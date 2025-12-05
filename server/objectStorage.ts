@@ -113,6 +113,127 @@ export class ObjectStorageService {
     }
   }
 
+  async streamVideo(file: File, req: import("express").Request, res: Response) {
+    try {
+      const [metadata] = await file.getMetadata();
+      const fileSize = parseInt(metadata.size as string, 10);
+      const contentType = metadata.contentType || "video/mp4";
+      const range = req.headers.range;
+
+      // Validate file size
+      if (!Number.isFinite(fileSize) || fileSize <= 0) {
+        console.error("Invalid file size:", metadata.size);
+        res.status(500).json({ error: "Invalid file metadata" });
+        return;
+      }
+
+      // Common headers for all responses
+      const commonHeaders = {
+        "Content-Type": contentType,
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+        "Access-Control-Allow-Headers": "Range, Content-Type",
+        "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
+      };
+
+      // Handle HEAD requests without streaming
+      if (req.method === "HEAD") {
+        res.status(200).set({
+          ...commonHeaders,
+          "Content-Length": fileSize,
+        }).end();
+        return;
+      }
+
+      if (range) {
+        // Parse range header (e.g., "bytes=0-1023")
+        const rangeMatch = range.match(/bytes=(\d*)-(\d*)/);
+        
+        if (!rangeMatch) {
+          // Invalid range format
+          res.status(416).set({
+            "Content-Range": `bytes */${fileSize}`,
+          }).end();
+          return;
+        }
+
+        const startStr = rangeMatch[1];
+        const endStr = rangeMatch[2];
+        
+        let start: number;
+        let end: number;
+
+        if (startStr === "" && endStr !== "") {
+          // Suffix range: bytes=-500 means last 500 bytes
+          const suffixLength = parseInt(endStr, 10);
+          if (!Number.isFinite(suffixLength) || suffixLength <= 0) {
+            res.status(416).set({ "Content-Range": `bytes */${fileSize}` }).end();
+            return;
+          }
+          start = Math.max(0, fileSize - suffixLength);
+          end = fileSize - 1;
+        } else if (startStr !== "") {
+          start = parseInt(startStr, 10);
+          end = endStr !== "" ? parseInt(endStr, 10) : fileSize - 1;
+        } else {
+          // Both empty - invalid
+          res.status(416).set({ "Content-Range": `bytes */${fileSize}` }).end();
+          return;
+        }
+
+        // Validate parsed values
+        if (!Number.isFinite(start) || !Number.isFinite(end) ||
+            start < 0 || end < 0 || start > end || start >= fileSize) {
+          res.status(416).set({
+            "Content-Range": `bytes */${fileSize}`,
+          }).end();
+          return;
+        }
+
+        // Clamp end to file size
+        end = Math.min(end, fileSize - 1);
+        const chunkSize = end - start + 1;
+        
+        res.status(206).set({
+          ...commonHeaders,
+          "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+          "Content-Length": chunkSize,
+        });
+
+        const stream = file.createReadStream({ start, end });
+        stream.on("error", (err) => {
+          console.error("Stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Error streaming file" });
+          }
+        });
+        stream.pipe(res);
+      } else {
+        // No range requested - send entire file
+        res.status(200).set({
+          ...commonHeaders,
+          "Content-Length": fileSize,
+        });
+
+        const stream = file.createReadStream();
+        stream.on("error", (err) => {
+          console.error("Stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Error streaming file" });
+          }
+        });
+        stream.pipe(res);
+      }
+    } catch (error) {
+      console.error("Error streaming video:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Error streaming video" });
+      }
+    }
+  }
+
   async getObjectEntityUploadURL(): Promise<{ uploadUrl: string; videoUrl: string }> {
     const privateObjectDir = this.getPrivateObjectDir();
     const objectId = randomUUID();

@@ -630,15 +630,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Allow public access to all thumbnails and videos
       // These are competition content that should be publicly viewable
-      if (req.path.includes('thumbnails') || req.path.includes('videos')) {
-        // Set proper headers for video streaming
+      if (req.path.includes('videos')) {
+        // Use optimized video streaming with Range request support
+        await objectStorageService.streamVideo(objectFile, req, res);
+        return;
+      }
+      
+      if (req.path.includes('thumbnails')) {
+        // Thumbnails don't need range support, just fast delivery
         res.set({
-          'Content-Type': 'video/mp4',
-          'Accept-Ranges': 'bytes',
+          'Content-Type': 'image/jpeg',
           'Cache-Control': 'public, max-age=86400',
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-          'Access-Control-Allow-Headers': 'Range, Content-Type',
         });
         objectStorageService.downloadObject(objectFile, res);
         return;
