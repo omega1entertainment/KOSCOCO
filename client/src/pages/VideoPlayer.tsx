@@ -276,7 +276,7 @@ function TikTokVideoCard({
         </>
       )}
 
-      <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20">
+      <div className="absolute right-2 md:right-3 bottom-24 md:bottom-32 flex flex-col items-center gap-3 md:gap-5 z-20">
         <button
           onClick={() => {
             if (!user) {
@@ -289,13 +289,13 @@ function TikTokVideoCard({
             }
             onLike();
           }}
-          className="flex flex-col items-center gap-1 group"
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
           data-testid={`button-like-${video.id}`}
         >
-          <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-            <Heart className="w-7 h-7 text-white" />
+          <div className="w-9 md:w-12 h-9 md:h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <Heart className="w-5 md:w-7 h-5 md:h-7 text-white" />
           </div>
-          <span className="text-white text-xs font-semibold drop-shadow-lg">
+          <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">
             {formatCount(likeCount)}
           </span>
         </button>
@@ -312,84 +312,84 @@ function TikTokVideoCard({
             }
             onVote();
           }}
-          className="flex flex-col items-center gap-1 group"
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
           data-testid={`button-vote-${video.id}`}
         >
-          <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-            <Star className="w-7 h-7 text-white" />
+          <div className="w-9 md:w-12 h-9 md:h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <Star className="w-5 md:w-7 h-5 md:h-7 text-white" />
           </div>
-          <span className="text-white text-xs font-semibold drop-shadow-lg">
+          <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">
             {formatCount(voteCount)}
           </span>
         </button>
 
         <button
           onClick={onShare}
-          className="flex flex-col items-center gap-1 group"
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
           data-testid={`button-share-${video.id}`}
         >
-          <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-            <Share2 className="w-7 h-7 text-white" />
+          <div className="w-9 md:w-12 h-9 md:h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <Share2 className="w-5 md:w-7 h-5 md:h-7 text-white" />
           </div>
-          <span className="text-white text-xs font-semibold drop-shadow-lg">Share</span>
+          <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">Share</span>
         </button>
 
         <button
-          className="flex flex-col items-center gap-1 group"
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
           data-testid={`button-save-${video.id}`}
         >
-          <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-            <Bookmark className="w-7 h-7 text-white" />
+          <div className="w-9 md:w-12 h-9 md:h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <Bookmark className="w-5 md:w-7 h-5 md:h-7 text-white" />
           </div>
-          <span className="text-white text-xs font-semibold drop-shadow-lg">Save</span>
+          <span className="text-white text-[10px] md:text-xs font-semibold drop-shadow-lg">Save</span>
         </button>
 
         <button
           onClick={onReport}
-          className="flex flex-col items-center gap-1 group"
+          className="flex flex-col items-center gap-0.5 md:gap-1 group"
           data-testid={`button-report-${video.id}`}
         >
-          <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
-            <Flag className="w-5 h-5 text-white" />
+          <div className="w-8 md:w-10 h-8 md:h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/20 transition-colors">
+            <Flag className="w-4 md:w-5 h-4 md:h-5 text-white" />
           </div>
         </button>
       </div>
 
-      <div className="absolute left-0 right-16 bottom-4 p-4 z-10">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="w-10 h-10 border-2 border-white">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+      <div className="absolute left-0 right-12 md:right-16 bottom-2 md:bottom-4 p-2 md:p-4 z-10">
+        <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+          <Avatar className="w-8 md:w-10 h-8 md:h-10 border-2 border-white flex-shrink-0">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs md:text-sm">
               {video.title.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm drop-shadow-lg truncate">
+            <p className="text-white font-semibold text-xs md:text-sm drop-shadow-lg truncate">
               {video.title}
             </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <Badge variant="secondary" className="text-[9px] md:text-xs bg-white/20 text-white border-0">
                 {video.subcategory}
               </Badge>
               {category && (
-                <span className="text-white/70 text-xs drop-shadow-lg">{category.name}</span>
+                <span className="text-white/70 text-[9px] md:text-xs drop-shadow-lg truncate">{category.name}</span>
               )}
             </div>
           </div>
         </div>
 
         {video.description && (
-          <p className="text-white/90 text-sm line-clamp-2 drop-shadow-lg mb-2">
+          <p className="text-white/90 text-xs md:text-sm line-clamp-1 md:line-clamp-2 drop-shadow-lg mb-1 md:mb-2">
             {video.description}
           </p>
         )}
 
-        <div className="flex items-center gap-4 text-white/80 text-xs">
-          <div className="flex items-center gap-1">
-            <Eye className="w-4 h-4" />
+        <div className="flex items-center gap-2 md:gap-4 text-white/80 text-[9px] md:text-xs">
+          <div className="flex items-center gap-0.5">
+            <Eye className="w-3 md:w-4 h-3 md:h-4" />
             <span>{formatCount(video.views)} views</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Check className="w-4 h-4" />
+          <div className="flex items-center gap-0.5">
+            <Check className="w-3 md:w-4 h-3 md:h-4" />
             <span>{formatCount(voteCount)} votes</span>
           </div>
         </div>
