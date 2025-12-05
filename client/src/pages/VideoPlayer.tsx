@@ -302,7 +302,7 @@ function TikTokVideoCard({
         </>
       )}
 
-      <div className="absolute right-2 md:right-3 bottom-2 md:bottom-4 flex flex-col items-center gap-3 md:gap-5 z-20">
+      <div className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 md:gap-5 z-20">
         <button
           onClick={() => {
             if (!user) {
@@ -423,7 +423,7 @@ function TikTokVideoCard({
         </button>
       </div>
 
-      <div className="absolute left-0 right-12 md:right-16 bottom-24 md:bottom-32 p-2 md:p-4 z-10 pointer-events-none">
+      <div className="absolute left-0 right-12 md:right-16 bottom-4 md:bottom-6 p-2 md:p-4 z-10 pointer-events-none">
         <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
           <Avatar className="w-8 md:w-10 h-8 md:h-10 border-2 border-white flex-shrink-0 mt-0.5">
             <AvatarFallback className="bg-primary text-primary-foreground text-xs md:text-sm">
