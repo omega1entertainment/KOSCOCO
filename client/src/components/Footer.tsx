@@ -15,6 +15,7 @@ import type { Category } from "@shared/schema";
 export default function Footer() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [location] = useLocation();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState('');
   
@@ -65,8 +66,13 @@ export default function Footer() {
     { key: 'footer.privacyPolicy' },
   ];
   
+  // Hide footer on VideoPlayer page
+  if (location.startsWith('/video/')) {
+    return null;
+  }
+
   return (
-    <footer className="hidden md:block bg-card border-t mt-auto">
+    <footer className="bg-card border-t mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
-import { Menu, X, ChevronDown, LogOut, User } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Globe } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation } from "@tanstack/react-query";
@@ -36,7 +36,11 @@ export default function NavigationHeader({
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'fr' : 'en');
+  };
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -386,6 +390,19 @@ export default function NavigationHeader({
               <div className="flex items-center justify-between px-4 py-2">
                 <span className="text-sm font-semibold text-muted-foreground">{t('nav.theme')}</span>
                 <ThemeToggle />
+              </div>
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-semibold text-muted-foreground">Language</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={toggleLanguage}
+                  className="h-7 px-2 text-xs font-semibold"
+                  data-testid="button-mobile-language-toggle"
+                >
+                  <Globe className="w-4 h-4 mr-1" />
+                  {language === 'en' ? 'EN' : 'FR'}
+                </Button>
               </div>
               {!isAuthenticated && (
                 <>
