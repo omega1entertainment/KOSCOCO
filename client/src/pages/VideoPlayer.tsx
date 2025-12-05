@@ -228,7 +228,7 @@ function VideoItem({
         )}
       </div>
 
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 text-white/60">
+      <div className="hidden absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 text-white/60">
         <ChevronUp className="w-6 h-6 animate-bounce" />
         <span className="text-xs">Scroll</span>
         <ChevronDown className="w-6 h-6 animate-bounce" />
