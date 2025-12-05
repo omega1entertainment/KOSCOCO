@@ -14,6 +14,7 @@ import { RecommendedVideos } from "@/components/RecommendedVideos";
 import { Users, Video, Trophy, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/queryKeys";
+import { createPermalink } from "@/lib/slugUtils";
 import type { Category } from "@shared/schema";
 
 import musicImage from "@assets/generated_images/male_vocalist_performing_on_stage.png";
@@ -413,7 +414,7 @@ export default function Home() {
               <VideoCard
                 key={video.id}
                 {...video}
-                onPlay={() => console.log(`Play ${video.id}`)}
+                onPlay={() => setLocation(`/video/${createPermalink(video.id, video.title)}`)}
                 onVote={() => handleVoteClick(video.id, video.title)}
                 onShare={() => console.log(`Share ${video.id}`)}
               />
