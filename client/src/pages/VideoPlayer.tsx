@@ -270,6 +270,12 @@ function TikTokVideoCard({
             className="h-full w-full object-contain"
             data-testid={`video-player-${video.id}`}
             onClick={togglePlay}
+            onError={() => {
+              console.error("Video playback error:", {
+                src: video.videoUrl,
+                error: videoRef.current?.error
+              });
+            }}
           >
             <source src={video.videoUrl} type="video/mp4" />
           </video>

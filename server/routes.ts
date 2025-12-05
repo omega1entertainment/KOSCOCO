@@ -631,6 +631,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Allow public access to all thumbnails and videos
       // These are competition content that should be publicly viewable
       if (req.path.includes('thumbnails') || req.path.includes('videos')) {
+        // Set proper headers for video streaming
+        res.set({
+          'Content-Type': 'video/mp4',
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+          'Access-Control-Allow-Headers': 'Range, Content-Type',
+        });
         objectStorageService.downloadObject(objectFile, res);
         return;
       }
@@ -662,8 +671,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Object storage not configured" });
       }
       const objectId = randomUUID();
-      const videoUrl = `${privateObjectDir}/videos/${objectId}`;
-      res.json({ videoUrl });
+      // Store full path for backend upload, but return /objects format for frontend
+      const fullPath = `${privateObjectDir}/videos/${objectId}`;
+      res.json({ videoUrl: fullPath });
     } catch (error) {
       console.error("Error generating upload path:", error);
       res.status(500).json({ message: "Failed to generate upload path" });
@@ -1048,7 +1058,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No video of the day available" });
       }
 
-      res.json(video);
+      // Normalize URLs for frontend consumption
+      const objectStorageService = new ObjectStorageService();
+      const normalizedVideo = {
+        ...video,
+        videoUrl: objectStorageService.normalizeObjectEntityPath(video.videoUrl),
+        thumbnailUrl: video.thumbnailUrl ? objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl) : null,
+      };
+
+      res.json(normalizedVideo);
     } catch (error) {
       console.error("Error fetching video of the day:", error);
       res.status(500).json({ message: "Failed to fetch video of the day" });
@@ -1059,7 +1077,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { categoryId } = req.params;
       const videos = await storage.getVideosByCategory(categoryId);
-      res.json(videos);
+      
+      // Normalize URLs for frontend consumption
+      const objectStorageService = new ObjectStorageService();
+      const normalizedVideos = videos.map(video => ({
+        ...video,
+        videoUrl: objectStorageService.normalizeObjectEntityPath(video.videoUrl),
+        thumbnailUrl: video.thumbnailUrl ? objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl) : null,
+      }));
+      
+      res.json(normalizedVideos);
     } catch (error) {
       console.error("Error fetching category videos:", error);
       res.status(500).json({ message: "Failed to fetch videos" });
@@ -1079,7 +1106,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Video not available" });
       }
 
-      res.json(video);
+      // Normalize URLs for frontend consumption
+      const objectStorageService = new ObjectStorageService();
+      const normalizedVideo = {
+        ...video,
+        videoUrl: objectStorageService.normalizeObjectEntityPath(video.videoUrl),
+        thumbnailUrl: video.thumbnailUrl ? objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl) : null,
+      };
+
+      res.json(normalizedVideo);
     } catch (error) {
       console.error("Error fetching video:", error);
       res.status(500).json({ message: "Failed to fetch video" });
