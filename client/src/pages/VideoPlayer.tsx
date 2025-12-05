@@ -249,7 +249,7 @@ function TikTokVideoCard({
   };
 
   return (
-    <div className="flex h-screen w-1/2 bg-black items-center justify-center mx-auto">
+    <div className="flex h-full w-full bg-black items-center justify-center">
       {isActive && showPreRollAd && preRollAd && !preRollCompleted ? (
         <SkippableInStreamAd
           ad={preRollAd}
@@ -811,7 +811,7 @@ export default function VideoPlayer() {
   }
 
   return (
-    <div className="h-screen w-full bg-black overflow-hidden">
+    <div className="h-screen w-1/2 mx-auto bg-black overflow-hidden flex flex-col">
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         {/* This container enables centering of video content */}
       </div>
