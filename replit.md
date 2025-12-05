@@ -56,6 +56,19 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 
 ## Recent Changes (December 5, 2025)
 
+**Creator Follow Feature (Completed)**
+- Added follows table to database with followerId, followingId, unique constraint, and indexes
+- Storage methods: followUser, unfollowUser, isFollowing, getFollowersCount, getFollowingCount
+- API endpoints:
+  - `POST /api/users/:userId/follow` - Follow a creator (auth required)
+  - `DELETE /api/users/:userId/follow` - Unfollow a creator (auth required)
+  - `GET /api/users/:userId/follow-status` - Get follow status and follower count
+- UI integration in TikTok-style video player:
+  - Follow button with UserPlus icon next to creator info
+  - Follower count display
+  - Auth-gated follow/unfollow actions
+  - Per-creator follow state tracking
+
 **Video Comments Feature (Completed)**
 - Added comments table to database with videoId, userId, content, and createdAt fields
 - Storage methods: createComment, getVideoComments (with pagination), getCommentCount, deleteComment
