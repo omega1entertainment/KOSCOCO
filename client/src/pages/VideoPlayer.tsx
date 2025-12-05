@@ -175,7 +175,7 @@ function VideoItem({
             className="w-12 h-12 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center"
             data-testid="button-vote"
           >
-            <Check className="w-6 h-6 text-white" />
+            <span className="text-white text-xs font-bold">Vote</span>
           </button>
           <span className="text-white text-xs font-semibold">{voteCount}</span>
         </div>
