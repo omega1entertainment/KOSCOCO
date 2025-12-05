@@ -98,6 +98,7 @@ export const videos = pgTable("videos", {
   description: text("description"),
   videoUrl: text("video_url").notNull(),
   compressedVideoUrl: text("compressed_video_url"),
+  compressionStatus: text("compression_status").default('pending'),
   thumbnailUrl: text("thumbnail_url"),
   duration: integer("duration").notNull(),
   fileSize: integer("file_size").notNull(),

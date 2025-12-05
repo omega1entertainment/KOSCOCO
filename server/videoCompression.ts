@@ -233,7 +233,8 @@ export async function compressVideoInBackground(
   videoId: string,
   videoStoragePath: string,
   userId: string,
-  updateVideoCompressedUrl: (videoId: string, compressedUrl: string, compressedSize: number) => Promise<void>
+  updateVideoCompressedUrl: (videoId: string, compressedUrl: string, compressedSize: number) => Promise<void>,
+  updateCompressionStatus?: (videoId: string, status: 'completed' | 'failed' | 'skipped') => Promise<void>
 ): Promise<void> {
   try {
     console.log(`[VideoCompression] Starting background compression for video: ${videoId}`);
@@ -244,12 +245,22 @@ export async function compressVideoInBackground(
       await updateVideoCompressedUrl(videoId, result.compressedVideoUrl, result.compressedSize);
       console.log(`[VideoCompression] Background compression complete for video: ${videoId}`);
       console.log(`[VideoCompression] Reduced from ${(result.originalSize / (1024 * 1024)).toFixed(2)} MB to ${(result.compressedSize / (1024 * 1024)).toFixed(2)} MB (${result.compressionRatio.toFixed(1)}% reduction)`);
+      // Status already set to 'completed' by updateVideoCompressedUrl
     } else if (result.success && !result.compressedVideoUrl) {
-      console.log(`[VideoCompression] Video already optimized or compression not beneficial, skipping DB update: ${videoId}`);
+      console.log(`[VideoCompression] Video already optimized or compression not beneficial, skipping: ${videoId}`);
+      if (updateCompressionStatus) {
+        await updateCompressionStatus(videoId, 'skipped');
+      }
     } else {
       console.error(`[VideoCompression] Background compression failed for video ${videoId}:`, result.error);
+      if (updateCompressionStatus) {
+        await updateCompressionStatus(videoId, 'failed');
+      }
     }
   } catch (error) {
     console.error(`[VideoCompression] Background compression error for video ${videoId}:`, error);
+    if (updateCompressionStatus) {
+      await updateCompressionStatus(videoId, 'failed');
+    }
   }
 }

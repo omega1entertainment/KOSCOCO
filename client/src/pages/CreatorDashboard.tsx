@@ -537,6 +537,29 @@ export default function CreatorDashboard() {
                             <Badge variant={video.status === 'approved' ? 'default' : video.status === 'pending' ? 'secondary' : 'destructive'}>
                               {video.status}
                             </Badge>
+                            {(() => {
+                              const cs = (video as { compressionStatus?: string }).compressionStatus;
+                              if (!cs || cs === 'completed' || cs === 'skipped') return null;
+                              return (
+                                <Badge variant="outline" className="text-xs" data-testid={`badge-compression-${video.id}`}>
+                                  {cs === 'processing' ? (
+                                    <span className="flex items-center gap-1">
+                                      <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                                      Optimizing...
+                                    </span>
+                                  ) : cs === 'pending' ? (
+                                    <span className="flex items-center gap-1">
+                                      <span className="inline-block w-2 h-2 rounded-full bg-gray-400"></span>
+                                      Queued
+                                    </span>
+                                  ) : cs === 'failed' ? (
+                                    <span className="flex items-center gap-1 text-destructive">
+                                      Optimization failed
+                                    </span>
+                                  ) : null}
+                                </Badge>
+                              );
+                            })()}
                             <span className="text-sm text-muted-foreground flex items-center gap-1">
                               <Eye className="h-3 w-3" />
                               {video.views}

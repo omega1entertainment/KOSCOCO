@@ -969,12 +969,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // Run video compression in background after moderation
+          // First mark as processing
+          await storage.updateVideoCompressionStatus(video.id, 'processing');
+          
           compressVideoInBackground(
             video.id,
             videoPath,
             userId,
             async (videoId: string, compressedUrl: string, compressedSize: number) => {
               await storage.updateVideoCompressedUrl(videoId, compressedUrl, compressedSize);
+            },
+            async (videoId: string, status: 'completed' | 'failed' | 'skipped') => {
+              await storage.updateVideoCompressionStatus(videoId, status);
             }
           );
         } catch (bgError) {
