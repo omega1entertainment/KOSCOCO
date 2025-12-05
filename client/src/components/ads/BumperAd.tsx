@@ -29,7 +29,9 @@ export default function BumperAd({
       credentials: "include",
     })
       .then(() => setHasTrackedImpression(true))
-      .catch(console.error);
+      .catch((error) => {
+        console.error("Failed to track bumper ad impression:", error);
+      });
   }, [adId]);
 
   const handleVideoEnded = () => {
@@ -39,7 +41,9 @@ export default function BumperAd({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adId }),
         credentials: "include",
-      }).catch(console.error);
+      }).catch((error) => {
+        console.error("Failed to track bumper ad view:", error);
+      });
       setHasTrackedView(true);
     }
     onComplete();
@@ -51,7 +55,9 @@ export default function BumperAd({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ adId }),
       credentials: "include",
-    }).catch(console.error);
+    }).catch((error) => {
+      console.error("Failed to track bumper ad click:", error);
+    });
     window.open(destinationUrl, "_blank", "noopener,noreferrer");
   };
 

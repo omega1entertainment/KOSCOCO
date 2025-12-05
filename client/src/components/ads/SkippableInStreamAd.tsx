@@ -41,7 +41,9 @@ export function SkippableInStreamAd({
   // Auto-play video
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.play().catch(console.error);
+      videoRef.current.play().catch((error) => {
+        console.error("Failed to auto-play skippable ad video:", error);
+      });
     }
   }, []);
 

@@ -31,7 +31,9 @@ export default function NonSkippableInStreamAd({
       credentials: "include",
     })
       .then(() => setHasTrackedImpression(true))
-      .catch(console.error);
+      .catch((error) => {
+        console.error("Failed to track non-skippable ad impression:", error);
+      });
   }, [adId]);
 
   const handleVideoEnded = () => {
@@ -41,7 +43,9 @@ export default function NonSkippableInStreamAd({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adId }),
         credentials: "include",
-      }).catch(console.error);
+      }).catch((error) => {
+        console.error("Failed to track non-skippable ad view:", error);
+      });
       setHasTrackedView(true);
     }
     onComplete();
@@ -53,7 +57,9 @@ export default function NonSkippableInStreamAd({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ adId }),
       credentials: "include",
-    }).catch(console.error);
+    }).catch((error) => {
+      console.error("Failed to track non-skippable ad click:", error);
+    });
     window.open(destinationUrl, "_blank", "noopener,noreferrer");
   };
 

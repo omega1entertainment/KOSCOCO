@@ -40,7 +40,9 @@ export default function InFeedVideoAd({
               credentials: "include",
             })
               .then(() => setHasTrackedImpression(true))
-              .catch(console.error);
+              .catch((error) => {
+                console.error("Failed to track in-feed ad impression:", error);
+              });
           }
         });
       },
@@ -84,7 +86,9 @@ export default function InFeedVideoAd({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ adId }),
           credentials: "include",
-        }).catch(console.error);
+        }).catch((error) => {
+          console.error("Failed to track in-feed ad view:", error);
+        });
         setHasTrackedView(true);
       }
     }
@@ -96,7 +100,9 @@ export default function InFeedVideoAd({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ adId }),
       credentials: "include",
-    }).catch(console.error);
+    }).catch((error) => {
+      console.error("Failed to track in-feed ad click:", error);
+    });
     window.open(destinationUrl, "_blank", "noopener,noreferrer");
   };
 
