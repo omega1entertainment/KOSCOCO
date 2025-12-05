@@ -1,15 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation, useRoute, Link } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
-import { OverlayAd } from "@/components/ads/OverlayAd";
-import { SkippableInStreamAd } from "@/components/ads/SkippableInStreamAd";
 import { 
   ArrowLeft, 
   Check, 
@@ -20,7 +17,12 @@ import {
   AlertTriangle, 
   ExternalLink, 
   Bookmark,
-  Play
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Video, Category } from "@shared/schema";
@@ -28,170 +30,62 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { extractIdFromPermalink, createPermalink } from "@/lib/slugUtils";
 import { queryKeys } from "@/lib/queryKeys";
 
-export default function VideoPlayer() {
-  const [, setLocation] = useLocation();
-  const [, params] = useRoute("/video/:permalink");
-  const permalink = params?.permalink || "";
-  const videoId = extractIdFromPermalink(permalink);
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { t } = useLanguage();
-  
-  const [voteModalOpen, setVoteModalOpen] = useState(false);
-  const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [showPreRollAd, setShowPreRollAd] = useState(true);
-  const [preRollCompleted, setPreRollCompleted] = useState(false);
-  const [showOverlayAd, setShowOverlayAd] = useState(true);
+interface VideoItemProps {
+  video: Video;
+  isActive: boolean;
+  isMuted: boolean;
+  onToggleMute: () => void;
+  user: any;
+  category?: Category;
+  voteCount: number;
+  likeCount: number;
+  onVote: () => void;
+  onLike: () => void;
+  onShare: () => void;
+  onReport: () => void;
+  onWatchProgress: (duration: number, completed: boolean) => void;
+}
+
+function VideoItem({
+  video,
+  isActive,
+  isMuted,
+  onToggleMute,
+  user,
+  category,
+  voteCount,
+  likeCount,
+  onVote,
+  onLike,
+  onShare,
+  onReport,
+  onWatchProgress,
+}: VideoItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const hasRecordedWatchRef = useRef(false);
 
-  const { data: video, isLoading: videoLoading } = useQuery<Video>({
-    queryKey: queryKeys.videos.byId(videoId),
-    enabled: !!videoId,
-  });
-
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: queryKeys.categories.all,
-  });
-
-  const { data: voteData } = useQuery<{ voteCount: number }>({
-    queryKey: queryKeys.votes.byVideo(videoId),
-    enabled: !!videoId,
-  });
-
-  const { data: likeData } = useQuery<{ likeCount: number }>({
-    queryKey: queryKeys.likes.byVideo(videoId),
-    enabled: !!videoId,
-  });
-
-  const { data: relatedVideos = [] } = useQuery<Video[]>({
-    queryKey: queryKeys.videos.byCategory(video?.categoryId || ""),
-    enabled: !!video?.categoryId,
-  });
-
-  const { data: overlayAd } = useQuery<any>({
-    queryKey: queryKeys.ads.overlayServe,
-  });
-
-  const { data: preRollAd, isLoading: isPreRollAdLoading } = useQuery<any>({
-    queryKey: queryKeys.ads.skippableInStreamServe,
-  });
-
   useEffect(() => {
-    if (!preRollAd && !isPreRollAdLoading) {
-      setPreRollCompleted(true);
-    }
-  }, [preRollAd, isPreRollAdLoading]);
+    if (!videoRef.current) return;
 
-  useEffect(() => {
-    if (preRollCompleted && videoRef.current) {
+    if (isActive) {
       videoRef.current.play().catch(() => {});
       setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+      setIsPlaying(false);
+      hasRecordedWatchRef.current = false;
     }
-  }, [preRollCompleted]);
-
-  const likeMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest(`/api/likes`, "POST", { videoId });
-    },
-    onSuccess: () => {
-      toast({
-        title: t('videoPlayer.liked'),
-        description: t('videoPlayer.likedVideoDescription'),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.likes.byVideo(videoId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('videoPlayer.likeFailed'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const watchHistoryMutation = useMutation({
-    mutationFn: async ({ watchDuration, completed }: { watchDuration: number; completed: boolean }) => {
-      return await apiRequest(`/api/watch-history`, "POST", {
-        videoId,
-        watchDuration,
-        completed,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.stats.home });
-    },
-  });
-
-  const handleAdImpression = async (adId: string) => {
-    try {
-      await apiRequest(`/api/ads/${adId}/impression`, "POST", {});
-    } catch (error) {
-      console.error("Failed to track ad impression:", error);
-    }
-  };
-
-  const handleAdClick = async (adId: string) => {
-    try {
-      await apiRequest(`/api/ads/${adId}/click`, "POST", {});
-    } catch (error) {
-      console.error("Failed to track ad click:", error);
-    }
-  };
-
-  const handlePreRollComplete = () => {
-    setPreRollCompleted(true);
-    setShowPreRollAd(false);
-  };
-
-  const handleShare = async () => {
-    if (!video) return;
-    const shareUrl = `${window.location.origin}/video/${createPermalink(video.id, video.title)}`;
-    try {
-      await navigator.share?.({
-        title: video.title,
-        text: `${t('videoPlayer.checkOutVideo')} ${video.title}`,
-        url: shareUrl,
-      });
-    } catch {
-      navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: t('videoPlayer.linkCopied'),
-        description: t('videoPlayer.linkCopiedDescription'),
-      });
-    }
-  };
-
-  const handleLike = () => {
-    if (!user) {
-      toast({
-        title: t('videoPlayer.signInRequired'),
-        description: t('videoPlayer.signInToLike'),
-        variant: "destructive",
-      });
-      return;
-    }
-    likeMutation.mutate();
-  };
-
-  const handleVote = () => {
-    if (!user) {
-      toast({
-        title: t('videoPlayer.signInRequired'),
-        description: t('videoPlayer.signInToVote'),
-        variant: "destructive",
-      });
-      return;
-    }
-    setVoteModalOpen(true);
-  };
+  }, [isActive]);
 
   useEffect(() => {
-    if (!videoRef.current || !preRollCompleted || !user) return;
+    if (!videoRef.current) return;
+    videoRef.current.muted = isMuted;
+  }, [isMuted]);
+
+  useEffect(() => {
+    if (!videoRef.current || !isActive || !user) return;
 
     const videoElement = videoRef.current;
 
@@ -204,20 +98,14 @@ export default function VideoPlayer() {
       
       if (currentTime >= watchThreshold) {
         hasRecordedWatchRef.current = true;
-        watchHistoryMutation.mutate({
-          watchDuration: Math.floor(currentTime),
-          completed: false,
-        });
+        onWatchProgress(Math.floor(currentTime), false);
       }
     };
 
     const handleEnded = () => {
       if (!hasRecordedWatchRef.current) {
         hasRecordedWatchRef.current = true;
-        watchHistoryMutation.mutate({
-          watchDuration: Math.floor(videoElement.duration),
-          completed: true,
-        });
+        onWatchProgress(Math.floor(videoElement.duration), true);
       }
     };
 
@@ -228,14 +116,311 @@ export default function VideoPlayer() {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate);
       videoElement.removeEventListener('ended', handleEnded);
     };
-  }, [preRollCompleted, user, watchHistoryMutation]);
+  }, [isActive, user, onWatchProgress]);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    }
+  };
+
+  return (
+    <div className="h-screen w-full snap-start snap-always relative bg-black flex items-center justify-center">
+      <video
+        ref={videoRef}
+        className="h-full w-full object-contain"
+        loop
+        muted={isMuted}
+        playsInline
+        preload="auto"
+        onClick={togglePlay}
+        data-testid={`video-player-${video.id}`}
+      >
+        <source src={video.videoUrl} type="video/mp4" />
+      </video>
+
+      {!isPlaying && isActive && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
+          onClick={togglePlay}
+        >
+          <div className="w-20 h-20 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
+            <Play className="w-10 h-10 text-white ml-1" />
+          </div>
+        </div>
+      )}
+
+      <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6">
+        <button
+          onClick={onToggleMute}
+          className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+          data-testid="button-mute-toggle"
+        >
+          {isMuted ? (
+            <VolumeX className="w-6 h-6 text-white" />
+          ) : (
+            <Volume2 className="w-6 h-6 text-white" />
+          )}
+        </button>
+
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={onVote}
+            className="w-12 h-12 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center"
+            data-testid="button-vote"
+          >
+            <Check className="w-6 h-6 text-white" />
+          </button>
+          <span className="text-white text-xs font-semibold">{voteCount}</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={onLike}
+            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            data-testid="button-like"
+          >
+            <ThumbsUp className="w-6 h-6 text-white" />
+          </button>
+          <span className="text-white text-xs font-semibold">{likeCount}</span>
+        </div>
+
+        <button
+          onClick={onShare}
+          className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+          data-testid="button-share"
+        >
+          <Share2 className="w-6 h-6 text-white" />
+        </button>
+
+        <button
+          onClick={onReport}
+          className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+          data-testid="button-report"
+        >
+          <Flag className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
+      <div className="absolute left-4 bottom-20 right-20 text-white">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge variant="secondary" className="bg-primary/80 text-white border-0" data-testid="badge-category">
+            {category?.name || video.subcategory}
+          </Badge>
+          <span className="flex items-center gap-1 text-sm">
+            <Eye className="w-4 h-4" />
+            {video.views}
+          </span>
+        </div>
+        <h2 className="text-lg font-bold mb-1 line-clamp-2" data-testid="text-video-title">
+          {video.title}
+        </h2>
+        {video.description && (
+          <p className="text-sm text-white/80 line-clamp-2" data-testid="text-description">
+            {video.description}
+          </p>
+        )}
+      </div>
+
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 text-white/60">
+        <ChevronUp className="w-6 h-6 animate-bounce" />
+        <span className="text-xs">Scroll</span>
+        <ChevronDown className="w-6 h-6 animate-bounce" />
+      </div>
+    </div>
+  );
+}
+
+export default function VideoPlayer() {
+  const [, setLocation] = useLocation();
+  const [, params] = useRoute("/video/:permalink");
+  const permalink = params?.permalink || "";
+  const videoId = extractIdFromPermalink(permalink);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { t } = useLanguage();
+  
+  const [voteModalOpen, setVoteModalOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [activeVideoId, setActiveVideoId] = useState<string>(videoId);
+  const [selectedVideoForAction, setSelectedVideoForAction] = useState<Video | null>(null);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const { data: video, isLoading: videoLoading } = useQuery<Video>({
+    queryKey: queryKeys.videos.byId(videoId),
+    enabled: !!videoId,
+  });
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: queryKeys.categories.all,
+  });
+
+  const { data: relatedVideos = [] } = useQuery<Video[]>({
+    queryKey: queryKeys.videos.byCategory(video?.categoryId || ""),
+    enabled: !!video?.categoryId,
+  });
+
+  const { data: voteDataMap } = useQuery<Record<string, number>>({
+    queryKey: ['/api/votes/batch', activeVideoId],
+    queryFn: async () => {
+      const response = await fetch(`/api/videos/${activeVideoId}/votes`);
+      if (!response.ok) return {};
+      const data = await response.json();
+      return { [activeVideoId]: data.voteCount || 0 };
+    },
+    enabled: !!activeVideoId,
+  });
+
+  const { data: likeDataMap } = useQuery<Record<string, number>>({
+    queryKey: ['/api/likes/batch', activeVideoId],
+    queryFn: async () => {
+      const response = await fetch(`/api/videos/${activeVideoId}/likes`);
+      if (!response.ok) return {};
+      const data = await response.json();
+      return { [activeVideoId]: data.likeCount || 0 };
+    },
+    enabled: !!activeVideoId,
+  });
+
+  const allVideos = video ? [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)] : [];
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            const videoId = entry.target.getAttribute('data-video-id');
+            if (videoId) {
+              setActiveVideoId(videoId);
+              const foundVideo = allVideos.find(v => v.id === videoId);
+              if (foundVideo) {
+                window.history.replaceState(
+                  null, 
+                  '', 
+                  `/video/${createPermalink(foundVideo.id, foundVideo.title)}`
+                );
+              }
+            }
+          }
+        });
+      },
+      {
+        root: containerRef.current,
+        rootMargin: '0px',
+        threshold: 0.5,
+      }
+    );
+
+    videoRefs.current.forEach((element) => {
+      observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [allVideos]);
+
+  const likeMutation = useMutation({
+    mutationFn: async (targetVideoId: string) => {
+      return await apiRequest(`/api/likes`, "POST", { videoId: targetVideoId });
+    },
+    onSuccess: () => {
+      toast({
+        title: t('videoPlayer.liked'),
+        description: t('videoPlayer.likedVideoDescription'),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/likes/batch', activeVideoId] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('videoPlayer.likeFailed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const watchHistoryMutation = useMutation({
+    mutationFn: async ({ targetVideoId, watchDuration, completed }: { targetVideoId: string; watchDuration: number; completed: boolean }) => {
+      return await apiRequest(`/api/watch-history`, "POST", {
+        videoId: targetVideoId,
+        watchDuration,
+        completed,
+      });
+    },
+  });
+
+  const handleShare = useCallback(async (targetVideo: Video) => {
+    const shareUrl = `${window.location.origin}/video/${createPermalink(targetVideo.id, targetVideo.title)}`;
+    try {
+      await navigator.share?.({
+        title: targetVideo.title,
+        text: `${t('videoPlayer.checkOutVideo')} ${targetVideo.title}`,
+        url: shareUrl,
+      });
+    } catch {
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: t('videoPlayer.linkCopied'),
+        description: t('videoPlayer.linkCopiedDescription'),
+      });
+    }
+  }, [t, toast]);
+
+  const handleLike = useCallback((targetVideo: Video) => {
+    if (!user) {
+      toast({
+        title: t('videoPlayer.signInRequired'),
+        description: t('videoPlayer.signInToLike'),
+        variant: "destructive",
+      });
+      return;
+    }
+    likeMutation.mutate(targetVideo.id);
+  }, [user, t, toast, likeMutation]);
+
+  const handleVote = useCallback((targetVideo: Video) => {
+    if (!user) {
+      toast({
+        title: t('videoPlayer.signInRequired'),
+        description: t('videoPlayer.signInToVote'),
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedVideoForAction(targetVideo);
+    setVoteModalOpen(true);
+  }, [user, t, toast]);
+
+  const handleReport = useCallback((targetVideo: Video) => {
+    setSelectedVideoForAction(targetVideo);
+    setReportDialogOpen(true);
+  }, []);
+
+  const handleWatchProgress = useCallback((targetVideoId: string, duration: number, completed: boolean) => {
+    if (!user) return;
+    watchHistoryMutation.mutate({ targetVideoId, watchDuration: duration, completed });
+  }, [user, watchHistoryMutation]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => !prev);
+  }, []);
 
   if (videoLoading || !video) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="h-screen flex items-center justify-center bg-black">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">{t('videoPlayer.loadingVideo')}</p>
+          <p className="mt-4 text-white/60">{t('videoPlayer.loadingVideo')}</p>
         </div>
       </div>
     );
@@ -243,9 +428,6 @@ export default function VideoPlayer() {
 
   const category = categories?.find(c => c.id === video.categoryId);
   const isVideoRejected = video.moderationStatus === 'rejected';
-  const approvedRelatedVideos = relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id);
-  const voteCount = voteData?.voteCount || 0;
-  const likeCount = likeData?.likeCount || 0;
 
   if (isVideoRejected) {
     return (
@@ -301,208 +483,65 @@ export default function VideoPlayer() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <Button
-          variant="ghost"
-          onClick={() => category ? setLocation(`/category/${category.id}`) : setLocation('/')}
-          className="mb-4 gap-2"
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {category ? `${t('videoPlayer.backTo')} ${category.name}` : t('videoPlayer.backToHome')}
-        </Button>
+    <div className="fixed inset-0 bg-black z-50">
+      <Button
+        variant="ghost"
+        onClick={() => category ? setLocation(`/category/${category.id}`) : setLocation('/')}
+        className="absolute top-4 left-4 z-50 gap-2 bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:text-white"
+        data-testid="button-back"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="overflow-hidden border-primary/20">
-              <div className="relative aspect-video bg-black">
-                {showPreRollAd && preRollAd && !preRollCompleted ? (
-                  <SkippableInStreamAd
-                    ad={preRollAd}
-                    onComplete={handlePreRollComplete}
-                    onSkip={handlePreRollComplete}
-                    onImpression={() => handleAdImpression(preRollAd.id)}
-                    onClick={() => handleAdClick(preRollAd.id)}
-                  />
-                ) : (
-                  <>
-                    <video
-                      ref={videoRef}
-                      className="w-full h-full object-contain"
-                      controls
-                      muted={isMuted}
-                      playsInline
-                      preload="auto"
-                      data-testid={`video-player-${video.id}`}
-                      onPlay={() => setIsPlaying(true)}
-                      onPause={() => setIsPlaying(false)}
-                      onError={(e) => {
-                        console.error("Video playback error:", {
-                          src: video.videoUrl,
-                          error: videoRef.current?.error
-                        });
-                      }}
-                    >
-                      <source src={video.videoUrl} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  </>
-                )}
-              </div>
-            </Card>
-
-            {overlayAd && showOverlayAd && preRollCompleted && (
-              <div className="mt-4">
-                <OverlayAd
-                  ad={overlayAd}
-                  onClose={() => setShowOverlayAd(false)}
-                  onImpression={() => handleAdImpression(overlayAd.id)}
-                  onClick={() => handleAdClick(overlayAd.id)}
-                />
-              </div>
-            )}
-
-            <div className="mt-6 space-y-4">
-              <h1 className="text-2xl font-bold" data-testid="text-video-title">{video.title}</h1>
-              
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge variant="secondary" className="bg-primary/10 text-primary" data-testid="badge-category">
-                  {video.subcategory}
-                </Badge>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1" data-testid="text-vote-count">
-                    <Check className="w-4 h-4" />
-                    {voteCount.toString().padStart(2, '0')} votes
-                  </span>
-                  <span className="flex items-center gap-1" data-testid="text-like-count">
-                    <ThumbsUp className="w-4 h-4" />
-                    {likeCount} likes
-                  </span>
-                  <span className="flex items-center gap-1" data-testid="text-view-count">
-                    <Eye className="w-4 h-4" />
-                    {video.views} views
-                  </span>
-                </div>
-              </div>
-
-              {video.description && (
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Description</h3>
-                  <p className="text-muted-foreground" data-testid="text-description">{video.description}</p>
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center gap-3 pt-4">
-                <Button 
-                  onClick={handleVote}
-                  className="gap-2 bg-primary hover:bg-primary/90"
-                  data-testid="button-vote"
-                >
-                  <Check className="w-4 h-4" />
-                  Vote
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleLike}
-                  className="gap-2"
-                  data-testid="button-like"
-                >
-                  <ThumbsUp className="w-4 h-4" />
-                  Like
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={handleShare}
-                  data-testid="button-share"
-                >
-                  <Share2 className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  data-testid="button-save"
-                >
-                  <Bookmark className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => setReportDialogOpen(true)}
-                  data-testid="button-report"
-                >
-                  <Flag className="w-4 h-4" />
-                </Button>
-              </div>
+      <div 
+        ref={containerRef}
+        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+        style={{ scrollSnapType: 'y mandatory' }}
+      >
+        {allVideos.map((v) => {
+          const videoCategory = categories?.find(c => c.id === v.categoryId);
+          return (
+            <div
+              key={v.id}
+              ref={(el) => {
+                if (el) videoRefs.current.set(v.id, el);
+                else videoRefs.current.delete(v.id);
+              }}
+              data-video-id={v.id}
+            >
+              <VideoItem
+                video={v}
+                isActive={activeVideoId === v.id}
+                isMuted={isMuted}
+                onToggleMute={toggleMute}
+                user={user}
+                category={videoCategory}
+                voteCount={voteDataMap?.[v.id] || 0}
+                likeCount={likeDataMap?.[v.id] || 0}
+                onVote={() => handleVote(v)}
+                onLike={() => handleLike(v)}
+                onShare={() => handleShare(v)}
+                onReport={() => handleReport(v)}
+                onWatchProgress={(duration, completed) => handleWatchProgress(v.id, duration, completed)}
+              />
             </div>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card>
-              <CardContent className="p-4">
-                <h2 className="text-lg font-semibold mb-4">Related Videos</h2>
-                {approvedRelatedVideos.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No other videos in this category yet
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {approvedRelatedVideos.slice(0, 5).map((relatedVideo) => (
-                      <Link
-                        key={relatedVideo.id}
-                        href={`/video/${createPermalink(relatedVideo.id, relatedVideo.title)}`}
-                        className="block group"
-                        data-testid={`link-related-video-${relatedVideo.id}`}
-                      >
-                        <div className="flex gap-3">
-                          <div className="w-32 h-20 bg-muted rounded overflow-hidden flex-shrink-0">
-                            {relatedVideo.thumbnailUrl ? (
-                              <img 
-                                src={relatedVideo.thumbnailUrl} 
-                                alt={relatedVideo.title}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-muted">
-                                <Play className="w-6 h-6 text-muted-foreground" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                              {relatedVideo.title}
-                            </h3>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <Eye className="w-3 h-3" />
-                                {relatedVideo.views}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       <VotePaymentModal
         open={voteModalOpen}
         onOpenChange={setVoteModalOpen}
-        videoId={video.id}
-        videoTitle={video.title}
+        videoId={selectedVideoForAction?.id || ""}
+        videoTitle={selectedVideoForAction?.title || ""}
       />
       
       <ReportDialog
         open={reportDialogOpen}
         onOpenChange={setReportDialogOpen}
-        videoId={video.id}
-        videoTitle={video.title}
+        videoId={selectedVideoForAction?.id || ""}
+        videoTitle={selectedVideoForAction?.title || ""}
       />
     </div>
   );
