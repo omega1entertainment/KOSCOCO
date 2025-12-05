@@ -43,7 +43,8 @@ import type {
   ScheduledVideo, InsertScheduledVideo,
   RecommendationEvent, InsertRecommendationEvent,
   UserRecommendation, InsertUserRecommendation,
-  UserPreferences, InsertUserPreferences
+  UserPreferences, InsertUserPreferences,
+  Comment, InsertComment, CommentWithUser
 } from "@shared/schema";
 
 const httpClient = neon(process.env.DATABASE_URL!);
@@ -357,6 +358,12 @@ export interface IStorage {
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   createUserPreferences(prefs: InsertUserPreferences): Promise<UserPreferences>;
   updateUserPreferences(userId: string, updates: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined>;
+  
+  // Comment methods
+  createComment(comment: InsertComment): Promise<Comment>;
+  getVideoComments(videoId: string, limit?: number, offset?: number): Promise<CommentWithUser[]>;
+  getCommentCount(videoId: string): Promise<number>;
+  deleteComment(id: string): Promise<void>;
 }
 
 export class DbStorage implements IStorage {
@@ -3055,6 +3062,44 @@ export class DbStorage implements IStorage {
       .where(eq(schema.userPreferences.userId, userId))
       .returning();
     return updated;
+  }
+
+  // ============= COMMENT METHODS =============
+  async createComment(comment: InsertComment): Promise<Comment> {
+    const [created] = await db.insert(schema.comments).values(comment).returning();
+    return created;
+  }
+
+  async getVideoComments(videoId: string, limit: number = 50, offset: number = 0): Promise<CommentWithUser[]> {
+    const results = await db.select({
+      comment: schema.comments,
+      user: {
+        id: schema.users.id,
+        username: schema.users.username,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        profileImageUrl: schema.users.profileImageUrl,
+      }
+    })
+    .from(schema.comments)
+    .innerJoin(schema.users, eq(schema.comments.userId, schema.users.id))
+    .where(eq(schema.comments.videoId, videoId))
+    .orderBy(desc(schema.comments.createdAt))
+    .limit(limit)
+    .offset(offset);
+    
+    return results.map(r => ({ ...r.comment, user: r.user }));
+  }
+
+  async getCommentCount(videoId: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(schema.comments)
+      .where(eq(schema.comments.videoId, videoId));
+    return Number(result?.count || 0);
+  }
+
+  async deleteComment(id: string): Promise<void> {
+    await db.delete(schema.comments).where(eq(schema.comments.id, id));
   }
 }
 
