@@ -585,9 +585,9 @@ export default function VideoPlayer() {
   ] : [];
 
   useEffect(() => {
-    // Show ads only every 3rd video to regulate frequency
+    // Show ads on every other video
     const currentIndex = videoFeed.findIndex(v => v.id === activeVideoId);
-    const shouldShowAd = currentIndex > 0 && currentIndex % 3 === 0;
+    const shouldShowAd = currentIndex % 2 === 0;
     
     if (!adFrequencyRef.current[activeVideoId]) {
       setShowPreRollAd(shouldShowAd);
