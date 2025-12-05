@@ -568,3 +568,10 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* TikTok-style video scroll container */
+.video-scroll-container {
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}

@@ -763,8 +763,7 @@ export default function VideoPlayer() {
     <div className="fixed inset-0 bg-black z-50">
       <div 
         ref={containerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollSnapType: 'y mandatory' }}
+        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide video-scroll-container"
       >
         {allVideos.map((v) => {
           const videoCategory = categories?.find(c => c.id === v.categoryId);
