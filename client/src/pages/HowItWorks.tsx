@@ -72,7 +72,7 @@ export default function HowItWorks() {
     },
     {
       number: "05",
-      title: t('howItWorks.step5.title'),
+      title: 'Progress through the 6 phases',
       description: t('howItWorks.step5.description'),
       image: stepImage5,
       highlights: [
