@@ -16,7 +16,7 @@ import stepImage1 from "@assets/generated_images/Registration_and_category_selec
 import stepImage2 from "@assets/generated_images/Video_upload_and_content_creation_862fb653.png";
 import stepImage3 from "@assets/generated_images/Content_approval_and_moderation_42c462a4.png";
 import stepImage4 from "@assets/generated_images/Public_voting_and_engagement_8d98442c.png";
-import stepImage5 from "@assets/generated_images/6-tier_ascending_stairs:_top_500_to_top_3.png";
+import stepImage5 from "@assets/generated_images/stairs_with_3d_category_text_on_top.png";
 import stepImage6 from "@assets/generated_images/Winning_prizes_and_celebration_eac6a499.png";
 
 export default function HowItWorks() {
@@ -204,19 +204,14 @@ export default function HowItWorks() {
                       {/* Image Side */}
                       <div className={`relative overflow-hidden bg-muted p-0 flex items-center justify-center ${isEven ? 'md:order-2' : 'md:order-1'}`}>
                         {index === 4 ? (
-                          <div className="relative flex items-center justify-center w-full h-full">
-                            <img
-                              src={step.image}
-                              alt={step.title}
-                              width={500}
-                              height={350}
-                              className="object-contain"
-                              style={{ maxWidth: '500px', maxHeight: '350px' }}
-                            />
-                            <span className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-primary bg-white px-4 py-2 rounded-lg">
-                              Category
-                            </span>
-                          </div>
+                          <img
+                            src={step.image}
+                            alt={step.title}
+                            width={500}
+                            height={350}
+                            className="object-contain"
+                            style={{ maxWidth: '500px', maxHeight: '350px' }}
+                          />
                         ) : (
                           <img
                             src={step.image}
