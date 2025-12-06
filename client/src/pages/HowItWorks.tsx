@@ -16,7 +16,7 @@ import stepImage1 from "@assets/generated_images/Registration_and_category_selec
 import stepImage2 from "@assets/generated_images/Video_upload_and_content_creation_862fb653.png";
 import stepImage3 from "@assets/generated_images/Content_approval_and_moderation_42c462a4.png";
 import stepImage4 from "@assets/generated_images/Public_voting_and_engagement_8d98442c.png";
-import stepImage5 from "@assets/generated_images/5-tier_competition_progression:_top_100_to_top_3.png";
+import stepImage5 from "@assets/generated_images/6-tier_ascending_stairs:_top_500_to_top_3.png";
 import stepImage6 from "@assets/generated_images/Winning_prizes_and_celebration_eac6a499.png";
 
 export default function HowItWorks() {
