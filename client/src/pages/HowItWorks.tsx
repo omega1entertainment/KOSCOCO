@@ -203,14 +203,30 @@ export default function HowItWorks() {
 
                       {/* Image Side */}
                       <div className={`relative overflow-hidden bg-muted p-0 flex items-center justify-center ${isEven ? 'md:order-2' : 'md:order-1'}`}>
-                        <img
-                          src={step.image}
-                          alt={step.title}
-                          width={800}
-                          height={488}
-                          className="w-full h-full object-cover"
-                          style={{ maxWidth: '800px', maxHeight: '488px' }}
-                        />
+                        {index === 4 ? (
+                          <div className="relative flex items-center justify-center w-full h-full">
+                            <img
+                              src={step.image}
+                              alt={step.title}
+                              width={500}
+                              height={350}
+                              className="object-contain"
+                              style={{ maxWidth: '500px', maxHeight: '350px' }}
+                            />
+                            <span className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-primary bg-white/80 px-4 py-2 rounded-lg">
+                              Category
+                            </span>
+                          </div>
+                        ) : (
+                          <img
+                            src={step.image}
+                            alt={step.title}
+                            width={800}
+                            height={488}
+                            className="w-full h-full object-cover"
+                            style={{ maxWidth: '800px', maxHeight: '488px' }}
+                          />
+                        )}
                       </div>
                     </div>
                   </Card>
