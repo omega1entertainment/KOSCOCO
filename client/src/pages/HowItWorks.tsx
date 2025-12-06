@@ -78,7 +78,9 @@ export default function HowItWorks() {
       highlights: [
         t('howItWorks.step5.highlight1'),
         t('howItWorks.step5.highlight2'),
-        t('howItWorks.step5.highlight3')
+        t('howItWorks.step5.highlight3'),
+        'Target top 3 in each category and win amazing prizes',
+        'Qualify for the ultimate prize at the Grande finale'
       ]
     },
     {
