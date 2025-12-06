@@ -213,7 +213,7 @@ export default function HowItWorks() {
                               className="object-contain"
                               style={{ maxWidth: '500px', maxHeight: '350px' }}
                             />
-                            <span className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-primary bg-white/80 px-4 py-2 rounded-lg">
+                            <span className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-primary bg-white px-4 py-2 rounded-lg">
                               Category
                             </span>
                           </div>
