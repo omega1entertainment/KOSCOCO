@@ -73,7 +73,7 @@ export default function HowItWorks() {
     {
       number: "05",
       title: 'Progress through the 6 phases',
-      description: t('howItWorks.step5.description'),
+      description: 'Progress through the 6 phases in each category to win the top 3 prizes in each category. Phases: TOP 500 → TOP 100 → TOP 50 → TOP 25 → TOP 10 → TOP 3',
       image: stepImage5,
       highlights: [
         t('howItWorks.step5.highlight1'),
