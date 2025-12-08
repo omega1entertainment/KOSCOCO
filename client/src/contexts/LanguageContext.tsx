@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useLayoutEffect } from "react";
+import enTranslations from "../translations/en.json";
+import frTranslations from "../translations/fr.json";
 
 type Language = "en" | "fr";
 
@@ -6,6 +8,11 @@ type LanguageContextType = {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+};
+
+const translationsMap: Record<Language, Record<string, string>> = {
+  en: enTranslations,
+  fr: frTranslations,
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -16,19 +23,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return stored || "en";
   });
 
-  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translations, setTranslations] = useState<Record<string, string>>(translationsMap[language] || enTranslations);
 
   useLayoutEffect(() => {
-    const loadTranslations = async () => {
-      try {
-        const module = await import(`../translations/${language}.json`);
-        setTranslations(module.default);
-      } catch (error) {
-        console.error(`Failed to load translations for ${language}`, error);
-      }
-    };
-    
-    loadTranslations();
+    setTranslations(translationsMap[language] || enTranslations);
     localStorage.setItem("language", language);
   }, [language]);
 
