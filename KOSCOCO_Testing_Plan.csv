@@ -1,0 +1,191 @@
+"Module","Feature","Test ID","Test Case Name","Description","Preconditions","Steps","Expected Result","Actual Result","Status","Notes"
+"MODULE","FEATURE","TEST ID","TEST CASE NAME","DESCRIPTION","PRECONDITIONS","STEPS","EXPECTED RESULT","ACTUAL RESULT","STATUS","NOTES"
+"Authentication","User Registration","AUTH-REG-001","Register with valid email and password","User should be able to register with a valid email, password, and phone number","User is on registration page; Email is not already registered","1. Enter valid email
+2. Enter valid password
+3. Enter phone number with country code
+4. Select category
+5. Agree to terms
+6. Click Register","OTP verification dialog appears; User receives verification code","","[ ]",""
+"Authentication","User Registration","AUTH-REG-002","OTP verification during registration","User should be able to verify their email using OTP","User has registered and OTP dialog is open","1. Enter received OTP code
+2. Click Verify
+3. Complete payment if required","Account created; User redirected to dashboard or payment page","","[ ]",""
+"Authentication","User Registration","AUTH-REG-003","Resend OTP during registration","User should be able to request a new OTP if they didn't receive one","User is in OTP verification dialog","1. Click 'Resend OTP'
+2. Wait for new code
+3. Enter new OTP","New OTP is sent; User can enter and verify new code","","[ ]",""
+"Authentication","User Login","AUTH-LOGIN-001","Login with valid email and password","User should be able to login with correct credentials","User has valid account; User is on login page","1. Enter email
+2. Enter password
+3. Click Login","User is logged in; Redirected to dashboard or home page","","[ ]",""
+"Authentication","User Login","AUTH-LOGIN-002","Login with invalid credentials","User should see error when entering wrong password","User is on login page","1. Enter valid email
+2. Enter incorrect password
+3. Click Login","Error message displayed; User stays on login page","","[ ]",""
+"Authentication","Two-Factor Authentication","AUTH-2FA-001","Enable 2FA on account","User should be able to enable two-factor authentication","User is logged in; User is on account settings","1. Navigate to security settings
+2. Click 'Enable 2FA'
+3. Scan QR code with authenticator app
+4. Enter verification code
+5. Save backup codes","2FA is enabled; User must enter 2FA code on login","","[ ]",""
+"Authentication","Two-Factor Authentication","AUTH-2FA-002","Login with 2FA enabled","User should be able to login when 2FA is enabled","User has 2FA enabled; User is on login page","1. Enter email and password
+2. Enter 2FA code from authenticator
+3. Click Verify","User is logged in successfully","","[ ]",""
+"Authentication","Social Login","AUTH-SOCIAL-001","Login with Google","User should be able to login using Google account","User has Google account; User is on login page","1. Click 'Login with Google'
+2. Authenticate with Google
+3. Authorize KOSCOCO","User is logged in with Google account; Account is created if new","","[ ]",""
+"Authentication","Social Login","AUTH-SOCIAL-002","Login with Facebook","User should be able to login using Facebook account","User has Facebook account; User is on login page","1. Click 'Login with Facebook'
+2. Authenticate with Facebook
+3. Authorize KOSCOCO","User is logged in with Facebook account; Account is created if new","","[ ]",""
+"Authentication","Password Reset","AUTH-PWD-001","Request password reset","User should be able to request a password reset email","User is on forgot password page; Email exists in system","1. Enter registered email
+2. Click 'Send Reset Link'
+3. Check email for reset link","Reset email is sent; User can click link to reset password","","[ ]",""
+"Authentication","Password Reset","AUTH-PWD-002","Complete password reset","User should be able to set new password using reset token","User has clicked reset link; Reset token is valid","1. Enter new password
+2. Confirm password
+3. Click 'Reset Password'","Password is updated; User can login with new password","","[ ]",""
+"Video Management","Video Upload","VIDEO-UPLOAD-001","Upload single video","User should be able to upload a video file","User is logged in; User is on upload page","1. Select video file (MP4, AVI, etc.)
+2. Enter video title
+3. Enter description
+4. Select category
+5. Click Upload","Video is uploaded; Progress bar shows completion; Video appears in user's videos","","[ ]",""
+"Video Management","Video Upload","VIDEO-UPLOAD-002","Upload video with thumbnail","User should be able to upload custom thumbnail with video","User is on upload page","1. Select video file
+2. Upload custom thumbnail image
+3. Fill other details
+4. Click Upload","Video and thumbnail are uploaded; Thumbnail appears on video card","","[ ]",""
+"Video Management","Video Upload","VIDEO-UPLOAD-003","Upload video with invalid file type","System should reject invalid file formats","User is on upload page","1. Select invalid file type (PDF, text, etc.)
+2. Try to upload","Error message; File is rejected","","[ ]",""
+"Video Management","Video Management","VIDEO-MANAGE-001","View uploaded videos in dashboard","User should see all their uploaded videos in dashboard","User is logged in; User has uploaded videos","1. Go to Dashboard
+2. Look for 'My Videos' section","All user's videos are displayed with thumbnails, titles, stats","","[ ]",""
+"Video Management","Video Management","VIDEO-MANAGE-002","Delete video","User should be able to delete their own video","User is logged in; User owns the video","1. Navigate to video
+2. Click delete button
+3. Confirm deletion","Video is deleted; No longer appears in user's videos","","[ ]",""
+"Video Management","Video Scheduling","VIDEO-SCHED-001","Schedule video for future publication","User should be able to schedule video for automatic publication","User has uploaded a video","1. Open video edit page
+2. Enable scheduling
+3. Select future date and time
+4. Click Save","Video is scheduled; Published at specified time","","[ ]",""
+"Content Browsing","Categories","BROWSE-CAT-001","View all categories","User should see all available competition categories","User is on Categories page","1. Navigate to Categories page
+2. View category cards","All categories displayed with images, descriptions, video counts","","[ ]",""
+"Content Browsing","Categories","BROWSE-CAT-002","Click on category to view videos","User should see all videos in a selected category","User is viewing categories","1. Click on a category card
+2. Wait for videos to load","Videos in category are displayed; Can filter by subcategory","","[ ]",""
+"Content Browsing","Video Player","PLAYER-001","Play video","Video should play when user clicks play button","User is on video page; Video is uploaded and processed","1. Click play button
+2. Wait for video to load
+3. Verify audio and video","Video plays smoothly; Audio is in sync","","[ ]",""
+"Content Browsing","Video Player","PLAYER-002","Video player controls","User should be able to control video playback","Video is playing","1. Test play/pause
+2. Test volume control
+3. Test seek/scrubbing
+4. Test fullscreen","All controls work correctly; Video responds to user input","","[ ]",""
+"Content Browsing","Video Information","VIDEO-INFO-001","View video metadata","User should see video title, description, creator info, and stats","User is on video page","1. View video title
+2. View description
+3. View creator profile
+4. View stats (views, likes, votes)","All information is displayed correctly and up-to-date","","[ ]",""
+"User Engagement","Like/Unlike","ENGAGE-LIKE-001","Like a video","Authenticated user should be able to like a video","User is logged in; User is on video page","1. Click like button
+2. Verify like count increases","Video is liked; Like count increases by 1; Button highlights","","[ ]",""
+"User Engagement","Like/Unlike","ENGAGE-LIKE-002","Unlike a video","User should be able to remove like from video","User has already liked a video","1. Click like button again
+2. Verify like count decreases","Like is removed; Like count decreases by 1; Button unhighlights","","[ ]",""
+"User Engagement","Comments","ENGAGE-COMMENT-001","Post comment on video","User should be able to post a comment on a video","User is logged in; User is on video page","1. Click comment section
+2. Type comment
+3. Click Post","Comment is posted; Appears in comment section; Comment count increases","","[ ]",""
+"User Engagement","Comments","ENGAGE-COMMENT-002","Delete own comment","User should be able to delete their own comments","User has posted a comment","1. Find own comment
+2. Click delete button
+3. Confirm deletion","Comment is deleted; Comment count decreases","","[ ]",""
+"User Engagement","Voting","ENGAGE-VOTE-001","Vote for a video","User should be able to vote for a video","User is authenticated; Competition is active; User has available votes","1. Click vote button
+2. Confirm vote","Vote is recorded; Vote count increases; Vote cannot be cast again","","[ ]",""
+"User Engagement","Voting","ENGAGE-VOTE-002","Purchase additional votes","User should be able to purchase more votes","User is logged in; Has payment method","1. Click 'Buy Votes'
+2. Select number of votes
+3. Complete payment via Flutterwave","Votes are added to account; Vote count increases","","[ ]",""
+"User Engagement","Follow/Unfollow","ENGAGE-FOLLOW-001","Follow a creator","User should be able to follow another creator","User is logged in; User is on creator's profile","1. Click follow button
+2. Verify follow count increases","Creator is followed; Follower count increases; Button text changes to 'Following'","","[ ]",""
+"User Engagement","Follow/Unfollow","ENGAGE-FOLLOW-002","Unfollow a creator","User should be able to unfollow a creator","User has followed a creator","1. Click 'Following' button
+2. Verify follow count decreases","Creator is unfollowed; Follower count decreases","","[ ]",""
+"User Engagement","Gift Sending","ENGAGE-GIFT-001","Send gift to creator","User should be able to send a gift to a creator","User is logged in; User has balance or payment method","1. Click Send Gift
+2. Select gift
+3. Complete payment
+4. Send gift","Gift is sent; Creator receives gift; User balance decreases","","[ ]",""
+"User Dashboard","Dashboard Overview","DASH-001","View dashboard statistics","User should see their stats on dashboard","User is logged in","1. Navigate to Dashboard
+2. View statistics cards","Total videos, votes received, votes cast, and other stats are displayed","","[ ]",""
+"User Dashboard","Profile Management","DASH-PROFILE-001","View user profile","User should be able to view their profile","User is logged in","1. Navigate to Profile
+2. View profile information","Username, email, profile photo, bio, and stats are displayed","","[ ]",""
+"User Dashboard","Profile Management","DASH-PROFILE-002","Edit profile information","User should be able to edit their profile","User is on profile edit page","1. Edit bio
+2. Upload profile photo
+3. Update other info
+4. Click Save","Profile is updated; Changes are reflected everywhere","","[ ]",""
+"User Dashboard","Registrations","DASH-REG-001","View competition registrations","User should see which competitions they're registered for","User is logged in; User has registered for competitions","1. Go to Dashboard
+2. View Registrations section","All registered categories are listed with status","","[ ]",""
+"Admin Features","Admin Dashboard","ADMIN-DASH-001","View admin overview","Admin should see overall platform statistics","User is admin; User is on admin dashboard","1. View dashboard overview","Key metrics displayed: users, videos, revenue, registrations","","[ ]",""
+"Admin Features","User Management","ADMIN-USER-001","View all users","Admin should be able to see list of all users","User is admin","1. Navigate to Users tab
+2. View user list","All users are displayed with email, status, role","","[ ]",""
+"Admin Features","User Management","ADMIN-USER-002","Assign user role","Admin should be able to change user roles","Admin is viewing users","1. Click on user
+2. Change role (judge, moderator, etc.)
+3. Save","User role is updated; User has new permissions","","[ ]",""
+"Admin Features","User Management","ADMIN-USER-003","Suspend user","Admin should be able to suspend a user account","Admin is viewing users","1. Click on user
+2. Click Suspend
+3. Confirm","User account is suspended; User cannot login","","[ ]",""
+"Admin Features","Content Moderation","ADMIN-MOD-001","View pending videos","Admin should see videos pending moderation","Admin is on moderation page","1. View pending videos tab","Unreviewed videos are displayed","","[ ]",""
+"Admin Features","Content Moderation","ADMIN-MOD-002","Approve video","Admin should be able to approve a video","Admin is viewing pending video","1. Click Approve
+2. Add optional comment
+3. Confirm","Video is approved; Becomes visible to all users","","[ ]",""
+"Admin Features","Content Moderation","ADMIN-MOD-003","Reject video","Admin should be able to reject a video with reason","Admin is viewing pending video","1. Click Reject
+2. Enter rejection reason
+3. Confirm","Video is rejected; Creator is notified","","[ ]",""
+"Admin Features","Phase Management","ADMIN-PHASE-001","View competition phases","Admin should see all competition phases","Admin is on phase management page","1. View phases list","All phases displayed with dates and status","","[ ]",""
+"Admin Features","Phase Management","ADMIN-PHASE-002","Activate phase","Admin should be able to activate a phase","Admin is viewing phases","1. Click on phase
+2. Click Activate
+3. Confirm","Phase is activated; Users can register for this phase","","[ ]",""
+"Admin Features","Payout Management","ADMIN-PAYOUT-001","View payout requests","Admin should see all pending payout requests","Admin is on payouts page","1. View pending payouts","All payout requests displayed with amount and user","","[ ]",""
+"Admin Features","Payout Management","ADMIN-PAYOUT-002","Approve payout request","Admin should be able to approve a payout","Admin is viewing payout requests","1. Click on payout
+2. Click Approve
+3. Confirm","Payout is processed; User is paid","","[ ]",""
+"Admin Features","Report Management","ADMIN-REPORT-001","View user reports","Admin should see all reports (violations, inappropriate content, etc.)","Admin is on reports page","1. View reports list","All reports displayed with type, user, and details","","[ ]",""
+"Admin Features","Report Management","ADMIN-REPORT-002","Review and resolve report","Admin should be able to review and resolve a report","Admin is viewing reports","1. Click on report
+2. Review details
+3. Take action (warn, suspend, delete)
+4. Mark as resolved","Report is marked resolved; Action is taken on user/content","","[ ]",""
+"Judge Features","Judge Dashboard","JUDGE-DASH-001","View judge dashboard","Judge should see their scoring dashboard","User is a judge; User is logged in","1. Navigate to Judge Dashboard","Dashboard shows pending videos and completed scores","","[ ]",""
+"Judge Features","Video Scoring","JUDGE-SCORE-001","Score a video","Judge should be able to rate and score a video","Judge is viewing pending video","1. Watch video
+2. Enter score/rating
+3. Add notes (optional)
+4. Submit score","Score is recorded; Video moves to completed list","","[ ]",""
+"Judge Features","Judge Profile","JUDGE-PROFILE-001","View judge public profile","Users should be able to see judge information on public profile","User is viewing judge list or video","1. Click on judge name
+2. View judge profile","Judge name, bio, and credentials are displayed","","[ ]",""
+"Monetization","Wallet","MONEY-WALLET-001","View wallet balance","Creator should see their account balance","User is logged in; User is a creator","1. Navigate to Wallet
+2. View balance","Current balance is displayed; Transaction history shown","","[ ]",""
+"Monetization","Wallet","MONEY-WALLET-002","Request payout","Creator should be able to request withdrawal of balance","Creator has available balance","1. Click 'Request Payout'
+2. Enter amount
+3. Select payment method
+4. Confirm","Payout request is created; Appears in admin's payout list","","[ ]",""
+"Monetization","Affiliate Program","MONEY-AFF-001","View affiliate information","User should see affiliate program details and commission rates","User is on affiliate page","1. Navigate to Affiliate page
+2. View program details","Commission structure and benefits are clearly displayed","","[ ]",""
+"Monetization","Affiliate Program","MONEY-AFF-002","Generate referral link","Affiliate should be able to generate unique referral link","User is an affiliate; User is on affiliate dashboard","1. Click 'Generate Link'
+2. Copy referral link
+3. Share with others","Unique referral link is generated; Tracked in dashboard","","[ ]",""
+"Monetization","Advertiser Platform","MONEY-ADV-001","Register as advertiser","Advertiser should be able to signup and get approved","User is on advertiser signup page","1. Fill advertiser information
+2. Submit application
+3. Wait for admin approval","Application submitted; User receives email when approved","","[ ]",""
+"Monetization","Advertiser Platform","MONEY-ADV-002","Create advertising campaign","Advertiser should be able to create ad campaign","Advertiser account is approved","1. Click 'Create Campaign'
+2. Enter campaign details
+3. Set budget and duration
+4. Submit","Campaign is created and goes live after approval","","[ ]",""
+"System Features","Language Support","SYS-LANG-001","Change language to French","User should be able to switch to French language","User is on any page","1. Click language selector
+2. Select 'French'
+3. Verify content changes","All content is displayed in French","","[ ]",""
+"System Features","Language Support","SYS-LANG-002","Change language to English","User should be able to switch to English language","User is viewing content in French","1. Click language selector
+2. Select 'English'
+3. Verify content changes","All content is displayed in English","","[ ]",""
+"System Features","Dark Mode","SYS-THEME-001","Toggle dark mode","User should be able to switch to dark theme","User is on any page","1. Click theme toggle
+2. Verify dark mode is applied
+3. Reload page
+4. Verify dark mode persists","Dark mode is applied and preference is saved","","[ ]",""
+"System Features","Leaderboard","SYS-LEADER-001","View leaderboard","User should see competition leaderboard","User is on leaderboard page","1. View leaderboard
+2. Check rankings and stats","Top creators are listed with vote counts and rankings","","[ ]",""
+"System Features","Search","SYS-SEARCH-001","Search for videos","User should be able to search for videos","User is on home or search page","1. Enter search term
+2. Press Enter
+3. View results","Matching videos are displayed","","[ ]",""
+"System Features","Notifications","SYS-NOTIF-001","View notifications","User should see notification bell with unread count","User is logged in; User has notifications","1. Click notification bell
+2. View notification list","Unread notifications are displayed with types and messages","","[ ]",""
+"System Features","Email Verification","SYS-EMAIL-001","Verify email during signup","User should verify email with code from email","User has signed up","1. Check email for verification link
+2. Click link or enter code
+3. Verify email","Email is verified; User can access full account","","[ ]",""
+"Performance & UX","Page Load Speed","PERF-001","Home page loads quickly","Home page should load within acceptable time","User is on home page","1. Open home page
+2. Measure load time
+3. Verify content renders","Page loads in under 3 seconds; Content is fully visible","","[ ]",""
+"Performance & UX","Responsive Design","PERF-002","Test mobile responsiveness","App should work well on mobile devices","User is on mobile device or using mobile emulation","1. Test on mobile
+2. Check layout
+3. Test interactions","Layout is responsive; All features work on mobile","","[ ]",""
+"Performance & UX","Error Handling","PERF-003","Test 404 page","User should see helpful 404 page when accessing non-existent page","User navigates to invalid URL","1. Enter invalid URL
+2. Verify 404 page appears
+3. Check for navigation links","404 page displays with navigation options","","[ ]",""
