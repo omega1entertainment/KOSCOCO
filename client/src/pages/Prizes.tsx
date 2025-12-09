@@ -1,4 +1,4 @@
-import { Trophy, Medal, Award, DollarSign } from "lucide-react";
+import { Trophy, Medal, Award } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
@@ -115,7 +115,6 @@ export default function Prizes() {
                       </h2>
 
                       <div className={`inline-flex items-center gap-2 text-4xl font-bold bg-gradient-to-r ${prize.gradient} bg-clip-text text-transparent mb-4 w-fit`}>
-                        <DollarSign className="w-8 h-8 text-primary" />
                         <span data-testid={`text-prize-amount-${index}`}>{prize.prize}</span>
                       </div>
 
