@@ -364,6 +364,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <PhaseTimeline />
       <VideoOfTheDay />
       {isAuthenticated && (
         <section className="py-12 md:py-20">
@@ -381,7 +382,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <PhaseTimeline />
       <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
