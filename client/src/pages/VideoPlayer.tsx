@@ -89,42 +89,32 @@ function VideoItem({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
-  const [cdnUrl, setCdnUrl] = useState<string | null>(null);
-  const [cdnThumbnailUrl, setCdnThumbnailUrl] = useState<string | null>(null);
   const hasRecordedWatchRef = useRef(false);
-  const cdnUrlFetchedRef = useRef(false);
+  const hasLoadedOnceRef = useRef(false);
 
-  const preloadValue = isActive ? "auto" : isNeighbor ? "metadata" : "none";
+  // Use React Query for CDN URL caching - prevents re-fetching on re-renders
+  const { data: cdnData } = useQuery<{ videoUrl?: string; thumbnailUrl?: string }>({
+    queryKey: ['/api/videos', video.id, 'cdn-url'],
+    queryFn: async () => {
+      const res = await fetch(`/api/videos/${video.id}/cdn-url`);
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: isActive || isNeighbor,
+    staleTime: Infinity, // CDN URLs don't change, cache forever
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+  });
+
+  // Mobile optimization: neighbors also preload "auto" to reduce buffering time
+  const preloadValue = isActive || isNeighbor ? "auto" : "metadata";
   const fallbackVideoUrl = (video as any).compressedVideoUrl || video.videoUrl;
   
   // Use CDN URL if available, otherwise fall back to proxy URL
-  const videoUrl = cdnUrl || fallbackVideoUrl;
-  const thumbnailUrl = cdnThumbnailUrl || video.thumbnailUrl;
-
-  // Fetch CDN URL when video becomes active or is a neighbor for faster loading
-  useEffect(() => {
-    if ((isActive || isNeighbor) && !cdnUrlFetchedRef.current) {
-      cdnUrlFetchedRef.current = true;
-      
-      fetch(`/api/videos/${video.id}/cdn-url`)
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data?.videoUrl) {
-            setCdnUrl(data.videoUrl);
-          }
-          if (data?.thumbnailUrl) {
-            setCdnThumbnailUrl(data.thumbnailUrl);
-          }
-        })
-        .catch(err => {
-          console.error('Failed to fetch CDN URL:', err);
-          // Silently fall back to proxy URL
-        });
-    }
-  }, [isActive, isNeighbor, video.id]);
+  const videoUrl = cdnData?.videoUrl || fallbackVideoUrl;
+  const thumbnailUrl = cdnData?.thumbnailUrl || video.thumbnailUrl;
 
   // Lazy loading: Only load video when it's in or near viewport
-  // Also unload videos that are far from viewport to reclaim memory
+  // Keep videos mounted once loaded to avoid re-downloading on scroll back
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -132,6 +122,12 @@ function VideoItem({
     // Load immediately if active or neighbor
     if (isActive || isNeighbor) {
       setShouldLoadVideo(true);
+      hasLoadedOnceRef.current = true;
+      return;
+    }
+
+    // If already loaded once, keep it mounted (don't unload on scroll away)
+    if (hasLoadedOnceRef.current) {
       return;
     }
 
@@ -140,15 +136,13 @@ function VideoItem({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setShouldLoadVideo(true);
-          } else if (!isActive && !isNeighbor) {
-            // Unload video when it's far from viewport to reclaim memory
-            setShouldLoadVideo(false);
-            setIsLoading(true); // Reset loading state for when it loads again
+            hasLoadedOnceRef.current = true;
           }
+          // Don't unmount videos once loaded - keeps them cached for faster replay
         });
       },
       {
-        rootMargin: '400px 0px', // Load/unload zone - 400px before entering/after leaving viewport
+        rootMargin: '1200px 0px', // Mobile optimization: larger prefetch window for smoother scrolling
         threshold: 0,
       }
     );
