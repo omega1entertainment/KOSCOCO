@@ -245,12 +245,17 @@ function VideoItem({
           loop
           muted={isMuted}
           playsInline
+          webkit-playsinline="true"
+          x5-playsinline="true"
+          x5-video-player-type="h5"
+          x5-video-player-fullscreen="true"
           preload={preloadValue}
           poster={thumbnailUrl || undefined}
           onClick={togglePlay}
           onCanPlay={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
           onPlaying={() => setIsLoading(false)}
+          onLoadedMetadata={() => setIsLoading(false)}
           data-testid={`video-player-${video.id}`}
         >
           <source src={videoUrl} type="video/mp4" />
