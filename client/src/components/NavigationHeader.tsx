@@ -67,6 +67,7 @@ export default function NavigationHeader({
   const navItems = [
     { label: t('nav.categories'), path: '/categories' },
     { label: 'How It Works', path: '/how-it-works' },
+    { label: 'FAQ', path: '/faq' },
   ];
   
   const leaderboardMenuItems = [
