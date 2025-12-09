@@ -694,7 +694,7 @@
   "prizes.grandFinale.prize": "5 000 000 FCFA",
   "prizes.grandFinale.description": "Les trois premiers gagnants de chaque catégorie concourent pour le prix ultime",
   
-  "prizes.top3.phase": "TOP 3 FINALISTES",
+  "prizes.top3.phase": "TOP 3 FINALISTES PAR CATÉGORIE",
   "prizes.top3.badge": "Par Catégorie",
   "prizes.top3.prize": "500 000 FCFA",
   "prizes.top3.description": "Gagnant de la 1ère place dans chacune des 5 catégories",
