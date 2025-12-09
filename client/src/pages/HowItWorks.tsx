@@ -16,7 +16,7 @@ import stepImage1 from "@assets/generated_images/Registration_and_category_selec
 import stepImage2 from "@assets/generated_images/Video_upload_and_content_creation_862fb653.png";
 import stepImage3 from "@assets/generated_images/Content_approval_and_moderation_42c462a4.png";
 import stepImage4 from "@assets/generated_images/Public_voting_and_engagement_8d98442c.png";
-import stepImage5 from "@assets/generated_images/phase_stairs_with_category_text_on_top.png";
+import stepImage5 from "@assets/generated_images/six_competition_phase_stairs_visualization.png";
 import stepImage6 from "@assets/generated_images/red_carpet_grand_finale_celebration.png";
 
 export default function HowItWorks() {
