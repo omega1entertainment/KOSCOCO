@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,8 +32,8 @@ export default function Register() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState("");
   const [paymentData, setPaymentData] = useState<any>(null);
-  const [registeredCategoryIds, setRegisteredCategoryIds] = useState<Set<string>>(new Set());
   const scriptLoaded = useRef(false);
+  const referralProcessed = useRef(false);
 
   useEffect(() => {
     if (!scriptLoaded.current) {
@@ -46,19 +46,16 @@ export default function Register() {
   }, []);
 
   useEffect(() => {
+    if (referralProcessed.current) return;
+    referralProcessed.current = true;
+    
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
     
     if (ref) {
       setReferralCode(ref);
-      // Store in sessionStorage to preserve across login redirects
       sessionStorage.setItem('affiliateReferralCode', ref);
-      toast({
-        title: "Referral Code Applied",
-        description: `You're registering with referral code: ${ref}`,
-      });
     } else {
-      // Check if referral code was stored from a previous login redirect
       const storedRef = sessionStorage.getItem('affiliateReferralCode');
       if (storedRef) {
         setReferralCode(storedRef);
@@ -73,22 +70,24 @@ export default function Register() {
     refetchOnMount: false,
   });
 
-  const { data: userRegistrations = [] } = useQuery<Registration[]>({
+  const { data: userRegistrationsData } = useQuery<Registration[]>({
     queryKey: ["/api/registrations/user"],
     enabled: !!user,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
   });
+  
+  const userRegistrations = userRegistrationsData ?? [];
 
-  const { data: registrationStatus } = useQuery<{ enabled: boolean }>({
+  const { data: registrationStatus, isLoading: statusLoading } = useQuery<{ enabled: boolean }>({
     queryKey: ["/api/registrations/status"],
     staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
 
-  // Extract already registered category IDs (approved registrations only)
-  useEffect(() => {
+  // Extract already registered category IDs (approved registrations only) - memoized to prevent infinite loops
+  const registeredCategoryIdsSet = useMemo(() => {
     const approvedRegs = userRegistrations.filter(reg => reg.paymentStatus === 'approved');
     const categoryIds = new Set<string>();
     for (const reg of approvedRegs) {
@@ -96,7 +95,7 @@ export default function Register() {
         categoryIds.add(catId);
       }
     }
-    setRegisteredCategoryIds(categoryIds);
+    return categoryIds;
   }, [userRegistrations]);
 
   const FEE_PER_CATEGORY = 2500;
@@ -217,7 +216,7 @@ export default function Register() {
 
   const handleCategoryToggle = (categoryId: string) => {
     // Don't allow selecting already registered categories
-    if (registeredCategoryIds.has(categoryId)) {
+    if (registeredCategoryIdsSet.has(categoryId)) {
       toast({
         title: "Already Registered",
         description: "You are already registered for this category.",
@@ -247,7 +246,7 @@ export default function Register() {
     registerMutation.mutate();
   };
 
-  if (authLoading || categoriesLoading) {
+  if (authLoading || categoriesLoading || statusLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -287,11 +286,11 @@ export default function Register() {
   }
 
   // Show modal if registrations are disabled
-  const registrationsDisabled = registrationStatus && !registrationStatus.enabled;
+  const registrationsDisabled = registrationStatus?.enabled === false;
 
   return (
     <>
-      <Dialog open={registrationsDisabled}>
+      <Dialog open={registrationsDisabled} onOpenChange={() => {}}>
         <DialogContent data-testid="dialog-registrations-coming-soon">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -325,14 +324,14 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            {registeredCategoryIds.size > 0 && (
+            {registeredCategoryIdsSet.size > 0 && (
               <Card className="mb-6 border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
                 <CardContent className="pt-6 flex gap-3">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
                   <div>
                     <p className="font-semibold text-amber-900 dark:text-amber-100">Already Registered</p>
                     <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
-                      You have already paid for and registered in {registeredCategoryIds.size} {registeredCategoryIds.size === 1 ? 'category' : 'categories'}. You can register for new categories below.
+                      You have already paid for and registered in {registeredCategoryIdsSet.size} {registeredCategoryIdsSet.size === 1 ? 'category' : 'categories'}. You can register for new categories below.
                     </p>
                   </div>
                 </CardContent>
@@ -340,7 +339,7 @@ export default function Register() {
             )}
             <div className="grid gap-6 mb-6">
               {categories?.map((category) => {
-                const isAlreadyRegistered = registeredCategoryIds.has(category.id);
+                const isAlreadyRegistered = registeredCategoryIdsSet.has(category.id);
                 return (
                   <Card
                     key={category.id}
