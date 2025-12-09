@@ -343,23 +343,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <VideoOfTheDay />
-      {isAuthenticated && (
-        <section className="py-12 md:py-20">
-          <div className="max-w-7xl mx-auto px-4">
-            <RecommendedVideos />
-          </div>
-        </section>
-      )}
-      <section className="py-12 md:py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {stats.map((stat, idx) => (
-              <StatsCard key={idx} {...stat} />
-            ))}
-          </div>
-        </div>
-      </section>
       <section className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 uppercase tracking-wide">
@@ -377,6 +360,23 @@ export default function Home() {
                 onClick={() => handleCategoryClick(category.title)}
                 data-testid={`card-category-${idx}`}
               />
+            ))}
+          </div>
+        </div>
+      </section>
+      <VideoOfTheDay />
+      {isAuthenticated && (
+        <section className="py-12 md:py-20">
+          <div className="max-w-7xl mx-auto px-4">
+            <RecommendedVideos />
+          </div>
+        </section>
+      )}
+      <section className="py-12 md:py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {stats.map((stat, idx) => (
+              <StatsCard key={idx} {...stat} />
             ))}
           </div>
         </div>
