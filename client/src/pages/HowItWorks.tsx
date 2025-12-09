@@ -17,7 +17,7 @@ import stepImage2 from "@assets/generated_images/Video_upload_and_content_creati
 import stepImage3 from "@assets/generated_images/Content_approval_and_moderation_42c462a4.png";
 import stepImage4 from "@assets/generated_images/Public_voting_and_engagement_8d98442c.png";
 import stepImage5 from "@assets/generated_images/stairs_with_3d_category_text_on_top.png";
-import stepImage6 from "@assets/generated_images/Winning_prizes_and_celebration_eac6a499.png";
+import stepImage6 from "@assets/generated_images/red_carpet_grand_finale_celebration.png";
 
 export default function HowItWorks() {
   const [, setLocation] = useLocation();
@@ -91,7 +91,8 @@ export default function HowItWorks() {
       highlights: [
         t('howItWorks.step6.highlight1'),
         t('howItWorks.step6.highlight2'),
-        t('howItWorks.step6.highlight3')
+        t('howItWorks.step6.highlight3'),
+        t('howItWorks.step6.highlight4')
       ]
     }
   ];
