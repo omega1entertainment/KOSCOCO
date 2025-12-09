@@ -179,7 +179,6 @@ export default function Home() {
         onWatchClick={() => console.log("Watch entries")}
         isAuthenticated={isAuthenticated}
       />
-      
       <section className="py-12 md:py-16 bg-background">
         <div className="max-w-5xl mx-auto px-4">
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-center mb-6 md:mb-8 uppercase tracking-wide">
@@ -210,7 +209,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="py-12 md:py-16 bg-background">
         <div className="max-w-5xl mx-auto px-4">
           <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-center mb-8 md:mb-12 uppercase tracking-wide">
@@ -283,12 +281,9 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="py-12 md:py-16 bg-muted/5">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-center mb-12 uppercase tracking-wide">
-            Meet Our Awesome Cameroonians Ambassadors
-          </h2>
+          <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-center mb-12 uppercase tracking-wide">Meet Our Awesome Cameroonian Ambassadors</h2>
           
           <div className="relative flex items-center justify-center gap-2 sm:gap-4">
             <button 
@@ -348,9 +343,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <VideoOfTheDay />
-      
       {isAuthenticated && (
         <section className="py-12 md:py-20">
           <div className="max-w-7xl mx-auto px-4">
@@ -358,7 +351,6 @@ export default function Home() {
           </div>
         </section>
       )}
-      
       <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -368,7 +360,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
       <section className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 uppercase tracking-wide">
@@ -390,9 +381,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
       <PhaseTimeline />
-      
       <section className="py-12 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
@@ -422,7 +411,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {selectedVideo && (
         <VotePaymentModal
           open={voteModalOpen}
@@ -431,7 +419,6 @@ export default function Home() {
           videoTitle={selectedVideo.title}
         />
       )}
-      
       <section className="py-12 md:py-20">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide mb-4 md:mb-6">
