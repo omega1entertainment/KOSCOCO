@@ -86,17 +86,17 @@ export async function sendOTPEmail({
     if (result.error) {
       console.log('Resend API response:', { 
         to: email, 
-        emailId: result.data?.id,
+        emailId: (result.data as any)?.id,
         error: result.error 
       });
       // In test mode, we already logged OTP above, so don't fail
-      if (!result.error.message?.includes('testing emails')) {
+      if (!(result.error as any).message?.includes('testing emails')) {
         throw new Error('Failed to send verification code. Please try again later.');
       }
     } else {
       console.log('OTP email sent via Resend:', { 
         to: email, 
-        emailId: result.data?.id
+        emailId: (result.data as any)?.id
       });
     }
   } catch (error) {
