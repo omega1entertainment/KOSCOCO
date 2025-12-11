@@ -7309,6 +7309,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= PRICING MANAGEMENT ENDPOINTS =============
+  app.get('/api/admin/pricing', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const pricing = await storage.getSystemSetting('categoryRegistrationFee');
+      const paidVoteFee = await storage.getSystemSetting('paidVoteFee');
+      res.json({
+        categoryRegistrationFee: pricing ? parseInt(pricing.value) : 2500,
+        paidVoteFee: paidVoteFee ? parseInt(paidVoteFee.value) : 100,
+      });
+    } catch (error) {
+      console.error('Error fetching pricing:', error);
+      res.status(500).json({ message: 'Failed to fetch pricing' });
+    }
+  });
+
+  app.post('/api/admin/pricing', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const pricingSchema = z.object({
+        categoryRegistrationFee: z.number().positive(),
+        paidVoteFee: z.number().positive(),
+      });
+      const data = pricingSchema.parse(req.body);
+      
+      await storage.updateSystemSetting('categoryRegistrationFee', data.categoryRegistrationFee.toString());
+      await storage.updateSystemSetting('paidVoteFee', data.paidVoteFee.toString());
+      
+      res.json({
+        categoryRegistrationFee: data.categoryRegistrationFee,
+        paidVoteFee: data.paidVoteFee,
+        message: 'Pricing updated successfully'
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation failed', errors: error.flatten() });
+      }
+      console.error('Error updating pricing:', error);
+      res.status(500).json({ message: 'Failed to update pricing' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
