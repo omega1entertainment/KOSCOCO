@@ -7310,6 +7310,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============= PRICING MANAGEMENT ENDPOINTS =============
+  // Public pricing endpoint - accessible to all users
+  app.get('/api/pricing', async (req: any, res) => {
+    try {
+      const pricing = await storage.getSystemSetting('categoryRegistrationFee');
+      const paidVoteFee = await storage.getSystemSetting('paidVoteFee');
+      res.json({
+        categoryRegistrationFee: pricing ? parseInt(pricing.value) : 2500,
+        paidVoteFee: paidVoteFee ? parseInt(paidVoteFee.value) : 100,
+      });
+    } catch (error) {
+      console.error('Error fetching pricing:', error);
+      res.status(500).json({ message: 'Failed to fetch pricing' });
+    }
+  });
+
   app.get('/api/admin/pricing', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const pricing = await storage.getSystemSetting('categoryRegistrationFee');
