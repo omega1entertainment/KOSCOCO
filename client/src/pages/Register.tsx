@@ -86,13 +86,6 @@ export default function Register() {
     refetchOnMount: false,
   });
 
-  const { data: pricingData } = useQuery<{ categoryRegistrationFee: number; paidVoteFee: number }>({
-    queryKey: ["/api/pricing"],
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
   // Extract already registered category IDs (approved registrations only) - memoized to prevent infinite loops
   const registeredCategoryIdsSet = useMemo(() => {
     const approvedRegs = userRegistrations.filter(reg => reg.paymentStatus === 'approved');
@@ -105,7 +98,7 @@ export default function Register() {
     return categoryIds;
   }, [userRegistrations]);
 
-  const FEE_PER_CATEGORY = pricingData?.categoryRegistrationFee || 2500;
+  const FEE_PER_CATEGORY = 2500;
   const totalAmount = selectedCategories.length * FEE_PER_CATEGORY;
 
   useEffect(() => {

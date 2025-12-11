@@ -94,86 +94,6 @@ import { Switch } from "@/components/ui/switch";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-function PricingManagementTab() {
-  const { toast } = useToast();
-  const [categoryFee, setCategoryFee] = useState<number>(2500);
-  const [voteFee, setVoteFee] = useState<number>(100);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { data: pricingData } = useQuery({
-    queryKey: ["/api/admin/pricing"],
-    queryFn: async () => {
-      const res = await apiRequest("/api/admin/pricing", "GET");
-      const data = await res.json();
-      setCategoryFee(data.categoryRegistrationFee);
-      setVoteFee(data.paidVoteFee);
-      return data;
-    },
-  });
-
-  const updatePricingMutation = useMutation({
-    mutationFn: async (pricing: any) => {
-      const res = await apiRequest("/api/admin/pricing", "POST", pricing);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Pricing updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/pricing"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5" />
-          Pricing Management
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="category-fee">Category Registration Fee (FCFA)</Label>
-            <Input
-              id="category-fee"
-              type="number"
-              value={categoryFee}
-              onChange={(e) => setCategoryFee(parseInt(e.target.value) || 0)}
-              placeholder="Enter category registration fee"
-              data-testid="input-category-fee"
-            />
-            <p className="text-xs text-muted-foreground">Fee per category for user registration</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="vote-fee">Paid Vote Fee (FCFA)</Label>
-            <Input
-              id="vote-fee"
-              type="number"
-              value={voteFee}
-              onChange={(e) => setVoteFee(parseInt(e.target.value) || 0)}
-              placeholder="Enter paid vote fee"
-              data-testid="input-vote-fee"
-            />
-            <p className="text-xs text-muted-foreground">Fee per paid vote</p>
-          </div>
-        </div>
-
-        <Button
-          onClick={() => updatePricingMutation.mutate({ categoryRegistrationFee: categoryFee, paidVoteFee: voteFee })}
-          disabled={updatePricingMutation.isPending}
-          data-testid="button-save-pricing"
-        >
-          {updatePricingMutation.isPending ? "Saving..." : "Save Pricing"}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 function CMSManagementTab() {
   const { toast } = useToast();
   const [selectedSection, setSelectedSection] = useState<string>("hero");
@@ -2254,14 +2174,6 @@ function AdminDashboardContent() {
             >
               <Shield className="w-4 h-4 mr-2" />
               Security
-            </TabsTrigger>
-            <TabsTrigger
-              value="pricing"
-              className="w-full justify-start"
-              data-testid="tab-pricing"
-            >
-              <DollarSign className="w-4 h-4 mr-2" />
-              Pricing
             </TabsTrigger>
           </TabsList>
 
@@ -5530,10 +5442,6 @@ function AdminDashboardContent() {
                   <TwoFactorSettings userType="admin" />
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="pricing" className="mt-0">
-              <PricingManagementTab />
             </TabsContent>
           </div>
         </div>
