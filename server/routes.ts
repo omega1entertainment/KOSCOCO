@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Sorry, you cannot register for a Category twice." });
       }
 
-      const FEE_PER_CATEGORY = 2500;
+      const FEE_PER_CATEGORY = 50;
       const totalFee = categoryIds.length * FEE_PER_CATEGORY;
 
       let affiliate = null;

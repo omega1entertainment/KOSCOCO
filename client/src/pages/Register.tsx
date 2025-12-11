@@ -98,7 +98,7 @@ export default function Register() {
     return categoryIds;
   }, [userRegistrations]);
 
-  const FEE_PER_CATEGORY = 2500;
+  const FEE_PER_CATEGORY = 50;
   const totalAmount = selectedCategories.length * FEE_PER_CATEGORY;
 
   useEffect(() => {
