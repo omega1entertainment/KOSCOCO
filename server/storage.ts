@@ -374,6 +374,10 @@ export interface IStorage {
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
   getFollowersCount(userId: string): Promise<number>;
   getFollowingCount(userId: string): Promise<number>;
+
+  // System settings methods
+  getSystemSetting(key: string): Promise<SystemSettings | undefined>;
+  updateSystemSetting(key: string, value: string): Promise<SystemSettings>;
 }
 
 export class DbStorage implements IStorage {
@@ -3225,6 +3229,28 @@ export class DbStorage implements IStorage {
       .from(schema.follows)
       .where(eq(schema.follows.followerId, userId));
     return Number(result?.count || 0);
+  }
+
+  // ============= SYSTEM SETTINGS METHODS =============
+  async getSystemSetting(key: string): Promise<SystemSettings | undefined> {
+    const [setting] = await db.select().from(schema.systemSettings).where(eq(schema.systemSettings.key, key));
+    return setting;
+  }
+
+  async updateSystemSetting(key: string, value: string): Promise<SystemSettings> {
+    const existing = await this.getSystemSetting(key);
+    if (existing) {
+      const [updated] = await db.update(schema.systemSettings)
+        .set({ value })
+        .where(eq(schema.systemSettings.key, key))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(schema.systemSettings)
+        .values({ key, value })
+        .returning();
+      return created;
+    }
   }
 }
 
