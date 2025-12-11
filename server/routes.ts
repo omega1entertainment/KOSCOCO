@@ -465,15 +465,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid payment currency" });
       }
 
-      // Verify the amount matches (both amount and charged_amount)
-      if (paymentData.amount !== registration.totalFee) {
-        console.error(`Amount mismatch: Expected ${registration.totalFee}, got ${paymentData.amount}`);
+      // Verify the amount matches (allowing small floating point differences)
+      const expectedAmount = registration.totalFee;
+      const paidAmount = paymentData.amount;
+      
+      if (Math.abs(paidAmount - expectedAmount) > 1) {
+        console.error(`Amount mismatch: Expected ${expectedAmount}, got ${paidAmount}`);
         return res.status(400).json({ message: "Payment amount mismatch" });
       }
 
-      if (paymentData.charged_amount !== registration.totalFee) {
-        console.error(`Charged amount mismatch: Expected ${registration.totalFee}, got ${paymentData.charged_amount}`);
-        return res.status(400).json({ message: "Charged amount mismatch" });
+      // Log charged_amount for debugging but don't block on it (Flutterwave may add fees)
+      if (paymentData.charged_amount !== expectedAmount) {
+        console.log(`Note: charged_amount (${paymentData.charged_amount}) differs from expected (${expectedAmount}), may include fees`);
       }
 
       // Update registration payment status to approved (user is now fully registered)
@@ -4767,81 +4770,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
-  // Payment verification endpoint
-  app.post('/api/payments/verify', isAuthenticated, async (req: any, res) => {
-    try {
-      const { transaction_id, registrationId } = req.body;
-      const userId = (req.user as SelectUser).id;
-
-      if (!transaction_id || !registrationId) {
-        return res.status(400).json({ message: "Missing transaction_id or registrationId" });
-      }
-
-      // Initialize Flutterwave
-      const flw = new Flutterwave(
-        process.env.FLW_PUBLIC_KEY!,
-        process.env.FLW_SECRET_KEY!
-      );
-
-      // Verify payment with Flutterwave
-      const response = await flw.Transaction.verify({ id: transaction_id });
-
-      if (
-        response.data.status === "successful" &&
-        response.data.currency === "XAF" // FCFA currency code
-      ) {
-        // Get registration to verify ownership and amount
-        const registration = await storage.getRegistrationById(registrationId);
-        
-        if (!registration) {
-          return res.status(404).json({ message: "Registration not found" });
-        }
-
-        if (registration.userId !== userId) {
-          return res.status(403).json({ message: "Unauthorized" });
-        }
-
-        // Verify amount matches (allowing for small floating point differences)
-        const expectedAmount = registration.totalFee;
-        const paidAmount = response.data.amount;
-        
-        if (Math.abs(paidAmount - expectedAmount) > 1) {
-          return res.status(400).json({ 
-            message: "Payment amount mismatch",
-            expected: expectedAmount,
-            received: paidAmount
-          });
-        }
-
-        // Update registration payment status to approved (user is now fully registered)
-        await storage.updateRegistrationPaymentStatus(registrationId, 'approved');
-
-        res.json({
-          success: true,
-          message: 'Payment verified successfully',
-          data: {
-            transactionId: transaction_id,
-            amount: paidAmount,
-            currency: response.data.currency,
-            registrationId
-          }
-        });
-      } else {
-        res.status(400).json({
-          status: 'error',
-          message: 'Payment verification failed',
-          paymentStatus: response.data.status
-        });
-      }
-    } catch (error) {
-      console.error("Payment verification error:", error);
-      res.status(500).json({ 
-        status: 'error',
-        message: "Failed to verify payment" 
-      });
-    }
-  });
-
   // Advertiser Routes
   app.get("/api/advertiser/current", isAuthenticated, async (req, res) => {
     try {
@@ -6874,7 +6802,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sentBy: adminUser.id,
           messageType: messageType || 'broadcast',
           error: result.error || null,
-          providerMessageSid: result.messageSid || null,
         });
       }
 
