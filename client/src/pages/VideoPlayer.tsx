@@ -997,7 +997,7 @@ export default function VideoPlayer() {
         ref={containerRef}
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide video-scroll-container"
       >
-        {allVideos.length === 0 && !videoLoading ? (
+        {allVideos.length === 0 && !videoLoading && !feedLoading ? (
           <div className="h-screen w-full flex flex-col items-center justify-center text-white">
             <div className="text-center px-6">
               <Grid3X3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
