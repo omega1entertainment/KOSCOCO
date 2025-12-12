@@ -596,7 +596,7 @@ export default function VideoPlayer() {
   const { data: likeDataMap } = useQuery<Record<string, number>>({
     queryKey: ['/api/likes/batch', activeVideoId],
     queryFn: async () => {
-      const response = await fetch(`/api/videos/${activeVideoId}/likes`);
+      const response = await fetch(`/api/likes/video/${activeVideoId}`);
       if (!response.ok) return {};
       const data = await response.json();
       return { [activeVideoId]: data.likeCount || 0 };
