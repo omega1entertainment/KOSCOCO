@@ -565,7 +565,8 @@ export default function VideoPlayer() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/video/:permalink");
   const permalink = params?.permalink || "";
-  const videoId = extractIdFromPermalink(permalink);
+  const isAllFeed = permalink.toLowerCase() === "all";
+  const videoId = isAllFeed ? "" : extractIdFromPermalink(permalink);
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -576,7 +577,7 @@ export default function VideoPlayer() {
   const [isMuted, setIsMuted] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState<string>(videoId);
   const [selectedVideoForAction, setSelectedVideoForAction] = useState<Video | null>(null);
-  const [filterMode, setFilterMode] = useState<'current' | 'all' | 'category'>('current');
+  const [filterMode, setFilterMode] = useState<'current' | 'all' | 'category'>(isAllFeed ? 'all' : 'current');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -671,7 +672,7 @@ export default function VideoPlayer() {
 
   // Determine which videos to show based on filter mode
   // When filter is set (not default 'current' on initial load with videoId), use feed videos
-  const [hasChangedFilter, setHasChangedFilter] = useState(false);
+  const [hasChangedFilter, setHasChangedFilter] = useState(isAllFeed);
   
   // Track when user manually changes filter
   const handleFilterChange = (newMode: 'current' | 'all' | 'category') => {
@@ -710,7 +711,7 @@ export default function VideoPlayer() {
             if (videoId) {
               setActiveVideoId(videoId);
               const foundVideo = allVideos.find(v => v.id === videoId);
-              if (foundVideo) {
+              if (foundVideo && !isAllFeed) {
                 window.history.replaceState(
                   null, 
                   '', 
@@ -733,7 +734,7 @@ export default function VideoPlayer() {
     });
 
     return () => observer.disconnect();
-  }, [allVideos]);
+  }, [allVideos, isAllFeed]);
 
   const likeMutation = useMutation({
     mutationFn: async ({ targetVideoId, isUnlike }: { targetVideoId: string; isUnlike: boolean }) => {
