@@ -605,7 +605,7 @@ export default function VideoPlayer() {
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !videoId, // Only fetch when not viewing a specific video
+    // Always fetch feed to support filter switching
   });
 
   const { data: relatedVideos = [] } = useQuery<VideoWithStats[]>({
@@ -669,15 +669,26 @@ export default function VideoPlayer() {
     enabled: !!activeCreatorId,
   });
 
-  // Use feed videos when no specific video, otherwise show related videos from same category
-  const allVideos = video 
-    ? [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)] 
-    : feedVideos.filter(v => v.status === 'approved');
+  // Determine which videos to show based on filter mode
+  // When filter is set (not default 'current' on initial load with videoId), use feed videos
+  const [hasChangedFilter, setHasChangedFilter] = useState(false);
+  
+  // Track when user manually changes filter
+  const handleFilterChange = (newMode: 'current' | 'all' | 'category') => {
+    setFilterMode(newMode);
+    setHasChangedFilter(true);
+  };
+  
+  // Use feed videos when filter has been changed or no specific video
+  const allVideos = (hasChangedFilter || !video)
+    ? feedVideos.filter(v => v.status === 'approved')
+    : [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)];
   const activeVideoIndex = allVideos.findIndex(v => v.id === activeVideoId);
   
   // Set initial active video when feed loads or filter changes
   useEffect(() => {
-    if (!videoId) {
+    // When filter changes or no specific video, use feed videos
+    if (hasChangedFilter || !videoId) {
       if (feedVideos.length > 0) {
         // Set to first video when feed changes
         setActiveVideoId(feedVideos[0].id);
@@ -686,7 +697,7 @@ export default function VideoPlayer() {
         setActiveVideoId('');
       }
     }
-  }, [videoId, feedVideos, filterMode, selectedCategoryId]);
+  }, [videoId, feedVideos, filterMode, selectedCategoryId, hasChangedFilter]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -924,7 +935,7 @@ export default function VideoPlayer() {
       <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent pt-safe">
         <div className="flex items-center justify-center gap-2 px-4 py-3">
           <button
-            onClick={() => setFilterMode('current')}
+            onClick={() => handleFilterChange('current')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
               filterMode === 'current' 
                 ? 'bg-primary text-white' 
@@ -935,7 +946,7 @@ export default function VideoPlayer() {
             Current
           </button>
           <button
-            onClick={() => setFilterMode('all')}
+            onClick={() => handleFilterChange('all')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
               filterMode === 'all' 
                 ? 'bg-primary text-white' 
@@ -946,7 +957,7 @@ export default function VideoPlayer() {
             All
           </button>
           <button
-            onClick={() => setFilterMode('category')}
+            onClick={() => handleFilterChange('category')}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1 ${
               filterMode === 'category' 
                 ? 'bg-primary text-white' 
@@ -999,7 +1010,7 @@ export default function VideoPlayer() {
               </p>
               {filterMode === 'category' && (
                 <button
-                  onClick={() => setFilterMode('all')}
+                  onClick={() => handleFilterChange('all')}
                   className="px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold"
                   data-testid="button-view-all-videos"
                 >
