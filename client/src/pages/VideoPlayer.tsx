@@ -742,7 +742,11 @@ export default function VideoPlayer() {
     queryKey: queryKeys.categories.all,
   });
 
-  // Feed query based on filter mode
+  // Track when user manually changes filter
+  const [hasChangedFilter, setHasChangedFilter] = useState(isAllFeed);
+  
+  // Feed query based on filter mode - only load when needed
+  const shouldLoadFeed = hasChangedFilter || isAllFeed || !videoId;
   const feedQueryParams = filterMode === 'category' && selectedCategoryId 
     ? `?filter=category&categoryId=${selectedCategoryId}&limit=20`
     : filterMode === 'current' 
@@ -757,6 +761,7 @@ export default function VideoPlayer() {
       return response.json();
     },
     staleTime: 30000,
+    enabled: shouldLoadFeed,
   });
 
   const { data: relatedVideos = [] } = useQuery<VideoWithStats[]>({
@@ -823,10 +828,6 @@ export default function VideoPlayer() {
   });
 
   // Determine which videos to show based on filter mode
-  // When filter is set (not default 'current' on initial load with videoId), use feed videos
-  const [hasChangedFilter, setHasChangedFilter] = useState(isAllFeed);
-  
-  // Track when user manually changes filter
   const handleFilterChange = (newMode: 'current' | 'all' | 'category') => {
     setFilterMode(newMode);
     setHasChangedFilter(true);
