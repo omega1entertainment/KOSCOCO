@@ -27,8 +27,16 @@ import {
   Send,
   X,
   UserPlus,
-  UserCheck
+  UserCheck,
+  Grid3X3
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -568,6 +576,8 @@ export default function VideoPlayer() {
   const [isMuted, setIsMuted] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState<string>(videoId);
   const [selectedVideoForAction, setSelectedVideoForAction] = useState<Video | null>(null);
+  const [filterMode, setFilterMode] = useState<'current' | 'all' | 'category'>('current');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -579,6 +589,23 @@ export default function VideoPlayer() {
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: queryKeys.categories.all,
+  });
+
+  // Feed query based on filter mode
+  const feedQueryParams = filterMode === 'category' && selectedCategoryId 
+    ? `?filter=category&categoryId=${selectedCategoryId}`
+    : filterMode === 'current' 
+      ? '?filter=current'
+      : '';
+  
+  const { data: feedVideos = [] } = useQuery<VideoWithStats[]>({
+    queryKey: ['/api/videos/feed', filterMode, selectedCategoryId],
+    queryFn: async () => {
+      const response = await fetch(`/api/videos/feed${feedQueryParams}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !videoId, // Only fetch when not viewing a specific video
   });
 
   const { data: relatedVideos = [] } = useQuery<VideoWithStats[]>({
@@ -642,8 +669,24 @@ export default function VideoPlayer() {
     enabled: !!activeCreatorId,
   });
 
-  const allVideos = video ? [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)] : [];
+  // Use feed videos when no specific video, otherwise show related videos from same category
+  const allVideos = video 
+    ? [video, ...relatedVideos.filter(v => v.status === 'approved' && v.id !== video.id)] 
+    : feedVideos.filter(v => v.status === 'approved');
   const activeVideoIndex = allVideos.findIndex(v => v.id === activeVideoId);
+  
+  // Set initial active video when feed loads or filter changes
+  useEffect(() => {
+    if (!videoId) {
+      if (feedVideos.length > 0) {
+        // Set to first video when feed changes
+        setActiveVideoId(feedVideos[0].id);
+      } else {
+        // Clear active video when feed is empty to prevent stale controls
+        setActiveVideoId('');
+      }
+    }
+  }, [videoId, feedVideos, filterMode, selectedCategoryId]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -877,10 +920,95 @@ export default function VideoPlayer() {
 
   return (
     <div className="fixed inset-0 bg-black z-50">
+      {/* Filter Header */}
+      <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent pt-safe">
+        <div className="flex items-center justify-center gap-2 px-4 py-3">
+          <button
+            onClick={() => setFilterMode('current')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              filterMode === 'current' 
+                ? 'bg-primary text-white' 
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+            data-testid="button-filter-current"
+          >
+            Current
+          </button>
+          <button
+            onClick={() => setFilterMode('all')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              filterMode === 'all' 
+                ? 'bg-primary text-white' 
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+            data-testid="button-filter-all"
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilterMode('category')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1 ${
+              filterMode === 'category' 
+                ? 'bg-primary text-white' 
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+            data-testid="button-filter-category"
+          >
+            <Grid3X3 className="w-4 h-4" />
+            Category
+          </button>
+        </div>
+        
+        {/* Category Selector */}
+        {filterMode === 'category' && (
+          <div className="px-4 pb-3">
+            <Select
+              value={selectedCategoryId}
+              onValueChange={(value) => setSelectedCategoryId(value)}
+            >
+              <SelectTrigger className="w-full bg-white/20 border-white/30 text-white" data-testid="select-category">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories?.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id} data-testid={`option-category-${cat.id}`}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+
       <div 
         ref={containerRef}
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide video-scroll-container"
       >
+        {allVideos.length === 0 && !videoLoading ? (
+          <div className="h-screen w-full flex flex-col items-center justify-center text-white">
+            <div className="text-center px-6">
+              <Grid3X3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">No Videos Found</h3>
+              <p className="text-white/70 mb-4">
+                {filterMode === 'category' && !selectedCategoryId 
+                  ? 'Please select a category to view videos'
+                  : filterMode === 'category'
+                    ? 'No videos available in this category yet'
+                    : 'No videos available at the moment'}
+              </p>
+              {filterMode === 'category' && (
+                <button
+                  onClick={() => setFilterMode('all')}
+                  className="px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold"
+                  data-testid="button-view-all-videos"
+                >
+                  View All Videos
+                </button>
+              )}
+            </div>
+          </div>
+        ) : null}
         {allVideos.map((v, index) => {
           const videoCategory = categories?.find(c => c.id === v.categoryId);
           const isNeighbor = Math.abs(index - activeVideoIndex) === 1;

@@ -98,6 +98,7 @@ export interface IStorage {
   getVideoById(id: string): Promise<VideoWithStats | undefined>;
   getVideosByUser(userId: string): Promise<Video[]>;
   getVideosByCategory(categoryId: string): Promise<VideoWithStats[]>;
+  getVideosByPhase(phaseId: string): Promise<VideoWithStats[]>;
   getPendingVideos(): Promise<Video[]>;
   getVideosWithoutThumbnails(): Promise<Video[]>;
   updateVideoStatus(id: string, status: string): Promise<Video | undefined>;
@@ -685,6 +686,55 @@ export class DbStorage implements IStorage {
       .from(schema.videos)
       .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
       .where(and(eq(schema.videos.categoryId, categoryId), eq(schema.videos.status, 'approved')))
+      .orderBy(desc(schema.videos.createdAt));
+    
+    // Convert string aggregates to numbers
+    return results.map(video => ({
+      ...video,
+      likeCount: parseInt(video.likeCount, 10),
+      voteCount: parseInt(video.voteCount, 10),
+    })) as VideoWithStats[];
+  }
+
+  async getVideosByPhase(phaseId: string): Promise<VideoWithStats[]> {
+    const results = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        creatorUsername: schema.users.username,
+        creatorFirstName: schema.users.firstName,
+        creatorLastName: schema.users.lastName,
+        likeCount: sql<string>`CAST((
+          SELECT COALESCE(COUNT(*), 0)
+          FROM likes
+          WHERE likes.video_id = videos.id
+        ) AS text)`,
+        voteCount: sql<string>`CAST((
+          (SELECT COALESCE(COUNT(*), 0)
+           FROM votes
+           WHERE votes.video_id = videos.id)
+          +
+          (SELECT COALESCE(SUM(paid_votes.quantity), 0)
+           FROM paid_votes
+           WHERE paid_votes.video_id = videos.id)
+        ) AS text)`,
+      })
+      .from(schema.videos)
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
+      .where(and(eq(schema.videos.phaseId, phaseId), eq(schema.videos.status, 'approved')))
       .orderBy(desc(schema.videos.createdAt));
     
     // Convert string aggregates to numbers

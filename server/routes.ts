@@ -7,7 +7,7 @@ import { setupAuth, isAuthenticated, isAdvertiser } from "./auth";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient, parseObjectPath } from "./objectStorage";
 import { ObjectPermission, getObjectAclPolicy } from "./objectAcl";
 import Flutterwave from "flutterwave-node-v3";
-import type { SelectUser } from "@shared/schema";
+import type { SelectUser, VideoWithStats } from "@shared/schema";
 import { insertJudgeScoreSchema, insertNewsletterSubscriberSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
@@ -1138,6 +1138,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching video of the day:", error);
       res.status(500).json({ message: "Failed to fetch video of the day" });
+    }
+  });
+
+  // Public: Get all approved videos with optional filters
+  app.get('/api/videos/feed', async (req, res) => {
+    try {
+      const { filter, categoryId } = req.query;
+      const objectStorageService = new ObjectStorageService();
+      
+      let videos: VideoWithStats[] = [];
+      
+      if (filter === 'current') {
+        // Get videos from the current active phase
+        const activePhase = await storage.getActivePhase();
+        if (activePhase) {
+          videos = await storage.getVideosByPhase(activePhase.id);
+        }
+        // Fall back to all approved videos if no active phase or no videos in current phase
+        if (videos.length === 0) {
+          videos = await storage.getApprovedVideos();
+        }
+      } else if (filter === 'category' && categoryId) {
+        // Get videos by category
+        videos = await storage.getVideosByCategory(categoryId as string);
+      } else {
+        // Get all approved videos
+        videos = await storage.getApprovedVideos();
+      }
+      
+      // Normalize URLs for frontend consumption
+      const normalizedVideos = videos
+        .filter(v => v.status === 'approved')
+        .map(video => ({
+          ...video,
+          videoUrl: objectStorageService.normalizeObjectEntityPath(video.videoUrl),
+          thumbnailUrl: video.thumbnailUrl ? objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl) : null,
+        }));
+      
+      res.json(normalizedVideos);
+    } catch (error) {
+      console.error("Error fetching video feed:", error);
+      res.status(500).json({ message: "Failed to fetch videos" });
     }
   });
 
