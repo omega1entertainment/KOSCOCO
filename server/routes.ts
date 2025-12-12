@@ -1144,8 +1144,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public: Get all approved videos with optional filters
   app.get('/api/videos/feed', async (req, res) => {
     try {
-      const { filter, categoryId } = req.query;
+      const { filter, categoryId, limit } = req.query;
       const objectStorageService = new ObjectStorageService();
+      const maxVideos = Math.min(parseInt(limit as string) || 20, 50);
       
       let videos: VideoWithStats[] = [];
       
@@ -1167,9 +1168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         videos = await storage.getApprovedVideos();
       }
       
-      // Normalize URLs for frontend consumption
+      // Normalize URLs for frontend consumption and limit results
       const normalizedVideos = videos
         .filter(v => v.status === 'approved')
+        .slice(0, maxVideos)
         .map(video => ({
           ...video,
           videoUrl: objectStorageService.normalizeObjectEntityPath(video.videoUrl),

@@ -594,19 +594,19 @@ export default function VideoPlayer() {
 
   // Feed query based on filter mode
   const feedQueryParams = filterMode === 'category' && selectedCategoryId 
-    ? `?filter=category&categoryId=${selectedCategoryId}`
+    ? `?filter=category&categoryId=${selectedCategoryId}&limit=20`
     : filterMode === 'current' 
-      ? '?filter=current'
-      : '';
+      ? '?filter=current&limit=20'
+      : '?limit=20';
   
-  const { data: feedVideos = [] } = useQuery<VideoWithStats[]>({
+  const { data: feedVideos = [], isLoading: feedLoading } = useQuery<VideoWithStats[]>({
     queryKey: ['/api/videos/feed', filterMode, selectedCategoryId],
     queryFn: async () => {
       const response = await fetch(`/api/videos/feed${feedQueryParams}`);
       if (!response.ok) return [];
       return response.json();
     },
-    // Always fetch feed to support filter switching
+    staleTime: 30000,
   });
 
   const { data: relatedVideos = [] } = useQuery<VideoWithStats[]>({
@@ -863,7 +863,7 @@ export default function VideoPlayer() {
     setIsMuted(prev => !prev);
   }, []);
 
-  if (videoLoading || !video) {
+  if (isAllFeed ? feedLoading : (videoLoading || !video)) {
     return (
       <div className="h-screen flex items-center justify-center bg-black">
         <div className="text-center">
@@ -874,10 +874,10 @@ export default function VideoPlayer() {
     );
   }
 
-  const category = categories?.find(c => c.id === video.categoryId);
-  const isVideoRejected = video.moderationStatus === 'rejected';
+  const category = video ? categories?.find(c => c.id === video.categoryId) : null;
+  const isVideoRejected = video?.moderationStatus === 'rejected';
 
-  if (isVideoRejected) {
+  if (isVideoRejected && video) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <main className="flex-1">
