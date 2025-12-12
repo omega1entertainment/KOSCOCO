@@ -70,7 +70,7 @@ export default function Hero({ currentPhase = "PHASE 1: SUBMISSIONS OPEN", onReg
           <Button 
             size="lg"
             variant="destructive"
-            onClick={() => setLocation("/categories")}
+            onClick={() => setLocation("/video/")}
             data-testid="button-watch-videos"
             className="gap-2"
           >
