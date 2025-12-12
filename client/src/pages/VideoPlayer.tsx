@@ -30,7 +30,8 @@ import {
   UserCheck,
   Grid3X3,
   Copy,
-  Link
+  Link,
+  Search
 } from "lucide-react";
 import { SiFacebook, SiX, SiWhatsapp, SiTelegram } from "react-icons/si";
 import {
@@ -1073,45 +1074,55 @@ export default function VideoPlayer() {
     <div className="fixed inset-0 bg-black z-50">
       {/* Filter Header */}
       <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent pt-safe">
-        <div className="flex items-center justify-center gap-6 px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="w-8" />
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => handleFilterChange('current')}
+              className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
+                filterMode === 'current' 
+                  ? 'text-white font-bold' 
+                  : 'text-gray-400 font-normal hover:text-gray-300'
+              }`}
+              data-testid="button-filter-current"
+            >
+              <span>Current</span>
+              {filterMode === 'current' && <span className="w-4 h-0.5 bg-white mt-1 rounded-full" />}
+            </button>
+            <button
+              onClick={() => handleFilterChange('all')}
+              className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
+                filterMode === 'all' 
+                  ? 'text-white font-bold' 
+                  : 'text-gray-400 font-normal hover:text-gray-300'
+              }`}
+              data-testid="button-filter-all"
+            >
+              <span>All</span>
+              {filterMode === 'all' && <span className="w-3 h-0.5 bg-white mt-1 rounded-full" />}
+            </button>
+            <button
+              onClick={() => handleFilterChange('category')}
+              className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
+                filterMode === 'category' 
+                  ? 'text-white font-bold' 
+                  : 'text-gray-400 font-normal hover:text-gray-300'
+              }`}
+              data-testid="button-filter-category"
+            >
+              <span className="flex items-center gap-1">
+                <Grid3X3 className="w-4 h-4" />
+                Category
+              </span>
+              {filterMode === 'category' && <span className="w-6 h-0.5 bg-white mt-1 rounded-full" />}
+            </button>
+          </div>
           <button
-            onClick={() => handleFilterChange('current')}
-            className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
-              filterMode === 'current' 
-                ? 'text-white font-bold' 
-                : 'text-gray-400 font-normal hover:text-gray-300'
-            }`}
-            data-testid="button-filter-current"
+            onClick={() => setLocation('/search')}
+            className="w-8 h-8 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+            data-testid="button-search-videos"
           >
-            <span>Current</span>
-            {filterMode === 'current' && <span className="w-4 h-0.5 bg-white mt-1 rounded-full" />}
-          </button>
-          <button
-            onClick={() => handleFilterChange('all')}
-            className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
-              filterMode === 'all' 
-                ? 'text-white font-bold' 
-                : 'text-gray-400 font-normal hover:text-gray-300'
-            }`}
-            data-testid="button-filter-all"
-          >
-            <span>All</span>
-            {filterMode === 'all' && <span className="w-3 h-0.5 bg-white mt-1 rounded-full" />}
-          </button>
-          <button
-            onClick={() => handleFilterChange('category')}
-            className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
-              filterMode === 'category' 
-                ? 'text-white font-bold' 
-                : 'text-gray-400 font-normal hover:text-gray-300'
-            }`}
-            data-testid="button-filter-category"
-          >
-            <span className="flex items-center gap-1">
-              <Grid3X3 className="w-4 h-4" />
-              Category
-            </span>
-            {filterMode === 'category' && <span className="w-6 h-0.5 bg-white mt-1 rounded-full" />}
+            <Search className="w-5 h-5" />
           </button>
         </div>
         
