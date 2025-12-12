@@ -565,7 +565,7 @@ export default function VideoPlayer() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/video/:permalink");
   const permalink = params?.permalink || "";
-  const isAllFeed = permalink.toLowerCase() === "all";
+  const isAllFeed = permalink.toLowerCase() === "all" || permalink === "";
   const videoId = isAllFeed ? "" : extractIdFromPermalink(permalink);
   const { user } = useAuth();
   const { toast } = useToast();

@@ -65,7 +65,7 @@ export default function NavigationHeader({
   });
   
   const navItems = [
-    { label: 'Feed', path: '/video/all' },
+    { label: 'Feed', path: '/video/' },
     { label: t('nav.categories'), path: '/categories' },
     { label: 'How It Works', path: '/how-it-works' },
     { label: 'FAQ', path: '/faq' },
