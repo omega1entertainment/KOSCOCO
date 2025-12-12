@@ -712,7 +712,7 @@ export default function VideoPlayer() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string>(videoId);
   const [selectedVideoForAction, setSelectedVideoForAction] = useState<Video | null>(null);
   const [filterMode, setFilterMode] = useState<'current' | 'all' | 'category'>(isAllFeed ? 'all' : 'current');
