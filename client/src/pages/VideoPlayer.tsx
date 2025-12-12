@@ -647,7 +647,9 @@ export default function VideoPlayer() {
     enabled: !!activeVideoId,
   });
 
-  const activeVideo = video?.id === activeVideoId ? video : relatedVideos.find(v => v.id === activeVideoId);
+  const activeVideo = video?.id === activeVideoId 
+    ? video 
+    : relatedVideos.find(v => v.id === activeVideoId) || feedVideos.find(v => v.id === activeVideoId);
   const activeCreatorId = activeVideo?.userId;
 
   const { data: followData } = useQuery<{ followersCount: number; isFollowing: boolean }>({
