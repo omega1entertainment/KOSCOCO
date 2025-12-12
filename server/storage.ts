@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@shared/schema";
-import { eq, and, desc, sql, isNull, inArray } from "drizzle-orm";
+import { eq, and, or, desc, sql, isNull, inArray, ilike } from "drizzle-orm";
 import type {
   User, InsertUser,
   Category, InsertCategory,
@@ -106,6 +106,7 @@ export interface IStorage {
   incrementVideoViews(id: string): Promise<void>;
   deleteVideo(id: string): Promise<void>;
   getApprovedVideos(): Promise<VideoWithStats[]>;
+  searchVideos(query: string, categoryId?: string, limit?: number, offset?: number): Promise<{ videos: VideoWithStats[]; total: number }>;
   getRejectedVideos(): Promise<Video[]>;
   updateVideoMetadata(id: string, updates: { title?: string; description?: string; subcategory?: string }): Promise<Video | undefined>;
   updateVideoCompressedUrl(id: string, compressedVideoUrl: string, compressedFileSize: number): Promise<Video | undefined>;
@@ -908,6 +909,71 @@ export class DbStorage implements IStorage {
       .orderBy(desc(schema.videos.createdAt));
 
     return videosWithStats;
+  }
+
+  async searchVideos(query: string, categoryId?: string, limit: number = 20, offset: number = 0): Promise<{ videos: VideoWithStats[]; total: number }> {
+    const conditions = [eq(schema.videos.status, 'approved')];
+    
+    if (query) {
+      const searchPattern = `%${query}%`;
+      conditions.push(
+        or(
+          ilike(schema.videos.title, searchPattern),
+          ilike(schema.videos.description, searchPattern)
+        )!
+      );
+    }
+    
+    if (categoryId) {
+      conditions.push(eq(schema.videos.categoryId, categoryId));
+    }
+    
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.videos)
+      .where(and(...conditions));
+    
+    const total = Number(countResult[0]?.count || 0);
+    
+    const videosWithStats = await db
+      .select({
+        id: schema.videos.id,
+        userId: schema.videos.userId,
+        categoryId: schema.videos.categoryId,
+        phaseId: schema.videos.phaseId,
+        subcategory: schema.videos.subcategory,
+        title: schema.videos.title,
+        description: schema.videos.description,
+        videoUrl: schema.videos.videoUrl,
+        thumbnailUrl: schema.videos.thumbnailUrl,
+        duration: schema.videos.duration,
+        fileSize: schema.videos.fileSize,
+        status: schema.videos.status,
+        views: schema.videos.views,
+        slug: schema.videos.slug,
+        isSelectedForTop500: schema.videos.isSelectedForTop500,
+        moderationStatus: schema.videos.moderationStatus,
+        moderationCategories: schema.videos.moderationCategories,
+        moderationReason: schema.videos.moderationReason,
+        moderatedAt: schema.videos.moderatedAt,
+        createdAt: schema.videos.createdAt,
+        updatedAt: schema.videos.updatedAt,
+        creatorUsername: schema.users.username,
+        creatorFirstName: schema.users.firstName,
+        creatorLastName: schema.users.lastName,
+        likeCount: sql<number>`COALESCE((SELECT COUNT(*) FROM likes WHERE likes.video_id = videos.id), 0)`,
+        voteCount: sql<number>`COALESCE(COUNT(DISTINCT ${schema.votes.id}), 0)`,
+      })
+      .from(schema.videos)
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
+      .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
+      .where(and(...conditions))
+      .groupBy(schema.videos.id, schema.users.username, schema.users.firstName, schema.users.lastName)
+      .orderBy(desc(schema.videos.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return { videos: videosWithStats as VideoWithStats[], total };
   }
 
   async getRejectedVideos(): Promise<Video[]> {

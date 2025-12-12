@@ -1141,6 +1141,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public: Search videos by query and category
+  app.get('/api/videos/search', async (req, res) => {
+    try {
+      const { q, categoryId, page = '1', limit = '20' } = req.query;
+      const query = (q as string || '').trim();
+      const pageNum = Math.max(1, parseInt(page as string) || 1);
+      const limitNum = Math.min(50, Math.max(1, parseInt(limit as string) || 20));
+      const offset = (pageNum - 1) * limitNum;
+      
+      const objectStorageService = new ObjectStorageService();
+      const results = await storage.searchVideos(query, categoryId as string, limitNum, offset);
+      
+      const normalizedVideos = results.videos.map(video => ({
+        ...video,
+        videoUrl: objectStorageService.normalizeObjectEntityPath(video.videoUrl),
+        thumbnailUrl: video.thumbnailUrl ? objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl) : null,
+      }));
+      
+      res.json({
+        videos: normalizedVideos,
+        total: results.total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(results.total / limitNum),
+      });
+    } catch (error) {
+      console.error("Error searching videos:", error);
+      res.status(500).json({ message: "Failed to search videos" });
+    }
+  });
+
   // Public: Get all approved videos with optional filters
   app.get('/api/videos/feed', async (req, res) => {
     try {
