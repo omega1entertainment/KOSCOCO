@@ -2463,11 +2463,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/likes/video/:videoId', async (req, res) => {
+  app.get('/api/likes/video/:videoId', async (req: any, res) => {
     try {
       const { videoId } = req.params;
       const likeCount = await storage.getVideoLikeCount(videoId);
-      res.json({ likeCount });
+      
+      let hasLiked = false;
+      const userId = req.user?.id;
+      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      
+      if (userId) {
+        const userLikes = await storage.getUserLikesForVideo(userId, videoId, undefined);
+        hasLiked = userLikes.length > 0;
+      } else if (ipAddress) {
+        const ipLikes = await storage.getUserLikesForVideo(null, videoId, ipAddress as string);
+        hasLiked = ipLikes.length > 0;
+      }
+      
+      res.json({ likeCount, hasLiked });
     } catch (error) {
       console.error("Error fetching like count:", error);
       res.status(500).json({ message: "Failed to fetch like count" });

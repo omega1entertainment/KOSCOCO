@@ -49,6 +49,7 @@ interface VideoItemProps {
   category?: Category;
   voteCount: number;
   likeCount: number;
+  isLiked: boolean;
   commentCount: number;
   isFollowing: boolean;
   followersCount: number;
@@ -72,6 +73,7 @@ function VideoItem({
   category,
   voteCount,
   likeCount,
+  isLiked,
   commentCount,
   isFollowing,
   followersCount,
@@ -312,10 +314,12 @@ function VideoItem({
         <div className="flex flex-col items-center gap-1">
           <button
             onClick={onLike}
-            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            className={`w-12 h-12 rounded-full backdrop-blur-sm flex items-center justify-center ${
+              isLiked ? 'bg-red-500' : 'bg-black/50'
+            }`}
             data-testid="button-like"
           >
-            <ThumbsUp className="w-6 h-6 text-white" />
+            <ThumbsUp className={`w-6 h-6 ${isLiked ? 'text-white fill-white' : 'text-white'}`} />
           </button>
           <span className="text-white text-xs font-semibold">{likeCount}</span>
         </div>
@@ -593,13 +597,13 @@ export default function VideoPlayer() {
     enabled: !!activeVideoId,
   });
 
-  const { data: likeDataMap } = useQuery<Record<string, number>>({
+  const { data: likeDataMap } = useQuery<Record<string, { likeCount: number; hasLiked: boolean }>>({
     queryKey: ['/api/likes/batch', activeVideoId],
     queryFn: async () => {
       const response = await fetch(`/api/likes/video/${activeVideoId}`);
       if (!response.ok) return {};
       const data = await response.json();
-      return { [activeVideoId]: data.likeCount || 0 };
+      return { [activeVideoId]: { likeCount: data.likeCount || 0, hasLiked: data.hasLiked || false } };
     },
     enabled: !!activeVideoId,
   });
@@ -896,7 +900,8 @@ export default function VideoPlayer() {
                 user={user}
                 category={videoCategory}
                 voteCount={voteDataMap?.[v.id] || 0}
-                likeCount={likeDataMap?.[v.id] || 0}
+                likeCount={likeDataMap?.[v.id]?.likeCount || 0}
+                isLiked={likeDataMap?.[v.id]?.hasLiked || false}
                 commentCount={commentCountMap?.[v.id] || 0}
                 isFollowing={v.id === activeVideoId ? (followData?.isFollowing || false) : false}
                 followersCount={v.id === activeVideoId ? (followData?.followersCount || 0) : 0}
