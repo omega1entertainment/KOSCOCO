@@ -109,18 +109,6 @@ export default function NavigationHeader({
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
           </button>
           
-          <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search videos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-[180px] lg:w-[220px] h-9"
-              data-testid="input-nav-search"
-            />
-          </form>
-          
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {navItems.map((item) => (
               <Button
