@@ -31,7 +31,8 @@ import {
   Grid3X3,
   Copy,
   Link,
-  Search
+  Search,
+  Home
 } from "lucide-react";
 import { SiFacebook, SiX, SiWhatsapp, SiTelegram } from "react-icons/si";
 import {
@@ -1064,7 +1065,13 @@ export default function VideoPlayer() {
       {/* Filter Header */}
       <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent pt-safe">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="w-8" />
+          <button
+            onClick={() => setLocation('/')}
+            className="w-8 h-8 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+            data-testid="button-home"
+          >
+            <Home className="w-5 h-5" />
+          </button>
           <div className="flex items-center gap-6">
             <button
               onClick={() => handleFilterChange('current')}
