@@ -937,37 +937,42 @@ export default function VideoPlayer() {
         <div className="flex items-center justify-center gap-6 px-4 py-3">
           <button
             onClick={() => handleFilterChange('current')}
-            className={`px-2 py-1 text-sm transition-all ${
+            className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
               filterMode === 'current' 
-                ? 'text-white font-bold underline decoration-2 underline-offset-4' 
+                ? 'text-white font-bold' 
                 : 'text-gray-400 font-normal hover:text-gray-300'
             }`}
             data-testid="button-filter-current"
           >
-            Current
+            <span>Current</span>
+            {filterMode === 'current' && <span className="w-4 h-0.5 bg-white mt-1 rounded-full" />}
           </button>
           <button
             onClick={() => handleFilterChange('all')}
-            className={`px-2 py-1 text-sm transition-all ${
+            className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
               filterMode === 'all' 
-                ? 'text-white font-bold underline decoration-2 underline-offset-4' 
+                ? 'text-white font-bold' 
                 : 'text-gray-400 font-normal hover:text-gray-300'
             }`}
             data-testid="button-filter-all"
           >
-            All
+            <span>All</span>
+            {filterMode === 'all' && <span className="w-3 h-0.5 bg-white mt-1 rounded-full" />}
           </button>
           <button
             onClick={() => handleFilterChange('category')}
-            className={`px-2 py-1 text-sm transition-all flex items-center gap-1 ${
+            className={`px-2 py-1 text-sm transition-all flex flex-col items-center ${
               filterMode === 'category' 
-                ? 'text-white font-bold underline decoration-2 underline-offset-4' 
+                ? 'text-white font-bold' 
                 : 'text-gray-400 font-normal hover:text-gray-300'
             }`}
             data-testid="button-filter-category"
           >
-            <Grid3X3 className="w-4 h-4" />
-            Category
+            <span className="flex items-center gap-1">
+              <Grid3X3 className="w-4 h-4" />
+              Category
+            </span>
+            {filterMode === 'category' && <span className="w-6 h-0.5 bg-white mt-1 rounded-full" />}
           </button>
         </div>
         
