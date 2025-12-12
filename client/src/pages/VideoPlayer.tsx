@@ -934,13 +934,13 @@ export default function VideoPlayer() {
     <div className="fixed inset-0 bg-black z-50">
       {/* Filter Header */}
       <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent pt-safe">
-        <div className="flex items-center justify-center gap-2 px-4 py-3">
+        <div className="flex items-center justify-center gap-6 px-4 py-3">
           <button
             onClick={() => handleFilterChange('current')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            className={`px-2 py-1 text-sm text-white transition-all ${
               filterMode === 'current' 
-                ? 'bg-primary text-white' 
-                : 'bg-white/20 text-white hover:bg-white/30'
+                ? 'font-bold underline underline-offset-4' 
+                : 'font-normal hover:opacity-80'
             }`}
             data-testid="button-filter-current"
           >
@@ -948,10 +948,10 @@ export default function VideoPlayer() {
           </button>
           <button
             onClick={() => handleFilterChange('all')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            className={`px-2 py-1 text-sm text-white transition-all ${
               filterMode === 'all' 
-                ? 'bg-primary text-white' 
-                : 'bg-white/20 text-white hover:bg-white/30'
+                ? 'font-bold underline underline-offset-4' 
+                : 'font-normal hover:opacity-80'
             }`}
             data-testid="button-filter-all"
           >
@@ -959,10 +959,10 @@ export default function VideoPlayer() {
           </button>
           <button
             onClick={() => handleFilterChange('category')}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1 ${
+            className={`px-2 py-1 text-sm text-white transition-all flex items-center gap-1 ${
               filterMode === 'category' 
-                ? 'bg-primary text-white' 
-                : 'bg-white/20 text-white hover:bg-white/30'
+                ? 'font-bold underline underline-offset-4' 
+                : 'font-normal hover:opacity-80'
             }`}
             data-testid="button-filter-category"
           >
