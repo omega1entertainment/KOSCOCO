@@ -711,7 +711,7 @@ export default function VideoPlayer() {
             if (videoId) {
               setActiveVideoId(videoId);
               const foundVideo = allVideos.find(v => v.id === videoId);
-              if (foundVideo && !isAllFeed) {
+              if (foundVideo && filterMode === 'current') {
                 window.history.replaceState(
                   null, 
                   '', 
@@ -734,7 +734,7 @@ export default function VideoPlayer() {
     });
 
     return () => observer.disconnect();
-  }, [allVideos, isAllFeed]);
+  }, [allVideos, filterMode]);
 
   const likeMutation = useMutation({
     mutationFn: async ({ targetVideoId, isUnlike }: { targetVideoId: string; isUnlike: boolean }) => {
