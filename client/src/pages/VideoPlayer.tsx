@@ -937,10 +937,10 @@ export default function VideoPlayer() {
         <div className="flex items-center justify-center gap-6 px-4 py-3">
           <button
             onClick={() => handleFilterChange('current')}
-            className={`px-2 py-1 text-sm text-white transition-all ${
+            className={`px-2 py-1 text-sm transition-all ${
               filterMode === 'current' 
-                ? 'font-bold underline underline-offset-4' 
-                : 'font-normal hover:opacity-80'
+                ? 'text-white font-bold underline decoration-2 underline-offset-4' 
+                : 'text-gray-400 font-normal hover:text-gray-300'
             }`}
             data-testid="button-filter-current"
           >
@@ -948,10 +948,10 @@ export default function VideoPlayer() {
           </button>
           <button
             onClick={() => handleFilterChange('all')}
-            className={`px-2 py-1 text-sm text-white transition-all ${
+            className={`px-2 py-1 text-sm transition-all ${
               filterMode === 'all' 
-                ? 'font-bold underline underline-offset-4' 
-                : 'font-normal hover:opacity-80'
+                ? 'text-white font-bold underline decoration-2 underline-offset-4' 
+                : 'text-gray-400 font-normal hover:text-gray-300'
             }`}
             data-testid="button-filter-all"
           >
@@ -959,10 +959,10 @@ export default function VideoPlayer() {
           </button>
           <button
             onClick={() => handleFilterChange('category')}
-            className={`px-2 py-1 text-sm text-white transition-all flex items-center gap-1 ${
+            className={`px-2 py-1 text-sm transition-all flex items-center gap-1 ${
               filterMode === 'category' 
-                ? 'font-bold underline underline-offset-4' 
-                : 'font-normal hover:opacity-80'
+                ? 'text-white font-bold underline decoration-2 underline-offset-4' 
+                : 'text-gray-400 font-normal hover:text-gray-300'
             }`}
             data-testid="button-filter-category"
           >
