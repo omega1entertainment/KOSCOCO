@@ -894,13 +894,17 @@ export class DbStorage implements IStorage {
         moderatedAt: schema.videos.moderatedAt,
         createdAt: schema.videos.createdAt,
         updatedAt: schema.videos.updatedAt,
+        creatorUsername: schema.users.username,
+        creatorFirstName: schema.users.firstName,
+        creatorLastName: schema.users.lastName,
         likeCount: sql<number>`COALESCE((SELECT COUNT(*) FROM likes WHERE likes.video_id = videos.id), 0)`,
         voteCount: sql<number>`COALESCE(COUNT(DISTINCT ${schema.votes.id}), 0)`,
       })
       .from(schema.videos)
+      .leftJoin(schema.users, eq(schema.videos.userId, schema.users.id))
       .leftJoin(schema.votes, eq(schema.videos.id, schema.votes.videoId))
       .where(eq(schema.videos.status, 'approved'))
-      .groupBy(schema.videos.id)
+      .groupBy(schema.videos.id, schema.users.username, schema.users.firstName, schema.users.lastName)
       .orderBy(desc(schema.videos.createdAt));
 
     return videosWithStats;
