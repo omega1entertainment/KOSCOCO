@@ -103,7 +103,7 @@ export default function NavigationHeader({
         <div className="flex items-center justify-between h-16 gap-4">
           <button 
             onClick={() => setLocation("/")}
-            className="flex items-center hover-elevate active-elevate-2 rounded-md p-2 -ml-2"
+            className="flex items-center flex-shrink-0 hover-elevate active-elevate-2 rounded-md p-2 -ml-2"
             data-testid="button-logo-home"
           >
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
