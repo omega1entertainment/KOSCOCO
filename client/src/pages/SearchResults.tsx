@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Play, Eye, Heart, Loader2 } from "lucide-react";
 import { useState, useEffect, FormEvent } from "react";
 import type { Category } from "@shared/schema";
+import { createPermalink } from "@/lib/slugUtils";
 
 interface VideoResult {
   id: string;
@@ -89,7 +90,7 @@ export default function SearchResults() {
   };
 
   const getVideoLink = (video: VideoResult) => {
-    return video.slug ? `/video/${video.slug}` : `/video/${video.id}`;
+    return `/video/${createPermalink(video.id, video.title)}`;
   };
 
   return (
