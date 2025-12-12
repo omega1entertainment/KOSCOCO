@@ -924,7 +924,7 @@ export class DbStorage implements IStorage {
       );
     }
     
-    if (categoryId) {
+    if (categoryId && categoryId !== 'all') {
       conditions.push(eq(schema.videos.categoryId, categoryId));
     }
     

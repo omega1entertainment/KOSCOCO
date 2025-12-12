@@ -53,6 +53,7 @@ import Advertise from "@/pages/Advertise";
 import FAQ from "@/pages/FAQ";
 import Help from "@/pages/Help";
 import WatchlistPage from "@/pages/WatchlistPage";
+import SearchResults from "@/pages/SearchResults";
 import NotFound from "@/pages/not-found";
 
 function ScrollToTop() {
@@ -139,6 +140,7 @@ function Router() {
           <Route path="/creator" component={CreatorDashboard} />
           <Route path="/edit-profile" component={EditProfile} />
           <Route path="/my-collections" component={WatchlistPage} />
+          <Route path="/search" component={SearchResults} />
           <Route component={NotFound} />
         </Switch>
       </main>

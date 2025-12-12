@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
-import { Menu, X, ChevronDown, LogOut, User, Globe } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, ChevronDown, LogOut, User, Globe, Search } from "lucide-react";
+import { useState, FormEvent } from "react";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,10 +34,19 @@ export default function NavigationHeader({
   const [expandedLeaderboard, setExpandedLeaderboard] = useState(false);
   const [expandedAffiliate, setExpandedAffiliate] = useState(false);
   const [expandedAdvertise, setExpandedAdvertise] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setLocation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setMobileMenuOpen(false);
+    }
+  };
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'fr' : 'en');
@@ -98,6 +108,18 @@ export default function NavigationHeader({
           >
             <img src={logo} alt="KOSCOCO" className="h-8" data-testid="img-logo" />
           </button>
+          
+          <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search videos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-[180px] lg:w-[220px] h-9"
+              data-testid="input-nav-search"
+            />
+          </form>
           
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {navItems.map((item) => (
@@ -277,6 +299,23 @@ export default function NavigationHeader({
       {mobileMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
+            <form onSubmit={handleSearch} className="flex items-center gap-2 mb-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search videos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9"
+                  data-testid="input-mobile-search"
+                />
+              </div>
+              <Button type="submit" size="icon" data-testid="button-mobile-search">
+                <Search className="w-4 h-4" />
+              </Button>
+            </form>
+            
             {navItems.map((item) => (
               <Button
                 key={item.label}
