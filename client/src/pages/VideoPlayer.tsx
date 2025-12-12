@@ -300,18 +300,6 @@ function VideoItem({
       )}
 
       <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6">
-        <button
-          onClick={onToggleMute}
-          className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
-          data-testid="button-mute-toggle"
-        >
-          {isMuted ? (
-            <VolumeX className="w-6 h-6 text-white" />
-          ) : (
-            <Volume2 className="w-6 h-6 text-white" />
-          )}
-        </button>
-
         <div className="flex flex-col items-center gap-1">
           <button
             onClick={onVote}
