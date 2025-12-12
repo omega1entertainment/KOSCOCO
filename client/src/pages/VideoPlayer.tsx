@@ -28,8 +28,11 @@ import {
   X,
   UserPlus,
   UserCheck,
-  Grid3X3
+  Grid3X3,
+  Copy,
+  Link
 } from "lucide-react";
+import { SiFacebook, SiX, SiWhatsapp, SiTelegram } from "react-icons/si";
 import {
   Select,
   SelectContent,
@@ -561,6 +564,151 @@ function CommentsPanel({ videoId, isOpen, onClose, user }: CommentsPanelProps) {
   );
 }
 
+interface SharePanelProps {
+  video: Video;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function SharePanel({ video, isOpen, onClose }: SharePanelProps) {
+  const { toast } = useToast();
+  const shareUrl = `${window.location.origin}/video/${createPermalink(video.id, video.title)}`;
+  const shareText = `Check out this video: ${video.title}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied",
+        description: "Video link copied to clipboard",
+      });
+    } catch {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShareFacebook = () => {
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const handleShareX = () => {
+    window.open(
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const handleShareWhatsApp = () => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+      '_blank'
+    );
+  };
+
+  const handleShareTelegram = () => {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+      '_blank'
+    );
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/50" />
+      <div 
+        className="relative w-full max-w-lg bg-background rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-semibold text-lg">Share Video</h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-muted rounded-full"
+            data-testid="button-close-share"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <button
+            onClick={handleShareFacebook}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-facebook"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center">
+              <SiFacebook className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">Facebook</span>
+          </button>
+
+          <button
+            onClick={handleShareX}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-x"
+          >
+            <div className="w-12 h-12 rounded-full bg-black dark:bg-white flex items-center justify-center">
+              <SiX className="w-5 h-5 text-white dark:text-black" />
+            </div>
+            <span className="text-xs text-muted-foreground">X</span>
+          </button>
+
+          <button
+            onClick={handleShareWhatsApp}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-whatsapp"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#25D366] flex items-center justify-center">
+              <SiWhatsapp className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">WhatsApp</span>
+          </button>
+
+          <button
+            onClick={handleShareTelegram}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-telegram"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#0088cc] flex items-center justify-center">
+              <SiTelegram className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">Telegram</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+          <Link className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+          <span className="flex-1 text-sm truncate">{shareUrl}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleCopyLink}
+            className="flex-shrink-0"
+            data-testid="button-copy-link"
+          >
+            <Copy className="w-4 h-4 mr-1" />
+            Copy
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function VideoPlayer() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/video/:permalink");
@@ -574,6 +722,7 @@ export default function VideoPlayer() {
   const [voteModalOpen, setVoteModalOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState<string>(videoId);
   const [selectedVideoForAction, setSelectedVideoForAction] = useState<Video | null>(null);
@@ -771,22 +920,10 @@ export default function VideoPlayer() {
     },
   });
 
-  const handleShare = useCallback(async (targetVideo: Video) => {
-    const shareUrl = `${window.location.origin}/video/${createPermalink(targetVideo.id, targetVideo.title)}`;
-    try {
-      await navigator.share?.({
-        title: targetVideo.title,
-        text: `${t('videoPlayer.checkOutVideo')} ${targetVideo.title}`,
-        url: shareUrl,
-      });
-    } catch {
-      navigator.clipboard.writeText(shareUrl);
-      toast({
-        title: t('videoPlayer.linkCopied'),
-        description: t('videoPlayer.linkCopiedDescription'),
-      });
-    }
-  }, [t, toast]);
+  const handleShare = useCallback((targetVideo: Video) => {
+    setSelectedVideoForAction(targetVideo);
+    setShareOpen(true);
+  }, []);
 
   const handleLike = useCallback((targetVideo: Video, isCurrentlyLiked: boolean) => {
     if (!user && !isCurrentlyLiked) {
@@ -1089,6 +1226,14 @@ export default function VideoPlayer() {
         onClose={() => setCommentsOpen(false)}
         user={user}
       />
+
+      {selectedVideoForAction && (
+        <SharePanel
+          video={selectedVideoForAction}
+          isOpen={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   );
 }
