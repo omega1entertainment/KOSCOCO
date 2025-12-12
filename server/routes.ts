@@ -2498,6 +2498,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/likes', async (req: any, res) => {
+    try {
+      const { videoId } = req.body;
+      if (!videoId) {
+        return res.status(400).json({ message: "Video ID is required" });
+      }
+
+      const userId = req.user?.id || null;
+      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+      const deleted = await storage.deleteLike(videoId, userId, userId ? undefined : ipAddress as string);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Like not found" });
+      }
+
+      const likeCount = await storage.getVideoLikeCount(videoId);
+
+      res.json({ 
+        success: true, 
+        likeCount
+      });
+    } catch (error) {
+      console.error("Error removing like:", error);
+      res.status(500).json({ message: "Failed to remove like" });
+    }
+  });
+
   app.post('/api/watch-history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as SelectUser).id;

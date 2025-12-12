@@ -55,7 +55,7 @@ interface VideoItemProps {
   followersCount: number;
   creatorName: string;
   onVote: () => void;
-  onLike: () => void;
+  onLike: (isCurrentlyLiked: boolean) => void;
   onShare: () => void;
   onReport: () => void;
   onOpenComments: () => void;
@@ -313,7 +313,7 @@ function VideoItem({
 
         <div className="flex flex-col items-center gap-1">
           <button
-            onClick={onLike}
+            onClick={() => onLike(isLiked)}
             className={`w-12 h-12 rounded-full backdrop-blur-sm flex items-center justify-center ${
               isLiked ? 'bg-red-500' : 'bg-black/50'
             }`}
@@ -682,13 +682,16 @@ export default function VideoPlayer() {
   }, [allVideos]);
 
   const likeMutation = useMutation({
-    mutationFn: async (targetVideoId: string) => {
+    mutationFn: async ({ targetVideoId, isUnlike }: { targetVideoId: string; isUnlike: boolean }) => {
+      if (isUnlike) {
+        return await apiRequest(`/api/likes`, "DELETE", { videoId: targetVideoId });
+      }
       return await apiRequest(`/api/likes`, "POST", { videoId: targetVideoId });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast({
-        title: t('videoPlayer.liked'),
-        description: t('videoPlayer.likedVideoDescription'),
+        title: variables.isUnlike ? "Unliked" : t('videoPlayer.liked'),
+        description: variables.isUnlike ? "You removed your like" : t('videoPlayer.likedVideoDescription'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/likes/batch', activeVideoId] });
     },
@@ -728,8 +731,8 @@ export default function VideoPlayer() {
     }
   }, [t, toast]);
 
-  const handleLike = useCallback((targetVideo: Video) => {
-    if (!user) {
+  const handleLike = useCallback((targetVideo: Video, isCurrentlyLiked: boolean) => {
+    if (!user && !isCurrentlyLiked) {
       toast({
         title: t('videoPlayer.signInRequired'),
         description: t('videoPlayer.signInToLike'),
@@ -737,7 +740,7 @@ export default function VideoPlayer() {
       });
       return;
     }
-    likeMutation.mutate(targetVideo.id);
+    likeMutation.mutate({ targetVideoId: targetVideo.id, isUnlike: isCurrentlyLiked });
   }, [user, t, toast, likeMutation]);
 
   const handleVote = useCallback((targetVideo: Video) => {
@@ -907,7 +910,7 @@ export default function VideoPlayer() {
                 followersCount={v.id === activeVideoId ? (followData?.followersCount || 0) : 0}
                 creatorName={(v as VideoWithStats).creatorUsername || `${(v as VideoWithStats).creatorFirstName || ''} ${(v as VideoWithStats).creatorLastName || ''}`.trim() || 'Creator'}
                 onVote={() => handleVote(v)}
-                onLike={() => handleLike(v)}
+                onLike={(isCurrentlyLiked) => handleLike(v, isCurrentlyLiked)}
                 onShare={() => handleShare(v)}
                 onReport={() => handleReport(v)}
                 onOpenComments={() => handleOpenComments(v)}

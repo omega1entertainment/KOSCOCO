@@ -120,6 +120,7 @@ export interface IStorage {
   getLeaderboard(categoryId?: string, phaseId?: string, limit?: number): Promise<(Video & { voteCount: number; totalJudgeScore: number; rank: number })[]>;
   
   createLike(like: InsertLike): Promise<Like>;
+  deleteLike(videoId: string, userId: string | null, ipAddress?: string): Promise<boolean>;
   getVideoLikeCount(videoId: string): Promise<number>;
   getUserLikesForVideo(userId: string | null, videoId: string, ipAddress?: string): Promise<Like[]>;
   getUserLikes(userId: string): Promise<Like[]>;
@@ -1013,6 +1014,19 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.likes)
       .where(eq(schema.likes.userId, userId))
       .orderBy(desc(schema.likes.createdAt));
+  }
+
+  async deleteLike(videoId: string, userId: string | null, ipAddress?: string): Promise<boolean> {
+    if (userId) {
+      const result = await db.delete(schema.likes)
+        .where(and(eq(schema.likes.videoId, videoId), eq(schema.likes.userId, userId)));
+      return true;
+    } else if (ipAddress) {
+      const result = await db.delete(schema.likes)
+        .where(and(eq(schema.likes.videoId, videoId), eq(schema.likes.ipAddress, ipAddress)));
+      return true;
+    }
+    return false;
   }
 
   async createWatchHistory(insertWatchHistory: InsertWatchHistory): Promise<WatchHistory> {
