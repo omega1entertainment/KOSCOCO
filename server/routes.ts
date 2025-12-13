@@ -719,14 +719,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/videos/upload-url', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
-      const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
-      if (!privateObjectDir) {
-        return res.status(500).json({ message: "Object storage not configured" });
-      }
       const objectId = randomUUID();
-      // Store full path for backend upload, but return /objects format for frontend
-      const fullPath = `${privateObjectDir}/videos/${objectId}`;
-      res.json({ videoUrl: fullPath });
+      
+      // Use Bunny Storage if configured, otherwise fall back to Replit Object Storage
+      if (bunnyStorageService.isConfigured()) {
+        const bunnyPath = `/videos/${objectId}.mp4`;
+        res.json({ videoUrl: bunnyPath, storageType: 'bunny' });
+      } else {
+        const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+        if (!privateObjectDir) {
+          return res.status(500).json({ message: "Object storage not configured" });
+        }
+        const fullPath = `${privateObjectDir}/videos/${objectId}`;
+        res.json({ videoUrl: fullPath, storageType: 'gcs' });
+      }
     } catch (error) {
       console.error("Error generating upload path:", error);
       res.status(500).json({ message: "Failed to generate upload path" });
@@ -758,6 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const videoFile = Array.isArray(files.video) ? files.video[0] : files.video;
         const thumbnailFile = files.thumbnail ? (Array.isArray(files.thumbnail) ? files.thumbnail[0] : files.thumbnail) : null;
         const videoUrlField = Array.isArray(fields.videoUrl) ? fields.videoUrl[0] : fields.videoUrl;
+        const storageTypeField = Array.isArray(fields.storageType) ? fields.storageType[0] : fields.storageType;
 
         if (!videoFile || !videoUrlField) {
           console.error("Missing video file or path. videoFile:", !!videoFile, "videoUrl:", videoUrlField);
@@ -791,79 +798,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let thumbnailUrl = null;
 
         try {
-          const { bucketName, objectName } = parseObjectPath(videoUrlField);
-          const bucket = objectStorageClient.bucket(bucketName);
-          const videoFileObj = bucket.file(objectName);
-
-          try {
-            await new Promise((resolve, reject) => {
-              const readStream = createReadStream(videoFile.filepath);
-              const writeStream = videoFileObj.createWriteStream({
-                metadata: {
-                  contentType: videoFile.mimetype || 'video/mp4',
-                  cacheControl: 'private, max-age=3600',
-                },
-              });
-
-              readStream.on('error', (error: Error) => {
-                console.error("Error reading file:", error);
-                reject(new Error('Failed to read video file'));
-              });
-
-              writeStream.on('error', (error: Error) => {
-                console.error("Error writing to storage:", error);
-                reject(new Error('Failed to upload to storage'));
-              });
-
-              writeStream.on('finish', () => {
-                resolve(undefined);
-              });
-
-              readStream.pipe(writeStream);
-            });
-
-            const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
-            const thumbnailId = randomUUID();
-            const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
-            const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
-            const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
-            const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
-
-            await new Promise((resolve, reject) => {
-              const readStream = createReadStream(thumbnailFile.filepath);
-              const writeStream = thumbnailFileObj.createWriteStream({
-                metadata: {
-                  contentType: 'image/jpeg',
-                  cacheControl: 'private, max-age=3600',
-                },
-              });
-
-              readStream.on('error', (error: Error) => {
-                console.error("Error reading thumbnail file:", error);
-                reject(new Error('Failed to read thumbnail file'));
-              });
-
-              writeStream.on('error', (error: Error) => {
-                console.error("Error writing thumbnail to storage:", error);
-                reject(new Error('Failed to upload thumbnail to storage'));
-              });
-
-              writeStream.on('finish', () => {
-                resolve(undefined);
-              });
-
-              readStream.pipe(writeStream);
-            });
-
-            thumbnailUrl = thumbnailPath;
-
-            res.json({ success: true, videoUrl: videoUrlField, thumbnailUrl });
-          } finally {
+          // Check if we're using Bunny Storage
+          const useBunny = storageTypeField === 'bunny' && bunnyStorageService.isConfigured();
+          
+          if (useBunny) {
+            // Upload to Bunny Storage
             try {
-              await fs.unlink(videoFile.filepath);
-              await fs.unlink(thumbnailFile.filepath);
-            } catch (unlinkError) {
-              console.error("Error cleaning up temp files:", unlinkError);
+              // Read video file and upload to Bunny
+              const videoBuffer = await fs.readFile(videoFile.filepath);
+              await bunnyStorageService.upload(videoBuffer, videoUrlField);
+              
+              // Generate thumbnail path and upload to Bunny
+              const thumbnailId = randomUUID();
+              const thumbnailPath = `/thumbnails/${thumbnailId}.jpg`;
+              const thumbnailBuffer = await fs.readFile(thumbnailFile.filepath);
+              await bunnyStorageService.upload(thumbnailBuffer, thumbnailPath);
+              
+              // Get CDN URLs for both files
+              const videoCdnUrl = bunnyStorageService.getCdnUrl(videoUrlField);
+              const thumbnailCdnUrl = bunnyStorageService.getCdnUrl(thumbnailPath);
+              
+              res.json({ 
+                success: true, 
+                videoUrl: videoUrlField,
+                thumbnailUrl: thumbnailPath,
+                videoCdnUrl,
+                thumbnailCdnUrl,
+                storageType: 'bunny'
+              });
+            } finally {
+              try {
+                await fs.unlink(videoFile.filepath);
+                await fs.unlink(thumbnailFile.filepath);
+              } catch (unlinkError) {
+                console.error("Error cleaning up temp files:", unlinkError);
+              }
+            }
+          } else {
+            // Fall back to GCS/Replit Object Storage
+            const { bucketName, objectName } = parseObjectPath(videoUrlField);
+            const bucket = objectStorageClient.bucket(bucketName);
+            const videoFileObj = bucket.file(objectName);
+
+            try {
+              await new Promise((resolve, reject) => {
+                const readStream = createReadStream(videoFile.filepath);
+                const writeStream = videoFileObj.createWriteStream({
+                  metadata: {
+                    contentType: videoFile.mimetype || 'video/mp4',
+                    cacheControl: 'private, max-age=3600',
+                  },
+                });
+
+                readStream.on('error', (error: Error) => {
+                  console.error("Error reading file:", error);
+                  reject(new Error('Failed to read video file'));
+                });
+
+                writeStream.on('error', (error: Error) => {
+                  console.error("Error writing to storage:", error);
+                  reject(new Error('Failed to upload to storage'));
+                });
+
+                writeStream.on('finish', () => {
+                  resolve(undefined);
+                });
+
+                readStream.pipe(writeStream);
+              });
+
+              const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+              const thumbnailId = randomUUID();
+              const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
+              const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
+              const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
+              const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
+
+              await new Promise((resolve, reject) => {
+                const readStream = createReadStream(thumbnailFile.filepath);
+                const writeStream = thumbnailFileObj.createWriteStream({
+                  metadata: {
+                    contentType: 'image/jpeg',
+                    cacheControl: 'private, max-age=3600',
+                  },
+                });
+
+                readStream.on('error', (error: Error) => {
+                  console.error("Error reading thumbnail file:", error);
+                  reject(new Error('Failed to read thumbnail file'));
+                });
+
+                writeStream.on('error', (error: Error) => {
+                  console.error("Error writing thumbnail to storage:", error);
+                  reject(new Error('Failed to upload thumbnail to storage'));
+                });
+
+                writeStream.on('finish', () => {
+                  resolve(undefined);
+                });
+
+                readStream.pipe(writeStream);
+              });
+
+              thumbnailUrl = thumbnailPath;
+
+              res.json({ success: true, videoUrl: videoUrlField, thumbnailUrl, storageType: 'gcs' });
+            } finally {
+              try {
+                await fs.unlink(videoFile.filepath);
+                await fs.unlink(thumbnailFile.filepath);
+              } catch (unlinkError) {
+                console.error("Error cleaning up temp files:", unlinkError);
+              }
             }
           }
         } catch (error: any) {
@@ -915,22 +961,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Maximum 2 videos per category allowed" });
       }
 
-      const objectStorageService = new ObjectStorageService();
-      const videoPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        videoUrl,
-        {
-          owner: userId,
-          visibility: "private",
-        }
-      );
+      // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
+      const isBunnyPath = (path: string) => path.startsWith('/videos/') || path.startsWith('/thumbnails/');
+      const useBunny = isBunnyPath(videoUrl) && bunnyStorageService.isConfigured();
+      
+      let videoPath: string;
+      let thumbnailPath: string;
+      
+      if (useBunny) {
+        // For Bunny Storage, use paths directly (no ACL needed)
+        videoPath = videoUrl;
+        thumbnailPath = thumbnailUrl;
+      } else {
+        // For GCS/Replit Object Storage, set ACL policies
+        const objectStorageService = new ObjectStorageService();
+        videoPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          videoUrl,
+          {
+            owner: userId,
+            visibility: "private",
+          }
+        );
 
-      const thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        thumbnailUrl,
-        {
-          owner: userId,
-          visibility: "public",
-        }
-      );
+        thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          thumbnailUrl,
+          {
+            owner: userId,
+            visibility: "public",
+          }
+        );
+      }
 
       // Generate unique slug to avoid duplicate key errors
       let slug = generateSlug(title);
@@ -982,13 +1042,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const tempVideoPath = path.join(objectStorageTempDir, `video-${randomUUID()}.mp4`);
           
           try {
-            const parsedPath = parseObjectPath(videoPath);
-            const [file] = await objectStorageClient
-              .bucket(parsedPath.bucketName)
-              .file(parsedPath.objectName)
-              .download();
+            // Download video for moderation - check if Bunny or GCS
+            if (useBunny) {
+              // Download from Bunny Storage
+              const videoBuffer = await bunnyStorageService.download(videoPath);
+              await fs.writeFile(tempVideoPath, videoBuffer);
+            } else {
+              // Download from GCS/Replit Object Storage
+              const parsedPath = parseObjectPath(videoPath);
+              const [file] = await objectStorageClient
+                .bucket(parsedPath.bucketName)
+                .file(parsedPath.objectName)
+                .download();
+              await fs.writeFile(tempVideoPath, file);
+            }
             
-            await fs.writeFile(tempVideoPath, file);
             const moderationResult = await moderateVideo(tempVideoPath, title, description);
             
             // Update video with moderation results
@@ -1030,7 +1098,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
             async (videoId: string, status: 'completed' | 'failed' | 'skipped') => {
               await storage.updateVideoCompressionStatus(videoId, status);
-            }
+            },
+            useBunny // Pass flag to indicate Bunny Storage
           );
         } catch (bgError) {
           console.error('Background moderation process error:', bgError);

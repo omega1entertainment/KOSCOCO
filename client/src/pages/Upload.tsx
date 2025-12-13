@@ -203,12 +203,15 @@ export default function Upload() {
         fileName: videoFile.name,
       });
 
-      const { videoUrl } = await uploadPathResponse.json();
+      const { videoUrl, storageType } = await uploadPathResponse.json();
 
       const formData = new FormData();
       formData.append('video', videoFile);
       formData.append('videoUrl', videoUrl);
       formData.append('thumbnail', thumbnailFile);
+      if (storageType) {
+        formData.append('storageType', storageType);
+      }
 
       const xhr = new XMLHttpRequest();
       

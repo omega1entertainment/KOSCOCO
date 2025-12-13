@@ -5,6 +5,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from './objectStorage';
+import { bunnyStorageService } from './bunnyStorageService';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
@@ -75,7 +76,8 @@ function calculateScaledDimensions(
 export async function compressVideo(
   videoStoragePath: string,
   userId: string,
-  options: CompressionOptions = {}
+  options: CompressionOptions = {},
+  useBunny: boolean = false
 ): Promise<VideoCompressionResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const tempDir = os.tmpdir();
@@ -84,18 +86,29 @@ export async function compressVideo(
   let originalSize = 0;
 
   try {
-    console.log(`[VideoCompression] Starting compression for: ${videoStoragePath}`);
+    console.log(`[VideoCompression] Starting compression for: ${videoStoragePath} (useBunny: ${useBunny})`);
 
-    const { bucketName, objectName } = parseObjectPath(videoStoragePath);
-    const bucket = objectStorageClient.bucket(bucketName);
-    const videoFile = bucket.file(objectName);
+    // Download video from appropriate storage
+    if (useBunny && bunnyStorageService.isConfigured()) {
+      // Download from Bunny Storage
+      const videoBuffer = await bunnyStorageService.download(videoStoragePath);
+      originalSize = videoBuffer.length;
+      console.log(`[VideoCompression] Original file size: ${(originalSize / (1024 * 1024)).toFixed(2)} MB`);
+      await fs.writeFile(tempInputPath, videoBuffer);
+      console.log(`[VideoCompression] Downloaded video from Bunny to temp: ${tempInputPath}`);
+    } else {
+      // Download from GCS/Replit Object Storage
+      const { bucketName, objectName } = parseObjectPath(videoStoragePath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const videoFile = bucket.file(objectName);
 
-    const [metadata] = await videoFile.getMetadata();
-    originalSize = parseInt(metadata.size as string, 10) || 0;
-    console.log(`[VideoCompression] Original file size: ${(originalSize / (1024 * 1024)).toFixed(2)} MB`);
+      const [metadata] = await videoFile.getMetadata();
+      originalSize = parseInt(metadata.size as string, 10) || 0;
+      console.log(`[VideoCompression] Original file size: ${(originalSize / (1024 * 1024)).toFixed(2)} MB`);
 
-    await videoFile.download({ destination: tempInputPath });
-    console.log(`[VideoCompression] Downloaded video to temp: ${tempInputPath}`);
+      await videoFile.download({ destination: tempInputPath });
+      console.log(`[VideoCompression] Downloaded video from GCS to temp: ${tempInputPath}`);
+    }
 
     const dimensions = await getVideoDimensions(tempInputPath);
     console.log(`[VideoCompression] Original dimensions: ${dimensions.width}x${dimensions.height}`);
@@ -165,46 +178,59 @@ export async function compressVideo(
       };
     }
 
-    const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || '';
-    if (!privateObjectDir) {
-      throw new Error('PRIVATE_OBJECT_DIR not configured');
+    let compressedStoragePath: string;
+    
+    // Upload to appropriate storage
+    if (useBunny && bunnyStorageService.isConfigured()) {
+      // Upload to Bunny Storage
+      const compressedId = randomUUID();
+      compressedStoragePath = `/videos/compressed/${compressedId}.mp4`;
+      const compressedBuffer = await fs.readFile(tempOutputPath);
+      await bunnyStorageService.upload(compressedBuffer, compressedStoragePath);
+      console.log(`[VideoCompression] Uploaded compressed video to Bunny: ${compressedStoragePath}`);
+    } else {
+      // Upload to GCS/Replit Object Storage
+      const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || '';
+      if (!privateObjectDir) {
+        throw new Error('PRIVATE_OBJECT_DIR not configured');
+      }
+
+      const compressedId = randomUUID();
+      compressedStoragePath = `${privateObjectDir}/videos/compressed/${compressedId}.mp4`;
+      const { bucketName: compBucket, objectName: compObjectName } = parseObjectPath(compressedStoragePath);
+      const compressedBucket = objectStorageClient.bucket(compBucket);
+      const compressedFile = compressedBucket.file(compObjectName);
+
+      await new Promise<void>((resolve, reject) => {
+        const readStream = require('fs').createReadStream(tempOutputPath);
+        const writeStream = compressedFile.createWriteStream({
+          metadata: {
+            contentType: 'video/mp4',
+            cacheControl: 'private, max-age=3600',
+          },
+        });
+
+        readStream.on('error', reject);
+        writeStream.on('error', reject);
+        writeStream.on('finish', () => resolve());
+
+        readStream.pipe(writeStream);
+      });
+      console.log(`[VideoCompression] Uploaded compressed video to GCS: ${compressedStoragePath}`);
+
+      const objectStorageService = new ObjectStorageService();
+      compressedStoragePath = await objectStorageService.trySetObjectEntityAclPolicy(
+        compressedStoragePath,
+        {
+          owner: userId,
+          visibility: 'private',
+        }
+      );
     }
 
-    const compressedId = randomUUID();
-    const compressedStoragePath = `${privateObjectDir}/videos/compressed/${compressedId}.mp4`;
-    const { bucketName: compBucket, objectName: compObjectName } = parseObjectPath(compressedStoragePath);
-    const compressedBucket = objectStorageClient.bucket(compBucket);
-    const compressedFile = compressedBucket.file(compObjectName);
-
-    await new Promise<void>((resolve, reject) => {
-      const readStream = require('fs').createReadStream(tempOutputPath);
-      const writeStream = compressedFile.createWriteStream({
-        metadata: {
-          contentType: 'video/mp4',
-          cacheControl: 'private, max-age=3600',
-        },
-      });
-
-      readStream.on('error', reject);
-      writeStream.on('error', reject);
-      writeStream.on('finish', () => resolve());
-
-      readStream.pipe(writeStream);
-    });
-    console.log(`[VideoCompression] Uploaded compressed video to: ${compressedStoragePath}`);
-
-    const objectStorageService = new ObjectStorageService();
-    const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
-      compressedStoragePath,
-      {
-        owner: userId,
-        visibility: 'private',
-      }
-    );
-
-    console.log(`[VideoCompression] Successfully compressed video: ${normalizedPath}`);
+    console.log(`[VideoCompression] Successfully compressed video: ${compressedStoragePath}`);
     return {
-      compressedVideoUrl: normalizedPath,
+      compressedVideoUrl: compressedStoragePath,
       originalSize,
       compressedSize,
       compressionRatio,
@@ -234,12 +260,13 @@ export async function compressVideoInBackground(
   videoStoragePath: string,
   userId: string,
   updateVideoCompressedUrl: (videoId: string, compressedUrl: string, compressedSize: number) => Promise<void>,
-  updateCompressionStatus?: (videoId: string, status: 'completed' | 'failed' | 'skipped') => Promise<void>
+  updateCompressionStatus?: (videoId: string, status: 'completed' | 'failed' | 'skipped') => Promise<void>,
+  useBunny: boolean = false
 ): Promise<void> {
   try {
-    console.log(`[VideoCompression] Starting background compression for video: ${videoId}`);
+    console.log(`[VideoCompression] Starting background compression for video: ${videoId} (useBunny: ${useBunny})`);
     
-    const result = await compressVideo(videoStoragePath, userId);
+    const result = await compressVideo(videoStoragePath, userId, {}, useBunny);
     
     if (result.success && result.compressedVideoUrl) {
       await updateVideoCompressedUrl(videoId, result.compressedVideoUrl, result.compressedSize);
