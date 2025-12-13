@@ -78,6 +78,17 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
   - `BUNNY_STORAGE_REGION` - Region code (de, ny, la, sg, etc.) - optional, defaults to 'de'
   - `BUNNY_STORAGE_CDN_URL` - (Optional) CDN URL for public access
 
+**File Storage Management UI (Completed)**
+- Created `client/src/components/FileStorageManagement.tsx`:
+  - Browse files and folders with table view
+  - Navigate directories with back button and path display
+  - Upload files to any path with dialog
+  - Delete files with confirmation dialog
+  - Copy CDN URLs to clipboard
+  - Download files directly
+  - Proper path handling for Bunny Storage API compatibility
+- Added "Storage" tab to Admin Dashboard for file management
+
 **BunnyCDN Integration for Video Streaming (Completed)**
 - Installed `bunnycdn-stream` package for BunnyCDN Stream API integration
 - Created `server/bunnyCdnService.ts` with:
