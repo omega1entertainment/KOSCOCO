@@ -274,6 +274,16 @@ export default function Login() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signupEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address (e.g., user@example.com)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const age = parseInt(signupAge);
     if (age < 18 && !signupParentalConsent) {
       toast({
