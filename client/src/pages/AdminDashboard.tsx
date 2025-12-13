@@ -628,6 +628,7 @@ function AdminDashboardContent() {
   });
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [bulkRoleDialogOpen, setBulkRoleDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Affiliate state
   const [selectedAffiliateId, setSelectedAffiliateId] = useState<string | null>(null);
@@ -1531,6 +1532,42 @@ function AdminDashboardContent() {
     },
   });
 
+  // Bulk delete users mutation
+  const bulkDeleteUsersMutation = useMutation({
+    mutationFn: async () => {
+      const promises = Array.from(selectedUserIds).map(userId =>
+        fetch(`/api/admin/users/${userId}`, {
+          method: "DELETE",
+          credentials: "include",
+        })
+      );
+      const responses = await Promise.all(promises);
+      for (const response of responses) {
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to delete user");
+        }
+      }
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bulk Delete Complete",
+        description: `${selectedUserIds.size} users have been deleted.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setSelectedUserIds(new Set());
+      setBulkDeleteDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Bulk Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handlePhotoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1750,6 +1787,18 @@ function AdminDashboardContent() {
                       >
                         {users.filter((u) => !u.isAdmin && !u.isJudge).length} {t("admin.users.contestants")}
                       </Badge>
+                      {selectedUserIds.size > 0 && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setBulkDeleteDialogOpen(true)}
+                          disabled={bulkDeleteUsersMutation.isPending}
+                          data-testid="button-bulk-delete-users"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete {selectedUserIds.size}
+                        </Button>
+                      )}
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full" data-testid="table-users">
@@ -1901,6 +1950,29 @@ function AdminDashboardContent() {
                 )}
               </CardContent>
             </Card>
+            <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+              <AlertDialogContent data-testid="dialog-bulk-delete-users">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {selectedUserIds.size} Users</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {selectedUserIds.size} user account(s)? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-bulk-delete">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => bulkDeleteUsersMutation.mutate()}
+                    disabled={bulkDeleteUsersMutation.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    data-testid="button-confirm-bulk-delete"
+                  >
+                    {bulkDeleteUsersMutation.isPending ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </AccordionContent>
         </AccordionItem>
 
@@ -2312,13 +2384,25 @@ function AdminDashboardContent() {
                       {selectedUserIds.size > 0 && (
                         <div className="bg-muted p-4 rounded-lg mb-4 flex items-center justify-between gap-4">
                           <div className="text-sm font-medium">{selectedUserIds.size} users selected</div>
-                          <Button
-                            size="sm"
-                            onClick={() => setBulkRoleDialogOpen(true)}
-                            data-testid="button-bulk-assign-roles"
-                          >
-                            Assign Roles
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => setBulkRoleDialogOpen(true)}
+                              data-testid="button-bulk-assign-roles"
+                            >
+                              Assign Roles
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setBulkDeleteDialogOpen(true)}
+                              disabled={bulkDeleteUsersMutation.isPending}
+                              data-testid="button-bulk-delete-users-desktop"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       )}
 
