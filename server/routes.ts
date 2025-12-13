@@ -7352,6 +7352,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= BUNNYCDN ENDPOINTS =============
+  const { bunnyCdnService } = await import('./bunnyCdnService');
+
+  app.get('/api/bunny/status', async (req, res) => {
+    try {
+      const isConfigured = bunnyCdnService.isConfigured();
+      res.json({ configured: isConfigured });
+    } catch (error) {
+      console.error('Error checking BunnyCDN status:', error);
+      res.status(500).json({ message: 'Failed to check BunnyCDN status' });
+    }
+  });
+
+  app.get('/api/bunny/videos', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyCdnService.isConfigured()) {
+        return res.status(503).json({ message: 'BunnyCDN is not configured' });
+      }
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const videos = await bunnyCdnService.listVideos(page, limit);
+      res.json(videos);
+    } catch (error) {
+      console.error('Error listing BunnyCDN videos:', error);
+      res.status(500).json({ message: 'Failed to list videos' });
+    }
+  });
+
+  app.get('/api/bunny/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyCdnService.isConfigured()) {
+        return res.status(503).json({ message: 'BunnyCDN is not configured' });
+      }
+      const video = await bunnyCdnService.getVideo(req.params.id);
+      res.json(video);
+    } catch (error) {
+      console.error('Error getting BunnyCDN video:', error);
+      res.status(500).json({ message: 'Failed to get video' });
+    }
+  });
+
+  app.post('/api/bunny/upload', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyCdnService.isConfigured()) {
+        return res.status(503).json({ message: 'BunnyCDN is not configured' });
+      }
+
+      const uploadSchema = z.object({
+        title: z.string().min(1, 'Title is required'),
+        videoUrl: z.string().url('Valid video URL is required'),
+      });
+
+      const { title, videoUrl } = uploadSchema.parse(req.body);
+      const result = await bunnyCdnService.uploadVideoFromUrl(videoUrl, title);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation failed', errors: error.flatten() });
+      }
+      console.error('Error uploading to BunnyCDN:', error);
+      res.status(500).json({ message: 'Failed to upload video' });
+    }
+  });
+
+  app.delete('/api/bunny/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyCdnService.isConfigured()) {
+        return res.status(503).json({ message: 'BunnyCDN is not configured' });
+      }
+      await bunnyCdnService.deleteVideo(req.params.id);
+      res.json({ message: 'Video deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting BunnyCDN video:', error);
+      res.status(500).json({ message: 'Failed to delete video' });
+    }
+  });
+
+  app.get('/api/bunny/urls/:videoId', async (req, res) => {
+    try {
+      if (!bunnyCdnService.isConfigured()) {
+        return res.status(503).json({ message: 'BunnyCDN is not configured' });
+      }
+      const { videoId } = req.params;
+      res.json({
+        embedUrl: bunnyCdnService.getEmbedUrl(videoId),
+        hlsUrl: bunnyCdnService.getHlsUrl(videoId),
+        thumbnailUrl: bunnyCdnService.getThumbnailUrl(videoId),
+      });
+    } catch (error) {
+      console.error('Error getting BunnyCDN URLs:', error);
+      res.status(500).json({ message: 'Failed to get video URLs' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

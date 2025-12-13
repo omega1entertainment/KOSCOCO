@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startScheduledVideoJob } from "./scheduledVideoJob";
+import { initializeBunnyCdn } from "./bunnyCdnService";
 
 const app = express();
 
@@ -78,6 +79,9 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Initialize BunnyCDN service
+    initializeBunnyCdn();
     
     // Start background jobs
     startScheduledVideoJob();
