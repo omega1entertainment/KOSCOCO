@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startScheduledVideoJob } from "./scheduledVideoJob";
 import { initializeBunnyCdn } from "./bunnyCdnService";
+import { initializeBunnyStorage } from "./bunnyStorageService";
 
 const app = express();
 
@@ -82,6 +83,9 @@ app.use((req, res, next) => {
     
     // Initialize BunnyCDN service
     initializeBunnyCdn();
+    
+    // Initialize Bunny Storage service
+    initializeBunnyStorage();
     
     // Start background jobs
     startScheduledVideoJob();

@@ -21,6 +21,7 @@ import { compressVideoInBackground } from "./videoCompression";
 import { generateSlug } from "../client/src/lib/slugUtils";
 import path from "path";
 import { sendNewsletterWelcomeEmail } from "./emailService";
+import { bunnyStorageService } from "./bunnyStorageService";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -7467,6 +7468,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error getting BunnyCDN URLs:', error);
       res.status(500).json({ message: 'Failed to get video URLs' });
+    }
+  });
+
+  // Bunny Storage API endpoints
+  app.get('/api/storage/status', async (req, res) => {
+    try {
+      res.json({ configured: bunnyStorageService.isConfigured() });
+    } catch (error) {
+      console.error('Error checking Bunny Storage status:', error);
+      res.status(500).json({ message: 'Failed to check storage status' });
+    }
+  });
+
+  app.get('/api/storage/files', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyStorageService.isConfigured()) {
+        return res.status(503).json({ message: 'Bunny Storage is not configured' });
+      }
+      const directory = (req.query.directory as string) || '/';
+      const files = await bunnyStorageService.list(directory);
+      res.json(files);
+    } catch (error) {
+      console.error('Error listing Bunny Storage files:', error);
+      res.status(500).json({ message: 'Failed to list files' });
+    }
+  });
+
+  app.post('/api/storage/upload', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyStorageService.isConfigured()) {
+        return res.status(503).json({ message: 'Bunny Storage is not configured' });
+      }
+
+      const form = formidable({ maxFileSize: 100 * 1024 * 1024 });
+      const [fields, files] = await form.parse(req);
+      
+      const file = files.file?.[0];
+      const remotePath = fields.path?.[0];
+      
+      if (!file) {
+        return res.status(400).json({ message: 'No file provided' });
+      }
+      
+      if (!remotePath) {
+        return res.status(400).json({ message: 'No remote path provided' });
+      }
+
+      const fileBuffer = await fs.readFile(file.filepath);
+      const result = await bunnyStorageService.upload(fileBuffer, remotePath);
+      
+      await fs.unlink(file.filepath).catch(() => {});
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error uploading to Bunny Storage:', error);
+      res.status(500).json({ message: 'Failed to upload file' });
+    }
+  });
+
+  app.get('/api/storage/download/*', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyStorageService.isConfigured()) {
+        return res.status(503).json({ message: 'Bunny Storage is not configured' });
+      }
+      
+      const remotePath = req.params[0];
+      if (!remotePath) {
+        return res.status(400).json({ message: 'No path provided' });
+      }
+
+      const buffer = await bunnyStorageService.download(remotePath);
+      
+      const filename = remotePath.split('/').pop() || 'file';
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.send(buffer);
+    } catch (error) {
+      console.error('Error downloading from Bunny Storage:', error);
+      res.status(500).json({ message: 'Failed to download file' });
+    }
+  });
+
+  app.delete('/api/storage/files/*', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      if (!bunnyStorageService.isConfigured()) {
+        return res.status(503).json({ message: 'Bunny Storage is not configured' });
+      }
+      
+      const remotePath = req.params[0];
+      if (!remotePath) {
+        return res.status(400).json({ message: 'No path provided' });
+      }
+
+      await bunnyStorageService.delete(remotePath);
+      res.json({ message: 'File deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting from Bunny Storage:', error);
+      res.status(500).json({ message: 'Failed to delete file' });
+    }
+  });
+
+  app.get('/api/storage/cdn-url/*', async (req, res) => {
+    try {
+      if (!bunnyStorageService.isConfigured()) {
+        return res.status(503).json({ message: 'Bunny Storage is not configured' });
+      }
+      
+      const remotePath = req.params[0];
+      if (!remotePath) {
+        return res.status(400).json({ message: 'No path provided' });
+      }
+
+      const cdnUrl = bunnyStorageService.getCdnUrl(remotePath);
+      res.json({ cdnUrl });
+    } catch (error) {
+      console.error('Error getting CDN URL:', error);
+      res.status(500).json({ message: 'Failed to get CDN URL' });
     }
   });
 
