@@ -46,6 +46,7 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 ## External Dependencies
 - **Database**: PostgreSQL (Neon) with Drizzle ORM
 - **Object Storage**: Replit Object Storage
+- **CDN/Video Streaming**: BunnyCDN Stream (optional, enhances video delivery)
 - **Authentication**: Passport.js, bcrypt
 - **Payment Gateway**: Flutterwave
 - **Email Service**: Resend
@@ -53,6 +54,30 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 - **Frontend Libraries**: React, Tailwind CSS, Shadcn UI, Wouter, react-hook-form, Zod
 - **Backend Libraries**: Express.js, Node.js
 - **Fonts**: Bebas Neue, Play, Inter
+
+## Recent Changes (December 13, 2025)
+
+**BunnyCDN Integration for Video Streaming (Completed)**
+- Installed `bunnycdn-stream` package for BunnyCDN Stream API integration
+- Created `server/bunnyCdnService.ts` with:
+  - Stream API client initialization
+  - Video upload (buffer and URL-based)
+  - Video info retrieval, deletion, and listing
+  - CDN URL generation (embed, HLS, thumbnail)
+  - Pull zone URL transformation (preserves signed URL query parameters)
+- Added API endpoints (admin-only):
+  - `GET /api/bunny/status` - Check if BunnyCDN is configured
+  - `GET /api/bunny/videos` - List videos from BunnyCDN library
+  - `GET /api/bunny/videos/:id` - Get video info
+  - `POST /api/bunny/upload` - Upload video to BunnyCDN from URL
+  - `DELETE /api/bunny/videos/:id` - Delete video
+  - `GET /api/bunny/urls/:videoId` - Get embed/HLS/thumbnail URLs
+- Updated existing CDN URL endpoints to use BunnyCDN pull zone when configured
+- Environment variables required:
+  - `BUNNY_STREAM_API_KEY` - Stream API key
+  - `BUNNY_VIDEO_LIBRARY_ID` - Video library ID
+  - `BUNNY_CDN_HOSTNAME` - CDN hostname (e.g., vz-xxx.b-cdn.net)
+  - `BUNNY_PULL_ZONE_URL` - (Optional) Pull zone URL for caching
 
 ## Recent Changes (December 5, 2025)
 
