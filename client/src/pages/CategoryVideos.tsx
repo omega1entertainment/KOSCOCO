@@ -29,6 +29,20 @@ export default function CategoryVideos() {
     enabled: !!categoryId,
   });
 
+  // Fetch CDN URLs for thumbnails (handles Bunny Storage paths)
+  const { data: cdnUrls = {} } = useQuery({
+    queryKey: ['videos/cdn-urls', videos?.map(v => v.id) || []],
+    queryFn: async () => {
+      if (!videos || videos.length === 0) return {};
+      const response = await apiRequest("/api/videos/cdn-urls", "POST", {
+        videoIds: videos.map(v => v.id),
+      });
+      const data = await response.json();
+      return data.urls || {};
+    },
+    enabled: !!videos && videos.length > 0,
+  });
+
   const { toast } = useToast();
 
   const likeMutation = useMutation({
@@ -132,10 +146,11 @@ export default function CategoryVideos() {
                     <div className="aspect-video relative overflow-hidden bg-muted">
                       {video.thumbnailUrl ? (
                         <img
-                          src={video.thumbnailUrl}
+                          src={cdnUrls[video.id]?.thumbnailUrl || video.thumbnailUrl}
                           alt={video.title}
                           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
+                          data-testid={`img-thumbnail-${video.id}`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted">
