@@ -31,12 +31,17 @@ class BunnyStorageService {
     this.config = config;
     
     if (config.apiKey && config.storageZone) {
+      // For Bunny Storage, the main Falkenstein region uses no prefix (empty string)
+      // Other regions: ny, la, sg, syd, br, jh, se, uk
+      // "de" is NOT a valid region - use empty string for Germany/Falkenstein
+      const region = config.region === "de" ? "" : (config.region || "");
+      
       this.client = new BunnyStorage(
         config.apiKey,
         config.storageZone,
-        config.region || "de"
+        region
       );
-      console.log("[BunnyStorage] Service initialized successfully");
+      console.log(`[BunnyStorage] Service initialized successfully (region: ${region || 'default/Falkenstein'})`);
     }
   }
 
