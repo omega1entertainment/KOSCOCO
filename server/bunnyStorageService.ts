@@ -112,7 +112,8 @@ export function initializeBunnyStorage(): void {
   const apiKey = process.env.BUNNY_STORAGE_API_KEY;
   const storageZone = process.env.BUNNY_STORAGE_ZONE;
   const region = process.env.BUNNY_STORAGE_REGION;
-  const cdnUrl = process.env.BUNNY_STORAGE_CDN_URL;
+  // Support both BUNNY_STORAGE_CDN_URL and BUNNY_PULL_ZONE_URL for CDN URLs
+  const cdnUrl = process.env.BUNNY_STORAGE_CDN_URL || process.env.BUNNY_PULL_ZONE_URL;
 
   if (apiKey && storageZone) {
     bunnyStorageService.initialize({
@@ -121,6 +122,11 @@ export function initializeBunnyStorage(): void {
       region,
       cdnUrl,
     });
+    if (cdnUrl) {
+      console.log(`[BunnyStorage] CDN URL configured: ${cdnUrl}`);
+    } else {
+      console.log("[BunnyStorage] No CDN URL configured - files will be served via storage API");
+    }
   } else {
     console.log("[BunnyStorage] Missing configuration - service not initialized");
   }

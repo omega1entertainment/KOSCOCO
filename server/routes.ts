@@ -1336,6 +1336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get CDN URL for a video - returns a signed URL for direct access from GCS edge network
   // If BunnyCDN is configured with a pull zone, it will transform the URL through BunnyCDN for better caching
+  // For Bunny Storage paths, uses Bunny CDN directly
   app.get('/api/videos/:id/cdn-url', async (req, res) => {
     try {
       const { id } = req.params;
@@ -1355,25 +1356,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the video URL to use (prefer compressed if available)
       const videoPath = video.compressedVideoUrl || video.videoUrl;
       
-      // Generate signed URL with 24-hour expiration for caching
-      let cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
+      // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
+      const isBunnyPath = (path: string) => path.startsWith('/videos/') || path.startsWith('/thumbnails/');
+      // Only use Bunny Storage if configured AND CDN URL is available
+      const bunnyCdnUrl = bunnyStorageService.getCdnUrl(videoPath);
+      const useBunnyStorage = isBunnyPath(videoPath) && bunnyStorageService.isConfigured() && !!bunnyCdnUrl;
       
-      // If BunnyCDN is configured with a pull zone, transform URL for better caching
-      if (bunnyCdnService.isConfigured()) {
-        cdnUrl = bunnyCdnService.getCdnUrl(cdnUrl);
-      }
+      let cdnUrl: string;
+      let thumbnailCdnUrl: string | null = null;
       
-      // Also generate thumbnail CDN URL if available
-      let thumbnailCdnUrl = null;
-      if (video.thumbnailUrl) {
-        try {
-          thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
-          // Transform thumbnail URL through BunnyCDN pull zone if configured
-          if (bunnyCdnService.isConfigured()) {
-            thumbnailCdnUrl = bunnyCdnService.getCdnUrl(thumbnailCdnUrl);
+      if (useBunnyStorage) {
+        // Use Bunny Storage CDN URL directly
+        cdnUrl = bunnyCdnUrl;
+        
+        if (video.thumbnailUrl && isBunnyPath(video.thumbnailUrl)) {
+          thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
+        }
+      } else if (isBunnyPath(videoPath)) {
+        // Bunny path but no CDN URL configured - cannot serve
+        return res.status(500).json({ message: "Video storage CDN not configured" });
+      } else {
+        // Generate signed URL with 24-hour expiration for GCS caching
+        cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
+        
+        // If BunnyCDN is configured with a pull zone, transform URL for better caching
+        if (bunnyCdnService.isConfigured()) {
+          cdnUrl = bunnyCdnService.getCdnUrl(cdnUrl);
+        }
+        
+        // Also generate thumbnail CDN URL if available
+        if (video.thumbnailUrl) {
+          try {
+            thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
+            // Transform thumbnail URL through BunnyCDN pull zone if configured
+            if (bunnyCdnService.isConfigured()) {
+              thumbnailCdnUrl = bunnyCdnService.getCdnUrl(thumbnailCdnUrl);
+            }
+          } catch (e) {
+            console.error('Failed to generate thumbnail CDN URL:', e);
           }
-        } catch (e) {
-          console.error('Failed to generate thumbnail CDN URL:', e);
         }
       }
 
@@ -1384,8 +1405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         videoUrl: cdnUrl,
         thumbnailUrl: thumbnailCdnUrl,
-        expiresIn: 86400, // 24 hours
+        expiresIn: useBunnyStorage ? null : 86400, // No expiration for Bunny CDN URLs
         useBunnyCdn: bunnyCdnService.isConfigured(),
+        useBunnyStorage,
       });
     } catch (error) {
       console.error("Error generating CDN URL:", error);
@@ -1395,6 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Batch get CDN URLs for multiple videos
   // If BunnyCDN is configured with a pull zone, URLs are transformed through BunnyCDN
+  // For Bunny Storage paths, uses Bunny CDN directly
   app.post('/api/videos/cdn-urls', async (req, res) => {
     try {
       const { videoIds } = req.body;
@@ -1411,6 +1434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const objectStorageService = new ObjectStorageService();
       const { bunnyCdnService } = await import('./bunnyCdnService');
       const results: Record<string, { videoUrl: string; thumbnailUrl: string | null }> = {};
+      
+      // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
+      const isBunnyPath = (path: string) => path.startsWith('/videos/') || path.startsWith('/thumbnails/');
 
       await Promise.all(
         videoIds.map(async (videoId: string) => {
@@ -1418,23 +1444,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const video = await storage.getVideoById(videoId);
             if (video && video.status === 'approved') {
               const videoPath = video.compressedVideoUrl || video.videoUrl;
-              let cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
+              // Only use Bunny Storage if configured AND CDN URL is available
+              const bunnyCdnUrl = bunnyStorageService.getCdnUrl(videoPath);
+              const useBunnyStorage = isBunnyPath(videoPath) && bunnyStorageService.isConfigured() && !!bunnyCdnUrl;
               
-              // Transform through BunnyCDN pull zone if configured
-              if (bunnyCdnService.isConfigured()) {
-                cdnUrl = bunnyCdnService.getCdnUrl(cdnUrl);
-              }
+              let cdnUrl: string;
+              let thumbnailCdnUrl: string | null = null;
               
-              let thumbnailCdnUrl = null;
-              if (video.thumbnailUrl) {
-                try {
-                  thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
-                  // Transform thumbnail URL through BunnyCDN pull zone if configured
-                  if (bunnyCdnService.isConfigured()) {
-                    thumbnailCdnUrl = bunnyCdnService.getCdnUrl(thumbnailCdnUrl);
+              if (useBunnyStorage) {
+                // Use Bunny Storage CDN URL directly
+                cdnUrl = bunnyCdnUrl;
+                
+                if (video.thumbnailUrl && isBunnyPath(video.thumbnailUrl)) {
+                  thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
+                }
+              } else if (isBunnyPath(videoPath)) {
+                // Bunny path but no CDN URL configured - skip this video
+                console.error(`Cannot generate CDN URL for video ${videoId}: Bunny CDN not configured`);
+                return;
+              } else {
+                // Generate signed URL for GCS
+                cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
+                
+                // Transform through BunnyCDN pull zone if configured
+                if (bunnyCdnService.isConfigured()) {
+                  cdnUrl = bunnyCdnService.getCdnUrl(cdnUrl);
+                }
+                
+                if (video.thumbnailUrl) {
+                  try {
+                    thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
+                    // Transform thumbnail URL through BunnyCDN pull zone if configured
+                    if (bunnyCdnService.isConfigured()) {
+                      thumbnailCdnUrl = bunnyCdnService.getCdnUrl(thumbnailCdnUrl);
+                    }
+                  } catch (e) {
+                    // Ignore thumbnail errors
                   }
-                } catch (e) {
-                  // Ignore thumbnail errors
                 }
               }
 
