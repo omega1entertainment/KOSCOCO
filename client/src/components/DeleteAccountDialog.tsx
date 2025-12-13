@@ -178,7 +178,7 @@ export function DeleteAccountDialog({
           <Button
             variant="destructive"
             onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending || selectedItems.size === 0}
+            disabled={deleteMutation.isPending}
             data-testid="button-confirm-delete-account"
           >
             {deleteMutation.isPending ? (
