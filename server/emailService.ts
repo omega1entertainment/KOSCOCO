@@ -3,6 +3,9 @@ import crypto from 'crypto';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Get custom from email from environment, default to Resend test domain
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'KOSCOCO <onboarding@resend.dev>';
+
 export function generateVerificationToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
@@ -33,7 +36,7 @@ export async function sendOTPEmail({
     console.log(`\n📧 OTP for ${email}: ${otp} (expires in 10 minutes)\n`);
     
     const result = await resend.emails.send({
-      from: 'KOSCOCO <onboarding@resend.dev>',
+      from: FROM_EMAIL,
       to: email,
       subject: `${otp} - Your KOSCOCO Verification Code`,
       replyTo: 'support@kozzii.africa',
@@ -134,7 +137,7 @@ export async function sendVerificationEmail({
 
   try {
     const result = await resend.emails.send({
-      from: 'KOSCOCO <onboarding@resend.dev>',
+      from: FROM_EMAIL,
       to: email,
       subject: 'Verify Your Email - KOSCOCO',
       replyTo: 'support@kozzii.africa',
@@ -212,7 +215,7 @@ export async function sendVerificationReminder({
 
   try {
     const result = await resend.emails.send({
-      from: 'KOSCOCO <onboarding@resend.dev>',
+      from: FROM_EMAIL,
       to: email,
       subject: 'Reminder: Verify Your Email - KOSCOCO',
       replyTo: 'support@kozzii.africa',
@@ -283,7 +286,7 @@ export async function sendNewsletterWelcomeEmail({
 }: SendNewsletterWelcomeEmailParams): Promise<void> {
   try {
     const result = await resend.emails.send({
-      from: 'KOSCOCO Newsletter <onboarding@resend.dev>',
+      from: FROM_EMAIL,
       to: email,
       subject: 'Welcome to KOSCOCO Newsletter! 🎬',
       replyTo: 'support@kozzii.africa',
