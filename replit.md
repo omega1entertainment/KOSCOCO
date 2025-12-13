@@ -57,6 +57,27 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 
 ## Recent Changes (December 13, 2025)
 
+**Bunny Storage Integration for File Storage (Completed)**
+- Installed `bunnycdn-storage` package for Bunny Storage API integration
+- Created `server/bunnyStorageService.ts` with:
+  - Storage client initialization with region support
+  - File upload (buffer-based)
+  - File download and deletion
+  - Directory listing
+  - CDN URL generation for public access
+- Added API endpoints (admin-only):
+  - `GET /api/storage/status` - Check if Bunny Storage is configured
+  - `GET /api/storage/files` - List files in a directory
+  - `POST /api/storage/upload` - Upload file with form data
+  - `GET /api/storage/download/*` - Download file
+  - `DELETE /api/storage/files/*` - Delete file
+  - `GET /api/storage/cdn-url/*` - Get CDN URL for a file
+- Environment variables required:
+  - `BUNNY_STORAGE_API_KEY` - Storage zone password/API key
+  - `BUNNY_STORAGE_ZONE` - Storage zone name
+  - `BUNNY_STORAGE_REGION` - Region code (de, ny, la, sg, etc.) - optional, defaults to 'de'
+  - `BUNNY_STORAGE_CDN_URL` - (Optional) CDN URL for public access
+
 **BunnyCDN Integration for Video Streaming (Completed)**
 - Installed `bunnycdn-stream` package for BunnyCDN Stream API integration
 - Created `server/bunnyCdnService.ts` with:
