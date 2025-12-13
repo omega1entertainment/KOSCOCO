@@ -4579,6 +4579,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
       }
 
+      // Always delete related records with foreign key constraints to prevent constraint violations
+      // Delete registrations (always, regardless of selectedItems)
+      await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
+      
+      // Delete affiliates and related data (always, regardless of selectedItems)
+      await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+      await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+      await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
+
       // Always delete the user
       await storage.deleteUser(id);
 
@@ -7684,7 +7693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/storage/cdn-url/*', async (req, res) => {
+  app.get('/api/storage/cdn-url/*', async (req: any, res) => {
     try {
       if (!bunnyStorageService.isConfigured()) {
         return res.status(503).json({ message: 'Bunny Storage is not configured' });

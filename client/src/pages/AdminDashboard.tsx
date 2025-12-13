@@ -279,10 +279,10 @@ function SmsTestingForm() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("send");
-  const { data: analytics } = useQuery({ queryKey: ["/api/admin/sms/analytics"] });
-  const { data: history = [] } = useQuery({ queryKey: ["/api/admin/sms/history"] });
-  const { data: usersCount } = useQuery({ queryKey: ["/api/admin/sms/bulk-recipients/users"] });
-  const { data: subscribersCount } = useQuery({ queryKey: ["/api/admin/sms/bulk-recipients/subscribers"] });
+  const { data: analytics = { total: 0, sent: 0, failed: 0 } } = useQuery<{ total: number; sent: number; failed: number }>({ queryKey: ["/api/admin/sms/analytics"] });
+  const { data: history = [] } = useQuery<any[]>({ queryKey: ["/api/admin/sms/history"] });
+  const { data: usersCount = { count: 0 } } = useQuery<{ count: number }>({ queryKey: ["/api/admin/sms/bulk-recipients/users"] });
+  const { data: subscribersCount = { count: 0 } } = useQuery<{ count: number }>({ queryKey: ["/api/admin/sms/bulk-recipients/subscribers"] });
   
   const form = useForm({
     resolver: zodResolver(z.object({
