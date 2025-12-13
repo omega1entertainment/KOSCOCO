@@ -2884,6 +2884,29 @@ function AdminDashboardContent() {
                   </div>
                 </DialogContent>
               </Dialog>
+              <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+                <AlertDialogContent data-testid="dialog-bulk-delete-users-desktop">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedUserIds.size} Users</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedUserIds.size} user account(s)? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-cancel-bulk-delete-desktop">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => bulkDeleteUsersMutation.mutate()}
+                      disabled={bulkDeleteUsersMutation.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-confirm-bulk-delete-desktop"
+                    >
+                      {bulkDeleteUsersMutation.isPending ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </TabsContent>
 
             <TabsContent value="judges" className="mt-0">
