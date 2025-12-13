@@ -1,4 +1,6 @@
-import BunnyStorage from "bunnycdn-storage";
+import BunnyStorageModule from "bunnycdn-storage";
+
+const BunnyStorage = (BunnyStorageModule as any).default || BunnyStorageModule;
 
 interface BunnyStorageConfig {
   apiKey: string;
@@ -22,7 +24,7 @@ interface UploadResult {
 }
 
 class BunnyStorageService {
-  private client: BunnyStorage | null = null;
+  private client: any = null;
   private config: BunnyStorageConfig | null = null;
 
   initialize(config: BunnyStorageConfig): void {
