@@ -57,8 +57,10 @@ import {
   Film,
   BarChart3,
   Shield,
+  HardDrive,
 } from "lucide-react";
 import TwoFactorSettings from "@/components/TwoFactorSettings";
+import FileStorageManagement from "@/components/FileStorageManagement";
 import { createPermalink } from "@/lib/slugUtils";
 import {
   AlertDialog,
@@ -2174,6 +2176,14 @@ function AdminDashboardContent() {
             >
               <Shield className="w-4 h-4 mr-2" />
               Security
+            </TabsTrigger>
+            <TabsTrigger
+              value="storage"
+              className="w-full justify-start"
+              data-testid="tab-storage"
+            >
+              <HardDrive className="w-4 h-4 mr-2" />
+              File Storage
             </TabsTrigger>
           </TabsList>
 
@@ -5442,6 +5452,10 @@ function AdminDashboardContent() {
                   <TwoFactorSettings userType="admin" />
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="storage" className="mt-0">
+              <FileStorageManagement />
             </TabsContent>
           </div>
         </div>
