@@ -188,7 +188,9 @@ class BunnyCdnService {
     
     try {
       const url = new URL(originalUrl);
-      return `${this.config.pullZoneUrl}${url.pathname}`;
+      // Preserve query parameters (required for signed URLs to work)
+      const queryString = url.search;
+      return `${this.config.pullZoneUrl}${url.pathname}${queryString}`;
     } catch {
       return originalUrl;
     }
