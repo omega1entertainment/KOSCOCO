@@ -4536,6 +4536,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You cannot delete your own account" });
       }
 
+      // CRITICAL: Delete referrals FIRST (they have foreign keys to registrations)
+      // This must happen before anything else
+      await db.execute(sql`DELETE FROM referrals WHERE registration_id IN (SELECT id FROM registrations WHERE user_id = ${id})`);
+
       // Always delete the user account itself
       // Selectively delete data based on selectedItems
 
@@ -4580,6 +4584,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Always delete related records with foreign key constraints to prevent constraint violations
+      // (Referrals already deleted at the beginning of function)
+      
       // Delete registrations (always, regardless of selectedItems)
       await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
       
