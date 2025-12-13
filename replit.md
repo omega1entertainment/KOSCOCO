@@ -57,7 +57,7 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 
 ## Recent Changes (December 13, 2025)
 
-**Video Upload Migration to Bunny Storage (In Progress)**
+**Video Upload Migration to Bunny Storage (Completed)**
 - Modified `/api/videos/upload-url` to detect Bunny Storage configuration and return appropriate paths
 - Modified `/api/videos/upload` to upload videos and thumbnails to Bunny Storage when configured
 - Modified `/api/videos` to:
@@ -70,8 +70,12 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
   - Download from Bunny Storage when `useBunny` is true
   - Upload compressed videos to Bunny Storage when `useBunny` is true
 - Updated `client/src/pages/Upload.tsx` to pass `storageType` field from upload-url response to upload endpoint
+- Updated CDN URL endpoints (`/api/videos/:id/cdn-url` and `/api/videos/cdn-urls`) to:
+  - Detect Bunny Storage paths and use `bunnyStorageService.getCdnUrl()` directly
+  - Require CDN URL configuration for Bunny-stored videos (returns error if not configured)
+  - Maintain backward compatibility with GCS-stored videos
+- Updated `bunnyStorageService.ts` to support `BUNNY_PULL_ZONE_URL` as fallback for `BUNNY_STORAGE_CDN_URL`
 - Backward compatible: Falls back to GCS/Replit Object Storage when Bunny is not configured
-- Still needed: Update video streaming/playback to serve from Bunny CDN URLs
 
 **Bunny Storage Integration for File Storage (Completed)**
 - Installed `bunnycdn-storage` package for Bunny Storage API integration
