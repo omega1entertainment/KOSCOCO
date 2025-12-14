@@ -55,6 +55,7 @@ import Help from "@/pages/Help";
 import WatchlistPage from "@/pages/WatchlistPage";
 import SearchResults from "@/pages/SearchResults";
 import NotFound from "@/pages/not-found";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -157,6 +158,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <PWAInstallPrompt />
           </TooltipProvider>
         </ThemeProvider>
       </LanguageProvider>
