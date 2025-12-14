@@ -7727,16 +7727,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const videoId = permalink.split('-')[0];
       
       if (!videoId) {
-        return res.sendFile('client/index.html', { root: process.cwd() });
+        return res.status(404).json({ message: 'Video not found' });
       }
 
-      // Fetch video data
-      const video = await db.query.videos.findFirst({
-        where: eq(schema.videos.id, videoId),
-      });
+      // Fetch video data using storage API
+      const video = await storage.getVideoById(videoId);
 
       if (!video) {
-        return res.sendFile('client/index.html', { root: process.cwd() });
+        return res.status(404).json({ message: 'Video not found' });
       }
 
       const shareUrl = `${req.protocol}://${req.get('host')}/video/${permalink}`;
@@ -7744,34 +7742,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const description = video.description || `Check out this video on Kozzii: ${video.title}`;
       const thumbnailUrl = video.thumbnailUrl || '';
 
+      // Escape HTML special characters
+      const escapeHtml = (text: string) => {
+        const map: Record<string, string> = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+      };
+
+      const escapedTitle = escapeHtml(title);
+      const escapedDescription = escapeHtml(description);
+
       // Return HTML with meta tags
       const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover" />
-    <meta name="description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta name="description" content="${escapedDescription}" />
     
     <!-- Open Graph Meta Tags for Social Media Sharing -->
-    <meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />
-    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />
-    <meta property="og:image" content="${thumbnailUrl}" />
+    <meta property="og:title" content="${escapedTitle}" />
+    <meta property="og:description" content="${escapedDescription}" />
+    <meta property="og:image" content="${escapeHtml(thumbnailUrl)}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="${shareUrl}" />
+    <meta property="og:url" content="${escapeHtml(shareUrl)}" />
     <meta property="og:type" content="video.other" />
+    <meta property="og:site_name" content="Kozzii" />
     
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title.replace(/"/g, '&quot;')}" />
-    <meta name="twitter:description" content="${description.replace(/"/g, '&quot;')}" />
-    <meta name="twitter:image" content="${thumbnailUrl}" />
+    <meta name="twitter:title" content="${escapedTitle}" />
+    <meta name="twitter:description" content="${escapedDescription}" />
+    <meta name="twitter:image" content="${escapeHtml(thumbnailUrl)}" />
+    <meta name="twitter:site" content="@kozzii" />
+    
+    <!-- Additional Meta Tags -->
+    <meta property="og:locale" content="en_US" />
     
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Play:wght@400;700&display=swap" rel="stylesheet">
-    <title>${title} - Kozzii</title>
+    <title>${escapedTitle} - Kozzii</title>
+    
+    <!-- Redirect to client after meta tags are loaded -->
+    <script>
+      window.location.href = '/';
+    </script>
   </head>
   <body>
     <div id="root"></div>
@@ -7779,11 +7802,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   </body>
 </html>`;
 
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
     } catch (error) {
       console.error('Error serving video page:', error);
-      res.sendFile('client/index.html', { root: process.cwd() });
+      res.status(500).json({ message: 'Error loading video' });
     }
   });
 
