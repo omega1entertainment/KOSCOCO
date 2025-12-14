@@ -7718,6 +7718,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Handle video URLs with meta tags for social media sharing
+  app.get('/video/:permalink', async (req: any, res) => {
+    try {
+      const { permalink } = req.params;
+      
+      // Extract video ID from permalink (format: id-slug)
+      const videoId = permalink.split('-')[0];
+      
+      if (!videoId) {
+        return res.sendFile('client/index.html', { root: process.cwd() });
+      }
+
+      // Fetch video data
+      const video = await db.query.videos.findFirst({
+        where: eq(schema.videos.id, videoId),
+      });
+
+      if (!video) {
+        return res.sendFile('client/index.html', { root: process.cwd() });
+      }
+
+      const shareUrl = `${req.protocol}://${req.get('host')}/video/${permalink}`;
+      const title = video.title || 'Kozzii';
+      const description = video.description || `Check out this video on Kozzii: ${video.title}`;
+      const thumbnailUrl = video.thumbnailUrl || '';
+
+      // Return HTML with meta tags
+      const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover" />
+    <meta name="description" content="${description.replace(/"/g, '&quot;')}" />
+    
+    <!-- Open Graph Meta Tags for Social Media Sharing -->
+    <meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta property="og:image" content="${thumbnailUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="${shareUrl}" />
+    <meta property="og:type" content="video.other" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:image" content="${thumbnailUrl}" />
+    
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Play:wght@400;700&display=swap" rel="stylesheet">
+    <title>${title} - Kozzii</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"><\/script>
+  </body>
+</html>`;
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    } catch (error) {
+      console.error('Error serving video page:', error);
+      res.sendFile('client/index.html', { root: process.cwd() });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
