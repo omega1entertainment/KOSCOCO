@@ -2394,9 +2394,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json({ success: false, message: "Payment amount mismatch" });
       }
 
-      if (Math.abs(paymentData.charged_amount - purchase.amount) > 0.01) {
-        console.error("Charged amount mismatch");
-        return res.status(200).json({ success: false, message: "Charged amount mismatch" });
+      // Note: charged_amount includes Flutterwave fees, so it may be higher than the base amount
+      // We only log this for monitoring but don't block the transaction
+      if (paymentData.charged_amount !== purchase.amount) {
+        console.log(`[Vote Purchase] Note: charged_amount (${paymentData.charged_amount}) differs from base amount (${purchase.amount}), may include fees`);
       }
 
       const COST_PER_VOTE = 50;
@@ -2514,9 +2515,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Amount mismatch - potential tampering detected" });
       }
 
-      if (Math.abs(paymentData.charged_amount - purchase.amount) > 0.01) {
-        console.error(`[Vote Purchase Webhook] Charged amount mismatch: expected ${purchase.amount}, got ${paymentData.charged_amount}`);
-        return res.status(400).json({ message: "Charged amount mismatch" });
+      // Note: charged_amount includes Flutterwave fees, so it may be higher than the base amount
+      // We only log this for monitoring but don't block the transaction
+      if (paymentData.charged_amount !== purchase.amount) {
+        console.log(`[Vote Purchase Webhook] Note: charged_amount (${paymentData.charged_amount}) differs from base amount (${purchase.amount}), may include fees`);
       }
 
       const COST_PER_VOTE = 50;
