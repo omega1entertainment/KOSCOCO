@@ -243,14 +243,15 @@ export async function setupAuth(app: Express) {
 
   // Login route with 2FA support
   app.post("/api/login", async (req, res, next) => {
-    // Verify Turnstile token first
+    // Verify Turnstile token first - REQUIRED
     const { turnstileToken } = req.body;
-    if (turnstileToken) {
-      const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
-      const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
-      if (!turnstileResult.success) {
-        return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
-      }
+    if (!turnstileToken) {
+      return res.status(400).json({ message: "Please complete the captcha verification" });
+    }
+    const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
+    const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
+    if (!turnstileResult.success) {
+      return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
     }
 
     passport.authenticate("local", async (err: any, user: User | false, info: any) => {
@@ -559,13 +560,14 @@ export async function setupAuth(app: Express) {
     try {
       const { email, password, firstName, lastName, phone, username, age, parentalConsent, turnstileToken } = req.body;
 
-      // Verify Turnstile token first
-      if (turnstileToken) {
-        const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
-        const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
-        if (!turnstileResult.success) {
-          return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
-        }
+      // Verify Turnstile token first - REQUIRED
+      if (!turnstileToken) {
+        return res.status(400).json({ message: "Please complete the captcha verification" });
+      }
+      const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
+      const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
+      if (!turnstileResult.success) {
+        return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
       }
 
       // Validation

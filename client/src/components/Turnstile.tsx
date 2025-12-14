@@ -31,6 +31,11 @@ export function Turnstile({ onVerify, onError, onExpire }: TurnstileProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const widgetIdRef = useRef<string | null>(null);
 
+  const handleExpire = () => {
+    onVerify("");
+    onExpire?.();
+  };
+
   useEffect(() => {
     // Load Turnstile script
     if (!window.turnstile) {
@@ -68,7 +73,7 @@ export function Turnstile({ onVerify, onError, onExpire }: TurnstileProps) {
           theme: "light",
           callback: onVerify,
           "error-callback": () => onError?.("Turnstile verification failed"),
-          "expired-callback": onExpire,
+          "expired-callback": handleExpire,
         });
       } catch (error) {
         onError?.("Failed to initialize Turnstile");

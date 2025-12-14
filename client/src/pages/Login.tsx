@@ -243,6 +243,15 @@ export default function Login() {
       return;
     }
 
+    if (!loginTurnstileToken) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the captcha verification",
+        variant: "destructive",
+      });
+      return;
+    }
+
     loginMutation.mutate();
   };
 
@@ -313,6 +322,15 @@ export default function Login() {
       toast({
         title: t("auth.acceptTermsRequired"),
         description: t("auth.acceptTermsMessage"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!signupTurnstileToken) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the captcha verification",
         variant: "destructive",
       });
       return;
@@ -826,8 +844,8 @@ export default function Login() {
               <span>Didn't receive the code?</span>
               <Button
                 type="button"
-                variant="link"
-                className="p-0 h-auto"
+                variant="ghost"
+                className="p-0 h-auto text-primary hover:underline"
                 onClick={() => resendOtpMutation.mutate()}
                 disabled={resendOtpMutation.isPending}
                 data-testid="button-resend-otp"
