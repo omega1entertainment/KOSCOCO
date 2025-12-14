@@ -34,7 +34,7 @@ import {
   Search,
   Home
 } from "lucide-react";
-import { SiFacebook, SiX, SiWhatsapp, SiTelegram } from "react-icons/si";
+import { SiFacebook, SiX, SiWhatsapp, SiTelegram, SiInstagram, SiTiktok, SiYoutube, SiLinkedin, SiPinterest, SiReddit, SiSnapchat, SiDiscord } from "react-icons/si";
 import {
   Select,
   SelectContent,
@@ -611,6 +611,59 @@ function SharePanel({ video, isOpen, onClose }: SharePanelProps) {
     );
   };
 
+  const handleShareInstagram = () => {
+    // Instagram doesn't have a direct share URL, open Instagram
+    window.open('https://www.instagram.com', '_blank');
+  };
+
+  const handleShareTikTok = () => {
+    window.open(
+      `https://www.tiktok.com/`,
+      '_blank'
+    );
+  };
+
+  const handleShareYouTube = () => {
+    window.open(
+      `https://www.youtube.com/share?url=${encodeURIComponent(shareUrl)}`,
+      '_blank'
+    );
+  };
+
+  const handleShareLinkedIn = () => {
+    window.open(
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const handleSharePinterest = () => {
+    window.open(
+      `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&description=${encodeURIComponent(shareText)}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const handleShareReddit = () => {
+    window.open(
+      `https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(video.title)}`,
+      '_blank',
+      'width=600,height=400'
+    );
+  };
+
+  const handleShareSnapchat = () => {
+    // Snapchat doesn't have a direct share URL
+    window.open('https://www.snapchat.com', '_blank');
+  };
+
+  const handleShareDiscord = () => {
+    // Discord doesn't have a direct share URL, but users can copy and paste
+    handleCopyLink();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -677,6 +730,94 @@ function SharePanel({ video, isOpen, onClose }: SharePanelProps) {
               <SiTelegram className="w-6 h-6 text-white" />
             </div>
             <span className="text-xs text-muted-foreground">Telegram</span>
+          </button>
+
+          <button
+            onClick={handleShareInstagram}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-instagram"
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#feda75] via-[#fa7e1e] to-[#d92e7f] flex items-center justify-center">
+              <SiInstagram className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">Instagram</span>
+          </button>
+
+          <button
+            onClick={handleShareTikTok}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-tiktok"
+          >
+            <div className="w-12 h-12 rounded-full bg-black dark:bg-white flex items-center justify-center">
+              <SiTiktok className="w-6 h-6 text-white dark:text-black" />
+            </div>
+            <span className="text-xs text-muted-foreground">TikTok</span>
+          </button>
+
+          <button
+            onClick={handleShareYouTube}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-youtube"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#FF0000] flex items-center justify-center">
+              <SiYoutube className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">YouTube</span>
+          </button>
+
+          <button
+            onClick={handleShareLinkedIn}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-linkedin"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#0A66C2] flex items-center justify-center">
+              <SiLinkedin className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">LinkedIn</span>
+          </button>
+
+          <button
+            onClick={handleSharePinterest}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-pinterest"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#E60023] flex items-center justify-center">
+              <SiPinterest className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">Pinterest</span>
+          </button>
+
+          <button
+            onClick={handleShareReddit}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-reddit"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#FF4500] flex items-center justify-center">
+              <SiReddit className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">Reddit</span>
+          </button>
+
+          <button
+            onClick={handleShareSnapchat}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-snapchat"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#FFFC00] flex items-center justify-center">
+              <SiSnapchat className="w-6 h-6 text-black" />
+            </div>
+            <span className="text-xs text-muted-foreground">Snapchat</span>
+          </button>
+
+          <button
+            onClick={handleShareDiscord}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors"
+            data-testid="button-share-discord"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#5865F2] flex items-center justify-center">
+              <SiDiscord className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xs text-muted-foreground">Discord</span>
           </button>
         </div>
 
