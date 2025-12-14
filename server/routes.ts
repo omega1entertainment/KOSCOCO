@@ -1334,9 +1334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get CDN URL for a video - returns a signed URL for direct access from GCS edge network
-  // If BunnyCDN is configured with a pull zone, it will transform the URL through BunnyCDN for better caching
-  // For Bunny Storage paths, uses Bunny CDN directly
+  // Get CDN URL for a video - uses Bunny CDN exclusively
   app.get('/api/videos/:id/cdn-url', async (req, res) => {
     try {
       const { id } = req.params;
@@ -1349,53 +1347,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (video.status !== 'approved') {
         return res.status(403).json({ message: "Video not available" });
       }
-
-      const objectStorageService = new ObjectStorageService();
-      const { bunnyCdnService } = await import('./bunnyCdnService');
       
       // Get the video URL to use (prefer compressed if available)
       const videoPath = video.compressedVideoUrl || video.videoUrl;
       
-      // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
-      const isBunnyPath = (path: string) => path.startsWith('/videos/') || path.startsWith('/thumbnails/');
-      // Only use Bunny Storage if configured AND CDN URL is available
-      const bunnyCdnUrl = bunnyStorageService.getCdnUrl(videoPath);
-      const useBunnyStorage = isBunnyPath(videoPath) && bunnyStorageService.isConfigured() && !!bunnyCdnUrl;
+      // Generate CDN URL using Bunny Storage
+      const cdnUrl = bunnyStorageService.getCdnUrl(videoPath);
+      if (!cdnUrl) {
+        return res.status(500).json({ message: "Failed to generate video CDN URL" });
+      }
       
-      let cdnUrl: string;
+      // Generate thumbnail CDN URL if available
       let thumbnailCdnUrl: string | null = null;
-      
-      if (useBunnyStorage) {
-        // Use Bunny Storage CDN URL directly
-        cdnUrl = bunnyCdnUrl;
-        
-        if (video.thumbnailUrl && isBunnyPath(video.thumbnailUrl)) {
-          thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
-        }
-      } else if (isBunnyPath(videoPath)) {
-        // Bunny path but no CDN URL configured - cannot serve
-        return res.status(500).json({ message: "Video storage CDN not configured" });
-      } else {
-        // Generate signed URL with 24-hour expiration for GCS caching
-        cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
-        
-        // If BunnyCDN is configured with a pull zone, transform URL for better caching
-        if (bunnyCdnService.isConfigured()) {
-          cdnUrl = bunnyCdnService.getCdnUrl(cdnUrl);
-        }
-        
-        // Also generate thumbnail CDN URL if available
-        if (video.thumbnailUrl) {
-          try {
-            thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
-            // Transform thumbnail URL through BunnyCDN pull zone if configured
-            if (bunnyCdnService.isConfigured()) {
-              thumbnailCdnUrl = bunnyCdnService.getCdnUrl(thumbnailCdnUrl);
-            }
-          } catch (e) {
-            console.error('Failed to generate thumbnail CDN URL:', e);
-          }
-        }
+      if (video.thumbnailUrl) {
+        thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
       }
 
       res.set({
@@ -1405,9 +1370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         videoUrl: cdnUrl,
         thumbnailUrl: thumbnailCdnUrl,
-        expiresIn: useBunnyStorage ? null : 86400, // No expiration for Bunny CDN URLs
-        useBunnyCdn: bunnyCdnService.isConfigured(),
-        useBunnyStorage,
+        expiresIn: null, // No expiration for Bunny CDN URLs
       });
     } catch (error) {
       console.error("Error generating CDN URL:", error);
@@ -1415,9 +1378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Batch get CDN URLs for multiple videos
-  // If BunnyCDN is configured with a pull zone, URLs are transformed through BunnyCDN
-  // For Bunny Storage paths, uses Bunny CDN directly
+  // Batch get CDN URLs for multiple videos - uses Bunny CDN exclusively
   app.post('/api/videos/cdn-urls', async (req, res) => {
     try {
       const { videoIds } = req.body;
@@ -1431,12 +1392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Maximum 50 videos per batch" });
       }
 
-      const objectStorageService = new ObjectStorageService();
-      const { bunnyCdnService } = await import('./bunnyCdnService');
       const results: Record<string, { videoUrl: string; thumbnailUrl: string | null }> = {};
-      
-      // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
-      const isBunnyPath = (path: string) => path.startsWith('/videos/') || path.startsWith('/thumbnails/');
 
       await Promise.all(
         videoIds.map(async (videoId: string) => {
@@ -1444,44 +1400,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const video = await storage.getVideoById(videoId);
             if (video && video.status === 'approved') {
               const videoPath = video.compressedVideoUrl || video.videoUrl;
-              // Only use Bunny Storage if configured AND CDN URL is available
-              const bunnyCdnUrl = bunnyStorageService.getCdnUrl(videoPath);
-              const useBunnyStorage = isBunnyPath(videoPath) && bunnyStorageService.isConfigured() && !!bunnyCdnUrl;
               
-              let cdnUrl: string;
-              let thumbnailCdnUrl: string | null = null;
-              
-              if (useBunnyStorage) {
-                // Use Bunny Storage CDN URL directly
-                cdnUrl = bunnyCdnUrl;
-                
-                if (video.thumbnailUrl && isBunnyPath(video.thumbnailUrl)) {
-                  thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
-                }
-              } else if (isBunnyPath(videoPath)) {
-                // Bunny path but no CDN URL configured - skip this video
-                console.error(`Cannot generate CDN URL for video ${videoId}: Bunny CDN not configured`);
+              // Generate CDN URL using Bunny Storage
+              const cdnUrl = bunnyStorageService.getCdnUrl(videoPath);
+              if (!cdnUrl) {
+                console.error(`Cannot generate CDN URL for video ${videoId}: Bunny CDN error`);
                 return;
-              } else {
-                // Generate signed URL for GCS
-                cdnUrl = await objectStorageService.getCdnUrl(videoPath, 86400);
-                
-                // Transform through BunnyCDN pull zone if configured
-                if (bunnyCdnService.isConfigured()) {
-                  cdnUrl = bunnyCdnService.getCdnUrl(cdnUrl);
-                }
-                
-                if (video.thumbnailUrl) {
-                  try {
-                    thumbnailCdnUrl = await objectStorageService.getCdnUrl(video.thumbnailUrl, 86400);
-                    // Transform thumbnail URL through BunnyCDN pull zone if configured
-                    if (bunnyCdnService.isConfigured()) {
-                      thumbnailCdnUrl = bunnyCdnService.getCdnUrl(thumbnailCdnUrl);
-                    }
-                  } catch (e) {
-                    // Ignore thumbnail errors
-                  }
-                }
+              }
+              
+              // Generate thumbnail CDN URL if available
+              let thumbnailCdnUrl: string | null = null;
+              if (video.thumbnailUrl) {
+                thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
               }
 
               results[videoId] = {
@@ -1501,8 +1431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         urls: results,
-        expiresIn: 86400,
-        useBunnyCdn: bunnyCdnService.isConfigured(),
+        expiresIn: null,
       });
     } catch (error) {
       console.error("Error generating batch CDN URLs:", error);
