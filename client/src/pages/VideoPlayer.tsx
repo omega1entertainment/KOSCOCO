@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useVideoMetaTags } from "@/hooks/useVideoMetaTags";
 import VotePaymentModal from "@/components/VotePaymentModal";
 import { ReportDialog } from "@/components/ReportDialog";
 import { 
@@ -867,6 +868,14 @@ export default function VideoPlayer() {
     queryKey: queryKeys.videos.byId(videoId),
     enabled: !!videoId,
   });
+
+  // Update meta tags for social sharing
+  useVideoMetaTags(video ? {
+    id: video.id,
+    title: video.title,
+    description: video.description ?? undefined,
+    thumbnailUrl: video.thumbnailUrl ?? undefined
+  } : null);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: queryKeys.categories.all,
