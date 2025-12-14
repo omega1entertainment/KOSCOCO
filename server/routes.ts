@@ -2340,20 +2340,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as SelectUser).id;
 
       if (!txRef || !transactionId) {
-        return res.status(400).json({ message: "Transaction reference and ID are required" });
+        return res.status(200).json({ success: false, message: "Transaction reference and ID are required" });
       }
 
       const purchase = await storage.getVotePurchaseByTxRef(txRef);
       if (!purchase) {
-        return res.status(404).json({ message: "Purchase not found" });
+        return res.status(200).json({ success: false, message: "Purchase not found" });
       }
 
       if (purchase.userId !== userId) {
-        return res.status(403).json({ message: "Forbidden - Not your purchase" });
+        return res.status(200).json({ success: false, message: "Not your purchase" });
       }
 
       if (purchase.status === 'successful') {
-        return res.json({ success: true, message: "Already processed" });
+        return res.json({ success: true, message: "Already processed", voteCount: purchase.voteCount });
       }
 
       const flwClient = new Flutterwave(
@@ -2364,7 +2364,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const verifyResponse = await flwClient.Transaction.verify({ id: transactionId });
 
       if (verifyResponse.status !== 'success') {
-        return res.status(400).json({ message: "Payment verification failed with Flutterwave" });
+        console.error("Flutterwave verification failed:", verifyResponse);
+        return res.status(200).json({ success: false, message: "Payment verification failed" });
       }
 
       const paymentData = verifyResponse.data;
@@ -2374,29 +2375,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: 'failed',
           paymentData: { data: paymentData },
         });
-        return res.status(400).json({ message: `Payment not successful: ${paymentData.status}` });
+        console.error(`Payment not successful: ${paymentData.status}`);
+        return res.status(200).json({ success: false, message: `Payment not successful: ${paymentData.status}` });
       }
 
       if (paymentData.tx_ref !== txRef) {
-        return res.status(400).json({ message: "Transaction reference mismatch" });
+        console.error("Transaction reference mismatch");
+        return res.status(200).json({ success: false, message: "Transaction reference mismatch" });
       }
 
       if (paymentData.currency !== 'XAF') {
-        return res.status(400).json({ message: "Invalid payment currency" });
+        console.error("Invalid payment currency");
+        return res.status(200).json({ success: false, message: "Invalid payment currency" });
       }
 
       if (Math.abs(paymentData.amount - purchase.amount) > 0.01) {
-        return res.status(400).json({ message: "Payment amount mismatch" });
+        console.error("Payment amount mismatch");
+        return res.status(200).json({ success: false, message: "Payment amount mismatch" });
       }
 
       if (Math.abs(paymentData.charged_amount - purchase.amount) > 0.01) {
-        return res.status(400).json({ message: "Charged amount mismatch" });
+        console.error("Charged amount mismatch");
+        return res.status(200).json({ success: false, message: "Charged amount mismatch" });
       }
 
       const COST_PER_VOTE = 50;
       const verifiedVoteCount = Math.floor(paymentData.amount / COST_PER_VOTE);
       if (verifiedVoteCount !== purchase.voteCount) {
-        return res.status(400).json({ message: "Vote count mismatch" });
+        console.error("Vote count mismatch");
+        return res.status(200).json({ success: false, message: "Vote count mismatch" });
       }
 
       await storage.updateVotePurchase(purchase.id, {
@@ -2412,14 +2419,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: verifiedVoteCount,
       });
 
+      console.log(`Vote purchase successful: ${txRef}, ${verifiedVoteCount} votes added immediately`);
+
       res.json({ 
         success: true, 
-        message: "Payment verified successfully",
+        message: "Payment verified successfully and votes applied immediately",
         voteCount: verifiedVoteCount
       });
     } catch (error: any) {
       console.error("Vote purchase callback error:", error);
-      res.status(500).json({ message: "Failed to verify payment" });
+      res.status(200).json({ success: false, message: "Failed to verify payment" });
     }
   });
 
