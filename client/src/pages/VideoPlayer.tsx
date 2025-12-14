@@ -864,10 +864,24 @@ export default function VideoPlayer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const { data: video, isLoading: videoLoading } = useQuery<VideoWithStats>({
+  // Diagnostic logging for video loading
+  useEffect(() => {
+    if (videoId && !isAllFeed) {
+      console.log(`[VideoPlayer] Loading video - permalink: ${permalink}, extracted videoId: ${videoId}`);
+    }
+  }, [permalink, videoId, isAllFeed]);
+
+  const { data: video, isLoading: videoLoading, error: videoError } = useQuery<VideoWithStats>({
     queryKey: queryKeys.videos.byId(videoId),
     enabled: !!videoId,
   });
+
+  // Log errors
+  useEffect(() => {
+    if (videoError) {
+      console.error(`[VideoPlayer] Video loading error for ${videoId}:`, videoError);
+    }
+  }, [videoError, videoId]);
 
   // Update meta tags for social sharing
   useVideoMetaTags(video ? {
