@@ -43,10 +43,17 @@ export function Turnstile({ onVerify, onError, onExpire }: TurnstileProps) {
       script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
       script.async = true;
       script.defer = true;
-      script.onload = () => setIsLoaded(true);
-      script.onerror = () => onError?.("Failed to load Turnstile");
+      script.onload = () => {
+        console.log("Turnstile script loaded successfully");
+        setIsLoaded(true);
+      };
+      script.onerror = () => {
+        console.error("Failed to load Turnstile script");
+        onError?.("Failed to load Turnstile");
+      };
       document.head.appendChild(script);
     } else {
+      console.log("Turnstile already exists in window");
       setIsLoaded(true);
     }
 
@@ -59,15 +66,20 @@ export function Turnstile({ onVerify, onError, onExpire }: TurnstileProps) {
   }, [onError]);
 
   useEffect(() => {
+    console.log("Render effect - isLoaded:", isLoaded, "hasWindow:", !!window.turnstile, "hasContainer:", !!containerRef.current, "hasWidgetId:", !!widgetIdRef.current);
+    
     if (isLoaded && window.turnstile && containerRef.current && !widgetIdRef.current) {
       const sitekey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+      console.log("Sitekey value:", sitekey ? "***configured***" : "NOT CONFIGURED");
       
       if (!sitekey) {
+        console.error("Turnstile site key is missing");
         onError?.("Turnstile site key not configured");
         return;
       }
 
       try {
+        console.log("Attempting to render Turnstile widget");
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey,
           theme: "light",
@@ -75,7 +87,9 @@ export function Turnstile({ onVerify, onError, onExpire }: TurnstileProps) {
           "error-callback": () => onError?.("Turnstile verification failed"),
           "expired-callback": handleExpire,
         });
+        console.log("Turnstile widget rendered with ID:", widgetIdRef.current);
       } catch (error) {
+        console.error("Failed to render Turnstile:", error);
         onError?.("Failed to initialize Turnstile");
       }
     }
