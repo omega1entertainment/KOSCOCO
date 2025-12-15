@@ -555,10 +555,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .update(rawBody)
           .digest('hex');
         
-        isValidSignature = crypto.timingSafeEqual(
-          Buffer.from(flwSignatureHeader),
-          Buffer.from(expectedSignature)
-        );
+        const signatureBuffer = Buffer.from(flwSignatureHeader);
+        const expectedBuffer = Buffer.from(expectedSignature);
+        
+        // Must check length before timingSafeEqual (throws on length mismatch)
+        if (signatureBuffer.length === expectedBuffer.length) {
+          isValidSignature = crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
+        }
         
         if (!isValidSignature) {
           console.error("Invalid HMAC signature");
@@ -566,10 +569,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // Method 2: Legacy simple hash verification (backward compatibility)
       else if (verifHashHeader) {
-        isValidSignature = crypto.timingSafeEqual(
-          Buffer.from(verifHashHeader),
-          Buffer.from(secretHash)
-        );
+        const hashBuffer = Buffer.from(verifHashHeader);
+        const secretBuffer = Buffer.from(secretHash);
+        
+        // Must check length before timingSafeEqual (throws on length mismatch)
+        if (hashBuffer.length === secretBuffer.length) {
+          isValidSignature = crypto.timingSafeEqual(hashBuffer, secretBuffer);
+        }
         
         if (!isValidSignature) {
           console.error("Invalid verif-hash signature");
