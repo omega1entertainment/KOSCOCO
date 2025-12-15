@@ -97,8 +97,16 @@ export default function Prizes() {
                       {index === 0 && (
                         <div className="absolute inset-0 flex items-end justify-center pb-4 bg-gradient-to-t from-black/70 to-transparent">
                           <span 
-                            className="text-white text-xl md:text-2xl font-bold text-center drop-shadow-lg px-4"
+                            className="text-xl md:text-2xl font-bold text-center px-4"
                             data-testid="text-ultimate-prize"
+                            style={{
+                              background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 30%, #B8860B 60%, #FFD700 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              textShadow: '2px 2px 0 #8B4513, 4px 4px 0 #654321, 6px 6px 8px rgba(0,0,0,0.5)',
+                              filter: 'drop-shadow(0 0 10px rgba(255,215,0,0.5))',
+                            }}
                           >
                             Ultimate Prize 5 Million FCFA
                           </span>
