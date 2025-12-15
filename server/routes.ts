@@ -2246,7 +2246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user ID if authenticated, or use IP address for anonymous votes
       const userId = req.user ? (req.user as SelectUser).id : null;
-      const ipAddress = req.ip || req.connection.remoteAddress || null;
+      const forwardedFor = req.headers['x-forwarded-for'];
+      const ipAddress = (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : req.ip) || null;
 
       // Check for duplicate votes (application-level check as first line of defense)
       const existingVotes = await storage.getUserVotesForVideo(userId, videoId, ipAddress);
@@ -2592,7 +2593,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user ? (req.user as SelectUser).id : null;
-      const ipAddress = req.ip || req.connection.remoteAddress || null;
+      const forwardedFor = req.headers['x-forwarded-for'];
+      const ipAddress = (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : req.ip) || null;
 
       // Check for both authenticated and IP-based duplicates
       if (userId) {
@@ -2638,7 +2640,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let hasLiked = false;
       const userId = req.user?.id;
-      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const forwardedFor = req.headers['x-forwarded-for'];
+      const ipAddress = forwardedFor 
+        ? (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : forwardedFor[0])
+        : req.socket.remoteAddress;
       
       if (userId) {
         const userLikes = await storage.getUserLikesForVideo(userId, videoId, undefined);
@@ -2674,7 +2679,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user?.id || null;
-      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const forwardedFor = req.headers['x-forwarded-for'];
+      const ipAddress = forwardedFor 
+        ? (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : forwardedFor[0])
+        : req.socket.remoteAddress;
 
       const deleted = await storage.deleteLike(videoId, userId, userId ? undefined : ipAddress as string);
       

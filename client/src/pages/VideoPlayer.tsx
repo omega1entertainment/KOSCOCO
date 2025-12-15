@@ -1054,7 +1054,8 @@ export default function VideoPlayer() {
         title: variables.isUnlike ? "Unliked" : t('videoPlayer.liked'),
         description: variables.isUnlike ? "You removed your like" : t('videoPlayer.likedVideoDescription'),
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/likes/batch', activeVideoId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/likes/batch'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/likes/video', variables.targetVideoId] });
     },
     onError: (error: Error) => {
       toast({
