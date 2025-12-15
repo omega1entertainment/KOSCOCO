@@ -777,7 +777,17 @@ export async function setupAuth(app: Express) {
   // Forgot password - Request reset
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, turnstileToken } = req.body;
+
+      // Verify Turnstile token first - REQUIRED
+      if (!turnstileToken) {
+        return res.status(400).json({ message: "Please complete the captcha verification" });
+      }
+      const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
+      const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
+      if (!turnstileResult.success) {
+        return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
+      }
 
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
