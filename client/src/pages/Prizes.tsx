@@ -100,12 +100,12 @@ export default function Prizes() {
                             className="text-xl md:text-2xl font-bold text-center px-4"
                             data-testid="text-ultimate-prize"
                             style={{
-                              background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 30%, #B8860B 60%, #FFD700 100%)',
+                              background: 'linear-gradient(180deg, #FFFF00 0%, #FFD700 25%, #FFEA00 50%, #FFD700 75%, #FFFF00 100%)',
                               WebkitBackgroundClip: 'text',
                               WebkitTextFillColor: 'transparent',
                               backgroundClip: 'text',
-                              textShadow: '2px 2px 0 #8B4513, 4px 4px 0 #654321, 6px 6px 8px rgba(0,0,0,0.5)',
-                              filter: 'drop-shadow(0 0 10px rgba(255,215,0,0.5))',
+                              textShadow: '1px 1px 0 #DAA520, 2px 2px 0 #B8860B, 3px 3px 0 #8B7500, 4px 4px 6px rgba(0,0,0,0.4)',
+                              filter: 'drop-shadow(0 0 15px rgba(255,255,0,0.8)) drop-shadow(0 0 30px rgba(255,215,0,0.6))',
                             }}
                           >
                             Ultimate Prize 5 Million FCFA
