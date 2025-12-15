@@ -480,24 +480,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Note: charged_amount (${paymentData.charged_amount}) differs from expected (${expectedAmount}), may include fees`);
       }
 
-      // Update registration payment status to approved (user is now fully registered)
-      await storage.updateRegistrationPaymentStatus(registrationId, 'approved');
+      // Use atomic approval method with idempotency and better error handling
+      const approvalResult = await storage.approveRegistrationWithReferrals(
+        registrationId,
+        paymentData.tx_ref,
+        transaction_id.toString()
+      );
 
-      // If there's a referral, update its status to 'completed'
-      const referrals = await storage.getReferralsByRegistrationId(registrationId);
-      for (const referral of referrals) {
-        await storage.updateReferralStatus(referral.id, 'completed');
+      if (!approvalResult.success) {
+        console.error(`[Payment Verify] Approval failed for registration ${registrationId}, userId: ${userId}, txRef: ${paymentData.tx_ref}: ${approvalResult.error}`);
+        return res.status(500).json({ 
+          message: "Payment was verified but registration update failed. Please contact support with your transaction reference.",
+          transactionRef: paymentData.tx_ref,
+          error: approvalResult.error 
+        });
       }
+
+      console.log(`[Payment Verify] Successfully completed for registration ${registrationId}, userId: ${userId}, txRef: ${paymentData.tx_ref}`);
 
       res.json({ 
         success: true, 
         message: "Payment verified successfully",
-        registration: await storage.getRegistrationById(registrationId)
+        registration: approvalResult.registration
       });
     } catch (error: any) {
-      console.error("Error verifying payment:", error);
+      console.error(`[Payment Verify] Error for registrationId: ${req.body?.registrationId}, userId: ${(req.user as SelectUser)?.id}:`, error);
       res.status(500).json({ 
-        message: "Failed to verify payment",
+        message: "Failed to verify payment. Please contact support if your account was charged.",
         error: error.message 
       });
     }
@@ -610,15 +619,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json({ status: 'amount_mismatch' });
         }
 
-        // All checks passed - update registration to approved (user is now fully registered)
-        await storage.updateRegistrationPaymentStatus(registrationId, 'approved');
-        
-        const referrals = await storage.getReferralsByRegistrationId(registrationId);
-        for (const referral of referrals) {
-          await storage.updateReferralStatus(referral.id, 'completed');
+        // All checks passed - use atomic approval method
+        const approvalResult = await storage.approveRegistrationWithReferrals(
+          registrationId,
+          txRef,
+          transactionId.toString()
+        );
+
+        if (!approvalResult.success) {
+          console.error(`[Payment Webhook] Approval failed for registration ${registrationId}: ${approvalResult.error}`);
+          return res.status(200).json({ status: 'approval_failed', error: approvalResult.error });
         }
 
-        console.log(`Payment webhook processed successfully for registration: ${registrationId}`);
+        console.log(`[Payment Webhook] Successfully processed for registration: ${registrationId}, txRef: ${txRef}`);
       }
 
       res.status(200).json({ status: 'received' });

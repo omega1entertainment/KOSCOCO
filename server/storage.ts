@@ -584,6 +584,90 @@ export class DbStorage implements IStorage {
     return registration;
   }
 
+  async approveRegistrationWithReferrals(
+    registrationId: string,
+    txRef: string,
+    transactionId: string
+  ): Promise<{ success: boolean; registration?: Registration; error?: string }> {
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[Payment] Approval attempt ${attempt}/${maxRetries} for registration ${registrationId}, txRef: ${txRef}`);
+        
+        const [existingReg] = await db
+          .select()
+          .from(schema.registrations)
+          .where(eq(schema.registrations.id, registrationId));
+        
+        if (!existingReg) {
+          console.error(`[Payment] Registration not found: ${registrationId}`);
+          return { success: false, error: 'Registration not found' };
+        }
+
+        if (existingReg.paymentStatus === 'approved') {
+          console.log(`[Payment] Registration already approved (idempotency): ${registrationId}`);
+          await this.updateReferralsToCompleted(registrationId);
+          return { success: true, registration: existingReg };
+        }
+
+        const [updatedRegistration] = await db
+          .update(schema.registrations)
+          .set({ paymentStatus: 'approved' })
+          .where(and(
+            eq(schema.registrations.id, registrationId),
+            sql`${schema.registrations.paymentStatus} != 'approved'`
+          ))
+          .returning();
+
+        if (!updatedRegistration) {
+          const [recheckReg] = await db
+            .select()
+            .from(schema.registrations)
+            .where(eq(schema.registrations.id, registrationId));
+          
+          if (recheckReg?.paymentStatus === 'approved') {
+            console.log(`[Payment] Registration approved by concurrent request: ${registrationId}`);
+            await this.updateReferralsToCompleted(registrationId);
+            return { success: true, registration: recheckReg };
+          }
+          
+          throw new Error('Registration update returned no rows');
+        }
+
+        console.log(`[Payment] Registration approved: ${registrationId}`);
+        await this.updateReferralsToCompleted(registrationId);
+        
+        console.log(`[Payment] Approval completed for registration ${registrationId}, txRef: ${txRef}`);
+        return { success: true, registration: updatedRegistration };
+
+      } catch (error: any) {
+        lastError = error;
+        console.error(`[Payment] Attempt ${attempt} failed for registration ${registrationId}:`, error.message);
+        
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        }
+      }
+    }
+
+    console.error(`[Payment] CRITICAL: All ${maxRetries} attempts failed for registration ${registrationId}, txRef: ${txRef}:`, lastError);
+    return { success: false, error: lastError?.message || 'All retry attempts failed' };
+  }
+
+  private async updateReferralsToCompleted(registrationId: string): Promise<void> {
+    try {
+      await db
+        .update(schema.referrals)
+        .set({ status: 'completed' })
+        .where(eq(schema.referrals.registrationId, registrationId));
+      console.log(`[Payment] Referrals updated for registration ${registrationId}`);
+    } catch (refError) {
+      console.error(`[Payment] Non-critical: Failed to update referrals for ${registrationId}:`, refError);
+    }
+  }
+
   async createVideo(insertVideo: InsertVideo): Promise<Video> {
     const [video] = await db.insert(schema.videos).values(insertVideo).returning();
     return video;
