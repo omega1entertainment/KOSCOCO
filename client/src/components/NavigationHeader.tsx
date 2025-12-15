@@ -52,27 +52,9 @@ export default function NavigationHeader({
     setLanguage(language === 'en' ? 'fr' : 'en');
   };
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("/api/logout", "POST");
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      toast({
-        title: t('nav.logoutSuccess'),
-        description: t('nav.logoutSuccessDesc'),
-      });
-      setLocation("/");
-    },
-    onError: () => {
-      toast({
-        title: t('nav.logoutFailed'),
-        description: t('nav.logoutFailedDesc'),
-        variant: "destructive",
-      });
-    },
-  });
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
   
   const navItems = [
     { label: 'Feed', path: '/video/' },
@@ -262,7 +244,7 @@ export default function NavigationHeader({
                         {t('nav.judgeDashboard')}
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => logoutMutation.mutate()} data-testid="menu-logout">
+                    <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
                       <LogOut className="w-4 h-4 mr-2" />
                       {t('nav.logout')}
                     </DropdownMenuItem>
@@ -527,7 +509,7 @@ export default function NavigationHeader({
                     variant="ghost"
                     className="min-h-11"
                     onClick={() => {
-                      logoutMutation.mutate();
+                      handleLogout();
                       setMobileMenuOpen(false);
                     }}
                     data-testid="mobile-button-logout"
