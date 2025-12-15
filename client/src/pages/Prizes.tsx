@@ -25,13 +25,14 @@ export default function Prizes() {
       phase: t('prizes.top3.phase'),
       badge: t('prizes.top3.badge'),
       image: top3Img,
-      prize: t('prizes.top3.prize'),
+      prize: "",
       description: t('prizes.top3.description'),
       icon: Medal,
       gradient: "from-gray-300 to-gray-500",
-      secondary: [
-        { place: t('prizes.top3.secondPlace'), amount: t('prizes.top3.secondPrize') },
-        { place: t('prizes.top3.thirdPlace'), amount: t('prizes.top3.thirdPrize') },
+      prizeList: [
+        { place: "1st Place", amount: "500,000 FCFA" },
+        { place: "2nd Place", amount: "300,000 FCFA" },
+        { place: "3rd Place", amount: "150,000 FCFA" },
       ],
     },
     {
@@ -190,9 +191,30 @@ export default function Prizes() {
                         {prize.phase}
                       </h2>
 
-                      <div className={`inline-flex items-center gap-2 text-4xl font-bold bg-gradient-to-r ${prize.gradient} bg-clip-text text-transparent mb-4 w-fit`}>
-                        <span data-testid={`text-prize-amount-${index}`}>{prize.prize}</span>
-                      </div>
+                      {prize.prize && (
+                        <div className={`inline-flex items-center gap-2 text-4xl font-bold bg-gradient-to-r ${prize.gradient} bg-clip-text text-transparent mb-4 w-fit`}>
+                          <span data-testid={`text-prize-amount-${index}`}>{prize.prize}</span>
+                        </div>
+                      )}
+
+                      {prize.prizeList && (
+                        <div className="space-y-3 mb-4">
+                          {prize.prizeList.map((item: { place: string; amount: string }, i: number) => (
+                            <div 
+                              key={i} 
+                              className="flex justify-between items-center py-2 border-b border-muted last:border-b-0"
+                              data-testid={`text-prize-list-${index}-${i}`}
+                            >
+                              <span className="font-semibold text-lg">{item.place}</span>
+                              <span className={`text-xl font-bold bg-gradient-to-r ${
+                                i === 0 ? 'from-yellow-400 to-yellow-600' : 
+                                i === 1 ? 'from-gray-300 to-gray-500' : 
+                                'from-orange-400 to-orange-600'
+                              } bg-clip-text text-transparent`}>{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       <p 
                         className="text-muted-foreground text-lg mb-4"
@@ -200,22 +222,6 @@ export default function Prizes() {
                       >
                         {prize.description}
                       </p>
-
-                      {prize.secondary && (
-                        <div className="space-y-2 mt-4 pt-4 border-t">
-                          <p className="font-semibold text-sm text-muted-foreground">{t('prizes.top3.additionalPrizesLabel')}</p>
-                          {prize.secondary.map((sec, i) => (
-                            <div 
-                              key={i} 
-                              className="flex justify-between items-center"
-                              data-testid={`text-secondary-prize-${index}-${i}`}
-                            >
-                              <span className="font-medium">{sec.place}</span>
-                              <span className="text-primary font-bold">{sec.amount}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </Card>
