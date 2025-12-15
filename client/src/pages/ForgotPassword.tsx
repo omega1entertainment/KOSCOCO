@@ -9,22 +9,16 @@ import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Turnstile } from "@/components/Turnstile";
 
 export default function ForgotPassword() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [resetToken, setResetToken] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
-
-  const handleTurnstileVerify = useCallback((token: string) => {
-    setTurnstileToken(token);
-  }, []);
 
   const forgotPasswordMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/auth/forgot-password", "POST", { email, turnstileToken });
+      const response = await apiRequest("/api/auth/forgot-password", "POST", { email });
       return await response.json();
     },
     onSuccess: (data) => {
@@ -53,15 +47,6 @@ export default function ForgotPassword() {
       toast({
         title: t('auth.missingInfo'),
         description: t('auth.enterEmailAddress'),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!turnstileToken) {
-      toast({
-        title: "Verification Required",
-        description: "Please complete the captcha verification",
         variant: "destructive",
       });
       return;
@@ -105,10 +90,6 @@ export default function ForgotPassword() {
                     onChange={(e) => setEmail(e.target.value)}
                     data-testid="input-forgot-email"
                   />
-                </div>
-
-                <div className="flex justify-center" data-testid="turnstile-forgot-password">
-                  <Turnstile onVerify={handleTurnstileVerify} />
                 </div>
 
                 <Button
