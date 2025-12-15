@@ -94,6 +94,16 @@ export default function Prizes() {
                         className="w-full h-full object-cover"
                         data-testid={`img-prize-${index}`}
                       />
+                      {index === 0 && (
+                        <div className="absolute inset-0 flex items-end justify-center pb-4 bg-gradient-to-t from-black/70 to-transparent">
+                          <span 
+                            className="text-white text-xl md:text-2xl font-bold text-center drop-shadow-lg px-4"
+                            data-testid="text-ultimate-prize"
+                          >
+                            Ultimate Prize 5 Million FCFA
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
