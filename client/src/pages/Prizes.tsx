@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import grandFinaleImg from "@assets/generated_images/grand_finale_winner_trophy.png";
-import top3Img from "@assets/generated_images/top_3_winners_podium_medals.png";
+import top3Img from "@assets/generated_images/three_empty_competition_podiums.png";
 import top10Img from "@assets/generated_images/top_10_finalists_rewards_display.png";
 
 export default function Prizes() {
@@ -109,6 +109,64 @@ export default function Prizes() {
                             }}
                           >
                             Ultimate Prize 5 Million FCFA
+                          </span>
+                        </div>
+                      )}
+                      {index === 1 && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent">
+                          {/* 1st Place - Center podium */}
+                          <span 
+                            className="absolute text-lg md:text-xl font-bold text-center"
+                            data-testid="text-podium-1st"
+                            style={{
+                              top: '35%',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              background: 'linear-gradient(180deg, #FFFF00 0%, #FFD700 25%, #FFEA00 50%, #FFD700 75%, #FFFF00 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              textShadow: '1px 1px 0 #DAA520, 2px 2px 0 #B8860B, 3px 3px 0 #8B7500, 4px 4px 6px rgba(0,0,0,0.5)',
+                              filter: 'drop-shadow(0 0 10px rgba(255,255,0,0.8)) drop-shadow(0 0 20px rgba(255,215,0,0.6))',
+                            }}
+                          >
+                            500,000 FCFA
+                          </span>
+                          {/* 2nd Place - Left podium */}
+                          <span 
+                            className="absolute text-base md:text-lg font-bold text-center"
+                            data-testid="text-podium-2nd"
+                            style={{
+                              top: '45%',
+                              left: '20%',
+                              transform: 'translateX(-50%)',
+                              background: 'linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 25%, #D4D4D4 50%, #C0C0C0 75%, #E8E8E8 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              textShadow: '1px 1px 0 #A9A9A9, 2px 2px 0 #808080, 3px 3px 0 #696969, 4px 4px 6px rgba(0,0,0,0.5)',
+                              filter: 'drop-shadow(0 0 10px rgba(192,192,192,0.8)) drop-shadow(0 0 20px rgba(169,169,169,0.6))',
+                            }}
+                          >
+                            300,000 FCFA
+                          </span>
+                          {/* 3rd Place - Right podium */}
+                          <span 
+                            className="absolute text-sm md:text-base font-bold text-center"
+                            data-testid="text-podium-3rd"
+                            style={{
+                              top: '50%',
+                              left: '80%',
+                              transform: 'translateX(-50%)',
+                              background: 'linear-gradient(180deg, #CD7F32 0%, #B87333 25%, #CD853F 50%, #B87333 75%, #CD7F32 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              textShadow: '1px 1px 0 #8B4513, 2px 2px 0 #704214, 3px 3px 0 #5C3317, 4px 4px 6px rgba(0,0,0,0.5)',
+                              filter: 'drop-shadow(0 0 10px rgba(205,127,50,0.8)) drop-shadow(0 0 20px rgba(184,115,51,0.6))',
+                            }}
+                          >
+                            150,000 FCFA
                           </span>
                         </div>
                       )}
