@@ -216,12 +216,14 @@ export default function Prizes() {
                         </div>
                       )}
 
-                      <p 
-                        className="text-muted-foreground text-lg mb-4"
-                        data-testid={`text-prize-desc-${index}`}
-                      >
-                        {prize.description}
-                      </p>
+                      {prize.description && (
+                        <p 
+                          className="text-muted-foreground text-lg mb-4"
+                          data-testid={`text-prize-desc-${index}`}
+                        >
+                          {prize.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Card>
