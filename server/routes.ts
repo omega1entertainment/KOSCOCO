@@ -131,6 +131,24 @@ function toPublicJudgeProfile(user: SelectUser) {
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
+  app.get('/api/health', async (req, res) => {
+    try {
+      const result = await db.execute(sql`SELECT 1 as check`);
+      res.json({ 
+        status: 'healthy', 
+        database: 'connected',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Health check failed:", error);
+      res.status(503).json({ 
+        status: 'unhealthy', 
+        database: 'disconnected',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as SelectUser;
