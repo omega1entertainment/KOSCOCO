@@ -28,17 +28,17 @@ Located in `tests/e2e/` - Tests user flows in a real browser environment.
 ### API Tests
 
 ```bash
-# Run all API tests
-npm run test:api
+# Run all API tests (using npx directly)
+npx vitest run --config vitest.config.ts
 
 # Run with coverage
-npm run test:api -- --coverage
+npx vitest run --config vitest.config.ts --coverage
 
 # Run specific test file
-npm run test:api -- tests/api/health.test.ts
+npx vitest run --config vitest.config.ts tests/api/health.test.ts
 
 # Watch mode during development
-npm run test:api -- --watch
+npx vitest --config vitest.config.ts --watch
 ```
 
 ### E2E Tests
@@ -48,7 +48,7 @@ npm run test:api -- --watch
 npx playwright install chromium
 
 # Run all E2E tests
-npm run test:e2e
+npx playwright test
 
 # Run with UI mode
 npx playwright test --ui
@@ -63,9 +63,11 @@ npx playwright show-report
 ### All Tests
 
 ```bash
-# Run all tests (API + E2E)
-npm test
+# Run API tests then E2E tests
+npx vitest run --config vitest.config.ts && npx playwright test
 ```
+
+**Note:** npm scripts (test, test:api, test:e2e) are not currently configured in package.json. Use the npx commands above directly.
 
 ---
 

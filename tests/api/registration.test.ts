@@ -78,7 +78,12 @@ describe('Payment API', () => {
         })
         .expect('Content-Type', /json/);
 
-      // Should return 401 for invalid signature (may return 500 if timing-safe compare fails)
+      // SECURITY FINDING SEC-001: Returns 500 instead of 401 for invalid signature
+      // The timing-safe compare throws when strings have different lengths
+      // TODO: Add length check before crypto.timingSafeEqual
+      if (response.status === 500) {
+        console.warn('SEC-001: Webhook returns 500 for invalid signature (should be 401)');
+      }
       expect([401, 500]).toContain(response.status);
     });
   });
