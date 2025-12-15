@@ -65,7 +65,7 @@
   "home.sampleVideo4Creator": "Paul Ndikum",
   "home.sampleVideo4Category": "Education",
   "home.ctaTitle": "Ready to Compete?",
-  "home.ctaDescription": "Register now for just 2,500 FCFA per category and join Cameroon's biggest content competition",
+  "home.ctaDescription": "Register now for just 2,500 XCFA per category and join Cameroon's biggest content competition",
   "home.registerNow": "Register Now",
   "home.learnMore": "Learn More",
   "home.videoOfTheDay.title": "Video of the Day",
@@ -691,22 +691,22 @@
   
   "prizes.grandFinale.phase": "GRANDE FINALE",
   "prizes.grandFinale.badge": "1st Place Overall",
-  "prizes.grandFinale.prize": "5,000,000 FCFA",
+  "prizes.grandFinale.prize": "5,000,000 XCFA",
   "prizes.grandFinale.description": "Top three winners in each category competes for the ultimate prize",
   
   "prizes.top3.phase": "TOP 3 FINALISTS PER CATEGORY",
   "prizes.top3.badge": "Per Category",
-  "prizes.top3.prize": "500,000 FCFA",
+  "prizes.top3.prize": "500,000 XCFA",
   "prizes.top3.description": "1st place winner in each of the 5 categories",
   "prizes.top3.additionalPrizesLabel": "Additional Category Prizes:",
   "prizes.top3.secondPlace": "2nd Place",
-  "prizes.top3.secondPrize": "300,000 FCFA",
+  "prizes.top3.secondPrize": "300,000 XCFA",
   "prizes.top3.thirdPlace": "3rd Place",
-  "prizes.top3.thirdPrize": "150,000 FCFA",
+  "prizes.top3.thirdPrize": "150,000 XCFA",
   
   "prizes.top10.phase": "TOP 10 FINALISTS",
   "prizes.top10.badge": "Recognition Prize",
-  "prizes.top10.prize": "50,000 FCFA",
+  "prizes.top10.prize": "50,000 XCFA",
   "prizes.top10.description": "Each finalist advancing to TOP 10 phase",
   
   "prizes.categories.musicDance": "Music & Dance",
@@ -719,7 +719,7 @@
   "prizes.categoriesSection.description": "Each category offers equal prize opportunities. Choose your passion and compete for glory!",
   
   "prizes.totalPool.label": "TOTAL PRIZE POOL",
-  "prizes.totalPool.amount": "15,000,000+ FCFA",
+  "prizes.totalPool.amount": "15,000,000+ XCFA",
   "prizes.totalPool.description": "With prizes distributed across 5 categories and multiple phases, this is Cameroon's biggest short content competition!",
   
   "prizes.cta.title": "Ready to Compete?",
@@ -780,7 +780,7 @@
   "howItWorks.step6.description": "Top performers in each category and the grand winner receive incredible prizes and recognition!",
   "howItWorks.step6.highlight1": "Top three winners in each category",
   "howItWorks.step6.highlight2": "Live red carpet Grand Finale",
-  "howItWorks.step6.highlight3": "The ultimate prize of 5 million FCFA",
+  "howItWorks.step6.highlight3": "The ultimate prize of 5 million XCFA",
   "howItWorks.step6.highlight4": "National and international fame and recognition",
   
   "howItWorks.scoring.heading": "How Winners Are Chosen",
@@ -897,12 +897,12 @@
   
   "affiliate.balance.title": "Available Balance",
   "affiliate.balance.description": "Request a payout when you reach the minimum threshold",
-  "affiliate.balance.minimum": "Minimum payout: 5,000 FCFA",
+  "affiliate.balance.minimum": "Minimum payout: 5,000 XCFA",
   "affiliate.balance.requestButton": "Request Payout",
   
   "affiliate.payout.dialogTitle": "Request Payout",
   "affiliate.payout.dialogDescription": "Enter your payout details. Requests are typically processed within 3-5 business days.",
-  "affiliate.payout.amountLabel": "Amount (FCFA)",
+  "affiliate.payout.amountLabel": "Amount (XCFA)",
   "affiliate.payout.amountPlaceholder": "5000",
   "affiliate.payout.available": "Available:",
   "affiliate.payout.paymentMethodLabel": "Payment Method",
@@ -918,7 +918,7 @@
   "affiliate.payoutHistory.title": "Payout History",
   "affiliate.payoutHistory.description": "Track your payout requests and their status",
   "affiliate.payoutHistory.empty": "No payout requests yet",
-  "affiliate.payoutHistory.emptyDescription": "Request a payout when you accumulate at least 5,000 FCFA",
+  "affiliate.payoutHistory.emptyDescription": "Request a payout when you accumulate at least 5,000 XCFA",
   "affiliate.payoutHistory.reason": "Reason:",
   "affiliate.payoutHistory.statusPending": "Pending",
   "affiliate.payoutHistory.statusApproved": "Approved",
@@ -949,7 +949,7 @@
   "affiliateProgram.subtitle": "Earn 20% commission by referring new participants to KOSCOCO",
   
   "affiliateProgram.benefits.commission.title": "20% Commission",
-  "affiliateProgram.benefits.commission.description": "Earn 500 FCFA for every participant you refer (20% of 2,500 FCFA registration fee)",
+  "affiliateProgram.benefits.commission.description": "Earn 500 XCFA for every participant you refer (20% of 2,500 XCFA registration fee)",
   "affiliateProgram.benefits.sharing.title": "Easy Sharing",
   "affiliateProgram.benefits.sharing.description": "Get your unique referral link and share it on social media, websites, or anywhere online",
   "affiliateProgram.benefits.tracking.title": "Track Earnings",
@@ -959,7 +959,7 @@
   "affiliateProgram.howItWorks.step1": "Fill out the form below to join the affiliate program (it's free!)",
   "affiliateProgram.howItWorks.step2": "Get your unique referral link from your affiliate dashboard",
   "affiliateProgram.howItWorks.step3": "Share your link with friends, followers, and your network",
-  "affiliateProgram.howItWorks.step4": "Earn 500 FCFA commission for every participant who registers using your link",
+  "affiliateProgram.howItWorks.step4": "Earn 500 XCFA commission for every participant who registers using your link",
   "affiliateProgram.howItWorks.step5": "Track all your referrals and earnings in your dashboard",
   
   "affiliateProgram.form.title": "Create Your Affiliate Account",

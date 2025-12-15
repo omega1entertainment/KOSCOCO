@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import grandFinaleImg from "@assets/generated_images/Grand_finale_winner_trophy_e9b20746.png";
-import top3Img from "@assets/generated_images/Top_3_category_winners_podium_0b933e0e.png";
-import top10Img from "@assets/generated_images/Top_10_finalists_rewards_a3219779.png";
+import grandFinaleImg from "@assets/generated_images/grand_finale_winner_trophy.png";
+import top3Img from "@assets/generated_images/top_3_winners_podium_medals.png";
+import top10Img from "@assets/generated_images/top_10_finalists_rewards_display.png";
 
 export default function Prizes() {
   const [, setLocation] = useLocation();
