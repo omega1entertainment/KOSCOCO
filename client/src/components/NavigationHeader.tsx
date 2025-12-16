@@ -205,6 +205,15 @@ export default function NavigationHeader({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              className="min-h-11"
+              onClick={() => onNavigate?.('/help')}
+              data-testid="link-help"
+            >
+              Help
+            </Button>
           </nav>
           
           <div className="hidden md:flex items-center gap-2">
@@ -414,6 +423,18 @@ export default function NavigationHeader({
                 </>
               )}
             </div>
+
+            <Button
+              variant="ghost"
+              className="min-h-11 justify-start w-full"
+              onClick={() => {
+                onNavigate?.('/help');
+                setMobileMenuOpen(false);
+              }}
+              data-testid="mobile-link-help"
+            >
+              Help
+            </Button>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               <div className="flex items-center justify-between px-4 py-2">

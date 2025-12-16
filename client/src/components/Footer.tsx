@@ -58,7 +58,6 @@ export default function Footer() {
   
   const support = [
     { key: 'footer.contact' },
-    { key: 'footer.help' },
     { key: 'footer.faq' },
     { key: 'footer.howItWorks' },
     { key: 'footer.rules' },
