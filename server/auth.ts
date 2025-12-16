@@ -15,7 +15,6 @@ import {
   getOTPExpiry,
   sendOTPEmail,
 } from "./emailService";
-import { verifyTurnstileToken } from "./turnstile";
 
 const MemoryStore = createMemoryStore(session);
 const PgSession = ConnectPgSimple(session);
@@ -243,17 +242,6 @@ export async function setupAuth(app: Express) {
 
   // Login route with 2FA support
   app.post("/api/login", async (req, res, next) => {
-    // Verify Turnstile token first - REQUIRED
-    const { turnstileToken } = req.body;
-    if (!turnstileToken) {
-      return res.status(400).json({ message: "Please complete the captcha verification" });
-    }
-    const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
-    const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
-    if (!turnstileResult.success) {
-      return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
-    }
-
     passport.authenticate("local", async (err: any, user: User | false, info: any) => {
       if (err) {
         console.error("Login authentication error:", err);
@@ -558,17 +546,7 @@ export async function setupAuth(app: Express) {
   // Signup route - Step 1: Validate and send OTP
   app.post("/api/signup", async (req, res) => {
     try {
-      const { email, password, firstName, lastName, phone, username, age, parentalConsent, turnstileToken } = req.body;
-
-      // Verify Turnstile token first - REQUIRED
-      if (!turnstileToken) {
-        return res.status(400).json({ message: "Please complete the captcha verification" });
-      }
-      const remoteip = (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket?.remoteAddress;
-      const turnstileResult = await verifyTurnstileToken(turnstileToken, remoteip);
-      if (!turnstileResult.success) {
-        return res.status(400).json({ message: turnstileResult.error || "Captcha verification failed" });
-      }
+      const { email, password, firstName, lastName, phone, username, age, parentalConsent } = req.body;
 
       // Validation
       if (!email || !password || !firstName || !lastName || !phone) {
