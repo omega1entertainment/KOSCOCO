@@ -4497,63 +4497,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You cannot delete your own account" });
       }
 
-      // CRITICAL: Delete referrals FIRST (they have foreign keys to registrations)
-      // This must happen before anything else
-      await db.execute(sql`DELETE FROM referrals WHERE registration_id IN (SELECT id FROM registrations WHERE user_id = ${id})`);
-
-      // Always delete the user account itself
-      // Selectively delete data based on selectedItems
-
-      // Delete selected data in cascade order
-      if (selectedItems.includes('votePurchases')) {
-        await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
-        await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
-      }
-
-      if (selectedItems.includes('watchHistory')) {
-        await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
-      }
-
-      if (selectedItems.includes('likes')) {
-        await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
-      }
-
-      if (selectedItems.includes('votes')) {
-        await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
-      }
-
-      if (selectedItems.includes('judges')) {
-        await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
-      }
-
-      if (selectedItems.includes('reports')) {
-        await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
-      }
-
-      if (selectedItems.includes('videos')) {
-        await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
-      }
-
-      if (selectedItems.includes('registrations')) {
-        await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
-      }
-
-      if (selectedItems.includes('affiliates')) {
-        await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
-        await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
-        await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
-      }
-
-      // Always delete related records with foreign key constraints to prevent constraint violations
-      // (Referrals already deleted at the beginning of function)
+      // ALWAYS delete data with foreign key constraints to users (regardless of selectedItems)
+      // This must happen before deleting the user itself
       
-      // Delete registrations (always, regardless of selectedItems)
+      // Delete comments created by user
+      await db.execute(sql`DELETE FROM comments WHERE user_id = ${id}`);
+      
+      // Delete follows (user as follower or being followed)
+      await db.execute(sql`DELETE FROM follows WHERE follower_id = ${id} OR following_id = ${id}`);
+      
+      // Delete ad impressions and clicks (depends on user)
+      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${id}`);
+      
+      // Delete poll responses (depends on user)
+      await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${id}`);
+      
+      // Delete likes (depends on user)
+      await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
+      
+      // Delete votes (depends on user)
+      await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
+      
+      // Delete watch history (depends on user)
+      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
+      
+      // Delete judge scores (depends on user as judge)
+      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
+      
+      // Delete reports (depends on user as reported_by or reviewed_by)
+      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
+      
+      // Delete paid votes and vote purchases (depends on user)
+      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
+      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
+
+      // Delete referrals (they have foreign keys to registrations)
+      await db.execute(sql`DELETE FROM referrals WHERE registration_id IN (SELECT id FROM registrations WHERE user_id = ${id})`);
+      
+      // Delete registrations
       await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
       
-      // Delete affiliates and related data (always, regardless of selectedItems)
+      // Delete affiliates and related data
       await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
       await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
       await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
+      
+      // Delete videos (depends on user)
+      await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
 
       // Always delete the user
       await storage.deleteUser(id);
