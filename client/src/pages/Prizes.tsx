@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import grandFinaleImg from "@assets/generated_images/grand_finale_winner_trophy.png";
 import top3Img from "@assets/generated_images/three_empty_competition_podiums.png";
-import top10Img from "@assets/generated_images/top_10_finalists_rewards_display.png";
+import top10Img from "@assets/generated_images/koscoco_top_10_finalists_design.png";
 
 export default function Prizes() {
   const [, setLocation] = useLocation();
