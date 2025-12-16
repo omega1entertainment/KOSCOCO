@@ -4498,74 +4498,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ALWAYS delete all data with foreign key constraints to users
       // Process in order to respect cascading foreign keys
+      // Only delete from tables that actually exist in the database
       
-      // 1. Delete user preferences and settings (no foreign keys to other user-dependent tables)
+      // 1. Delete user preferences and settings
       await db.execute(sql`DELETE FROM notification_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM email_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM dashboard_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM account_settings WHERE user_id = ${id}`);
-      
-      // 2. Delete notification, activity, and session data
+      await db.execute(sql`DELETE FROM user_preferences WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM user_recommendations WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM notifications WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM activity_logs WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM login_sessions WHERE user_id = ${id}`);
       
-      // 3. Delete interaction data (comments, follows, likes, votes)
+      // 2. Delete interaction data (comments, follows, likes)
       await db.execute(sql`DELETE FROM comments WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM follows WHERE follower_id = ${id} OR following_id = ${id}`);
       await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
       
-      // 4. Delete voting data
+      // 3. Delete voting data
       await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
       await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
       
-      // 5. Delete content and watchlist data
-      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
+      // 4. Delete watchlist data (watchlist_videos first, then watchlists)
+      await db.execute(sql`DELETE FROM watchlist_videos WHERE watchlist_id IN (SELECT id FROM watchlists WHERE user_id = ${id})`);
       await db.execute(sql`DELETE FROM watchlists WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM favorites WHERE user_id = ${id}`);
       
-      // 6. Delete poll responses
+      // 5. Delete poll responses
       await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${id}`);
       
-      // 7. Delete ad data
+      // 6. Delete ad data
       await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM ads WHERE approved_by = ${id}`);
       
-      // 8. Delete report data
+      // 7. Delete report data
       await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
       
-      // 9. Delete SMS messages (as sender or recipient)
+      // 8. Delete SMS messages (as sender or recipient)
       await db.execute(sql`DELETE FROM sms_messages WHERE user_id = ${id} OR sent_by = ${id}`);
       
-      // 10. Delete content created by user (affiliate campaigns, email campaigns, CMS content)
+      // 9. Delete content created by user (affiliate campaigns, email campaigns, CMS content)
       await db.execute(sql`DELETE FROM affiliate_campaigns WHERE created_by = ${id}`);
       await db.execute(sql`DELETE FROM email_campaigns WHERE created_by = ${id}`);
       await db.execute(sql`DELETE FROM cms_content WHERE updated_by = ${id}`);
       
-      // 11. Delete payout requests processed by user
+      // 10. Delete payout requests processed by user
       await db.execute(sql`DELETE FROM payout_requests WHERE processed_by = ${id}`);
       
-      // 12. Delete affiliate and referral data
+      // 11. Delete affiliate and referral data
       await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
       await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
       await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
       
-      // 13. Delete referrals tied to user's registrations
+      // 12. Delete referrals tied to user's registrations
       await db.execute(sql`DELETE FROM referrals WHERE registration_id IN (SELECT id FROM registrations WHERE user_id = ${id})`);
       
-      // 14. Delete registration data
+      // 13. Delete registration data
       await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
       
-      // 15. Delete videos (this will cascade delete polls via database constraints)
+      // 14. Delete videos and related content
       await db.execute(sql`DELETE FROM scheduled_videos WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM publishing_analytics WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM recommendation_events WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
 
-      // 16. Finally delete the user account
+      // 15. Finally delete the user account
       await storage.deleteUser(id);
 
       res.json({ message: "User deleted successfully" });
