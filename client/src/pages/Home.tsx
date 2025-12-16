@@ -15,6 +15,7 @@ import { Users, Video, Trophy, TrendingUp, ChevronLeft, ChevronRight } from "luc
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/queryKeys";
 import { createPermalink } from "@/lib/slugUtils";
+import { apiRequest } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
 
 import musicImage from "@assets/generated_images/male_vocalist_performing_on_stage.png";
@@ -110,6 +111,20 @@ export default function Home() {
     enabled: apiCategories.length > 0,
   });
 
+  // Fetch CDN URLs for thumbnails (handles Bunny Storage paths)
+  const { data: cdnUrls = {} } = useQuery({
+    queryKey: ['videos/cdn-urls', trendingVideosData?.map((v: any) => v.id) || []],
+    queryFn: async () => {
+      if (!trendingVideosData || trendingVideosData.length === 0) return {};
+      const response = await apiRequest("/api/videos/cdn-urls", "POST", {
+        videoIds: trendingVideosData.map((v: any) => v.id),
+      });
+      const data = await response.json();
+      return data.urls || {};
+    },
+    enabled: !!trendingVideosData && trendingVideosData.length > 0,
+  });
+
   // When video stats change, invalidate trending videos to refresh
   // This is handled by queryClient.invalidateQueries in mutations
 
@@ -153,10 +168,14 @@ export default function Home() {
     .slice(0, 4)
     .map((video) => {
       const categoryName = video.categoryName || 'Music & Dance';
+      // Use CDN URL if available, otherwise fall back to category image
+      const thumbnailUrl = (cdnUrls as Record<string, { thumbnailUrl?: string }>)[video.id]?.thumbnailUrl 
+        || categoryImages[categoryName] 
+        || musicImage;
       return {
         id: video.id,
         title: video.title,
-        thumbnail: video.thumbnailUrl || categoryImages[categoryName] || musicImage,
+        thumbnail: thumbnailUrl,
         creator: { name: 'Creator' },
         category: categoryName,
         votes: video.voteCount || 0,
