@@ -732,18 +732,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/videos/upload-url', isAuthenticated, isEmailVerified, async (req: any, res) => {
     try {
       const objectId = randomUUID();
-      
-      // Use Bunny Storage if configured, otherwise fall back to Replit Object Storage
-        const bunnyPath = `/videos/${objectId}.mp4`;
-        res.json({ videoUrl: bunnyPath, storageType: 'bunny' });
-      } else {
-        const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
-        if (!privateObjectDir) {
-          return res.status(500).json({ message: "Object storage not configured" });
-        }
-        const fullPath = `${privateObjectDir}/videos/${objectId}`;
-        res.json({ videoUrl: fullPath, storageType: 'gcs' });
+      const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+      if (!privateObjectDir) {
+        return res.status(500).json({ message: "Object storage not configured" });
       }
+      const fullPath = `${privateObjectDir}/videos/${objectId}`;
+      res.json({ videoUrl: fullPath, storageType: 'gcs' });
     } catch (error) {
       console.error("Error generating upload path:", error);
       res.status(500).json({ message: "Failed to generate upload path" });
@@ -809,108 +803,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let thumbnailUrl = null;
 
         try {
-          // Check if we're using Bunny Storage
-          
-              
-              // Get CDN URLs for both files
-              
-              res.json({ 
-                success: true, 
-                videoUrl: videoUrlField,
-                thumbnailUrl: thumbnailPath,
-                videoCdnUrl,
-                thumbnailCdnUrl,
-                storageType: 'bunny'
-              });
-            } finally {
-              try {
-                await fs.unlink(videoFile.filepath);
-                await fs.unlink(thumbnailFile.filepath);
-              } catch (unlinkError) {
-                console.error("Error cleaning up temp files:", unlinkError);
-              }
-            }
-          } else {
-            // Fall back to GCS/Replit Object Storage
-            const { bucketName, objectName } = parseObjectPath(videoUrlField);
-            const bucket = objectStorageClient.bucket(bucketName);
-            const videoFileObj = bucket.file(objectName);
+          // Upload to Replit Object Storage
+          const { bucketName, objectName } = parseObjectPath(videoUrlField);
+          const bucket = objectStorageClient.bucket(bucketName);
+          const videoFileObj = bucket.file(objectName);
 
-            try {
-              await new Promise((resolve, reject) => {
-                const readStream = createReadStream(videoFile.filepath);
-                const writeStream = videoFileObj.createWriteStream({
-                  metadata: {
-                    contentType: videoFile.mimetype || 'video/mp4',
-                    cacheControl: 'private, max-age=3600',
-                  },
-                });
+          await new Promise((resolve, reject) => {
+            const readStream = createReadStream(videoFile.filepath);
+            const writeStream = videoFileObj.createWriteStream({
+              metadata: {
+                contentType: videoFile.mimetype || 'video/mp4',
+                cacheControl: 'private, max-age=3600',
+              },
+            });
 
-                readStream.on('error', (error: Error) => {
-                  console.error("Error reading file:", error);
-                  reject(new Error('Failed to read video file'));
-                });
+            readStream.on('error', (error: Error) => {
+              console.error("Error reading file:", error);
+              reject(new Error('Failed to read video file'));
+            });
 
-                writeStream.on('error', (error: Error) => {
-                  console.error("Error writing to storage:", error);
-                  reject(new Error('Failed to upload to storage'));
-                });
+            writeStream.on('error', (error: Error) => {
+              console.error("Error writing to storage:", error);
+              reject(new Error('Failed to upload to storage'));
+            });
 
-                writeStream.on('finish', () => {
-                  resolve(undefined);
-                });
+            writeStream.on('finish', () => {
+              resolve(undefined);
+            });
 
-                readStream.pipe(writeStream);
-              });
+            readStream.pipe(writeStream);
+          });
 
-              const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
-              const thumbnailId = randomUUID();
-              const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
-              const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
-              const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
-              const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
+          const privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+          const thumbnailId = randomUUID();
+          const thumbnailPath = `${privateObjectDir}/thumbnails/${thumbnailId}.jpg`;
+          const { bucketName: thumbBucket, objectName: thumbObjectName } = parseObjectPath(thumbnailPath);
+          const thumbnailBucket = objectStorageClient.bucket(thumbBucket);
+          const thumbnailFileObj = thumbnailBucket.file(thumbObjectName);
 
-              await new Promise((resolve, reject) => {
-                const readStream = createReadStream(thumbnailFile.filepath);
-                const writeStream = thumbnailFileObj.createWriteStream({
-                  metadata: {
-                    contentType: 'image/jpeg',
-                    cacheControl: 'private, max-age=3600',
-                  },
-                });
+          await new Promise((resolve, reject) => {
+            const readStream = createReadStream(thumbnailFile.filepath);
+            const writeStream = thumbnailFileObj.createWriteStream({
+              metadata: {
+                contentType: 'image/jpeg',
+                cacheControl: 'private, max-age=3600',
+              },
+            });
 
-                readStream.on('error', (error: Error) => {
-                  console.error("Error reading thumbnail file:", error);
-                  reject(new Error('Failed to read thumbnail file'));
-                });
+            readStream.on('error', (error: Error) => {
+              console.error("Error reading thumbnail file:", error);
+              reject(new Error('Failed to read thumbnail file'));
+            });
 
-                writeStream.on('error', (error: Error) => {
-                  console.error("Error writing thumbnail to storage:", error);
-                  reject(new Error('Failed to upload thumbnail to storage'));
-                });
+            writeStream.on('error', (error: Error) => {
+              console.error("Error writing thumbnail to storage:", error);
+              reject(new Error('Failed to upload thumbnail to storage'));
+            });
 
-                writeStream.on('finish', () => {
-                  resolve(undefined);
-                });
+            writeStream.on('finish', () => {
+              resolve(undefined);
+            });
 
-                readStream.pipe(writeStream);
-              });
+            readStream.pipe(writeStream);
+          });
 
-              thumbnailUrl = thumbnailPath;
+          thumbnailUrl = thumbnailPath;
 
-              res.json({ success: true, videoUrl: videoUrlField, thumbnailUrl, storageType: 'gcs' });
-            } finally {
-              try {
-                await fs.unlink(videoFile.filepath);
-                await fs.unlink(thumbnailFile.filepath);
-              } catch (unlinkError) {
-                console.error("Error cleaning up temp files:", unlinkError);
-              }
-            }
-          }
+          res.json({ success: true, videoUrl: videoUrlField, thumbnailUrl, storageType: 'gcs' });
         } catch (error: any) {
           console.error("Error uploading to storage:", error);
           res.status(500).json({ message: error.message || "Failed to upload video" });
+        } finally {
+          try {
+            await fs.unlink(videoFile.filepath);
+            await fs.unlink(thumbnailFile.filepath);
+          } catch (unlinkError) {
+            console.error("Error cleaning up temp files:", unlinkError);
+          }
         }
       });
     } catch (error: any) {
@@ -957,23 +926,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Maximum 2 videos per category allowed" });
       }
 
-      // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
+      // Set ACL policies on storage paths
+      const objectStorageService = new ObjectStorageService();
       
-      let videoPath: string;
-      let thumbnailPath: string;
-      
-            visibility: "private",
-          }
-        );
+      const videoPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        videoUrl,
+        {
+          owner: userId,
+          visibility: "private",
+        }
+      );
 
-        thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
-          thumbnailUrl,
-          {
-            owner: userId,
-            visibility: "public",
-          }
-        );
-      }
+      const thumbnailPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        thumbnailUrl,
+        {
+          owner: userId,
+          visibility: "public",
+        }
+      );
 
       // Generate unique slug to avoid duplicate key errors
       let slug = generateSlug(title);
@@ -1025,9 +995,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const tempVideoPath = path.join(objectStorageTempDir, `video-${randomUUID()}.mp4`);
           
           try {
-            // Download video for moderation - check if Bunny or GCS
-              await fs.writeFile(tempVideoPath, file);
-            }
+            // Download video for moderation from Object Storage
+            const { bucketName: modBucket, objectName: modObject } = parseObjectPath(videoPath);
+            const modBucketObj = objectStorageClient.bucket(modBucket);
+            const modFile = modBucketObj.file(modObject);
+            const [fileContents] = await modFile.download();
+            await fs.writeFile(tempVideoPath, fileContents);
             
             const moderationResult = await moderateVideo(tempVideoPath, title, description);
             
@@ -1070,8 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
             async (videoId: string, status: 'completed' | 'failed' | 'skipped') => {
               await storage.updateVideoCompressionStatus(videoId, status);
-            },
-            useBunny // Pass flag to indicate Bunny Storage
+            }
           );
         } catch (bgError) {
           console.error('Background moderation process error:', bgError);
@@ -1306,7 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get CDN URL for a video - uses Bunny CDN exclusively
+  // Get CDN URL for a video - uses Object Storage signed URLs
   app.get('/api/videos/:id/cdn-url', async (req, res) => {
     try {
       const { id } = req.params;
@@ -1323,24 +1295,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the video URL to use (prefer compressed if available)
       const videoPath = video.compressedVideoUrl || video.videoUrl;
       
-      // Generate CDN URL using Bunny Storage
+      // Generate signed URL from Object Storage
+      const objectStorageService = new ObjectStorageService();
+      const cdnUrl = objectStorageService.normalizeObjectEntityPath(videoPath);
+      
       if (!cdnUrl) {
         return res.status(500).json({ message: "Failed to generate video CDN URL" });
       }
       
-      // Generate thumbnail CDN URL if available
+      // Generate thumbnail URL if available
       let thumbnailCdnUrl: string | null = null;
       if (video.thumbnailUrl) {
+        thumbnailCdnUrl = objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl);
       }
 
       res.set({
-        'Cache-Control': 'public, max-age=3600', // Cache the CDN URL response for 1 hour
+        'Cache-Control': 'public, max-age=3600',
       });
 
       res.json({
         videoUrl: cdnUrl,
         thumbnailUrl: thumbnailCdnUrl,
-        expiresIn: null, // No expiration for Bunny CDN URLs
+        expiresIn: 3600,
       });
     } catch (error) {
       console.error("Error generating CDN URL:", error);
@@ -1348,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Batch get CDN URLs for multiple videos - uses Bunny CDN exclusively
+  // Batch get CDN URLs for multiple videos
   app.post('/api/videos/cdn-urls', async (req, res) => {
     try {
       const { videoIds } = req.body;
@@ -1363,6 +1339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const results: Record<string, { videoUrl: string; thumbnailUrl: string | null }> = {};
+      const objectStorageService = new ObjectStorageService();
 
       await Promise.all(
         videoIds.map(async (videoId: string) => {
@@ -1371,15 +1348,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (video && video.status === 'approved') {
               const videoPath = video.compressedVideoUrl || video.videoUrl;
               
-              // Generate CDN URL using Bunny Storage
+              // Generate URL from Object Storage
+              const cdnUrl = objectStorageService.normalizeObjectEntityPath(videoPath);
               if (!cdnUrl) {
-                console.error(`Cannot generate CDN URL for video ${videoId}: Bunny CDN error`);
+                console.error(`Cannot generate CDN URL for video ${videoId}`);
                 return;
               }
               
-              // Generate thumbnail CDN URL if available
+              // Generate thumbnail URL if available
               let thumbnailCdnUrl: string | null = null;
               if (video.thumbnailUrl) {
+                thumbnailCdnUrl = objectStorageService.normalizeObjectEntityPath(video.thumbnailUrl);
               }
 
               results[videoId] = {
@@ -1399,7 +1378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         urls: results,
-        expiresIn: null,
+        expiresIn: 3600,
       });
     } catch (error) {
       console.error("Error generating batch CDN URLs:", error);
@@ -7427,192 +7406,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating user preferences:', error);
       res.status(500).json({ message: 'Failed to update preferences' });
-    }
-  });
-
-  // ============= BUNNYCDN ENDPOINTS =============
-
-  app.get('/api/bunny/status', async (req, res) => {
-    try {
-      res.json({ configured: isConfigured });
-    } catch (error) {
-      console.error('Error checking BunnyCDN status:', error);
-      res.status(500).json({ message: 'Failed to check BunnyCDN status' });
-    }
-  });
-
-  app.get('/api/bunny/videos', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'BunnyCDN is not configured' });
-      }
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
-      res.json(videos);
-    } catch (error) {
-      console.error('Error listing BunnyCDN videos:', error);
-      res.status(500).json({ message: 'Failed to list videos' });
-    }
-  });
-
-  app.get('/api/bunny/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'BunnyCDN is not configured' });
-      }
-      res.json(video);
-    } catch (error) {
-      console.error('Error getting BunnyCDN video:', error);
-      res.status(500).json({ message: 'Failed to get video' });
-    }
-  });
-
-  app.post('/api/bunny/upload', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'BunnyCDN is not configured' });
-      }
-
-      const uploadSchema = z.object({
-        title: z.string().min(1, 'Title is required'),
-        videoUrl: z.string().url('Valid video URL is required'),
-      });
-
-      const { title, videoUrl } = uploadSchema.parse(req.body);
-      res.json(result);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: 'Validation failed', errors: error.flatten() });
-      }
-      console.error('Error uploading to BunnyCDN:', error);
-      res.status(500).json({ message: 'Failed to upload video' });
-    }
-  });
-
-  app.delete('/api/bunny/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'BunnyCDN is not configured' });
-      }
-      res.json({ message: 'Video deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting BunnyCDN video:', error);
-      res.status(500).json({ message: 'Failed to delete video' });
-    }
-  });
-
-  app.get('/api/bunny/urls/:videoId', async (req, res) => {
-    try {
-        return res.status(503).json({ message: 'BunnyCDN is not configured' });
-      }
-      const { videoId } = req.params;
-      res.json({
-      });
-    } catch (error) {
-      console.error('Error getting BunnyCDN URLs:', error);
-      res.status(500).json({ message: 'Failed to get video URLs' });
-    }
-  });
-
-  // Bunny Storage API endpoints
-  app.get('/api/storage/status', async (req, res) => {
-    try {
-    } catch (error) {
-      console.error('Error checking Bunny Storage status:', error);
-      res.status(500).json({ message: 'Failed to check storage status' });
-    }
-  });
-
-  app.get('/api/storage/files', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'Bunny Storage is not configured' });
-      }
-      const directory = (req.query.directory as string) || '/';
-      res.json(files);
-    } catch (error) {
-      console.error('Error listing Bunny Storage files:', error);
-      res.status(500).json({ message: 'Failed to list files' });
-    }
-  });
-
-  app.post('/api/storage/upload', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'Bunny Storage is not configured' });
-      }
-
-      const form = formidable({ maxFileSize: 100 * 1024 * 1024 });
-      const [fields, files] = await form.parse(req);
-      
-      const file = files.file?.[0];
-      const remotePath = fields.path?.[0];
-      
-      if (!file) {
-        return res.status(400).json({ message: 'No file provided' });
-      }
-      
-      if (!remotePath) {
-        return res.status(400).json({ message: 'No remote path provided' });
-      }
-
-      const fileBuffer = await fs.readFile(file.filepath);
-      
-      await fs.unlink(file.filepath).catch(() => {});
-      
-      res.json(result);
-    } catch (error) {
-      console.error('Error uploading to Bunny Storage:', error);
-      res.status(500).json({ message: 'Failed to upload file' });
-    }
-  });
-
-  app.get('/api/storage/download/*', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'Bunny Storage is not configured' });
-      }
-      
-      const remotePath = req.params[0];
-      if (!remotePath) {
-        return res.status(400).json({ message: 'No path provided' });
-      }
-
-      
-      const filename = remotePath.split('/').pop() || 'file';
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/octet-stream');
-      res.send(buffer);
-    } catch (error) {
-      console.error('Error downloading from Bunny Storage:', error);
-      res.status(500).json({ message: 'Failed to download file' });
-    }
-  });
-
-  app.delete('/api/storage/files/*', isAuthenticated, isAdmin, async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'Bunny Storage is not configured' });
-      }
-      
-      const remotePath = req.params[0];
-      if (!remotePath) {
-        return res.status(400).json({ message: 'No path provided' });
-      }
-
-      res.json({ message: 'File deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting from Bunny Storage:', error);
-      res.status(500).json({ message: 'Failed to delete file' });
-    }
-  });
-
-  app.get('/api/storage/cdn-url/*', async (req: any, res) => {
-    try {
-        return res.status(503).json({ message: 'Bunny Storage is not configured' });
-      }
-      
-      const remotePath = req.params[0];
-      if (!remotePath) {
-        return res.status(400).json({ message: 'No path provided' });
-      }
-
-      res.json({ cdnUrl });
-    } catch (error) {
-      console.error('Error getting CDN URL:', error);
-      res.status(500).json({ message: 'Failed to get CDN URL' });
     }
   });
 

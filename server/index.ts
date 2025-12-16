@@ -79,12 +79,6 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     
-    // Initialize BunnyCDN service
-    initializeBunnyCdn();
-    
-    // Initialize Bunny Storage service
-    initializeBunnyStorage();
-    
     // Start background jobs
     startScheduledVideoJob();
   });

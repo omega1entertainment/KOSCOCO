@@ -45,8 +45,7 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon) with Drizzle ORM
-- **Object Storage**: Replit Object Storage
-- **CDN/Video Streaming**: BunnyCDN Stream (optional, enhances video delivery)
+- **Object Storage**: Replit Object Storage (exclusive - no external CDN)
 - **Authentication**: Passport.js, bcrypt
 - **Payment Gateway**: Flutterwave
 - **Email Service**: Resend
@@ -55,83 +54,25 @@ The platform is built with a modern web stack, utilizing full-stack TypeScript.
 - **Backend Libraries**: Express.js, Node.js
 - **Fonts**: Bebas Neue, Play, Inter
 
-## Recent Changes (December 13, 2025)
+## Recent Changes (December 16, 2025)
 
-**Video Upload Migration to Bunny Storage (Completed)**
-- Modified `/api/videos/upload-url` to detect Bunny Storage configuration and return appropriate paths
-- Modified `/api/videos/upload` to upload videos and thumbnails to Bunny Storage when configured
-- Modified `/api/videos` to:
-  - Detect Bunny paths using `isBunnyPath()` function (checks for `/videos/` or `/thumbnails/` prefix)
-  - Skip GCS ACL policies for Bunny paths
-  - Download from Bunny Storage for moderation
-  - Pass `useBunny` flag to compression function
+**Complete Bunny Storage/CDN Removal - Migration to Replit Object Storage Only (Completed)**
+- Deleted `server/bunnyStorageService.ts` and `server/bunnyCdnService.ts`
+- Updated `server/index.ts` to remove Bunny initialization calls
 - Updated `server/videoCompression.ts`:
-  - Added `useBunny` parameter to `compressVideo()` and `compressVideoInBackground()`
-  - Download from Bunny Storage when `useBunny` is true
-  - Upload compressed videos to Bunny Storage when `useBunny` is true
-- Updated `client/src/pages/Upload.tsx` to pass `storageType` field from upload-url response to upload endpoint
-- Updated CDN URL endpoints (`/api/videos/:id/cdn-url` and `/api/videos/cdn-urls`) to:
-  - Detect Bunny Storage paths and use `bunnyStorageService.getCdnUrl()` directly
-  - Require CDN URL configuration for Bunny-stored videos (returns error if not configured)
-  - Maintain backward compatibility with GCS-stored videos
-- Updated `bunnyStorageService.ts` to support `BUNNY_PULL_ZONE_URL` as fallback for `BUNNY_STORAGE_CDN_URL`
-- Backward compatible: Falls back to GCS/Replit Object Storage when Bunny is not configured
+  - Removed `useBunny` parameter from `compressVideo()` and `compressVideoInBackground()`
+  - Now uses exclusively Replit Object Storage for all operations
+- Updated `server/routes.ts`:
+  - Removed all Bunny CDN and Bunny Storage API endpoints
+  - Updated `/api/videos/upload-url` to only use Replit Object Storage paths
+  - Updated `/api/videos/upload` to only upload to Replit Object Storage
+  - Updated CDN URL endpoints (`/api/videos/:id/cdn-url` and `/api/videos/cdn-urls`) to use Object Storage service
+  - Fixed video moderation download to use Object Storage
+  - Removed file storage management endpoints (were Bunny-specific)
+- All video and thumbnail storage now exclusively uses Replit Object Storage
+- Removed environment variable dependencies: `BUNNY_STORAGE_API_KEY`, `BUNNY_STORAGE_ZONE`, `BUNNY_STORAGE_REGION`, `BUNNY_STORAGE_CDN_URL`, `BUNNY_STREAM_API_KEY`, `BUNNY_VIDEO_LIBRARY_ID`, `BUNNY_CDN_HOSTNAME`, `BUNNY_PULL_ZONE_URL`
 
-**Bunny Storage Integration for File Storage (Completed)**
-- Installed `bunnycdn-storage` package for Bunny Storage API integration
-- Created `server/bunnyStorageService.ts` with:
-  - Storage client initialization with region support
-  - File upload (buffer-based)
-  - File download and deletion
-  - Directory listing
-  - CDN URL generation for public access
-- Added API endpoints (admin-only):
-  - `GET /api/storage/status` - Check if Bunny Storage is configured
-  - `GET /api/storage/files` - List files in a directory
-  - `POST /api/storage/upload` - Upload file with form data
-  - `GET /api/storage/download/*` - Download file
-  - `DELETE /api/storage/files/*` - Delete file
-  - `GET /api/storage/cdn-url/*` - Get CDN URL for a file
-- Environment variables required:
-  - `BUNNY_STORAGE_API_KEY` - Storage zone password/API key
-  - `BUNNY_STORAGE_ZONE` - Storage zone name
-  - `BUNNY_STORAGE_REGION` - Region code (de, ny, la, sg, etc.) - optional, defaults to 'de'
-  - `BUNNY_STORAGE_CDN_URL` - (Optional) CDN URL for public access
-
-**File Storage Management UI (Completed)**
-- Created `client/src/components/FileStorageManagement.tsx`:
-  - Browse files and folders with table view
-  - Navigate directories with back button and path display
-  - Upload files to any path with dialog
-  - Delete files with confirmation dialog
-  - Copy CDN URLs to clipboard
-  - Download files directly
-  - Proper path handling for Bunny Storage API compatibility
-- Added "Storage" tab to Admin Dashboard for file management
-
-**BunnyCDN Integration for Video Streaming (Completed)**
-- Installed `bunnycdn-stream` package for BunnyCDN Stream API integration
-- Created `server/bunnyCdnService.ts` with:
-  - Stream API client initialization
-  - Video upload (buffer and URL-based)
-  - Video info retrieval, deletion, and listing
-  - CDN URL generation (embed, HLS, thumbnail)
-  - Pull zone URL transformation (preserves signed URL query parameters)
-- Added API endpoints (admin-only):
-  - `GET /api/bunny/status` - Check if BunnyCDN is configured
-  - `GET /api/bunny/videos` - List videos from BunnyCDN library
-  - `GET /api/bunny/videos/:id` - Get video info
-  - `POST /api/bunny/upload` - Upload video to BunnyCDN from URL
-  - `DELETE /api/bunny/videos/:id` - Delete video
-  - `GET /api/bunny/urls/:videoId` - Get embed/HLS/thumbnail URLs
-- Updated existing CDN URL endpoints to use BunnyCDN pull zone when configured
-- Environment variables required:
-  - `BUNNY_STREAM_API_KEY` - Stream API key
-  - `BUNNY_VIDEO_LIBRARY_ID` - Video library ID
-  - `BUNNY_CDN_HOSTNAME` - CDN hostname (e.g., vz-xxx.b-cdn.net)
-  - `BUNNY_PULL_ZONE_URL` - (Optional) Pull zone URL for caching
-
-## Recent Changes (December 5, 2025)
+## Previous Changes (December 5, 2025)
 
 **Creator Follow Feature (Completed)**
 - Added follows table to database with followerId, followingId, unique constraint, and indexes
