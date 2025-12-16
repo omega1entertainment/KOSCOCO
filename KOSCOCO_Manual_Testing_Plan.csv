@@ -1,0 +1,373 @@
+Test Case ID,Category,Feature,Test Scenario,Pre-conditions,Test Steps,Expected Result,Priority,Status,Tester,Date Tested,Notes
+AUTH-001,Authentication,User Registration,Verify new user can register with valid details,User is not logged in,"1. Navigate to /register
+2. Fill in First Name, Last Name, Email, Phone, Password
+3. Click Register button
+4. Enter OTP code sent to email
+5. Click Verify","User account is created successfully, user is logged in and redirected to home page",High,,,
+AUTH-002,Authentication,User Registration,Verify email OTP verification during signup,User is on registration page,"1. Complete registration form with valid email
+2. Submit the form
+3. Check email for OTP code
+4. Enter the 6-digit OTP code
+5. Click Verify","OTP is validated, account is created, user is logged in",High,,,
+AUTH-003,Authentication,User Registration,Verify OTP resend functionality,User is on OTP verification screen,"1. Click 'Resend Code' button
+2. Wait for new email
+3. Enter new OTP code","New OTP is sent to email, old OTP is invalidated",Medium,,,
+AUTH-004,Authentication,User Registration,Verify registration fails with existing email,Another user exists with same email,"1. Navigate to /register
+2. Enter existing email address
+3. Complete other fields
+4. Click Register","Error message: Email already registered",High,,,
+AUTH-005,Authentication,User Login,Verify user can login with valid credentials,User has existing account,"1. Navigate to /login
+2. Enter valid email and password
+3. Click Login","User is logged in and redirected to home page",High,,,
+AUTH-006,Authentication,User Login,Verify login fails with invalid password,User has existing account,"1. Navigate to /login
+2. Enter valid email
+3. Enter wrong password
+4. Click Login","Error message: Invalid credentials",High,,,
+AUTH-007,Authentication,User Login,Verify login with 2FA enabled,User has 2FA enabled,"1. Navigate to /login
+2. Enter valid credentials
+3. Click Login
+4. Enter 6-digit TOTP code from authenticator app","User is logged in after 2FA verification",High,,,
+AUTH-008,Authentication,User Login,Verify backup code login for 2FA,User has 2FA enabled and backup codes,"1. Navigate to /login
+2. Enter valid credentials
+3. On 2FA screen enter backup code instead of TOTP","User is logged in, backup code is consumed",Medium,,,
+AUTH-009,Authentication,Password Reset,Verify forgot password flow,User has existing account,"1. Navigate to /forgot-password
+2. Enter registered email
+3. Click Send Reset Link
+4. Check email for reset link
+5. Click link and set new password","Password is reset successfully, user can login with new password",High,,,
+AUTH-010,Authentication,Logout,Verify user can logout,User is logged in,"1. Click user menu dropdown
+2. Click Logout","User is logged out, redirected to home page",High,,,
+AUTH-011,Authentication,2FA Setup,Verify user can enable 2FA,User is logged in without 2FA,"1. Go to Dashboard > Security tab
+2. Click Enable 2FA
+3. Scan QR code with authenticator app
+4. Enter verification code
+5. Save backup codes","2FA is enabled, backup codes are displayed",Medium,,,
+AUTH-012,Authentication,2FA Disable,Verify user can disable 2FA,User is logged in with 2FA enabled,"1. Go to Dashboard > Security tab
+2. Click Disable 2FA
+3. Enter password and current TOTP code
+4. Confirm","2FA is disabled",Medium,,,
+AUTH-013,Authentication,Email Verification,Verify email verification resend,User has unverified email,"1. Go to /verify-email
+2. Click Resend Verification Email
+3. Check email inbox","New verification email is sent",Medium,,,
+VID-001,Videos,Video Feed,Verify video feed displays videos,Videos exist in database,"1. Navigate to /video/
+2. Scroll through videos","Videos display in TikTok-style full-screen format with swipe navigation",High,,,
+VID-002,Videos,Video Playback,Verify video plays automatically,User is on video page,"1. Navigate to any video
+2. Observe video player","Video starts playing automatically",High,,,
+VID-003,Videos,Video Playback,Verify video pause/play toggle,Video is playing,"1. Click on video to pause
+2. Click again to resume","Video toggles between play and pause",High,,,
+VID-004,Videos,Video Playback,Verify Picture-in-Picture mode,Video is playing,"1. Click PiP button on video player
+2. Navigate to another page","Video continues playing in floating PiP window",Medium,,,
+VID-005,Videos,Video Upload,Verify video upload with valid file,User is logged in,"1. Navigate to /upload
+2. Select video file (MP4 under 100MB)
+3. Enter title and description
+4. Select category
+5. Click Upload","Video is uploaded successfully, appears in moderation queue",High,,,
+VID-006,Videos,Video Upload,Verify upload fails with oversized file,User is logged in,"1. Navigate to /upload
+2. Try to upload video over 100MB","Error message about file size limit",High,,,
+VID-007,Videos,Video Upload,Verify upload fails with invalid format,User is logged in,"1. Navigate to /upload
+2. Try to upload non-video file","Error message about invalid file format",Medium,,,
+VID-008,Videos,Video Like,Verify user can like a video,User is logged in,"1. Navigate to any video
+2. Click the heart/like button","Like count increases, button shows liked state",High,,,
+VID-009,Videos,Video Like,Verify user can unlike a video,User has already liked the video,"1. Navigate to liked video
+2. Click the heart/like button again","Like count decreases, button returns to unliked state",High,,,
+VID-010,Videos,Video Like,Verify anonymous like with IP tracking,User is not logged in,"1. Navigate to any video
+2. Click the heart/like button","Like is recorded, prevents duplicate likes from same IP",Medium,,,
+VID-011,Videos,Video Comments,Verify user can post comment,User is logged in,"1. Navigate to any video
+2. Click comments button
+3. Type comment in text field
+4. Click Post","Comment appears in comments list with username and timestamp",High,,,
+VID-012,Videos,Video Comments,Verify comments pagination,Video has more than 20 comments,"1. Navigate to video with many comments
+2. Scroll to bottom of comments
+3. Click Load More or scroll for more","Additional comments are loaded",Medium,,,
+VID-013,Videos,Follow Creator,Verify user can follow a creator,User is logged in,"1. Navigate to a video
+2. Click Follow button next to creator name","User follows creator, button changes to Following",High,,,
+VID-014,Videos,Follow Creator,Verify user can unfollow a creator,User is following the creator,"1. Navigate to video by followed creator
+2. Click Following button","User unfollows creator, button changes back to Follow",High,,,
+VID-015,Videos,Video Share,Verify video share functionality,User is viewing a video,"1. Click share button
+2. Copy link or share to social media","Share options display, link is copied successfully",Medium,,,
+VID-016,Videos,Video Search,Verify video search by title,Videos exist in database,"1. Enter search query in search bar
+2. Press Enter or click search button","Search results page shows matching videos",High,,,
+VID-017,Videos,Category Filter,Verify videos filter by category,Videos exist in multiple categories,"1. Navigate to /categories
+2. Click on a category","Only videos from selected category are displayed",High,,,
+VOTE-001,Voting,Free Vote,Verify user can cast free vote,User is logged in and has not voted today,"1. Navigate to any video
+2. Click Vote button","Vote is recorded, vote count increases",High,,,
+VOTE-002,Voting,Free Vote,Verify daily vote limit,User has already voted today,"1. Try to vote on another video same day","Message about daily vote limit reached",High,,,
+VOTE-003,Voting,Paid Vote,Verify paid vote purchase flow,User is logged in,"1. Navigate to any video
+2. Click Buy Votes button
+3. Select vote package
+4. Complete Flutterwave payment","Votes are credited to the video, payment recorded",High,,,
+VOTE-004,Voting,Vote Count,Verify vote count displays correctly,Video has votes,"1. Navigate to video with votes","Vote count displays accurately",High,,,
+VOTE-005,Voting,Vote Count,Verify vote count updates after purchase,User completes paid vote purchase,"1. Complete paid vote purchase
+2. Return to video page","Vote count reflects new votes immediately",High,,,
+LEAD-001,Leaderboard,View Leaderboard,Verify leaderboard displays top videos,Videos have votes/likes,"1. Navigate to /leaderboard","Leaderboard shows videos ranked by engagement",High,,,
+LEAD-002,Leaderboard,Category Filter,Verify leaderboard filters by category,Multiple categories exist,"1. Navigate to /leaderboard
+2. Select category filter","Leaderboard shows only videos from selected category",Medium,,,
+LEAD-003,Leaderboard,Phase Filter,Verify leaderboard shows current phase,Competition phase is active,"1. Navigate to /leaderboard","Current phase label displays, rankings are accurate",Medium,,,
+LEAD-004,Leaderboard,Prizes Page,Verify prizes page content,Prize information configured,"1. Navigate to /prizes","Prize tiers and amounts display correctly",Medium,,,
+AFF-001,Affiliate,Program Registration,Verify user can join affiliate program,User is logged in,"1. Navigate to /affiliate
+2. Read terms and click Join
+3. Complete affiliate signup form","Affiliate account is created, unique referral link generated",High,,,
+AFF-002,Affiliate,Affiliate Login,Verify affiliate can login,User has affiliate account,"1. Navigate to /affiliate/login
+2. Enter credentials
+3. Click Login","Affiliate is logged in, redirected to dashboard",High,,,
+AFF-003,Affiliate,Referral Link,Verify referral link tracks referrals,User has affiliate account,"1. Copy referral link from dashboard
+2. Share with new user
+3. New user registers using link","Referral is tracked, appears in affiliate dashboard",High,,,
+AFF-004,Affiliate,Commission Tracking,Verify commission calculation,Referred users have activity,"1. Referral makes qualifying purchase
+2. Check affiliate dashboard","Commission is calculated (20%) and displayed",High,,,
+AFF-005,Affiliate,Dashboard Analytics,Verify affiliate dashboard shows stats,User has affiliate referrals,"1. Navigate to /affiliate/dashboard
+2. View analytics section","Shows total referrals, earnings, conversion rate",Medium,,,
+AFF-006,Affiliate,Payout Request,Verify affiliate can request payout,Affiliate has earnings above minimum,"1. Navigate to affiliate dashboard
+2. Click Request Payout
+3. Enter payout details","Payout request is submitted for admin approval",Medium,,,
+ADV-001,Advertising,Advertiser Registration,Verify advertiser can sign up,User is not an advertiser,"1. Navigate to /advertiser/signup
+2. Fill company details
+3. Accept terms
+4. Submit application","Application submitted for admin approval",High,,,
+ADV-002,Advertising,Advertiser Login,Verify advertiser can login,Advertiser account approved,"1. Navigate to /advertiser/login
+2. Enter credentials","Advertiser is logged in to dashboard",High,,,
+ADV-003,Advertising,Create Campaign,Verify campaign creation,Advertiser is logged in,"1. Navigate to /advertiser/campaign/create
+2. Fill campaign details (name, budget, dates)
+3. Submit","Campaign is created in draft status",High,,,
+ADV-004,Advertising,Create Ad,Verify ad creation within campaign,Campaign exists,"1. Navigate to campaign details
+2. Click Create Ad
+3. Upload creative (video/image)
+4. Set targeting
+5. Submit","Ad is created and linked to campaign",High,,,
+ADV-005,Advertising,Ad Preview,Verify ad preview before publishing,Ad is created,"1. View ad details
+2. Click Preview","Ad displays as it will appear to users",Medium,,,
+ADV-006,Advertising,Campaign Analytics,Verify campaign metrics display,Campaign has impressions,"1. View campaign in dashboard
+2. Check analytics section","Shows impressions, clicks, CTR, spend",Medium,,,
+ADV-007,Advertising,Ad Types,Verify skippable in-stream ads,In-stream ad is active,"1. View video with ad
+2. Wait for skip button
+3. Click Skip Ad","Ad plays before video, skip button appears after 5s",High,,,
+ADV-008,Advertising,Ad Types,Verify overlay banner ads,Banner ad is active,"1. View video with banner ad","Banner displays at bottom of video player",Medium,,,
+ADMIN-001,Admin Dashboard,Access Control,Verify only admins can access dashboard,User is admin,"1. Login as admin
+2. Navigate to /admin","Admin dashboard displays with all tabs",High,,,
+ADMIN-002,Admin Dashboard,Access Control,Verify non-admins cannot access,User is not admin,"1. Login as regular user
+2. Navigate to /admin","Access denied or redirected",High,,,
+ADMIN-003,Admin Dashboard,Overview Stats,Verify overview statistics,Data exists in system,"1. View Admin Dashboard overview","Shows Total Users, Videos, Views, Suspended Users, Unverified Emails",High,,,
+ADMIN-004,Admin Dashboard,User Management,Verify admin can view all users,Users exist in system,"1. Navigate to Users tab
+2. Search/filter users","User list displays with details",High,,,
+ADMIN-005,Admin Dashboard,User Management,Verify admin can suspend user,User exists,"1. Find user in list
+2. Click Suspend
+3. Confirm","User is suspended, cannot login",High,,,
+ADMIN-006,Admin Dashboard,Video Moderation,Verify pending videos queue,Videos pending approval,"1. Navigate to Moderation tab","List of pending videos displays",High,,,
+ADMIN-007,Admin Dashboard,Video Moderation,Verify approve video,Video is pending,"1. Select pending video
+2. Click Approve","Video status changes to approved, visible publicly",High,,,
+ADMIN-008,Admin Dashboard,Video Moderation,Verify reject video,Video is pending,"1. Select pending video
+2. Click Reject
+3. Enter reason","Video is rejected, creator notified",High,,,
+ADMIN-009,Admin Dashboard,Phase Management,Verify phase controls,Competition running,"1. Navigate to Competition tab
+2. View/modify phase settings","Current phase displays, can advance to next phase",High,,,
+ADMIN-010,Admin Dashboard,Top 500 Selection,Verify automatic Top 500 selection,Videos have likes in categories,"1. Navigate to Competition tab
+2. Click Select Top 500
+3. Confirm","Top 500 videos per category selected based on likes",High,,,
+ADMIN-011,Admin Dashboard,Advertiser Approval,Verify advertiser account approval,Advertiser pending approval,"1. Navigate to Advertisers tab
+2. View pending applications
+3. Click Approve","Advertiser account is activated",Medium,,,
+ADMIN-012,Admin Dashboard,Newsletter Management,Verify email campaign creation,Admin is on newsletter tab,"1. Navigate to Newsletter tab
+2. Click Create Campaign
+3. Use WYSIWYG editor
+4. Send to subscribers","Email campaign is sent to all subscribers",Medium,,,
+ADMIN-013,Admin Dashboard,SMS Messaging,Verify SMS send to phone number,Twilio configured,"1. Navigate to SMS tab
+2. Enter phone number
+3. Select template or type message
+4. Click Send","SMS is sent, appears in history",Medium,,,
+ADMIN-014,Admin Dashboard,SMS Analytics,Verify SMS analytics display,SMS messages sent,"1. Navigate to SMS > Analytics tab","Shows total sent, failed, success rate",Low,,,
+ADMIN-015,Admin Dashboard,SMS Retry,Verify retry failed SMS,Failed SMS exists,"1. Navigate to SMS > History tab
+2. Find failed message
+3. Click Retry","SMS is resent, status updates",Low,,,
+ADMIN-016,Admin Dashboard,File Storage,Verify file storage browser,Bunny Storage configured,"1. Navigate to Storage tab
+2. Browse directories
+3. Upload/download files","Can navigate, upload, download, delete files",Medium,,,
+JUDGE-001,Judge Dashboard,Access Control,Verify judge can access dashboard,User is assigned as judge,"1. Login as judge
+2. Navigate to /judge-dashboard","Judge dashboard displays",High,,,
+JUDGE-002,Judge Dashboard,Video Scoring,Verify judge can score videos,Videos assigned for judging,"1. View video in queue
+2. Enter scores for criteria
+3. Submit score","Score is recorded, video marked as judged",High,,,
+JUDGE-003,Judge Dashboard,Judging Queue,Verify judging queue displays,Videos pending judging,"1. View judging queue","List of videos to judge with progress indicator",Medium,,,
+JUDGE-004,Judges,Public Judges Page,Verify judges page shows all judges,Judges exist,"1. Navigate to /judges","Grid of judges with photos and bios",Medium,,,
+JUDGE-005,Judges,Judge Profile,Verify individual judge profile,Judge exists,"1. Click on judge from judges page","Judge profile with details and judged videos",Low,,,
+CREATOR-001,Creator Dashboard,Access Control,Verify creator can access dashboard,User has uploaded videos,"1. Navigate to /creator","Creator dashboard displays",High,,,
+CREATOR-002,Creator Dashboard,Video Analytics,Verify video stats display,Creator has videos,"1. View My Videos section","Shows views, likes, comments for each video",High,,,
+CREATOR-003,Creator Dashboard,Video Management,Verify can edit video details,Creator has videos,"1. Select video
+2. Click Edit
+3. Update title/description
+4. Save","Video details are updated",Medium,,,
+CREATOR-004,Creator Dashboard,Polls/Quizzes,Verify poll creation,Creator has video,"1. Select video
+2. Navigate to Polls tab
+3. Create poll with options
+4. Set timing
+5. Save","Poll is attached to video at specified time",Medium,,,
+CREATOR-005,Creator Dashboard,Scheduled Videos,Verify scheduled video management,Creator has scheduled uploads,"1. Navigate to Scheduled tab","List of scheduled videos with publish dates",Low,,,
+USER-001,User Dashboard,Profile View,Verify user can view profile,User is logged in,"1. Navigate to /dashboard","Profile information displays correctly",High,,,
+USER-002,User Dashboard,Edit Profile,Verify user can edit profile,User is logged in,"1. Navigate to /edit-profile
+2. Update name, bio, avatar
+3. Save","Profile is updated successfully",High,,,
+USER-003,User Dashboard,Watch History,Verify watch history displays,User has watched videos,"1. Navigate to dashboard
+2. View Watch History section","List of watched videos with progress",Medium,,,
+USER-004,User Dashboard,My Collections,Verify collections/watchlist,User has saved videos,"1. Navigate to /my-collections","Saved videos display in collections",Medium,,,
+USER-005,User Dashboard,Delete Account,Verify account deletion flow,User is logged in,"1. Navigate to settings
+2. Click Delete Account
+3. Confirm with password","Account is deleted, user logged out",Low,,,
+NAV-001,Navigation,Main Menu Desktop,Verify all menu items work,App is loaded,"1. Click each menu item in desktop nav
+2. Verify navigation to correct page","All menu items navigate correctly",High,,,
+NAV-002,Navigation,Main Menu Mobile,Verify mobile menu functions,App on mobile viewport,"1. Click hamburger menu
+2. Test all menu items
+3. Test submenus (expand/collapse)","Mobile menu works, submenus expand/collapse",High,,,
+NAV-003,Navigation,Help Submenu,Verify Help dropdown items,On any page,"1. Click Help in navigation
+2. Click Help Center
+3. Click FAQ
+4. Click How It Works","All submenu items navigate to correct pages",High,,,
+NAV-004,Navigation,Footer Links,Verify footer navigation,Footer is visible,"1. Scroll to footer
+2. Click each link","All footer links work correctly",Medium,,,
+NAV-005,Navigation,Logo Home Link,Verify logo navigates to home,On any page,"1. Click logo in header","Navigates to home page",High,,,
+NAV-006,Navigation,Theme Toggle,Verify dark/light mode toggle,App is loaded,"1. Click theme toggle button
+2. Toggle multiple times","Theme switches between dark and light mode",Medium,,,
+NAV-007,Navigation,Language Toggle,Verify English/French toggle,App is loaded,"1. Click language toggle
+2. Observe UI text change","All text switches between English and French",Medium,,,
+NAV-008,Navigation,Search Functionality,Verify search from nav bar,App is loaded,"1. Enter search term in search bar
+2. Press Enter","Navigate to search results with matching videos",High,,,
+PAGES-001,Static Pages,Terms of Service,Verify terms page loads,None,"1. Navigate to /terms-of-service","Terms of service content displays",Low,,,
+PAGES-002,Static Pages,Privacy Policy,Verify privacy page loads,None,"1. Navigate to /privacy-policy","Privacy policy content displays",Low,,,
+PAGES-003,Static Pages,Competition Rules,Verify rules page loads,None,"1. Navigate to /rules","Competition rules content displays",Medium,,,
+PAGES-004,Static Pages,Contact Page,Verify contact form works,None,"1. Navigate to /contact
+2. Fill contact form
+3. Submit","Contact form submits successfully",Medium,,,
+PAGES-005,Static Pages,FAQ Page,Verify FAQ displays,FAQ content exists,"1. Navigate to /faq
+2. Click on questions","FAQ accordion expands to show answers",Medium,,,
+PAGES-006,Static Pages,Help Page,Verify help page content,None,"1. Navigate to /help","Help content and guides display",Medium,,,
+PAGES-007,Static Pages,How It Works,Verify how it works page,None,"1. Navigate to /how-it-works","Step-by-step guide displays",Medium,,,
+PAGES-008,Static Pages,Advertise Page,Verify advertise landing page,None,"1. Navigate to /advertise","Advertising platform info and CTA display",Medium,,,
+NEWSLETTER-001,Newsletter,Subscribe,Verify newsletter subscription,Email not subscribed,"1. Scroll to footer
+2. Enter email in newsletter field
+3. Click Subscribe","Success message, email added to subscribers",Medium,,,
+NEWSLETTER-002,Newsletter,Duplicate Subscribe,Verify duplicate email handling,Email already subscribed,"1. Try to subscribe with existing email","Message: Already subscribed",Low,,,
+NEWSLETTER-003,Newsletter,Invalid Email,Verify invalid email validation,None,"1. Enter invalid email format
+2. Click Subscribe","Validation error message",Low,,,
+NOTIFY-001,Notifications,Bell Icon,Verify notification bell displays,User is logged in,"1. Check notification bell in header","Bell icon shows unread count",Medium,,,
+NOTIFY-002,Notifications,View Notifications,Verify can view notifications,User has notifications,"1. Click notification bell
+2. View notification list","List of notifications displays",Medium,,,
+NOTIFY-003,Notifications,Mark as Read,Verify mark notification read,User has unread notifications,"1. Click on notification
+2. Observe read status","Notification marked as read, count decreases",Low,,,
+RESP-001,Responsiveness,Mobile Layout,Verify mobile responsive layout,Mobile viewport,"1. View app on mobile device/viewport
+2. Check all pages","All pages display correctly on mobile",High,,,
+RESP-002,Responsiveness,Tablet Layout,Verify tablet responsive layout,Tablet viewport,"1. View app on tablet device/viewport
+2. Check all pages","All pages display correctly on tablet",Medium,,,
+RESP-003,Responsiveness,Desktop Layout,Verify desktop layout,Desktop viewport,"1. View app on desktop
+2. Check all pages","All pages display correctly on desktop",High,,,
+PERF-001,Performance,Page Load Time,Verify reasonable load times,None,"1. Navigate to various pages
+2. Measure load time","Pages load within 3 seconds",Medium,,,
+PERF-002,Performance,Video Streaming,Verify smooth video playback,Videos exist,"1. Play multiple videos
+2. Monitor buffering","Videos play smoothly without excessive buffering",High,,,
+PERF-003,Performance,Image Loading,Verify image optimization,Images in app,"1. Check network tab for image sizes","Images are optimized and load quickly",Low,,,
+ERROR-001,Error Handling,404 Page,Verify 404 page displays,None,"1. Navigate to non-existent URL","Custom 404 page displays with navigation options",Medium,,,
+ERROR-002,Error Handling,API Errors,Verify graceful error handling,None,"1. Trigger API error (if possible)","User-friendly error message displays",Medium,,,
+ERROR-003,Error Handling,Form Validation,Verify form error messages,None,"1. Submit forms with invalid data","Clear validation error messages display",High,,,
+SEC-001,Security,Session Timeout,Verify session expires,User is logged in,"1. Stay idle for extended period
+2. Try to perform action","Redirected to login if session expired",Medium,,,
+SEC-002,Security,Protected Routes,Verify auth-required pages,User is not logged in,"1. Try to access /dashboard
+2. Try to access /upload","Redirected to login page",High,,,
+SEC-003,Security,Admin Route Protection,Verify admin-only routes,User is not admin,"1. Login as regular user
+2. Try to access /admin","Access denied or redirected",High,,,
+PAY-001,Payments,Flutterwave Integration,Verify successful payment webhook handling,"Flutterwave test environment, valid test card","1. Initiate paid vote purchase
+2. Complete payment with test card
+3. Wait for webhook callback","Payment recorded, votes credited, success toast displays",High,,,Payment webhook URL must be configured
+PAY-002,Payments,Flutterwave Integration,Verify failed payment handling,Flutterwave test environment,"1. Initiate paid vote purchase
+2. Use card that triggers decline
+3. Observe error handling","Payment fails gracefully, error message displays, no votes credited",High,,,
+PAY-003,Payments,Flutterwave Integration,Verify payment callback idempotency,Payment already processed,"1. Simulate duplicate webhook callback
+2. Check database","Duplicate callback ignored, no double-crediting of votes",High,,,
+PAY-004,Payments,Flutterwave Integration,Verify payment timeout handling,Network issues during payment,"1. Start payment flow
+2. Simulate network timeout
+3. Check order status","Pending status shown, retry option available",Medium,,,
+PAY-005,Payments,Vote Packages,Verify vote package pricing displays,Vote packages configured,"1. Click Buy Votes
+2. View available packages","All packages display with correct prices in XAF",High,,,
+PAY-006,Payments,Transaction History,Verify payment history displays,User has completed payments,"1. Navigate to dashboard
+2. View transaction history","All payments listed with dates and amounts",Medium,,,
+MOD-001,Moderation,Video Upload,Verify chunked upload for large files,User uploading video near size limit,"1. Upload video close to 100MB
+2. Monitor upload progress","Upload completes with progress indicator",Medium,,,
+MOD-002,Moderation,Video Upload,Verify upload error recovery,Network interruption during upload,"1. Start video upload
+2. Interrupt network briefly
+3. Resume","Upload retries or allows resume",Medium,,,
+MOD-003,Moderation,Content Detection,Verify inappropriate content flagging,Video with flagged content,"1. Admin reviews flagged video
+2. Take action","Content flagging system works, admin can review",Medium,,,
+MOD-004,Moderation,Video Compression,Verify video compression workflow,Video uploaded,"1. Upload raw video
+2. Check compressed output","Video is compressed for optimal streaming",Medium,,,
+MOD-005,Moderation,Admin Escalation,Verify moderation escalation flow,Complex moderation case,"1. Moderator flags for senior review
+2. Admin reviews","Escalation workflow functions properly",Low,,,
+CDN-001,Storage/CDN,Bunny Storage,Verify file upload to Bunny Storage,Bunny Storage configured,"1. Upload video file
+2. Check storage location","File stored in Bunny Storage, accessible via CDN",High,,,Test requires BUNNY_STORAGE_API_KEY
+CDN-002,Storage/CDN,Bunny CDN,Verify CDN URL generation,Video in Bunny Storage,"1. Request video playback
+2. Check CDN URL","CDN URL generated correctly, video streams from CDN",High,,,
+CDN-003,Storage/CDN,Storage Fallback,Verify GCS fallback when Bunny unavailable,Bunny not configured,"1. Upload video without Bunny config
+2. Verify storage location","Falls back to GCS/Replit Object Storage",Medium,,,
+CDN-004,Storage/CDN,Thumbnail Generation,Verify thumbnail upload to storage,Video uploaded,"1. Upload video
+2. Check thumbnail","Thumbnail generated and stored correctly",Medium,,,
+CDN-005,Storage/CDN,File Browser,Verify admin file browser navigation,Files in storage,"1. Admin navigates Storage tab
+2. Browse folders","Can navigate directories, view files",Medium,,,
+CDN-006,Storage/CDN,CDN Error Handling,Verify CDN failure graceful degradation,CDN temporarily unavailable,"1. Simulate CDN failure
+2. Try to play video","Fallback or clear error message shown",Medium,,,
+TOAST-001,Notifications,Toast Messages,Verify success toast on like,User likes video,"1. Click like button on video","Green success toast appears briefly",Medium,,,
+TOAST-002,Notifications,Toast Messages,Verify success toast on vote,User votes on video,"1. Cast vote on video","Success toast confirms vote recorded",Medium,,,
+TOAST-003,Notifications,Toast Messages,Verify success toast on comment,User posts comment,"1. Post comment on video","Success toast confirms comment posted",Medium,,,
+TOAST-004,Notifications,Toast Messages,Verify error toast on failure,Action fails,"1. Trigger an action that fails","Red error toast with message",Medium,,,
+TOAST-005,Notifications,Cache Invalidation,Verify like count updates immediately,User likes video,"1. Like video
+2. Check like count","Count updates without page refresh",High,,,
+TOAST-006,Notifications,Cache Invalidation,Verify vote count updates after purchase,User purchases votes,"1. Complete vote purchase
+2. Check vote count","Vote count reflects purchase immediately",High,,,
+TOAST-007,Notifications,Cache Invalidation,Verify comment count updates,User posts comment,"1. Post comment
+2. Check comment count","Comment count updates without refresh",Medium,,,
+PWA-001,PWA,Install Prompt,Verify PWA install prompt displays,Supported browser,"1. Visit site on mobile Chrome/Safari
+2. Wait for prompt","Install prompt appears after brief usage",Medium,,,
+PWA-002,PWA,Install Flow,Verify PWA installation,Install prompt shown,"1. Click Install button
+2. Confirm installation","App installs to home screen",Medium,,,
+PWA-003,PWA,Offline Behavior,Verify offline fallback,App installed and offline,"1. Disconnect network
+2. Open PWA","Offline page or cached content displays",Low,,,
+RATE-001,Rate Limiting,Like Endpoint,Verify like rate limiting,User making rapid requests,"1. Rapidly click like/unlike
+2. Monitor responses","Rate limiting kicks in after threshold",Medium,,,
+RATE-002,Rate Limiting,Vote Endpoint,Verify vote rate limiting,User making rapid requests,"1. Rapidly submit votes
+2. Monitor responses","Rate limiting prevents abuse",Medium,,,
+RATE-003,Rate Limiting,Comment Endpoint,Verify comment rate limiting,User posting rapidly,"1. Rapidly post comments
+2. Monitor responses","Rate limiting prevents spam",Medium,,,
+RATE-004,Rate Limiting,IP Tracking,Verify anonymous like IP tracking,Anonymous user,"1. Like video as anonymous
+2. Try to like again","Duplicate like prevented by IP tracking",High,,,
+L10N-001,Localization,French Translation,Verify all UI text in French,Language set to French,"1. Switch to French
+2. Navigate all pages","All visible text is in French",High,,,
+L10N-002,Localization,English Translation,Verify all UI text in English,Language set to English,"1. Switch to English
+2. Navigate all pages","All visible text is in English",High,,,
+L10N-003,Localization,Form Validation,Verify error messages localized,Language set to French,"1. Switch to French
+2. Submit invalid form","Error messages display in French",Medium,,,
+L10N-004,Localization,Date Formatting,Verify dates display correctly,Language set to French,"1. Switch to French
+2. Check dates on videos/comments","Dates formatted for locale",Low,,,
+L10N-005,Localization,Currency Display,Verify XAF currency formatting,Price displays visible,"1. View vote packages
+2. Check price format","Prices show in XAF with correct formatting",Medium,,,
+L10N-006,Localization,FAQ Bilingual,Verify FAQ content in both languages,FAQ content exists,"1. View FAQ in English
+2. Switch to French
+3. View FAQ again","FAQ content displays in selected language",Medium,,,
+A11Y-001,Accessibility,Keyboard Navigation,Verify tab navigation,Any page,"1. Use Tab key to navigate
+2. Check focus indicators","All interactive elements reachable via keyboard",High,,,
+A11Y-002,Accessibility,Keyboard Navigation,Verify Enter/Space activation,Any interactive element,"1. Tab to button/link
+2. Press Enter or Space","Element activates correctly",High,,,
+A11Y-003,Accessibility,Screen Reader,Verify button labels,Screen reader enabled,"1. Navigate with screen reader
+2. Check button announcements","All buttons have descriptive labels",Medium,,,
+A11Y-004,Accessibility,Screen Reader,Verify form labels,Any form,"1. Navigate form with screen reader
+2. Check input announcements","All inputs announce their labels",Medium,,,
+A11Y-005,Accessibility,Contrast,Verify text contrast ratio,Any page,"1. Use contrast checker tool
+2. Check text against backgrounds","Text meets WCAG AA contrast (4.5:1)",Medium,,,
+A11Y-006,Accessibility,Focus Visible,Verify focus indicators visible,Any interactive element,"1. Tab through page
+2. Check focus visibility","Focus ring is clearly visible",High,,,
+A11Y-007,Accessibility,Alt Text,Verify image alt text,Pages with images,"1. Check images for alt attributes
+2. Verify descriptive text","All meaningful images have alt text",Medium,,,
+A11Y-008,Accessibility,Video Controls,Verify video player accessible,Video playing,"1. Tab to video controls
+2. Test play/pause/volume","Video controls usable via keyboard",Medium,,,
+REF-001,Referrals,Code Tracking,Verify referral code preserved across login redirect,User has referral link,"1. Click referral link
+2. Get redirected to login
+3. Login or register","Referral code preserved, credited correctly",High,,,
+REF-002,Referrals,Commission Payout,Verify payout approval workflow,Affiliate has pending payout,"1. Admin views payout requests
+2. Approves payout
+3. Check affiliate dashboard","Payout marked as approved, affiliate notified",Medium,,,
+REF-003,Referrals,Minimum Threshold,Verify payout minimum enforcement,Affiliate below threshold,"1. Affiliate requests payout below minimum","Error: Minimum payout threshold not met",Medium,,,
+REF-004,Referrals,Commission Calculation,Verify 20% commission accuracy,Referred user makes purchase,"1. Referred user purchases votes
+2. Check affiliate commission","Commission = 20% of purchase amount",High,,,
