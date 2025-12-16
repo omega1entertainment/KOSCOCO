@@ -1536,19 +1536,9 @@ function AdminDashboardContent() {
   const bulkDeleteUsersMutation = useMutation({
     mutationFn: async () => {
       const promises = Array.from(selectedUserIds).map(userId =>
-        fetch(`/api/admin/users/${userId}`, {
-          method: "DELETE",
-          credentials: "include",
-        })
+        apiRequest(`/api/admin/users/${userId}`, "DELETE", {})
       );
-      const responses = await Promise.all(promises);
-      for (const response of responses) {
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to delete user");
-        }
-      }
-      return { success: true };
+      return await Promise.all(promises);
     },
     onSuccess: () => {
       toast({
