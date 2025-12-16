@@ -34,6 +34,7 @@ export default function NavigationHeader({
   const [expandedLeaderboard, setExpandedLeaderboard] = useState(false);
   const [expandedAffiliate, setExpandedAffiliate] = useState(false);
   const [expandedAdvertise, setExpandedAdvertise] = useState(false);
+  const [expandedHelp, setExpandedHelp] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
@@ -77,8 +78,11 @@ export default function NavigationHeader({
   const navItems = [
     { label: 'Feed', path: '/video/' },
     { label: t('nav.categories'), path: '/categories' },
-    { label: 'How It Works', path: '/how-it-works' },
+  ];
+  
+  const helpMenuItems = [
     { label: 'FAQ', path: '/faq' },
+    { label: 'How It Works', path: '/how-it-works' },
   ];
   
   const leaderboardMenuItems = [
@@ -206,14 +210,35 @@ export default function NavigationHeader({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="ghost"
-              className="min-h-11"
-              onClick={() => onNavigate?.('/help')}
-              data-testid="link-help"
-            >
-              Help
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="min-h-11"
+                  data-testid="link-help"
+                >
+                  Help
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => onNavigate?.('/help')}
+                  data-testid="menu-help-main"
+                >
+                  Help Center
+                </DropdownMenuItem>
+                {helpMenuItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.label}
+                    onClick={() => onNavigate?.(item.path)}
+                    data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
           
           <div className="hidden md:flex items-center gap-2">
@@ -424,17 +449,46 @@ export default function NavigationHeader({
               )}
             </div>
 
-            <Button
-              variant="ghost"
-              className="min-h-11 justify-start w-full"
-              onClick={() => {
-                onNavigate?.('/help');
-                setMobileMenuOpen(false);
-              }}
-              data-testid="mobile-link-help"
-            >
-              Help
-            </Button>
+            <div className="mt-2">
+              <Button
+                variant="ghost"
+                className="min-h-11 justify-between w-full px-4"
+                onClick={() => setExpandedHelp(!expandedHelp)}
+                data-testid="button-help-submenu"
+              >
+                <span className="text-sm font-semibold">Help</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedHelp ? 'rotate-180' : ''}`} />
+              </Button>
+              {expandedHelp && (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 justify-start w-full ml-4"
+                    onClick={() => {
+                      onNavigate?.('/help');
+                      setMobileMenuOpen(false);
+                    }}
+                    data-testid="mobile-link-help-center"
+                  >
+                    Help Center
+                  </Button>
+                  {helpMenuItems.map((item) => (
+                    <Button
+                      key={item.label}
+                      variant="ghost"
+                      className="min-h-11 justify-start w-full ml-4"
+                      onClick={() => {
+                        onNavigate?.(item.path);
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid={`mobile-menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+                </>
+              )}
+            </div>
             
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
               <div className="flex items-center justify-between px-4 py-2">
