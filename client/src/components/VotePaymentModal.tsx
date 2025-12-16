@@ -126,7 +126,6 @@ export default function VotePaymentModal({
                 // Invalidate all queries related to this video to refresh vote counts
                 queryClient.invalidateQueries({ queryKey: queryKeys.videos.byId(videoId) });
                 queryClient.invalidateQueries({ queryKey: queryKeys.votes.byVideo(videoId) });
-                queryClient.invalidateQueries({ queryKey: ['/api/votes/batch', videoId] });
                 queryClient.invalidateQueries({ queryKey: ['/api/votes/batch'] });
                 queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
                 queryClient.invalidateQueries({ queryKey: queryKeys.stats.home });

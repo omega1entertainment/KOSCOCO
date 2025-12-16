@@ -4,33 +4,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { startScheduledVideoJob } from "./scheduledVideoJob";
 import { initializeBunnyCdn } from "./bunnyCdnService";
 import { initializeBunnyStorage } from "./bunnyStorageService";
-import helmet from "helmet";
 
 const app = express();
-
-// Security headers with Helmet.js
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https:"],
-      mediaSrc: ["'self'", "blob:", "https:"],
-      fontSrc: ["'self'", "https:"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  frameguard: { action: "deny" },
-  noSniff: true,
-  xssFilter: true,
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-}));
 
 declare module 'http' {
   interface IncomingMessage {

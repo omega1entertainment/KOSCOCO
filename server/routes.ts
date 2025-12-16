@@ -131,24 +131,6 @@ function toPublicJudgeProfile(user: SelectUser) {
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
-  app.get('/api/health', async (req, res) => {
-    try {
-      const result = await db.execute(sql`SELECT 1 as check`);
-      res.json({ 
-        status: 'healthy', 
-        database: 'connected',
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Health check failed:", error);
-      res.status(503).json({ 
-        status: 'unhealthy', 
-        database: 'disconnected',
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
-
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const user = req.user as SelectUser;
@@ -555,13 +537,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .update(rawBody)
           .digest('hex');
         
-        const signatureBuffer = Buffer.from(flwSignatureHeader);
-        const expectedBuffer = Buffer.from(expectedSignature);
-        
-        // Must check length before timingSafeEqual (throws on length mismatch)
-        if (signatureBuffer.length === expectedBuffer.length) {
-          isValidSignature = crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
-        }
+        isValidSignature = crypto.timingSafeEqual(
+          Buffer.from(flwSignatureHeader),
+          Buffer.from(expectedSignature)
+        );
         
         if (!isValidSignature) {
           console.error("Invalid HMAC signature");
@@ -569,13 +548,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // Method 2: Legacy simple hash verification (backward compatibility)
       else if (verifHashHeader) {
-        const hashBuffer = Buffer.from(verifHashHeader);
-        const secretBuffer = Buffer.from(secretHash);
-        
-        // Must check length before timingSafeEqual (throws on length mismatch)
-        if (hashBuffer.length === secretBuffer.length) {
-          isValidSignature = crypto.timingSafeEqual(hashBuffer, secretBuffer);
-        }
+        isValidSignature = crypto.timingSafeEqual(
+          Buffer.from(verifHashHeader),
+          Buffer.from(secretHash)
+        );
         
         if (!isValidSignature) {
           console.error("Invalid verif-hash signature");

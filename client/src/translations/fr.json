@@ -65,7 +65,7 @@
   "home.sampleVideo4Creator": "Paul Ndikum",
   "home.sampleVideo4Category": "Éducation",
   "home.ctaTitle": "Prêt à Concourir?",
-  "home.ctaDescription": "Inscrivez-vous maintenant pour seulement 2 500 XCFA par catégorie et rejoignez la plus grande compétition de contenu du Cameroun",
+  "home.ctaDescription": "Inscrivez-vous maintenant pour seulement 2 500 FCFA par catégorie et rejoignez la plus grande compétition de contenu du Cameroun",
   "home.registerNow": "S'inscrire Maintenant",
   "home.learnMore": "En Savoir Plus",
   "home.videoOfTheDay.title": "Vidéo du Jour",
@@ -691,22 +691,22 @@
   
   "prizes.grandFinale.phase": "GRANDE FINALE",
   "prizes.grandFinale.badge": "1ère Place Générale",
-  "prizes.grandFinale.prize": "5 000 000 XCFA",
+  "prizes.grandFinale.prize": "5 000 000 FCFA",
   "prizes.grandFinale.description": "Les trois premiers gagnants de chaque catégorie concourent pour le prix ultime",
   
   "prizes.top3.phase": "TOP 3 FINALISTES PAR CATÉGORIE",
   "prizes.top3.badge": "Par Catégorie",
-  "prizes.top3.prize": "500 000 XCFA",
-  "prizes.top3.description": "",
+  "prizes.top3.prize": "500 000 FCFA",
+  "prizes.top3.description": "Gagnant de la 1ère place dans chacune des 5 catégories",
   "prizes.top3.additionalPrizesLabel": "Prix Additionnels par Catégorie:",
   "prizes.top3.secondPlace": "2ème Place",
-  "prizes.top3.secondPrize": "300 000 XCFA",
+  "prizes.top3.secondPrize": "300 000 FCFA",
   "prizes.top3.thirdPlace": "3ème Place",
-  "prizes.top3.thirdPrize": "150 000 XCFA",
+  "prizes.top3.thirdPrize": "150 000 FCFA",
   
   "prizes.top10.phase": "TOP 10 FINALISTES",
   "prizes.top10.badge": "Prix de Reconnaissance",
-  "prizes.top10.prize": "50 000 XCFA",
+  "prizes.top10.prize": "50 000 FCFA",
   "prizes.top10.description": "Chaque finaliste passant à la phase TOP 10",
   
   "prizes.categories.musicDance": "Musique et Danse",
@@ -719,7 +719,7 @@
   "prizes.categoriesSection.description": "Chaque catégorie offre des opportunités de prix égales. Choisissez votre passion et participez pour la gloire!",
   
   "prizes.totalPool.label": "CAGNOTTE TOTALE",
-  "prizes.totalPool.amount": "15 000 000+ XCFA",
+  "prizes.totalPool.amount": "15 000 000+ FCFA",
   "prizes.totalPool.description": "Avec des prix distribués dans 5 catégories et plusieurs phases, c'est la plus grande compétition de contenu court du Cameroun!",
   
   "prizes.cta.title": "Prêt à Participer?",
@@ -780,7 +780,7 @@
   "howItWorks.step6.description": "Les meilleurs performeurs de chaque catégorie et le grand gagnant reçoivent des prix incroyables et de la reconnaissance!",
   "howItWorks.step6.highlight1": "Les trois premiers gagnants dans chaque catégorie",
   "howItWorks.step6.highlight2": "Grande Finale en direct sur le tapis rouge",
-  "howItWorks.step6.highlight3": "Le prix ultime de 5 millions de XCFA",
+  "howItWorks.step6.highlight3": "Le prix ultime de 5 millions de FCFA",
   "howItWorks.step6.highlight4": "Célébrité nationale et internationale",
   
   "howItWorks.scoring.heading": "Comment les Gagnants Sont Choisis",
@@ -897,12 +897,12 @@
   
   "affiliate.balance.title": "Solde Disponible",
   "affiliate.balance.description": "Demandez un paiement lorsque vous atteignez le seuil minimum",
-  "affiliate.balance.minimum": "Paiement minimum: 5 000 XCFA",
+  "affiliate.balance.minimum": "Paiement minimum: 5 000 FCFA",
   "affiliate.balance.requestButton": "Demander un Paiement",
   
   "affiliate.payout.dialogTitle": "Demander un Paiement",
   "affiliate.payout.dialogDescription": "Entrez vos détails de paiement. Les demandes sont généralement traitées dans un délai de 3 à 5 jours ouvrables.",
-  "affiliate.payout.amountLabel": "Montant (XCFA)",
+  "affiliate.payout.amountLabel": "Montant (FCFA)",
   "affiliate.payout.amountPlaceholder": "5000",
   "affiliate.payout.available": "Disponible:",
   "affiliate.payout.paymentMethodLabel": "Méthode de Paiement",
@@ -918,7 +918,7 @@
   "affiliate.payoutHistory.title": "Historique des Paiements",
   "affiliate.payoutHistory.description": "Suivez vos demandes de paiement et leur statut",
   "affiliate.payoutHistory.empty": "Aucune demande de paiement pour le moment",
-  "affiliate.payoutHistory.emptyDescription": "Demandez un paiement lorsque vous accumulez au moins 5 000 XCFA",
+  "affiliate.payoutHistory.emptyDescription": "Demandez un paiement lorsque vous accumulez au moins 5 000 FCFA",
   "affiliate.payoutHistory.reason": "Raison:",
   "affiliate.payoutHistory.statusPending": "En Attente",
   "affiliate.payoutHistory.statusApproved": "Approuvé",
@@ -949,7 +949,7 @@
   "affiliateProgram.subtitle": "Gagnez 20% de commission en parrainant de nouveaux participants à KOSCOCO",
   
   "affiliateProgram.benefits.commission.title": "Commission de 20%",
-  "affiliateProgram.benefits.commission.description": "Gagnez 500 XCFA pour chaque participant que vous parrainez (20% des frais d'inscription de 2 500 XCFA)",
+  "affiliateProgram.benefits.commission.description": "Gagnez 500 FCFA pour chaque participant que vous parrainez (20% des frais d'inscription de 2 500 FCFA)",
   "affiliateProgram.benefits.sharing.title": "Partage Facile",
   "affiliateProgram.benefits.sharing.description": "Obtenez votre lien de parrainage unique et partagez-le sur les réseaux sociaux, les sites web ou n'importe où en ligne",
   "affiliateProgram.benefits.tracking.title": "Suivi des Gains",
@@ -959,7 +959,7 @@
   "affiliateProgram.howItWorks.step1": "Remplissez le formulaire ci-dessous pour rejoindre le programme d'affiliation (c'est gratuit!)",
   "affiliateProgram.howItWorks.step2": "Obtenez votre lien de parrainage unique depuis votre tableau de bord d'affilié",
   "affiliateProgram.howItWorks.step3": "Partagez votre lien avec vos amis, abonnés et votre réseau",
-  "affiliateProgram.howItWorks.step4": "Gagnez 500 XCFA de commission pour chaque participant qui s'inscrit en utilisant votre lien",
+  "affiliateProgram.howItWorks.step4": "Gagnez 500 FCFA de commission pour chaque participant qui s'inscrit en utilisant votre lien",
   "affiliateProgram.howItWorks.step5": "Suivez tous vos parrainages et vos gains dans votre tableau de bord",
   
   "affiliateProgram.form.title": "Créez Votre Compte d'Affilié",

@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { SiFacebook, SiGoogle } from "react-icons/si";
 import { Shield } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Turnstile } from "@/components/Turnstile";
 
 // Country phone format mapping
 const PHONE_FORMATS: Record<string, string> = {
@@ -74,11 +75,24 @@ export default function Login() {
   // Signup form error state
   const [signupErrors, setSignupErrors] = useState<string[]>([]);
 
+  // Turnstile state
+  const [loginTurnstileToken, setLoginTurnstileToken] = useState<string>("");
+  const [signupTurnstileToken, setSignupTurnstileToken] = useState<string>("");
+
+  const handleLoginTurnstileVerify = useCallback((token: string) => {
+    setLoginTurnstileToken(token);
+  }, []);
+
+  const handleSignupTurnstileVerify = useCallback((token: string) => {
+    setSignupTurnstileToken(token);
+  }, []);
+
   const loginMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("/api/login", "POST", {
         email: loginEmail,
         password: loginPassword,
+        turnstileToken: loginTurnstileToken,
       });
       return await response.json();
     },
@@ -142,6 +156,7 @@ export default function Login() {
         username: signupUsername,
         age: signupAge ? parseInt(signupAge) : null,
         parentalConsent: signupParentalConsent,
+        turnstileToken: signupTurnstileToken,
       });
       return await response.json();
     },
@@ -228,6 +243,15 @@ export default function Login() {
       return;
     }
 
+    if (!loginTurnstileToken) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the captcha verification",
+        variant: "destructive",
+      });
+      return;
+    }
+
     loginMutation.mutate();
   };
 
@@ -303,6 +327,15 @@ export default function Login() {
       return;
     }
 
+    if (!signupTurnstileToken) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the captcha verification",
+        variant: "destructive",
+      });
+      return;
+    }
+
     signupMutation.mutate();
   };
 
@@ -361,6 +394,10 @@ export default function Login() {
                       <Link href="/forgot-password" className="text-sm text-primary hover:underline" data-testid="link-forgot-password">
                         {t("auth.forgotPassword")}
                       </Link>
+                    </div>
+
+                    <div className="flex justify-center" data-testid="turnstile-login">
+                      <Turnstile onVerify={handleLoginTurnstileVerify} />
                     </div>
 
                     <Button
@@ -587,6 +624,10 @@ export default function Login() {
                           {t("auth.privacyPolicy")}
                         </a>
                       </Label>
+                    </div>
+
+                    <div className="flex justify-center" data-testid="turnstile-signup">
+                      <Turnstile onVerify={handleSignupTurnstileVerify} />
                     </div>
 
                     <Button

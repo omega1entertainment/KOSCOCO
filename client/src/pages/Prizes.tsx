@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import grandFinaleImg from "@assets/generated_images/grand_finale_winner_trophy.png";
-import top3Img from "@assets/generated_images/three_empty_competition_podiums.png";
-import top10Img from "@assets/generated_images/koscoco_top_10_finalists_design.png";
+import grandFinaleImg from "@assets/generated_images/Grand_finale_winner_trophy_e9b20746.png";
+import top3Img from "@assets/generated_images/Top_3_category_winners_podium_0b933e0e.png";
+import top10Img from "@assets/generated_images/Top_10_finalists_rewards_a3219779.png";
 
 export default function Prizes() {
   const [, setLocation] = useLocation();
@@ -25,14 +25,13 @@ export default function Prizes() {
       phase: t('prizes.top3.phase'),
       badge: t('prizes.top3.badge'),
       image: top3Img,
-      prize: "",
+      prize: t('prizes.top3.prize'),
       description: t('prizes.top3.description'),
       icon: Medal,
       gradient: "from-gray-300 to-gray-500",
-      prizeList: [
-        { place: "1st Place", amount: "500,000 FCFA" },
-        { place: "2nd Place", amount: "300,000 FCFA" },
-        { place: "3rd Place", amount: "150,000 FCFA" },
+      secondary: [
+        { place: t('prizes.top3.secondPlace'), amount: t('prizes.top3.secondPrize') },
+        { place: t('prizes.top3.thirdPlace'), amount: t('prizes.top3.thirdPrize') },
       ],
     },
     {
@@ -95,82 +94,6 @@ export default function Prizes() {
                         className="w-full h-full object-cover"
                         data-testid={`img-prize-${index}`}
                       />
-                      {index === 0 && (
-                        <div className="absolute inset-0 flex items-end justify-center pb-4 bg-gradient-to-t from-black/70 to-transparent">
-                          <span 
-                            className="text-xl md:text-2xl font-bold text-center px-4"
-                            data-testid="text-ultimate-prize"
-                            style={{
-                              background: 'linear-gradient(180deg, #FFFF00 0%, #FFD700 25%, #FFEA00 50%, #FFD700 75%, #FFFF00 100%)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text',
-                              textShadow: '1px 1px 0 #DAA520, 2px 2px 0 #B8860B, 3px 3px 0 #8B7500, 4px 4px 6px rgba(0,0,0,0.4)',
-                              filter: 'drop-shadow(0 0 15px rgba(255,255,0,0.8)) drop-shadow(0 0 30px rgba(255,215,0,0.6))',
-                            }}
-                          >
-                            Ultimate Prize 5 Million FCFA
-                          </span>
-                        </div>
-                      )}
-                      {index === 1 && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent">
-                          {/* 1st Place - Center podium */}
-                          <span 
-                            className="absolute text-lg md:text-xl font-bold text-center"
-                            data-testid="text-podium-1st"
-                            style={{
-                              top: '35%',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              background: 'linear-gradient(180deg, #FFFF00 0%, #FFD700 25%, #FFEA00 50%, #FFD700 75%, #FFFF00 100%)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text',
-                              textShadow: '1px 1px 0 #DAA520, 2px 2px 0 #B8860B, 3px 3px 0 #8B7500, 4px 4px 6px rgba(0,0,0,0.5)',
-                              filter: 'drop-shadow(0 0 10px rgba(255,255,0,0.8)) drop-shadow(0 0 20px rgba(255,215,0,0.6))',
-                            }}
-                          >
-                            500,000 FCFA
-                          </span>
-                          {/* 2nd Place - Left podium */}
-                          <span 
-                            className="absolute text-base md:text-lg font-bold text-center"
-                            data-testid="text-podium-2nd"
-                            style={{
-                              top: '45%',
-                              left: '20%',
-                              transform: 'translateX(-50%)',
-                              background: 'linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 25%, #D4D4D4 50%, #C0C0C0 75%, #E8E8E8 100%)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text',
-                              textShadow: '1px 1px 0 #A9A9A9, 2px 2px 0 #808080, 3px 3px 0 #696969, 4px 4px 6px rgba(0,0,0,0.5)',
-                              filter: 'drop-shadow(0 0 10px rgba(192,192,192,0.8)) drop-shadow(0 0 20px rgba(169,169,169,0.6))',
-                            }}
-                          >
-                            300,000 FCFA
-                          </span>
-                          {/* 3rd Place - Right podium */}
-                          <span 
-                            className="absolute text-sm md:text-base font-bold text-center"
-                            data-testid="text-podium-3rd"
-                            style={{
-                              top: '50%',
-                              left: '80%',
-                              transform: 'translateX(-50%)',
-                              background: 'linear-gradient(180deg, #CD7F32 0%, #B87333 25%, #CD853F 50%, #B87333 75%, #CD7F32 100%)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text',
-                              textShadow: '1px 1px 0 #8B4513, 2px 2px 0 #704214, 3px 3px 0 #5C3317, 4px 4px 6px rgba(0,0,0,0.5)',
-                              filter: 'drop-shadow(0 0 10px rgba(205,127,50,0.8)) drop-shadow(0 0 20px rgba(184,115,51,0.6))',
-                            }}
-                          >
-                            150,000 FCFA
-                          </span>
-                        </div>
-                      )}
                     </div>
 
                     {/* Content */}
@@ -191,38 +114,31 @@ export default function Prizes() {
                         {prize.phase}
                       </h2>
 
-                      {prize.prize && (
-                        <div className={`inline-flex items-center gap-2 text-4xl font-bold bg-gradient-to-r ${prize.gradient} bg-clip-text text-transparent mb-4 w-fit`}>
-                          <span data-testid={`text-prize-amount-${index}`}>{prize.prize}</span>
-                        </div>
-                      )}
+                      <div className={`inline-flex items-center gap-2 text-4xl font-bold bg-gradient-to-r ${prize.gradient} bg-clip-text text-transparent mb-4 w-fit`}>
+                        <span data-testid={`text-prize-amount-${index}`}>{prize.prize}</span>
+                      </div>
 
-                      {prize.prizeList && (
-                        <div className="space-y-3 mb-4">
-                          {prize.prizeList.map((item: { place: string; amount: string }, i: number) => (
+                      <p 
+                        className="text-muted-foreground text-lg mb-4"
+                        data-testid={`text-prize-desc-${index}`}
+                      >
+                        {prize.description}
+                      </p>
+
+                      {prize.secondary && (
+                        <div className="space-y-2 mt-4 pt-4 border-t">
+                          <p className="font-semibold text-sm text-muted-foreground">{t('prizes.top3.additionalPrizesLabel')}</p>
+                          {prize.secondary.map((sec, i) => (
                             <div 
                               key={i} 
-                              className="flex justify-between items-center py-2 border-b border-muted last:border-b-0"
-                              data-testid={`text-prize-list-${index}-${i}`}
+                              className="flex justify-between items-center"
+                              data-testid={`text-secondary-prize-${index}-${i}`}
                             >
-                              <span className="font-semibold text-lg">{item.place}</span>
-                              <span className={`text-xl font-bold bg-gradient-to-r ${
-                                i === 0 ? 'from-yellow-400 to-yellow-600' : 
-                                i === 1 ? 'from-gray-300 to-gray-500' : 
-                                'from-orange-400 to-orange-600'
-                              } bg-clip-text text-transparent`}>{item.amount}</span>
+                              <span className="font-medium">{sec.place}</span>
+                              <span className="text-primary font-bold">{sec.amount}</span>
                             </div>
                           ))}
                         </div>
-                      )}
-
-                      {prize.description && (
-                        <p 
-                          className="text-muted-foreground text-lg mb-4"
-                          data-testid={`text-prize-desc-${index}`}
-                        >
-                          {prize.description}
-                        </p>
                       )}
                     </div>
                   </div>
