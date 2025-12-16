@@ -106,7 +106,14 @@ class BunnyStorageService {
       return undefined;
     }
     
-    const cleanPath = remotePath.startsWith("/") ? remotePath.slice(1) : remotePath;
+    // Strip /objects/ prefix if present (legacy path format)
+    let cleanPath = remotePath;
+    if (cleanPath.startsWith("/objects/")) {
+      cleanPath = cleanPath.slice(9); // Remove "/objects/"
+    } else if (cleanPath.startsWith("/")) {
+      cleanPath = cleanPath.slice(1);
+    }
+    
     return `${this.config.cdnUrl}/${cleanPath}`;
   }
 }
