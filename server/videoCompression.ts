@@ -5,7 +5,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { ObjectStorageService, objectStorageClient, parseObjectPath } from './objectStorage';
-import { bunnyStorageService } from './bunnyStorageService';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
@@ -76,8 +75,7 @@ function calculateScaledDimensions(
 export async function compressVideo(
   videoStoragePath: string,
   userId: string,
-  options: CompressionOptions = {},
-  useBunny: boolean = false
+  options: CompressionOptions = {}
 ): Promise<VideoCompressionResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const tempDir = os.tmpdir();
@@ -86,29 +84,19 @@ export async function compressVideo(
   let originalSize = 0;
 
   try {
-    console.log(`[VideoCompression] Starting compression for: ${videoStoragePath} (useBunny: ${useBunny})`);
+    console.log(`[VideoCompression] Starting compression for: ${videoStoragePath}`);
 
-    // Download video from appropriate storage
-    if (useBunny && bunnyStorageService.isConfigured()) {
-      // Download from Bunny Storage
-      const videoBuffer = await bunnyStorageService.download(videoStoragePath);
-      originalSize = videoBuffer.length;
-      console.log(`[VideoCompression] Original file size: ${(originalSize / (1024 * 1024)).toFixed(2)} MB`);
-      await fs.writeFile(tempInputPath, videoBuffer);
-      console.log(`[VideoCompression] Downloaded video from Bunny to temp: ${tempInputPath}`);
-    } else {
-      // Download from GCS/Replit Object Storage
-      const { bucketName, objectName } = parseObjectPath(videoStoragePath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const videoFile = bucket.file(objectName);
+    // Download from Replit Object Storage
+    const { bucketName, objectName } = parseObjectPath(videoStoragePath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const videoFile = bucket.file(objectName);
 
-      const [metadata] = await videoFile.getMetadata();
-      originalSize = parseInt(metadata.size as string, 10) || 0;
-      console.log(`[VideoCompression] Original file size: ${(originalSize / (1024 * 1024)).toFixed(2)} MB`);
+    const [metadata] = await videoFile.getMetadata();
+    originalSize = parseInt(metadata.size as string, 10) || 0;
+    console.log(`[VideoCompression] Original file size: ${(originalSize / (1024 * 1024)).toFixed(2)} MB`);
 
-      await videoFile.download({ destination: tempInputPath });
-      console.log(`[VideoCompression] Downloaded video from GCS to temp: ${tempInputPath}`);
-    }
+    await videoFile.download({ destination: tempInputPath });
+    console.log(`[VideoCompression] Downloaded video from Replit Object Storage to temp: ${tempInputPath}`);
 
     const dimensions = await getVideoDimensions(tempInputPath);
     console.log(`[VideoCompression] Original dimensions: ${dimensions.width}x${dimensions.height}`);

@@ -21,7 +21,6 @@ import { compressVideoInBackground } from "./videoCompression";
 import { generateSlug } from "../client/src/lib/slugUtils";
 import path from "path";
 import { sendNewsletterWelcomeEmail } from "./emailService";
-import { bunnyStorageService } from "./bunnyStorageService";
 
 // Initialize Flutterwave
 const flw = new Flutterwave(
@@ -735,7 +734,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const objectId = randomUUID();
       
       // Use Bunny Storage if configured, otherwise fall back to Replit Object Storage
-      if (bunnyStorageService.isConfigured()) {
         const bunnyPath = `/videos/${objectId}.mp4`;
         res.json({ videoUrl: bunnyPath, storageType: 'bunny' });
       } else {
@@ -812,24 +810,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           // Check if we're using Bunny Storage
-          const useBunny = storageTypeField === 'bunny' && bunnyStorageService.isConfigured();
           
-          if (useBunny) {
-            // Upload to Bunny Storage
-            try {
-              // Read video file and upload to Bunny
-              const videoBuffer = await fs.readFile(videoFile.filepath);
-              await bunnyStorageService.upload(videoBuffer, videoUrlField);
-              
-              // Generate thumbnail path and upload to Bunny
-              const thumbnailId = randomUUID();
-              const thumbnailPath = `/thumbnails/${thumbnailId}.jpg`;
-              const thumbnailBuffer = await fs.readFile(thumbnailFile.filepath);
-              await bunnyStorageService.upload(thumbnailBuffer, thumbnailPath);
               
               // Get CDN URLs for both files
-              const videoCdnUrl = bunnyStorageService.getCdnUrl(videoUrlField);
-              const thumbnailCdnUrl = bunnyStorageService.getCdnUrl(thumbnailPath);
               
               res.json({ 
                 success: true, 
@@ -975,23 +958,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if paths are Bunny Storage paths (start with /videos/ or /thumbnails/)
-      const isBunnyPath = (path: string) => path.startsWith('/videos/') || path.startsWith('/thumbnails/');
-      const useBunny = isBunnyPath(videoUrl) && bunnyStorageService.isConfigured();
       
       let videoPath: string;
       let thumbnailPath: string;
       
-      if (useBunny) {
-        // For Bunny Storage, use paths directly (no ACL needed)
-        videoPath = videoUrl;
-        thumbnailPath = thumbnailUrl;
-      } else {
-        // For GCS/Replit Object Storage, set ACL policies
-        const objectStorageService = new ObjectStorageService();
-        videoPath = await objectStorageService.trySetObjectEntityAclPolicy(
-          videoUrl,
-          {
-            owner: userId,
             visibility: "private",
           }
         );
@@ -1056,17 +1026,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           try {
             // Download video for moderation - check if Bunny or GCS
-            if (useBunny) {
-              // Download from Bunny Storage
-              const videoBuffer = await bunnyStorageService.download(videoPath);
-              await fs.writeFile(tempVideoPath, videoBuffer);
-            } else {
-              // Download from GCS/Replit Object Storage
-              const parsedPath = parseObjectPath(videoPath);
-              const [file] = await objectStorageClient
-                .bucket(parsedPath.bucketName)
-                .file(parsedPath.objectName)
-                .download();
               await fs.writeFile(tempVideoPath, file);
             }
             
@@ -1365,7 +1324,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const videoPath = video.compressedVideoUrl || video.videoUrl;
       
       // Generate CDN URL using Bunny Storage
-      const cdnUrl = bunnyStorageService.getCdnUrl(videoPath);
       if (!cdnUrl) {
         return res.status(500).json({ message: "Failed to generate video CDN URL" });
       }
@@ -1373,7 +1331,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate thumbnail CDN URL if available
       let thumbnailCdnUrl: string | null = null;
       if (video.thumbnailUrl) {
-        thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
       }
 
       res.set({
@@ -1415,7 +1372,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const videoPath = video.compressedVideoUrl || video.videoUrl;
               
               // Generate CDN URL using Bunny Storage
-              const cdnUrl = bunnyStorageService.getCdnUrl(videoPath);
               if (!cdnUrl) {
                 console.error(`Cannot generate CDN URL for video ${videoId}: Bunny CDN error`);
                 return;
@@ -1424,7 +1380,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Generate thumbnail CDN URL if available
               let thumbnailCdnUrl: string | null = null;
               if (video.thumbnailUrl) {
-                thumbnailCdnUrl = bunnyStorageService.getCdnUrl(video.thumbnailUrl) || null;
               }
 
               results[videoId] = {
@@ -7476,11 +7431,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============= BUNNYCDN ENDPOINTS =============
-  const { bunnyCdnService } = await import('./bunnyCdnService');
 
   app.get('/api/bunny/status', async (req, res) => {
     try {
-      const isConfigured = bunnyCdnService.isConfigured();
       res.json({ configured: isConfigured });
     } catch (error) {
       console.error('Error checking BunnyCDN status:', error);
@@ -7490,12 +7443,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/bunny/videos', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyCdnService.isConfigured()) {
         return res.status(503).json({ message: 'BunnyCDN is not configured' });
       }
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
-      const videos = await bunnyCdnService.listVideos(page, limit);
       res.json(videos);
     } catch (error) {
       console.error('Error listing BunnyCDN videos:', error);
@@ -7505,10 +7456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/bunny/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyCdnService.isConfigured()) {
         return res.status(503).json({ message: 'BunnyCDN is not configured' });
       }
-      const video = await bunnyCdnService.getVideo(req.params.id);
       res.json(video);
     } catch (error) {
       console.error('Error getting BunnyCDN video:', error);
@@ -7518,7 +7467,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/bunny/upload', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyCdnService.isConfigured()) {
         return res.status(503).json({ message: 'BunnyCDN is not configured' });
       }
 
@@ -7528,7 +7476,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const { title, videoUrl } = uploadSchema.parse(req.body);
-      const result = await bunnyCdnService.uploadVideoFromUrl(videoUrl, title);
       res.json(result);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -7541,10 +7488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/bunny/videos/:id', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyCdnService.isConfigured()) {
         return res.status(503).json({ message: 'BunnyCDN is not configured' });
       }
-      await bunnyCdnService.deleteVideo(req.params.id);
       res.json({ message: 'Video deleted successfully' });
     } catch (error) {
       console.error('Error deleting BunnyCDN video:', error);
@@ -7554,14 +7499,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/bunny/urls/:videoId', async (req, res) => {
     try {
-      if (!bunnyCdnService.isConfigured()) {
         return res.status(503).json({ message: 'BunnyCDN is not configured' });
       }
       const { videoId } = req.params;
       res.json({
-        embedUrl: bunnyCdnService.getEmbedUrl(videoId),
-        hlsUrl: bunnyCdnService.getHlsUrl(videoId),
-        thumbnailUrl: bunnyCdnService.getThumbnailUrl(videoId),
       });
     } catch (error) {
       console.error('Error getting BunnyCDN URLs:', error);
@@ -7572,7 +7513,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bunny Storage API endpoints
   app.get('/api/storage/status', async (req, res) => {
     try {
-      res.json({ configured: bunnyStorageService.isConfigured() });
     } catch (error) {
       console.error('Error checking Bunny Storage status:', error);
       res.status(500).json({ message: 'Failed to check storage status' });
@@ -7581,11 +7521,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/storage/files', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyStorageService.isConfigured()) {
         return res.status(503).json({ message: 'Bunny Storage is not configured' });
       }
       const directory = (req.query.directory as string) || '/';
-      const files = await bunnyStorageService.list(directory);
       res.json(files);
     } catch (error) {
       console.error('Error listing Bunny Storage files:', error);
@@ -7595,7 +7533,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/storage/upload', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyStorageService.isConfigured()) {
         return res.status(503).json({ message: 'Bunny Storage is not configured' });
       }
 
@@ -7614,7 +7551,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const fileBuffer = await fs.readFile(file.filepath);
-      const result = await bunnyStorageService.upload(fileBuffer, remotePath);
       
       await fs.unlink(file.filepath).catch(() => {});
       
@@ -7627,7 +7563,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/storage/download/*', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyStorageService.isConfigured()) {
         return res.status(503).json({ message: 'Bunny Storage is not configured' });
       }
       
@@ -7636,7 +7571,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No path provided' });
       }
 
-      const buffer = await bunnyStorageService.download(remotePath);
       
       const filename = remotePath.split('/').pop() || 'file';
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -7650,7 +7584,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/storage/files/*', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      if (!bunnyStorageService.isConfigured()) {
         return res.status(503).json({ message: 'Bunny Storage is not configured' });
       }
       
@@ -7659,7 +7592,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No path provided' });
       }
 
-      await bunnyStorageService.delete(remotePath);
       res.json({ message: 'File deleted successfully' });
     } catch (error) {
       console.error('Error deleting from Bunny Storage:', error);
@@ -7669,7 +7601,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/storage/cdn-url/*', async (req: any, res) => {
     try {
-      if (!bunnyStorageService.isConfigured()) {
         return res.status(503).json({ message: 'Bunny Storage is not configured' });
       }
       
@@ -7678,7 +7609,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No path provided' });
       }
 
-      const cdnUrl = bunnyStorageService.getCdnUrl(remotePath);
       res.json({ cdnUrl });
     } catch (error) {
       console.error('Error getting CDN URL:', error);
