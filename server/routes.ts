@@ -4430,79 +4430,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You cannot delete your own account" });
       }
 
-      // ALWAYS delete all data with foreign key constraints to users
-      // Process in order to respect cascading foreign keys
-      // Only delete from tables that actually exist in the database
-      
-      // 1. Delete user preferences and settings
-      await db.execute(sql`DELETE FROM notification_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM email_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM dashboard_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM user_preferences WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM user_recommendations WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM newsletter_subscribers WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM notifications WHERE user_id = ${id}`);
-      
-      // 2. Delete interaction data (comments, follows, likes, polls created by user)
-      await db.execute(sql`DELETE FROM comments WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM follows WHERE follower_id = ${id} OR following_id = ${id}`);
-      await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM polls WHERE created_by = ${id}`);
-      
-      // 3. Delete voting data
-      await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
-      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
-      
-      // 4. Delete watchlist data (watchlist_videos first, then watchlists)
-      await db.execute(sql`DELETE FROM watchlist_videos WHERE watchlist_id IN (SELECT id FROM watchlists WHERE user_id = ${id})`);
-      await db.execute(sql`DELETE FROM watchlists WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM favorites WHERE user_id = ${id}`);
-      
-      // 5. Delete poll responses and user interests
-      await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM user_interests WHERE user_id = ${id}`);
-      
-      // 6. Delete ad data
-      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM ads WHERE approved_by = ${id}`);
-      
-      // 7. Delete report data
-      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${id} OR reviewed_by = ${id}`);
-      
-      // 8. Delete SMS messages (as sender or recipient)
-      await db.execute(sql`DELETE FROM sms_messages WHERE user_id = ${id} OR sent_by = ${id}`);
-      
-      // 9. Delete content created by user (affiliate campaigns, email campaigns, CMS content)
-      await db.execute(sql`DELETE FROM affiliate_campaigns WHERE created_by = ${id}`);
-      await db.execute(sql`DELETE FROM email_campaigns WHERE created_by = ${id}`);
-      await db.execute(sql`DELETE FROM cms_content WHERE updated_by = ${id}`);
-      
-      // 10. Delete payout requests processed by user
-      await db.execute(sql`DELETE FROM payout_requests WHERE processed_by = ${id}`);
-      
-      // 11. Delete affiliate and referral data
-      await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
-      await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
-      await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
-      
-      // 12. Delete referrals tied to user's registrations
-      await db.execute(sql`DELETE FROM referrals WHERE registration_id IN (SELECT id FROM registrations WHERE user_id = ${id})`);
-      
-      // 13. Delete registration data
-      await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
-      
-      // 14. Delete videos and related content
-      await db.execute(sql`DELETE FROM scheduled_videos WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM publishing_analytics WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM recommendation_events WHERE user_id = ${id}`);
-      await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
+      // Check if user exists first
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-      // 15. Finally delete the user account
-      await storage.deleteUser(id);
+      // Use comprehensive transactional deletion that handles all FK constraints
+      await storage.deleteUserWithDependencies(id);
 
       res.json({ message: "User deleted successfully" });
     } catch (error) {
@@ -4516,60 +4451,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const currentUser = req.user as SelectUser;
       const userId = currentUser.id;
-      const { selectedItems = [] } = req.body || {};
 
-      // ALWAYS delete data with foreign key constraints to users (regardless of selectedItems)
-      // This must happen before deleting the user
-      
-      // Delete ad impressions and clicks (depends on user)
-      await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${userId}`);
-      await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${userId}`);
-      
-      // Delete poll responses (depends on user)
-      await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${userId}`);
-      
-      // Delete likes (depends on user)
-      await db.execute(sql`DELETE FROM likes WHERE user_id = ${userId}`);
-      
-      // Delete votes (depends on user)
-      await db.execute(sql`DELETE FROM votes WHERE user_id = ${userId}`);
-      
-      // Delete watch history (depends on user)
-      await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${userId}`);
-      
-      // Delete judge scores (depends on user as judge)
-      await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${userId}`);
-      
-      // Delete reports (depends on user as reported_by or reviewed_by)
-      await db.execute(sql`DELETE FROM reports WHERE reported_by = ${userId} OR reviewed_by = ${userId}`);
-      
-      // Delete paid votes and vote purchases (depends on user)
-      await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${userId})`);
-      await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${userId}`);
-
-      // NOW handle optional selective deletions based on selectedItems
-      
-      // Delete polls created by user (depends on user as creator)
-      if (selectedItems.includes('videos')) {
-        await db.execute(sql`DELETE FROM polls WHERE creator_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('videos')) {
-        await db.execute(sql`DELETE FROM videos WHERE user_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('registrations')) {
-        await db.execute(sql`DELETE FROM registrations WHERE user_id = ${userId}`);
-      }
-
-      if (selectedItems.includes('affiliates')) {
-        await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
-        await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${userId})`);
-        await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${userId}`);
-      }
-
-      // Always delete the user
-      await storage.deleteUser(userId);
+      // Use comprehensive transactional deletion that handles all FK constraints
+      await storage.deleteUserWithDependencies(userId);
 
       // Log out the user by clearing their session
       req.logout((err: any) => {

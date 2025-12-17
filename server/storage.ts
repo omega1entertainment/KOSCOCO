@@ -62,6 +62,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<void>;
+  deleteUserWithDependencies(id: string): Promise<void>;
   updateUserGoogleId(id: string, googleId: string): Promise<User | undefined>;
   updateUserFacebookId(id: string, facebookId: string): Promise<User | undefined>;
   setPasswordResetToken(id: string, token: string, expires: Date): Promise<void>;
@@ -422,6 +423,114 @@ export class DbStorage implements IStorage {
 
   async deleteUser(id: string): Promise<void> {
     await db.delete(schema.users).where(eq(schema.users.id, id));
+  }
+
+  /**
+   * Comprehensive user deletion that handles ALL foreign key constraints
+   * Executes DELETE statements in proper order to respect FK dependencies
+   * All operations must succeed for the user to be deleted
+   */
+  async deleteUserWithDependencies(id: string): Promise<void> {
+    // Order matters: delete child tables before parent tables
+    // Each statement is executed separately with proper parameter binding
+    
+    // 1. User preferences and settings (no further dependencies)
+    await db.execute(sql`DELETE FROM notification_preferences WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM email_preferences WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM dashboard_preferences WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM account_settings WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM user_preferences WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM user_recommendations WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM newsletter_subscribers WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM notifications WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM activity_logs WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM login_sessions WHERE user_id = ${id}`);
+    
+    // 2. Interaction data (comments, follows, likes, favorites)
+    await db.execute(sql`DELETE FROM comments WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM follows WHERE follower_id = ${id} OR following_id = ${id}`);
+    await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM favorites WHERE user_id = ${id}`);
+    
+    // 3. Watch data
+    await db.execute(sql`DELETE FROM watchlist_videos WHERE watchlist_id IN (SELECT id FROM watchlists WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM watchlists WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
+    
+    // 4. Voting data (paid_votes depends on vote_purchases)
+    await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM paid_votes WHERE purchase_id IN (SELECT id FROM vote_purchases WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM vote_purchases WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM judge_scores WHERE judge_id = ${id}`);
+    
+    // 5. Poll data (poll_responses first, then poll_options, then polls created by user)
+    await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM poll_options WHERE poll_id IN (SELECT id FROM polls WHERE created_by = ${id})`);
+    await db.execute(sql`DELETE FROM polls WHERE created_by = ${id}`);
+    
+    // 6. Ad data (ad_clicks depends on ad_impressions in some cases)
+    await db.execute(sql`DELETE FROM ad_clicks WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
+    // Nullify approved_by references in ads table
+    await db.execute(sql`UPDATE ads SET approved_by = NULL WHERE approved_by = ${id}`);
+    
+    // 7. Report data - nullify user references instead of deleting
+    await db.execute(sql`UPDATE reports SET reported_by = NULL WHERE reported_by = ${id}`);
+    await db.execute(sql`UPDATE reports SET reviewed_by = NULL WHERE reviewed_by = ${id}`);
+    
+    // 8. SMS messages
+    await db.execute(sql`DELETE FROM sms_messages WHERE user_id = ${id}`);
+    await db.execute(sql`UPDATE sms_messages SET sent_by = NULL WHERE sent_by = ${id}`);
+    
+    // 9. CMS content (nullify updated_by)
+    await db.execute(sql`UPDATE cms_content SET updated_by = NULL WHERE updated_by = ${id}`);
+    
+    // 10. Email campaigns
+    await db.execute(sql`DELETE FROM email_campaigns WHERE created_by = ${id}`);
+    
+    // 11. Recommendation data
+    await db.execute(sql`DELETE FROM recommendation_events WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM scheduled_videos WHERE user_id = ${id}`);
+    await db.execute(sql`DELETE FROM publishing_analytics WHERE user_id = ${id}`);
+    
+    // 12. Affiliate data (complex dependency chain)
+    // First, delete marketing_assets that depend on affiliate_campaigns created by user
+    await db.execute(sql`DELETE FROM marketing_assets WHERE campaign_id IN (SELECT id FROM affiliate_campaigns WHERE created_by = ${id})`);
+    await db.execute(sql`DELETE FROM affiliate_campaigns WHERE created_by = ${id}`);
+    // Now handle payout_requests - both processed_by and affiliate-based
+    await db.execute(sql`UPDATE payout_requests SET processed_by = NULL WHERE processed_by = ${id}`);
+    await db.execute(sql`DELETE FROM payout_requests WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+    // Delete referrals that reference user's affiliates or registrations
+    await db.execute(sql`DELETE FROM referrals WHERE affiliate_id IN (SELECT id FROM affiliates WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM referrals WHERE registration_id IN (SELECT id FROM registrations WHERE user_id = ${id})`);
+    // Now safe to delete affiliates
+    await db.execute(sql`DELETE FROM affiliates WHERE user_id = ${id}`);
+    
+    // 13. Registrations
+    await db.execute(sql`DELETE FROM registrations WHERE user_id = ${id}`);
+    
+    // 14. Videos and related content (likes/votes/comments on user's videos)
+    // Delete video-related data for videos owned by user
+    await db.execute(sql`DELETE FROM poll_responses WHERE poll_id IN (SELECT id FROM polls WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id}))`);
+    await db.execute(sql`DELETE FROM poll_options WHERE poll_id IN (SELECT id FROM polls WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id}))`);
+    await db.execute(sql`DELETE FROM polls WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM comments WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM likes WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM votes WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM watch_history WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM favorites WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM recommendation_events WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM user_recommendations WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM judge_scores WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM paid_votes WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM scheduled_videos WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM watchlist_videos WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    await db.execute(sql`DELETE FROM reports WHERE video_id IN (SELECT id FROM videos WHERE user_id = ${id})`);
+    // Finally delete the videos
+    await db.execute(sql`DELETE FROM videos WHERE user_id = ${id}`);
+    
+    // 15. Delete the user account
+    await db.execute(sql`DELETE FROM users WHERE id = ${id}`);
   }
 
   async updateUserGoogleId(id: string, googleId: string): Promise<User | undefined> {
