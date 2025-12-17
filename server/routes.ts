@@ -4436,14 +4436,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 1. Delete user preferences and settings
       await db.execute(sql`DELETE FROM notification_preferences WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM email_preferences WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM dashboard_preferences WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM user_preferences WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM user_recommendations WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM newsletter_subscribers WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM notifications WHERE user_id = ${id}`);
       
-      // 2. Delete interaction data (comments, follows, likes)
+      // 2. Delete interaction data (comments, follows, likes, polls created by user)
       await db.execute(sql`DELETE FROM comments WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM follows WHERE follower_id = ${id} OR following_id = ${id}`);
       await db.execute(sql`DELETE FROM likes WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM polls WHERE created_by = ${id}`);
       
       // 3. Delete voting data
       await db.execute(sql`DELETE FROM votes WHERE user_id = ${id}`);
@@ -4457,8 +4461,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute(sql`DELETE FROM watch_history WHERE user_id = ${id}`);
       await db.execute(sql`DELETE FROM favorites WHERE user_id = ${id}`);
       
-      // 5. Delete poll responses
+      // 5. Delete poll responses and user interests
       await db.execute(sql`DELETE FROM poll_responses WHERE user_id = ${id}`);
+      await db.execute(sql`DELETE FROM user_interests WHERE user_id = ${id}`);
       
       // 6. Delete ad data
       await db.execute(sql`DELETE FROM ad_impressions WHERE user_id = ${id}`);
