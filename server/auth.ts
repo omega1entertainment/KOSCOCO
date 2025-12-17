@@ -14,6 +14,7 @@ import {
   generateOTP,
   getOTPExpiry,
   sendOTPEmail,
+  sendPasswordResetEmail,
 } from "./emailService";
 
 const MemoryStore = createMemoryStore(session);
@@ -776,9 +777,18 @@ export async function setupAuth(app: Express) {
 
       await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
 
-      // In a real app, you would send an email here
-      // For now, we'll just return the token (in production, this should be sent via email)
-      console.log(`Password reset token for ${email}: ${resetToken}`);
+      // Send password reset email
+      try {
+        await sendPasswordResetEmail({
+          email: normalizedEmail,
+          firstName: user.firstName,
+          resetToken,
+        });
+      } catch (emailError) {
+        console.error("Failed to send password reset email:", emailError);
+        // Still return success message to not reveal if user exists
+        return res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+      }
 
       res.json({ 
         message: "If an account with that email exists, a password reset link has been sent.",

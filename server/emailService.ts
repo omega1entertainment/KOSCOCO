@@ -275,6 +275,88 @@ export async function sendVerificationReminder({
   }
 }
 
+interface SendPasswordResetEmailParams {
+  email: string;
+  firstName: string;
+  resetToken: string;
+}
+
+export async function sendPasswordResetEmail({
+  email,
+  firstName,
+  resetToken,
+}: SendPasswordResetEmailParams): Promise<void> {
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+    : 'http://localhost:5000';
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: 'Reset Your KOSCOCO Password',
+      replyTo: 'support@kozzii.africa',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reset Your Password</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #DC2626; padding: 20px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">KOSCOCO</h1>
+              <p style="color: white; margin: 5px 0 0 0; font-size: 14px;">Kozzii Short Content Competition</p>
+            </div>
+            
+            <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd;">
+              <h2 style="color: #DC2626; margin-top: 0;">Hi ${firstName}!</h2>
+              
+              <p>We received a request to reset your KOSCOCO password. Click the button below to create a new password:</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" 
+                   style="background-color: #DC2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                  Reset Password
+                </a>
+              </div>
+              
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="background-color: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; word-break: break-all; font-size: 14px;">
+                ${resetUrl}
+              </p>
+              
+              <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                This password reset link will expire in <strong>1 hour</strong>. If you didn't request this reset, you can safely ignore this email.
+              </p>
+              
+              <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                Need help? Contact us at <a href="mailto:support@kozzii.africa" style="color: #DC2626; text-decoration: none;">support@kozzii.africa</a>
+              </p>
+            </div>
+            
+            <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
+              <p>© 2024 KOSCOCO - Kozzii Short Content Competition</p>
+              <p>Cameroon</p>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+    
+    console.log('Password reset email sent successfully:', { 
+      to: email, 
+      emailId: result.data?.id,
+      error: result.error 
+    });
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    throw new Error('Failed to send password reset email. Please try again later.');
+  }
+}
+
 interface SendNewsletterWelcomeEmailParams {
   email: string;
   firstName?: string;
